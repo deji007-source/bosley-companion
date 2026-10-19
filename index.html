@@ -242,17 +242,32 @@ async function send(text){
  try{
   const r=await fetch(CHAT_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({messages:history.slice(-16)})});
   if(!r.ok){const j=await r.json().catch(()=>({}));throw Error(j.error||"Server returned "+r.status)}
-  const rd=r.body.getReader(),dec=new TextDecoder();let buf="",out="";
-  for(;;){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
-   while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line.startsWith("data:"))continue;const d=line.slice(5).trim();if(d==="[DONE]")continue;
-    try{const t=JSON.parse(d).choices?.[0]?.delta?.content;if(t){out+=t;p.textContent=out;chat.scrollTop=chat.scrollHeight}}catch{}}}
-  if(!out)throw Error("The AI returned an empty reply");
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf="",out="",streamError="";
+  for(;;){
+   const{done,value}=await rd.read();
+   if(done)break;
+   buf+=dec.decode(value,{stream:true}).replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+   let i;
+   while((i=buf.indexOf("\n"))>=0){
+    const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+    if(!line.startsWith("data:"))continue;
+    const d=line.slice(5).trim();
+    if(!d||d==="[DONE]")continue;
+    let packet;
+    try{packet=JSON.parse(d)}catch(parseError){console.warn("Ignoring malformed AI stream event",parseError);continue}
+    if(packet.error){streamError=packet.error.message||"AI provider reported a stream error";continue}
+    const token=packet.choices?.[0]?.delta?.content;
+    if(typeof token==="string"&&token){out+=token;p.textContent=out;chat.scrollTop=chat.scrollHeight}
+   }
+  }
+  if(streamError&&!out)throw Error(streamError);
+  if(!out)throw Error("The AI returned an empty reply. Check the provider key, model availability, and Edge Function logs.");
   history.push({role:"assistant",content:out});S.backend=true;S.busy=false;eyes();
   try{await persistChatExchange(text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
   speak(out);
  }catch(e){
   history.pop();S.busy=false;S.backend=false;
-  p.className="err";p.textContent=(e.name==="AbortError"?"The AI took too long to respond. ":"")+(e.name==="AbortError"?"Try again.":"Couldn't get a reply: "+e.message+". Your message wasn't answered; try again.");
+  p.className="err";p.textContent=(e.name==="AbortError"?"The AI took too long to respond. ":"")+(e.name==="AbortError"?"Try again.":"Couldn't get a reply: "+String(e?.message||"Unknown connection error").slice(0,240)+". Your message wasn't answered; try again.");
   flash();
  }finally{clearTimeout(to);eyes()}
 }

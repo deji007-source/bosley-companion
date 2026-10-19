@@ -529,6 +529,23 @@ jobs:
           </html>
           BUBBLE_EOF
 
+      - name: Verify generated desktop bridge before packaging
+        shell: bash
+        run: |
+          test -s desktop/main.cjs
+          test -s desktop/preload.cjs
+          test -s desktop/bubble.html
+          grep -Fq "bosley:capabilities" desktop/main.cjs
+          grep -Fq "bosley:request" desktop/main.cjs
+          grep -Fq "get_desktop_info" desktop/main.cjs
+          grep -Fq "open_external_url" desktop/main.cjs
+          grep -Fq "contextIsolation: true" desktop/main.cjs
+          grep -Fq "nodeIntegration: false" desktop/main.cjs
+          grep -Fq "sandbox: true" desktop/main.cjs
+          grep -Fq "getCapabilities" desktop/preload.cjs
+          grep -Fq "contextBridge.exposeInMainWorld('BosleyDesktop'" desktop/preload.cjs
+          echo "Desktop bridge source checks passed."
+
       - name: Install dependencies and build installer
         shell: bash
         run: |

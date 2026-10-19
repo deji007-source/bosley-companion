@@ -191,7 +191,7 @@ export default function App() {
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         let newline: number;
-        while ((newline = buffer.indexOf("\\n")) >= 0) {
+        while ((newline = buffer.indexOf("\n")) >= 0) {
           const line = buffer.slice(0, newline).trim();
           buffer = buffer.slice(newline + 1);
           if (!line.startsWith("data:")) continue;

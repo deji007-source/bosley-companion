@@ -280,10 +280,20 @@ async function syncWorkflows(){
  if(workflowSyncPromise)return workflowSyncPromise;
  const uid=user.id;
  workflowSyncPromise=(async()=>{
+  const localKey=workflowStorageKey(),legacyKey=AUTO_KEY;
+  let local=getWorkflows();
+  if(localKey!==legacyKey){
+   try{const legacy=JSON.parse(localStorage.getItem(legacyKey)||"[]");if(Array.isArray(legacy)&&legacy.length){const names=new Set(local.map(x=>String(x.name||"").toLowerCase()));for(const wf of legacy){if(wf?.name&&!names.has(wf.name.toLowerCase())){local.push(wf);names.add(wf.name.toLowerCase())}}saveWorkflows(local)}}catch{}
+  }
   const {data,error}=await db.from("automation_workflows").select("id,user_id,name,steps,updated_at").eq("user_id",uid).order("updated_at",{ascending:false});
   if(error)throw error;
   const rows=(data||[]).map(x=>({id:x.id,name:x.name,steps:Array.isArray(x.steps)?x.steps:[]}));
-  saveWorkflows(rows);workflowSyncUser=uid;return rows;
+  const byName=new Map(rows.map(x=>[String(x.name).toLowerCase(),x]));
+  const pending=[];
+  for(const wf of local){if(!wf?.name)continue;const key=wf.name.toLowerCase();if(!byName.has(key)){rows.push(wf);byName.set(key,wf);pending.push(wf)}}
+  saveWorkflows(rows);workflowSyncUser=uid;
+  for(const wf of pending){try{await persistWorkflow(wf)}catch(e){autoLog("error","A local workflow could not sync to cloud: "+e.message)}}
+  return rows;
  })().finally(()=>{workflowSyncPromise=null});
  return workflowSyncPromise;
 }

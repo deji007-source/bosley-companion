@@ -77,6 +77,8 @@ jobs:
           cat > desktop/main.cjs <<'MAIN_EOF'
           const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
           const path = require('path');
+          const fs = require('fs');
+          const { spawn } = require('child_process');
 
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;
@@ -361,7 +363,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app']
             };
           });
 
@@ -412,6 +414,37 @@ jobs:
                 bubble.setAlwaysOnTop(true, 'screen-saver');
               }
               return { ok: true, appearance: widgetAppearance };
+            }
+            if (request.action === 'launch_app') {
+              const appId = String(request.payload?.app || '').toLowerCase();
+              // Fixed allowlist only: never accept executable paths or shell commands from the web page.
+              if (process.platform !== 'win32') {
+                throw new Error('App launching is currently supported by the Windows desktop build only.');
+              }
+              if (appId !== 'chrome') {
+                throw new Error('This first app-launch action supports Chrome only.');
+              }
+              const choice = await dialog.showMessageBox(panel, {
+                type: 'question',
+                buttons: ['Cancel', 'Open Chrome'],
+                defaultId: 0,
+                cancelId: 0,
+                title: 'Bosley Companion',
+                message: 'Allow Bosley to launch Google Chrome?',
+                detail: 'Bosley can only launch the approved Chrome application. No command or executable path was supplied by chat.'
+              });
+              if (choice.response !== 1) return { ok: false, cancelled: true };
+              const candidates = [
+                path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+                path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+                path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'Application', 'chrome.exe')
+              ];
+              const executable = candidates.find(candidate => candidate && fs.existsSync(candidate));
+              if (!executable) throw new Error('Chrome was not found in its standard Windows installation folders.');
+              const child = spawn(executable, [], { detached: true, stdio: 'ignore', windowsHide: true });
+              child.on('error', () => {});
+              child.unref();
+              return { ok: true, launched: 'chrome' };
             }
             if (request.action === 'open_external_url') {
               const rawUrl = String(request.payload?.url || '');

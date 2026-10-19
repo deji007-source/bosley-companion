@@ -6,6 +6,11 @@ on:
   push:
     paths:
       - ".github/workflows/build-windows.yml"
+      - "index.html"
+      - "package.json"
+      - "src/**"
+      - "vite.config.ts"
+      - "tsconfig*.json"
 
 permissions:
   contents: read

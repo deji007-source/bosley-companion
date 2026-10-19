@@ -455,11 +455,16 @@ async function runAction(step,approved=false){
   }else if(action==="set_widget_appearance"){
    const face=readFaceSettings();
    payload={size:face.widgetSize||"default",edge:face.widgetEdge||"soft",border:face.widgetBorder||"thin"};
-  }else throw Error("Only get_desktop_info, open_external_url, and set_widget_appearance are currently supported.");
+  }else if(action==="launch_app"){
+   const appName=String(step.app||input||"").trim().toLowerCase();
+   if(!["chrome","google chrome"].includes(appName))throw Error("Only Chrome is currently enabled for native app launching.");
+   payload={app:"chrome"};
+  }else throw Error("Only get_desktop_info, open_external_url, set_widget_appearance, and launch_app are currently supported.");
   const result=await b.request({action,payload});
   if(result?.ok!==true){if(result?.cancelled)return "Desktop action cancelled by user.";throw Error(result?.error||"Bridge did not confirm success.");}
   if(action==="get_desktop_info")return "Windows desktop confirmed: "+String(result.platform||"desktop")+", app "+String(result.appVersion||"unknown")+", display "+String(result.display?.width||"?")+"×"+String(result.display?.height||"?");
   if(action==="set_widget_appearance")return "Native widget resized and styled: "+payload.size+", "+payload.edge+" corners, "+payload.border+" outline.";
+  if(action==="launch_app")return "Windows confirmed that Chrome launch was requested successfully.";
   return "Opened approved HTTPS website: "+payload.url;
  }
  throw Error("Unsupported action type: "+step.type)
@@ -485,7 +490,7 @@ async function queueAutomationInstruction(instruction,confirmation){
   autoLog("running","Queued remote automation: "+instruction);
  }catch(error){addMsg("bosley","I could not queue that automation: "+String(error?.message||error));autoLog("error","Automation queue failed: "+String(error?.message||error))}
 }
-function dispatchAutomationCommand(raw){const song=String(raw||"").trim().match(/^(?:bosley[, ]+)?play\\s+(.+?)(?:\\s+on\\s+(?:spotify|youtube))?\\s*[.!]?$/i);if(song){const title=song[1].trim();if(/^(another|next|the next song)$/i.test(title)){addMsg("bosley","Tell me the song or artist name, e.g. “play Billie Jean on Spotify”.");return true}queueAutomationInstruction("play "+title+" on spotify","Song request queued for your connected automation flow. I’ll only report playback as started when the connected agent confirms it.");return true}const t=String(raw||"").trim();let m;const q=t.toLowerCase();const face=readFaceSettings();let changed=false;
+function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;const launch=t.match(/^(?:bosley[, ]+)?open\\s+(?:google\\s+)?chrome[.!]?$/i);if(launch){runAction({type:"desktop_action",action:"launch_app",input:"chrome"}).then(result=>addMsg("bosley",result)).catch(error=>addMsg("bosley","I couldn't open Chrome: "+String(error?.message||error)));return true}const song=String(raw||"").trim().match(/^(?:bosley[, ]+)?play\\s+(.+?)(?:\\s+on\\s+(?:spotify|youtube))?\\s*[.!]?$/i);if(song){const title=song[1].trim();if(/^(another|next|the next song)$/i.test(title)){addMsg("bosley","Tell me the song or artist name, e.g. “play Billie Jean on Spotify”.");return true}queueAutomationInstruction("play "+title+" on spotify","Song request queued for your connected automation flow. I’ll only report playback as started when the connected agent confirms it.");return true}const q=t.toLowerCase();const face=readFaceSettings();let changed=false;
  const mentionsWidget=/\b(widgets?|launcher|floating\s+window|rectangle|corners|edges)\b/.test(q);
  if(mentionsWidget&&/\b(sharp|sharper|square|less\s+round)\b/.test(q)){face.widgetEdge="sharp";changed=true}
  else if(mentionsWidget&&/\b(round|rounded|soft|smoother)\b/.test(q)){face.widgetEdge="soft";changed=true}

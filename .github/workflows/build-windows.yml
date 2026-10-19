@@ -9,6 +9,7 @@ on:
       - "index.html"
       - "package.json"
       - "src/**"
+      - "styles.css"
       - "vite.config.ts"
       - "tsconfig*.json"
 

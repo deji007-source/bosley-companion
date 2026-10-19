@@ -75,7 +75,7 @@ jobs:
           PACKAGE_EOF
 
           cat > desktop/main.cjs <<'MAIN_EOF'
-          const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
+          const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
           const path = require('path');
 
           const SITE = 'https://bosley-companion.vercel.app/';
@@ -233,6 +233,7 @@ jobs:
               autoHideMenuBar: true,
               alwaysOnTop: true,
               webPreferences: {
+                preload: path.join(__dirname, 'preload.cjs'),
                 contextIsolation: true,
                 nodeIntegration: false,
                 sandbox: true
@@ -312,6 +313,70 @@ jobs:
             }
           }
 
+          function isTrustedPanelSender(event) {
+            const frameUrl = event.senderFrame?.url || '';
+            try {
+              return new URL(frameUrl).origin === new URL(SITE).origin;
+            } catch {
+              return false;
+            }
+          }
+
+          ipcMain.handle('bosley:capabilities', event => {
+            if (!isTrustedPanelSender(event)) {
+              throw new Error('Untrusted Bosley panel origin');
+            }
+            return {
+              platform: process.platform,
+              desktopBridge: true,
+              actions: ['get_desktop_info', 'open_external_url']
+            };
+          });
+
+          ipcMain.handle('bosley:request', async (event, request) => {
+            if (!isTrustedPanelSender(event)) {
+              throw new Error('Untrusted Bosley panel origin');
+            }
+            if (!request || typeof request.action !== 'string') {
+              throw new Error('Invalid desktop request');
+            }
+            if (request.action === 'get_desktop_info') {
+              const display = screen.getPrimaryDisplay();
+              return {
+                ok: true,
+                platform: process.platform,
+                appVersion: app.getVersion(),
+                display: {
+                  width: display.workAreaSize.width,
+                  height: display.workAreaSize.height
+                }
+              };
+            }
+            if (request.action === 'open_external_url') {
+              const rawUrl = String(request.payload?.url || '');
+              let target;
+              try { target = new URL(rawUrl); } catch {
+                throw new Error('A valid HTTPS URL is required');
+              }
+              if (target.protocol !== 'https:') {
+                throw new Error('Only HTTPS links can be opened');
+              }
+              const choice = await dialog.showMessageBox(panel, {
+                type: 'question',
+                buttons: ['Cancel', 'Open link'],
+                defaultId: 0,
+                cancelId: 0,
+                title: 'Bosley Companion',
+                message: 'Allow Bosley to open this external link?',
+                detail: target.href
+              });
+              if (choice.response !== 1) return { ok: false, cancelled: true };
+              await shell.openExternal(target.href);
+              return { ok: true, opened: true };
+            }
+            throw new Error('Desktop action is not allowlisted');
+          });
+
           app.whenReady().then(() => {
             createBubble();
             createPanel();
@@ -338,9 +403,14 @@ jobs:
           cat > desktop/preload.cjs <<'PRELOAD_EOF'
           const { contextBridge, ipcRenderer } = require('electron');
 
-          contextBridge.exposeInMainWorld('bosleyDesktop', {
-            togglePanel: () => ipcRenderer.send('toggle-panel')
+          const desktopBridge = Object.freeze({
+            togglePanel: () => ipcRenderer.send('toggle-panel'),
+            getCapabilities: () => ipcRenderer.invoke('bosley:capabilities'),
+            request: request => ipcRenderer.invoke('bosley:request', request)
           });
+
+          contextBridge.exposeInMainWorld('bosleyDesktop', desktopBridge);
+          contextBridge.exposeInMainWorld('BosleyDesktop', desktopBridge);
           PRELOAD_EOF
 
           cat > desktop/bubble.html <<'BUBBLE_EOF'

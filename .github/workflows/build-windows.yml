@@ -639,6 +639,7 @@ jobs:
           grep -Fq "get_desktop_info" desktop/main.cjs
           grep -Fq "open_external_url" desktop/main.cjs
           grep -Fq "set_widget_appearance" desktop/main.cjs
+          grep -Fq "launch_app" desktop/main.cjs
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs
           grep -Fq "nodeIntegration: false" desktop/main.cjs

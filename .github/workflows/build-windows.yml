@@ -601,15 +601,15 @@ jobs:
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 92, height: 56 },
-                default: { width: 108, height: 64 },
-                wide: { width: 128, height: 72 }
+                compact: { width: 104, height: 68 },
+                default: { width: 128, height: 80 },
+                wide: { width: 140, height: 88 }
               };
               function applyAppearance(value) {
                 if (!value) return;
                 const size = sizes[value.size] || sizes.default;
                 document.documentElement.style.setProperty('--widget-radius',
-                  ({ soft: '24px', balanced: '18px', sharp: '10px' })[value.edge] || '24px');
+                  ({ soft: '24px', balanced: '12px', sharp: '3px' })[value.edge] || '3px');
                 document.documentElement.style.setProperty('--widget-border-width',
                   ({ thin: '1px', medium: '2px', bold: '3px' })[value.border] || '1px');
                 button.style.width = size.width + 'px';

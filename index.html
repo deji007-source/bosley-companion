@@ -134,7 +134,10 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
    <button class="primary" type="submit">Save appearance</button>
    <button class="link" type="button" id="facereset">Reset appearance</button>
    <p class="fb" id="facefeedback" aria-live="polite"></p>
-  </form>
+     <label class="mute" for="voiceprofile">Bosley voice</label>
+   <select id="voiceprofile"><option value="jarvis">Jarvis-style (deep, calm)</option><option value="natural">Natural assistant</option><option value="system">System default</option></select>
+   <button type="button" class="primary" id="voicepreview">▶ Preview voice</button>
+</form>
  </section>
  <button class="toggle" id="autotoggle" aria-expanded="false">⚙ <b>Automation</b><span id="autometa">BROWSER MODE</span></button>
  <section class="automation" id="automation" hidden></section>
@@ -158,6 +161,19 @@ const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
 let automationRuns=[],automationBusy=false;
 let speechOn=true;try{speechOn=JSON.parse(localStorage.getItem("bosley_prefs")||"{}").speechOn!==false}catch{}
+let voiceProfile="jarvis";try{voiceProfile=localStorage.getItem("bosley_voice_profile")||"jarvis"}catch{}
+function chooseBosleyVoice(){
+ if(!("speechSynthesis"in window))return null;
+ const voices=speechSynthesis.getVoices()||[],english=voices.filter(v=>/^en(-|_)/i.test(v.lang)),pool=english.length?english:voices;
+ const score=v=>{const n=(v.name+" "+v.lang).toLowerCase();let p=0;
+ if(/natural|neural|premium|enhanced/.test(n))p+=4;
+ if(voiceProfile==="jarvis"&&/david|guy|daniel|ryan|mark|male/.test(n))p+=5;
+ if(voiceProfile==="natural"&&/natural|neural|premium|enhanced/.test(n))p+=5;
+ if(/zira|female/.test(n))p-=2;if(/robot|novelty/.test(n))p-=8;return p};
+ return voiceProfile==="system"?null:(pool.slice().sort((a,b)=>score(b)-score(a))[0]||null);
+}
+if("speechSynthesis"in window)speechSynthesis.onvoiceschanged=()=>chooseBosleyVoice();
+
 const S={listening:false,speaking:false,busy:false,offline:!navigator.onLine,errUntil:0,backend:null};
 
 /* ---------- eye states: driven only by real events ---------- */
@@ -206,8 +222,9 @@ function initFaceSettings(){
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
- $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
- form.onsubmit=e=>{e.preventDefault();const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ $("#voiceprofile").value=voiceProfile; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
+ form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
  $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#facefeedback").textContent="Appearance reset."};
 }
 $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
@@ -317,7 +334,7 @@ $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpea
 /* ---------- voice ---------- */
 function speak(t){
  if(!speechOn||!("speechSynthesis"in window))return;speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(t),end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
+ const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.94:1;u.pitch=voiceProfile==="jarvis"?0.82:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
  u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;eyes()};u.onend=end;u.onerror=end;speechSynthesis.speak(u);
 }
 function stopSpeak(){if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}

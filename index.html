@@ -39,6 +39,14 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 .toggle span{float:right;color:var(--mute);font:9px 'DM Mono',monospace}
 .workspace,.automation{margin:8px 14px 0;padding:12px;border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:48%;font-size:11px}.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}
 .workspace h3{margin:0 0 5px;font-size:12px}.mute{color:var(--mute);font-size:10px;line-height:1.6}
+html[data-face-size=compact] .eye{width:15px;height:24px}
+html[data-face-size=default] .eye{width:19px;height:29px}
+html[data-face-size=large] .eye{width:23px;height:34px}
+html[data-hat-style=soft] .hat path{stroke:#aaa}
+html[data-hat-style=hidden] .hat{display:none}
+html[data-face-preset=calm] .launch .eyes{gap:18px}
+html[data-face-preset=alert] .launch .eye{height:34px}
+html[data-face-preset=alert] .launch .eyes{gap:12px}
 .tabs{display:flex;gap:6px;margin:10px 0}.tabs button{flex:1;padding:7px;border:1px solid var(--line);border-radius:7px;background:none;color:var(--mute)}.tabs .on{border-color:#f2f2f2;color:#fff;background:#0d0d0d}
 .form{display:grid;gap:7px;margin-top:8px}.form input,.form textarea,.form select{width:100%;padding:9px 10px;border:1px solid #333;border-radius:8px;background:#050505;font-size:11px}.form textarea{min-height:48px}
 .row{display:flex;gap:7px}.row>*{flex:1}
@@ -76,6 +84,22 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="collapse" aria-label="Collapse panel">−</button></header>
  <button class="toggle" id="wstoggle" aria-expanded="false">▤ <b>Jarvis Workspace</b><span id="wsmeta">SIGN IN</span></button>
  <section class="workspace" id="ws" hidden></section>
+ <button class="toggle" id="facetoggle" aria-expanded="false">◉ <b>Appearance</b><span>FACE SETTINGS</span></button>
+ <section class="workspace" id="facepanel" hidden>
+  <h3>Bosley appearance</h3>
+  <p class="mute">Choose a face preset. Changes are saved on this device and can be updated anytime.</p>
+  <form class="form" id="faceform">
+   <label class="mute" for="facepreset">Face preset</label>
+   <select id="facepreset"><option value="incognito">Incognito (signature)</option><option value="calm">Calm</option><option value="alert">Alert</option></select>
+   <label class="mute" for="facesize">Eye size</label>
+   <select id="facesize"><option value="compact">Compact</option><option value="default">Default</option><option value="large">Large</option></select>
+   <label class="mute" for="hatstyle">Hat outline</label>
+   <select id="hatstyle"><option value="white">Crisp white</option><option value="soft">Soft grey</option><option value="hidden">Hidden</option></select>
+   <button class="primary" type="submit">Save appearance</button>
+   <button class="link" type="button" id="facereset">Reset appearance</button>
+   <p class="fb" id="facefeedback" aria-live="polite"></p>
+  </form>
+ </section>
  <button class="toggle" id="autotoggle" aria-expanded="false">⚙ <b>Automation</b><span id="autometa">BROWSER MODE</span></button>
  <section class="automation" id="automation" hidden></section>
  <section class="chat" id="chat" role="log" aria-live="off"></section>
@@ -121,6 +145,20 @@ function blinkOnce(){H.classList.add("blink");setTimeout(()=>H.classList.remove(
 (function loop(){setTimeout(()=>{if(!RM.matches&&!document.hidden){blinkOnce();if(Math.random()<.2)setTimeout(blinkOnce,260)}loop()},2500+Math.random()*4000)})();
 setInterval(()=>{if(!RM.matches&&!document.hidden&&!S.listening&&Date.now()-lastMove>3000)look(Math.random()*1.4-.7,Math.random()*.8-.3)},2200);
 addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online",()=>{S.offline=false;eyes()});
+
+/* ---------- customizable face ---------- */
+const FACE_KEY="bosley_face_settings_v1";
+const FACE_DEFAULTS={preset:"incognito",size:"default",hat:"white"};
+function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
+function applyFaceSettings(v){H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat}
+function initFaceSettings(){
+ const v=readFaceSettings();applyFaceSettings(v);
+ const form=$("#faceform");if(!form)return;
+ $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
+ form.onsubmit=e=>{e.preventDefault();const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#facefeedback").textContent="Appearance reset."};
+}
+$("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
 
 /* ---------- panel ---------- */
 const widgetMode=new URLSearchParams(location.search).get("widget")==="1"||!!window.BosleyDesktop||!!window.BosleyAndroidWidget;

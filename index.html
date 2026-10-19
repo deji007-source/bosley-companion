@@ -95,7 +95,7 @@ const $=s=>document.querySelector(s),H=document.documentElement;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const db=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
-let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],rec=null,lastMove=0,raf=0;
+let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
 let automationRuns=[],automationBusy=false;
 let speechOn=true;try{speechOn=JSON.parse(localStorage.getItem("bosley_prefs")||"{}").speechOn!==false}catch{}
 const S={listening:false,speaking:false,busy:false,offline:!navigator.onLine,errUntil:0,backend:null};
@@ -151,6 +151,34 @@ function addMsg(role,text,cls=""){
  a.innerHTML='<b>'+(role==="you"?"YOU":"BOSLEY")+'</b><p></p>';a.lastChild.textContent=text;chat.appendChild(a);chat.scrollTop=chat.scrollHeight;return a.lastChild;
 }
 const note=t=>addMsg("sys",t);
+async function persistChatExchange(userText,assistantText){
+ if(!db||!user)throw Error("Sign in to save chat history.");
+ if(!conversationId){
+  const {data,error}=await db.from("conversations").insert({user_id:user.id,title:userText.slice(0,80)||"New conversation"}).select("id").single();
+  if(error)throw error;conversationId=data.id;
+ }
+ const first=await db.from("messages").insert({conversation_id:conversationId,user_id:user.id,role:"user",content:userText});
+ if(first.error)throw first.error;
+ const second=await db.from("messages").insert({conversation_id:conversationId,user_id:user.id,role:"assistant",content:assistantText});
+ if(second.error)throw second.error;
+ const updated=await db.from("conversations").update({last_message_at:new Date().toISOString()}).eq("id",conversationId).eq("user_id",user.id);
+ if(updated.error)throw updated.error;
+}
+async function restoreLatestConversation(){
+ if(!db||!user)return;
+ try{
+  const {data:conv,error}=await db.from("conversations").select("id,title").eq("user_id",user.id).order("last_message_at",{ascending:false}).limit(1).maybeSingle();
+  if(error)throw error;
+  conversationId=conv?.id||null;
+  if(!conv)return;
+  const {data:rows,error:messagesError}=await db.from("messages").select("role,content").eq("user_id",user.id).eq("conversation_id",conv.id).order("created_at",{ascending:true}).limit(100);
+  if(messagesError)throw messagesError;
+  history=(rows||[]).filter(m=>m.role==="user"||m.role==="assistant").map(m=>({role:m.role,content:m.content}));
+  chat.innerHTML="";
+  if(!history.length){addMsg("bosley","Welcome back. Start a new message whenever you're ready.");return}
+  history.forEach(m=>addMsg(m.role==="user"?"you":"bosley",m.content));
+ }catch(e){console.warn("Bosley chat restore failed:",e);note("I couldn't restore saved chat history. You can still chat; check your connection or workspace permissions if this keeps happening.")}
+}
 addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace and I'll answer through the Jarvis AI backend. Until a real request succeeds I won't claim it's connected.");
 async function send(text){
  if(S.busy||!text)return;
@@ -168,7 +196,9 @@ async function send(text){
    while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line.startsWith("data:"))continue;const d=line.slice(5).trim();if(d==="[DONE]")continue;
     try{const t=JSON.parse(d).choices?.[0]?.delta?.content;if(t){out+=t;p.textContent=out;chat.scrollTop=chat.scrollHeight}}catch{}}}
   if(!out)throw Error("The AI returned an empty reply");
-  history.push({role:"assistant",content:out});S.backend=true;S.busy=false;eyes();speak(out);
+  history.push({role:"assistant",content:out});S.backend=true;S.busy=false;eyes();
+  try{await persistChatExchange(text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
+  speak(out);
  }catch(e){
   history.pop();S.busy=false;S.backend=false;
   p.className="err";p.textContent=(e.name==="AbortError"?"The AI took too long to respond. ":"")+(e.name==="AbortError"?"Try again.":"Couldn't get a reply: "+e.message+". Your message wasn't answered; try again.");
@@ -176,7 +206,7 @@ async function send(text){
  }finally{clearTimeout(to);eyes()}
 }
 $("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim();i.value="";send(t)};
-$("#new").onclick=()=>{history=[];chat.innerHTML="";stopSpeak();addMsg("bosley","New conversation. What's up?")};
+$("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpeak();addMsg("bosley","New conversation. What's up?")};
 
 /* ---------- voice ---------- */
 function speak(t){
@@ -226,8 +256,8 @@ async function load(){
 }
 $("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
 if(db){
- db.auth.getSession().then(({data})=>{user=data.session?.user||null;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
- db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;if(!user){notes=[];tasks=[];history=[]}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
+ db.auth.getSession().then(({data})=>{user=data.session?.user||null;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";if(user)restoreLatestConversation()});
+ db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
 }
 
 /* ---------- permissioned automation layer ----------

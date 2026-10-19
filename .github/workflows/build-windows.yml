@@ -81,6 +81,12 @@ jobs:
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;
           let panel = null;
+          let widgetAppearance = { size: 'default', edge: 'soft', border: 'thin' };
+          const WIDGET_SIZES = {
+            compact: { width: 104, height: 68 },
+            default: { width: 120, height: 76 },
+            wide: { width: 140, height: 84 }
+          };
 
           function escapeHtml(value) {
             return String(value).replace(/[&<>"']/g, character => ({
@@ -96,8 +102,9 @@ jobs:
             const area = screen.getPrimaryDisplay().workArea;
 
             if (bubble && !bubble.isDestroyed()) {
-              const bubbleWidth = 120;
-              const bubbleHeight = 76;
+              const dimensions = WIDGET_SIZES[widgetAppearance.size] || WIDGET_SIZES.default;
+              const bubbleWidth = dimensions.width;
+              const bubbleHeight = dimensions.height;
 
               bubble.setBounds({
                 x: area.x + Math.round((area.width - bubbleWidth) / 2),
@@ -197,9 +204,10 @@ jobs:
           }
 
           function createBubble() {
+            const dimensions = WIDGET_SIZES[widgetAppearance.size] || WIDGET_SIZES.default;
             bubble = new BrowserWindow({
-              width: 120,
-              height: 76,
+              width: dimensions.width,
+              height: dimensions.height,
               frame: false,
               transparent: true,
               resizable: false,
@@ -217,7 +225,9 @@ jobs:
             });
 
             bubble.setAlwaysOnTop(true, 'screen-saver');
-            bubble.loadFile(path.join(__dirname, 'bubble.html'));
+            bubble.loadFile(path.join(__dirname, 'bubble.html')).then(() => {
+              bubble.webContents.send('bosley:widget-appearance', widgetAppearance);
+            }).catch(error => console.error('Bubble load failed:', error.message));
             bubble.on('closed', () => {
               bubble = null;
             });
@@ -348,7 +358,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance']
             };
           });
 
@@ -370,6 +380,35 @@ jobs:
                   height: display.workAreaSize.height
                 }
               };
+            }
+            if (request.action === 'set_widget_appearance') {
+              const payload = request.payload || {};
+              const allowedSizes = ['compact', 'default', 'wide'];
+              const allowedEdges = ['soft', 'balanced', 'sharp'];
+              const allowedBorders = ['thin', 'medium', 'bold'];
+              if (!allowedSizes.includes(payload.size) ||
+                  !allowedEdges.includes(payload.edge) ||
+                  !allowedBorders.includes(payload.border)) {
+                throw new Error('Invalid widget appearance settings');
+              }
+              widgetAppearance = {
+                size: payload.size,
+                edge: payload.edge,
+                border: payload.border
+              };
+              const dimensions = WIDGET_SIZES[widgetAppearance.size];
+              if (bubble && !bubble.isDestroyed()) {
+                const area = screen.getPrimaryDisplay().workArea;
+                bubble.setBounds({
+                  x: area.x + Math.round((area.width - dimensions.width) / 2),
+                  y: area.y + 12,
+                  width: dimensions.width,
+                  height: dimensions.height
+                });
+                bubble.webContents.send('bosley:widget-appearance', widgetAppearance);
+                bubble.setAlwaysOnTop(true, 'screen-saver');
+              }
+              return { ok: true, appearance: widgetAppearance };
             }
             if (request.action === 'open_external_url') {
               const rawUrl = String(request.payload?.url || '');
@@ -425,7 +464,13 @@ jobs:
           const desktopBridge = Object.freeze({
             togglePanel: () => ipcRenderer.send('toggle-panel'),
             getCapabilities: () => ipcRenderer.invoke('bosley:capabilities'),
-            request: request => ipcRenderer.invoke('bosley:request', request)
+            request: request => ipcRenderer.invoke('bosley:request', request),
+            onWidgetAppearance: callback => {
+              if (typeof callback !== 'function') return () => {};
+              const listener = (_event, appearance) => callback(appearance);
+              ipcRenderer.on('bosley:widget-appearance', listener);
+              return () => ipcRenderer.removeListener('bosley:widget-appearance', listener);
+            }
           });
 
           contextBridge.exposeInMainWorld('bosleyDesktop', desktopBridge);
@@ -471,6 +516,11 @@ jobs:
                 place-items: center;
                 -webkit-app-region: no-drag;
                 transition: border-color 120ms ease;
+              }
+
+              button {
+                border-radius: var(--widget-radius, 14px);
+                border-width: var(--widget-border-width, 1px);
               }
 
               button:hover {
@@ -538,11 +588,30 @@ jobs:
             </button>
 
             <script>
-              document
-                .querySelector('button')
-                .addEventListener('click', () => {
-                  window.bosleyDesktop.togglePanel();
-                });
+              const button = document.querySelector('button');
+              const sizes = {
+                compact: { width: 92, height: 56 },
+                default: { width: 108, height: 64 },
+                wide: { width: 128, height: 72 }
+              };
+              function applyAppearance(value) {
+                if (!value) return;
+                const size = sizes[value.size] || sizes.default;
+                document.documentElement.style.setProperty('--widget-radius',
+                  ({ soft: '24px', balanced: '18px', sharp: '10px' })[value.edge] || '24px');
+                document.documentElement.style.setProperty('--widget-border-width',
+                  ({ thin: '1px', medium: '2px', bold: '3px' })[value.border] || '1px');
+                button.style.width = size.width + 'px';
+                button.style.height = size.height + 'px';
+                document.querySelector('svg').style.width = Math.max(72, size.width - 14) + 'px';
+                document.querySelector('svg').style.height = Math.max(42, size.height - 12) + 'px';
+              }
+              if (window.bosleyDesktop.onWidgetAppearance) {
+                window.bosleyDesktop.onWidgetAppearance(applyAppearance);
+              }
+              document.querySelector('button').addEventListener('click', () => {
+                window.bosleyDesktop.togglePanel();
+              });
             </script>
           </body>
           </html>
@@ -558,6 +627,8 @@ jobs:
           grep -Fq "bosley:request" desktop/main.cjs
           grep -Fq "get_desktop_info" desktop/main.cjs
           grep -Fq "open_external_url" desktop/main.cjs
+          grep -Fq "set_widget_appearance" desktop/main.cjs
+          grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs
           grep -Fq "nodeIntegration: false" desktop/main.cjs
           grep -Fq "sandbox: true" desktop/main.cjs

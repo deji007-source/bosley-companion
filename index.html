@@ -458,15 +458,16 @@ function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge
 }
 $("#autotoggle").onclick=()=>{const el=$("#automation");el.hidden=!el.hidden;$("#autotoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)drawAutomation()};
 function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;const q=t.toLowerCase();const face=readFaceSettings();let changed=false;
- if(/\b(make|set|change|adjust)\b.*\b(widget|rectangle|corners|edges)\b.*\b(sharp|sharper|square)\b/.test(q)){face.widgetEdge="sharp";changed=true}
- else if(/\b(make|set|change|adjust)\b.*\b(widget|rectangle|corners|edges)\b.*\b(round|rounded|soft)\b/.test(q)){face.widgetEdge="soft";changed=true}
- if(/\b(widget|rectangle)\b.*\b(wider|wide|larger|bigger)\b/.test(q)){face.widgetSize="wide";changed=true}
- else if(/\b(widget|rectangle)\b.*\b(smaller|compact|narrower)\b/.test(q)){face.widgetSize="compact";changed=true}
+ const mentionsWidget=/\b(widgets?|launcher|floating\s+window|rectangle|corners|edges)\b/.test(q);
+ if(mentionsWidget&&/\b(sharp|sharper|square|less\s+round)\b/.test(q)){face.widgetEdge="sharp";changed=true}
+ else if(mentionsWidget&&/\b(round|rounded|soft|smoother)\b/.test(q)){face.widgetEdge="soft";changed=true}
+ if(mentionsWidget&&/\b(wider|wide|larger|bigger|increase\s+(?:the\s+)?width|more\s+wide)\b/.test(q)){face.widgetSize="wide";changed=true}
+ else if(mentionsWidget&&/\b(smaller|compact|narrower|reduce\s+(?:the\s+)?width)\b/.test(q)){face.widgetSize="compact";changed=true}
  if(/\b(thicker|bold)\b.*\b(outline|border)\b|\b(outline|border)\b.*\b(thicker|bold)\b/.test(q)){face.widgetBorder="bold";changed=true}
  else if(/\b(thinner|fine)\b.*\b(outline|border)\b|\b(outline|border)\b.*\b(thinner|fine)\b/.test(q)){face.widgetBorder="thin";changed=true}
  if(/\b(eyes|eye)\b.*\b(bigger|larger)\b/.test(q)){face.size="large";changed=true}
  else if(/\b(eyes|eye)\b.*\b(smaller|compact)\b/.test(q)){face.size="compact";changed=true}
- if(changed){try{localStorage.setItem(FACE_KEY,JSON.stringify(face));applyFaceSettings(face);addMsg("bosley","Updated my widget appearance and saved it on this device.");return true}catch{addMsg("bosley","I couldn't save the appearance change in this browser.");return true}}
+ if(changed){try{localStorage.setItem(FACE_KEY,JSON.stringify(face));applyFaceSettings(face);const parts=[];if(mentionsWidget&&face.widgetSize==="wide")parts.push("wider widget");if(mentionsWidget&&face.widgetSize==="compact")parts.push("compact widget");if(mentionsWidget&&face.widgetEdge==="sharp")parts.push("sharper rectangle corners");if(mentionsWidget&&face.widgetEdge==="soft")parts.push("rounded rectangle corners");if(face.widgetBorder==="bold")parts.push("thicker outline");if(face.widgetBorder==="thin")parts.push("fine outline");if(face.size==="large")parts.push("larger eyes");if(face.size==="compact")parts.push("smaller eyes");addMsg("bosley","Done — set "+(parts.join(", ")||"your appearance")+" and saved it on this device. Open Appearance to fine-tune it.");return true}catch{addMsg("bosley","I couldn't save the appearance change in this browser.");return true}}
  if((m=t.match(/^(?:bosley,?\s+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(autoLog.bind(null,"success")).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?search(?: the web)? for\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>autoLog("success",r)).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
 
 /* ---------- keyboard ---------- */

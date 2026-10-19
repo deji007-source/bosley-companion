@@ -25,7 +25,7 @@ jobs:
 
       - name: Install web dependencies and verify production build
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Generate Bosley desktop app

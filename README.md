@@ -5,6 +5,10 @@ Bosley Companion is a browser-first AI companion with a Vite frontend, Supabase-
 **Live app:** https://bosley-companion.vercel.app/  
 **Windows build:** GitHub Actions → **Build Bosley Windows App** workflow.
 
+## Source-of-truth note
+
+The currently maintained companion experience is the root `index.html`, which contains the inline UI and its Supabase integration. `src/App.tsx` is a separate React prototype and still contains a demo welcome message saying AI is disconnected; do not assume that prototype is the deployed production UI. Avoid implementing the same feature twice. Before migrating the inline experience into React, first port and test authentication, streaming chat, conversation persistence, workspace data, workflow sync, and appearance settings as one controlled migration.
+
 ## Current capabilities
 
 - Dark companion interface and floating Windows widget.

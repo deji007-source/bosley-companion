@@ -44,6 +44,10 @@ html[data-face-size=default] .eye{width:19px;height:29px}
 html[data-face-size=large] .eye{width:23px;height:34px}
 html[data-hat-style=soft] .hat path{stroke:#aaa}
 html[data-hat-style=hidden] .hat{display:none}
+html[data-eye-shape=soft-square] .launch .eye{border-radius:5px}
+html[data-eye-gap=close] .launch .eyes{gap:9px}
+html[data-eye-gap=normal] .launch .eyes{gap:15px}
+html[data-eye-gap=wide] .launch .eyes{gap:21px}
 html[data-face-preset=calm] .launch .eyes{gap:18px}
 html[data-face-preset=alert] .launch .eye{height:34px}
 html[data-face-preset=alert] .launch .eyes{gap:12px}
@@ -95,6 +99,10 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
    <select id="facesize"><option value="compact">Compact</option><option value="default">Default</option><option value="large">Large</option></select>
    <label class="mute" for="hatstyle">Hat outline</label>
    <select id="hatstyle"><option value="white">Crisp white</option><option value="soft">Soft grey</option><option value="hidden">Hidden</option></select>
+   <label class="mute" for="eyeshape">Eye shape</label>
+   <select id="eyeshape"><option value="pill">Tall rounded pills</option><option value="soft-square">Soft rectangular</option></select>
+   <label class="mute" for="eyegap">Eye spacing</label>
+   <select id="eyegap"><option value="close">Close</option><option value="normal">Balanced</option><option value="wide">Wide</option></select>
    <button class="primary" type="submit">Save appearance</button>
    <button class="link" type="button" id="facereset">Reset appearance</button>
    <p class="fb" id="facefeedback" aria-live="polite"></p>
@@ -148,16 +156,20 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 
 /* ---------- customizable face ---------- */
 const FACE_KEY="bosley_face_settings_v1";
-const FACE_DEFAULTS={preset:"incognito",size:"default",hat:"white"};
+const FACE_DEFAULTS={preset:"incognito",size:"default",hat:"white",eyeShape:"pill",eyeGap:"normal"};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
-function applyFaceSettings(v){H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat}
+function applyFaceSettings(v){
+ H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
+ H.dataset.eyeShape=v.eyeShape||"pill";H.dataset.eyeGap=v.eyeGap||"normal";
+}
 applyFaceSettings(readFaceSettings());
 function initFaceSettings(){
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
- form.onsubmit=e=>{e.preventDefault();const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
- $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#facefeedback").textContent="Appearance reset."};
+ $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";
+ form.onsubmit=e=>{e.preventDefault();const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#facefeedback").textContent="Appearance reset."};
 }
 $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
 

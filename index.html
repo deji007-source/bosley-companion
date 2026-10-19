@@ -30,8 +30,10 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 .launch .eyes{position:absolute;left:0;right:0;top:33px}
 
 /* ---- panel ---- */
-.panel{position:fixed;left:50%;top:92px;transform:translateX(-50%);width:min(410px,calc(100vw - 24px));height:min(680px,calc(100dvh - 106px));min-height:380px;display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
+.panel{position:fixed;left:50%;top:92px;transform:translateX(-50%);width:min(410px,calc(100vw - 24px));height:min(510px,calc(100dvh - 106px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
 @keyframes in{from{opacity:0;transform:translate(-50%,-6px) scale(.97)}}
+.panel.maximized{width:min(640px,calc(100vw - 24px));height:calc(100dvh - 106px);min-height:0;max-height:calc(100dvh - 106px)}
+@media(max-width:520px){.panel.maximized{height:calc(100dvh - 96px);max-height:calc(100dvh - 96px)}}
 .top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #ffffff12}
 .brand{flex:1}.brand strong{font-size:12px;letter-spacing:.14em}.brand small{display:block;margin-top:4px;color:var(--mute);font:10px 'DM Mono',monospace}
 .top button{border:1px solid var(--line);border-radius:8px;background:none;width:30px;height:30px}
@@ -105,7 +107,7 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
- <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="collapse" aria-label="Collapse panel">−</button></header>
+ <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
  <button class="toggle" id="wstoggle" aria-expanded="false">▤ <b>Jarvis Workspace</b><span id="wsmeta">SIGN IN</span></button>
  <section class="workspace" id="ws" hidden></section>
  <button class="toggle" id="facetoggle" aria-expanded="false">◉ <b>Appearance</b><span>FACE SETTINGS</span></button>
@@ -230,7 +232,8 @@ $("#launch").addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.
  dragState.x=e.screenX;dragState.y=e.screenY;},{passive:true});
 function finishDrag(){dragState=null}
 $("#launch").addEventListener("pointerup",finishDrag);$("#launch").addEventListener("pointercancel",finishDrag);
-$("#launch").onclick=e=>{if(dragged){e.preventDefault();e.stopPropagation();dragged=false;return}toggle()};$("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
+$("#launch").onclick=e=>{if(dragged){e.preventDefault();e.stopPropagation();dragged=false;return}toggle()};$("#maximize").onclick=()=>{const p=$("#panel"),max=p.classList.toggle("maximized");$("#maximize").textContent=max?"❐":"□";$("#maximize").setAttribute("aria-label",max?"Restore panel":"Maximize panel");$("#maximize").title=max?"Restore panel":"Maximize panel"};
+$("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
 
 /* ---------- chat ---------- */
 const chat=$("#chat");
@@ -472,7 +475,17 @@ function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge
  const log=$("#auto-log");if(log)log.innerHTML=automationRuns.map(r=>`<article class="item"><main><strong class="${r.status==="success"?"ok":r.status==="error"?"warn":""}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`).join("")||'<p class="mute">No automation runs yet.</p>';
 }
 $("#autotoggle").onclick=()=>{const el=$("#automation");el.hidden=!el.hidden;$("#autotoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)drawAutomation()};
-function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;const q=t.toLowerCase();const face=readFaceSettings();let changed=false;
+async function queueAutomationInstruction(instruction,confirmation){
+ try{
+  const sess=db?(await db.auth.getSession()).data.session:null;
+  if(!sess||!user){addMsg("bosley","Sign in under Jarvis Workspace first so I can route this request to your account's automation flow.");return}
+  const {error}=await db.from("automation_runs").insert({user_id:user.id,instruction,status:"pending"});
+  if(error)throw error;
+  addMsg("bosley",confirmation);
+  autoLog("running","Queued remote automation: "+instruction);
+ }catch(error){addMsg("bosley","I could not queue that automation: "+String(error?.message||error));autoLog("error","Automation queue failed: "+String(error?.message||error))}
+}
+function dispatchAutomationCommand(raw){const song=String(raw||"").trim().match(/^(?:bosley[, ]+)?play\\s+(.+?)(?:\\s+on\\s+(?:spotify|youtube))?\\s*[.!]?$/i);if(song){const title=song[1].trim();if(/^(another|next|the next song)$/i.test(title)){addMsg("bosley","Tell me the song or artist name, e.g. “play Billie Jean on Spotify”.");return true}queueAutomationInstruction("play "+title+" on spotify","Song request queued for your connected automation flow. I’ll only report playback as started when the connected agent confirms it.");return true}const t=String(raw||"").trim();let m;const q=t.toLowerCase();const face=readFaceSettings();let changed=false;
  const mentionsWidget=/\b(widgets?|launcher|floating\s+window|rectangle|corners|edges)\b/.test(q);
  if(mentionsWidget&&/\b(sharp|sharper|square|less\s+round)\b/.test(q)){face.widgetEdge="sharp";changed=true}
  else if(mentionsWidget&&/\b(round|rounded|soft|smoother)\b/.test(q)){face.widgetEdge="soft";changed=true}

@@ -546,44 +546,19 @@ jobs:
               title="Open Bosley"
             >
               <svg
-                viewBox="0 0 94 52"
+                viewBox="0 0 108 64"
                 role="img"
-                aria-label="White outlined incognito hat with two vertical eyes"
+                aria-label="Bosley incognito fedora with two white vertical eyes"
               >
-                <path
-                  d="M31 28 C32 16 38 8 47 8 C56 8 62 16 63 28"
-                  fill="none"
-                  stroke="#fff"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-
-                <path
-                  d="M25 29 C31 26 63 26 69 29 L76 34 C78 36 76 38 72 39 C57 42 37 42 22 39 C18 38 16 36 18 34 Z"
-                  fill="#000"
-                  stroke="#fff"
-                  stroke-width="1.7"
-                  stroke-linejoin="round"
-                />
-
-                <rect
-                  x="39"
-                  y="20"
-                  width="5"
-                  height="15"
-                  rx="2.5"
-                  fill="#fff"
-                />
-
-                <rect
-                  x="50"
-                  y="20"
-                  width="5"
-                  height="15"
-                  rx="2.5"
-                  fill="#fff"
-                />
+                <path d="M31 28 L42 7 Q44 4 48 7 L54 11 L61 7 Q65 4 67 8 L78 28 Z"
+                  fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M36 21 Q54 23 73 21 L78 28 L31 28 Z"
+                  fill="#171717" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+                <path d="M8 34 Q19 27 40 27 L68 27 Q89 27 100 34 Q79 40 54 40 Q29 40 8 34 Z"
+                  fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M39 30 Q54 32 69 30" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+                <rect x="39" y="34" width="7" height="18" rx="3.5" fill="#fff"/>
+                <rect x="62" y="34" width="7" height="18" rx="3.5" fill="#fff"/>
               </svg>
             </button>
 

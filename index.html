@@ -37,7 +37,18 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 .top button{border:1px solid var(--line);border-radius:8px;background:none;width:30px;height:30px}
 .toggle{margin:10px 14px 0;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:#000;text-align:left;font-size:11px}
 .toggle span{float:right;color:var(--mute);font:9px 'DM Mono',monospace}
-.workspace,.automation{margin:8px 14px 0;padding:12px;border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:48%;font-size:11px}.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}
+.workspace,.automation{flex:0 1 auto;min-height:0;margin:8px 14px 0;padding:12px;border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:min(34dvh,240px);font-size:11px}
+.toggle{flex:0 0 auto}
+.top,.composer,.bottom{flex:0 0 auto}
+.chat{flex:1 1 auto;min-height:0;overscroll-behavior:contain;scrollbar-gutter:stable}
+.composer{margin-bottom:0}
+.bottom{padding-bottom:max(11px,env(safe-area-inset-bottom))}
+@media(max-width:520px){
+ .panel{height:calc(100dvh - 96px);min-height:0}
+ .workspace,.automation{max-height:26dvh}
+ .chat{padding:12px 14px}
+ .composer{margin-left:10px;margin-right:10px}
+}.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}
 .workspace h3{margin:0 0 5px;font-size:12px}.mute{color:var(--mute);font-size:10px;line-height:1.6}
 html[data-face-size=compact] .eye{width:15px;height:24px}
 html[data-face-size=default] .eye{width:19px;height:29px}

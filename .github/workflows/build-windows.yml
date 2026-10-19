@@ -1,0 +1,247 @@
+
+name: Build Bosley Windows App
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/build-windows.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Get repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Create desktop wrapper
+        shell: bash
+        run: |
+          mkdir -p desktop
+
+          cat > desktop/package.json <<'EOF'
+          {
+            "name": "bosley-companion-desktop",
+            "version": "1.0.0",
+            "description": "Bosley floating desktop companion",
+            "main": "main.cjs",
+            "scripts": {
+              "dist": "electron-builder --win nsis"
+            },
+            "devDependencies": {
+              "electron": "^35.0.0",
+              "electron-builder": "^26.0.0"
+            },
+            "build": {
+              "appId": "com.bosley.companion",
+              "productName": "Bosley Companion",
+              "directories": {
+                "output": "dist"
+              },
+              "files": [
+                "main.cjs",
+                "preload.cjs",
+                "bubble.html"
+              ],
+              "win": {
+                "target": "nsis"
+              },
+              "nsis": {
+                "oneClick": false,
+                "allowToChangeInstallationDirectory": true
+              }
+            }
+          }
+          EOF
+
+          cat > desktop/main.cjs <<'EOF'
+          const { app, BrowserWindow, ipcMain, screen } = require('electron');
+          const path = require('path');
+
+          const SITE = 'https://bosley-companion.vercel.app/';
+          let bubble;
+          let panel;
+
+          function placeWindows() {
+            const area = screen.getPrimaryDisplay().workArea;
+            if (bubble) {
+              bubble.setPosition(area.x + area.width - 100, area.y + 150);
+            }
+            if (panel) {
+              panel.setPosition(
+                area.x + area.width - 450,
+                area.y + Math.max(10, area.height - 730)
+              );
+            }
+          }
+
+          function createBubble() {
+            bubble = new BrowserWindow({
+              width: 84,
+              height: 84,
+              frame: false,
+              transparent: true,
+              resizable: false,
+              movable: true,
+              alwaysOnTop: true,
+              skipTaskbar: true,
+              hasShadow: false,
+              webPreferences: {
+                preload: path.join(__dirname, 'preload.cjs'),
+                contextIsolation: true,
+                nodeIntegration: false
+              }
+            });
+
+            bubble.setAlwaysOnTop(true, 'screen-saver');
+            bubble.loadFile(path.join(__dirname, 'bubble.html'));
+            bubble.on('closed', () => { bubble = null; });
+          }
+
+          function createPanel() {
+            panel = new BrowserWindow({
+              width: 430,
+              height: 700,
+              show: false,
+              title: 'Bosley Companion',
+              autoHideMenuBar: true,
+              alwaysOnTop: true,
+              webPreferences: {
+                contextIsolation: true,
+                nodeIntegration: false
+              }
+            });
+
+            panel.setAlwaysOnTop(true);
+            panel.loadURL(SITE);
+
+            panel.on('close', (event) => {
+              if (!app.isQuitting) {
+                event.preventDefault();
+                panel.hide();
+              }
+            });
+
+            panel.on('closed', () => { panel = null; });
+          }
+
+          function togglePanel() {
+            if (!panel || panel.isDestroyed()) createPanel();
+
+            if (panel.isVisible()) {
+              panel.hide();
+            } else {
+              placeWindows();
+              panel.show();
+              panel.focus();
+              bubble?.setAlwaysOnTop(true, 'screen-saver');
+            }
+          }
+
+          app.whenReady().then(() => {
+            createBubble();
+            createPanel();
+            placeWindows();
+
+            ipcMain.on('toggle-panel', togglePanel);
+
+            screen.on('display-metrics-changed', placeWindows);
+            screen.on('display-added', placeWindows);
+            screen.on('display-removed', placeWindows);
+          });
+
+          app.on('before-quit', () => { app.isQuitting = true; });
+
+          app.on('window-all-closed', () => {
+            if (process.platform !== 'darwin') app.quit();
+          });
+          EOF
+
+          cat > desktop/preload.cjs <<'EOF'
+          const { contextBridge, ipcRenderer } = require('electron');
+
+          contextBridge.exposeInMainWorld('bosleyDesktop', {
+            togglePanel: () => ipcRenderer.send('toggle-panel')
+          });
+          EOF
+
+          cat > desktop/bubble.html <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              * { box-sizing: border-box; }
+              html, body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background: transparent;
+              }
+              body {
+                display: grid;
+                place-items: center;
+                -webkit-app-region: drag;
+              }
+              button {
+                width: 70px;
+                height: 70px;
+                border: 1.5px solid white;
+                border-radius: 50%;
+                background: #050505;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+                box-shadow: 0 3px 16px #0008;
+                -webkit-app-region: no-drag;
+              }
+              .eye {
+                width: 7px;
+                height: 27px;
+                border-radius: 5px;
+                background: white;
+              }
+              button:hover { transform: scale(1.04); }
+            </style>
+          </head>
+          <body>
+            <button aria-label="Open Bosley chat" title="Open Bosley">
+              <span class="eye"></span>
+              <span class="eye"></span>
+            </button>
+            <script>
+              document.querySelector('button').addEventListener('click', () => {
+                window.bosleyDesktop.togglePanel();
+              });
+            </script>
+          </body>
+          </html>
+          EOF
+
+      - name: Install and build Windows installer
+        shell: bash
+        run: |
+          cd desktop
+          npm install
+          npm run dist
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bosley-Windows-Installer
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 14

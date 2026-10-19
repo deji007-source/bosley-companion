@@ -59,6 +59,15 @@ html[data-eye-shape=soft-square] .launch .eye{border-radius:5px}
 html[data-eye-gap=close] .launch .eyes{gap:9px}
 html[data-eye-gap=normal] .launch .eyes{gap:15px}
 html[data-eye-gap=wide] .launch .eyes{gap:21px}
+html[data-widget-edge=soft] .launch{border-radius:24px}
+html[data-widget-edge=balanced] .launch{border-radius:18px}
+html[data-widget-edge=sharp] .launch{border-radius:10px}
+html[data-widget-border=thin] .launch{border-width:1px}
+html[data-widget-border=medium] .launch{border-width:2px}
+html[data-widget-border=bold] .launch{border-width:3px}
+html[data-widget-size=compact] .launch{width:92px;height:56px}
+html[data-widget-size=default] .launch{width:108px;height:64px}
+html[data-widget-size=wide] .launch{width:128px;height:72px}
 html[data-face-preset=calm] .launch .eyes{gap:18px}
 html[data-face-preset=alert] .launch .eye{height:34px}
 html[data-face-preset=alert] .launch .eyes{gap:12px}
@@ -114,6 +123,12 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
    <select id="eyeshape"><option value="pill">Tall rounded pills</option><option value="soft-square">Soft rectangular</option></select>
    <label class="mute" for="eyegap">Eye spacing</label>
    <select id="eyegap"><option value="close">Close</option><option value="normal">Balanced</option><option value="wide">Wide</option></select>
+   <label class="mute" for="widgetedge">Rectangle corners</label>
+   <select id="widgetedge"><option value="soft">Rounded edge</option><option value="balanced">Balanced edge</option><option value="sharp">Sharper edge</option></select>
+   <label class="mute" for="widgetborder">White outline thickness</label>
+   <select id="widgetborder"><option value="thin">Fine outline</option><option value="medium">Medium outline</option><option value="bold">Bold outline</option></select>
+   <label class="mute" for="widgetsize">Widget size</label>
+   <select id="widgetsize"><option value="compact">Compact</option><option value="default">Default</option><option value="wide">Wide</option></select>
    <button class="primary" type="submit">Save appearance</button>
    <button class="link" type="button" id="facereset">Reset appearance</button>
    <p class="fb" id="facefeedback" aria-live="polite"></p>
@@ -167,20 +182,20 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 
 /* ---------- customizable face ---------- */
 const FACE_KEY="bosley_face_settings_v1";
-const FACE_DEFAULTS={preset:"incognito",size:"default",hat:"white",eyeShape:"pill",eyeGap:"normal"};
+const FACE_DEFAULTS={preset:"incognito",size:"default",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"soft",widgetBorder:"thin",widgetSize:"default"};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function applyFaceSettings(v){
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
- H.dataset.eyeShape=v.eyeShape||"pill";H.dataset.eyeGap=v.eyeGap||"normal";
+ H.dataset.eyeShape=v.eyeShape||"pill";H.dataset.eyeGap=v.eyeGap||"normal";H.dataset.widgetEdge=v.widgetEdge||"soft";H.dataset.widgetBorder=v.widgetBorder||"thin";H.dataset.widgetSize=v.widgetSize||"default";
 }
 applyFaceSettings(readFaceSettings());
 function initFaceSettings(){
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
- $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";
- form.onsubmit=e=>{e.preventDefault();const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
- $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#facefeedback").textContent="Appearance reset."};
+ $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
+ form.onsubmit=e=>{e.preventDefault();const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#facefeedback").textContent="Appearance reset."};
 }
 $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
 
@@ -442,7 +457,17 @@ function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge
  const log=$("#auto-log");if(log)log.innerHTML=automationRuns.map(r=>`<article class="item"><main><strong class="${r.status==="success"?"ok":r.status==="error"?"warn":""}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`).join("")||'<p class="mute">No automation runs yet.</p>';
 }
 $("#autotoggle").onclick=()=>{const el=$("#automation");el.hidden=!el.hidden;$("#autotoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)drawAutomation()};
-function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;if((m=t.match(/^(?:bosley,?\s+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(autoLog.bind(null,"success")).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?search(?: the web)? for\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>autoLog("success",r)).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
+function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;const q=t.toLowerCase();const face=readFaceSettings();let changed=false;
+ if(/\b(make|set|change|adjust)\b.*\b(widget|rectangle|corners|edges)\b.*\b(sharp|sharper|square)\b/.test(q)){face.widgetEdge="sharp";changed=true}
+ else if(/\b(make|set|change|adjust)\b.*\b(widget|rectangle|corners|edges)\b.*\b(round|rounded|soft)\b/.test(q)){face.widgetEdge="soft";changed=true}
+ if(/\b(widget|rectangle)\b.*\b(wider|wide|larger|bigger)\b/.test(q)){face.widgetSize="wide";changed=true}
+ else if(/\b(widget|rectangle)\b.*\b(smaller|compact|narrower)\b/.test(q)){face.widgetSize="compact";changed=true}
+ if(/\b(thicker|bold)\b.*\b(outline|border)\b|\b(outline|border)\b.*\b(thicker|bold)\b/.test(q)){face.widgetBorder="bold";changed=true}
+ else if(/\b(thinner|fine)\b.*\b(outline|border)\b|\b(outline|border)\b.*\b(thinner|fine)\b/.test(q)){face.widgetBorder="thin";changed=true}
+ if(/\b(eyes|eye)\b.*\b(bigger|larger)\b/.test(q)){face.size="large";changed=true}
+ else if(/\b(eyes|eye)\b.*\b(smaller|compact)\b/.test(q)){face.size="compact";changed=true}
+ if(changed){try{localStorage.setItem(FACE_KEY,JSON.stringify(face));applyFaceSettings(face);addMsg("bosley","Updated my widget appearance and saved it on this device.");return true}catch{addMsg("bosley","I couldn't save the appearance change in this browser.");return true}}
+ if((m=t.match(/^(?:bosley,?\s+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(autoLog.bind(null,"success")).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?search(?: the web)? for\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>autoLog("success",r)).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
 
 /* ---------- keyboard ---------- */
 addEventListener("keydown",e=>{

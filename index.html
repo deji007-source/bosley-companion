@@ -187,6 +187,17 @@ function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStor
 function applyFaceSettings(v){
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
  H.dataset.eyeShape=v.eyeShape||"pill";H.dataset.eyeGap=v.eyeGap||"normal";H.dataset.widgetEdge=v.widgetEdge||"soft";H.dataset.widgetBorder=v.widgetBorder||"thin";H.dataset.widgetSize=v.widgetSize||"default";
+ syncNativeWidgetAppearance(v);
+}
+async function syncNativeWidgetAppearance(v){
+ const b=bridge();
+ if(!b||typeof b.request!=="function")return;
+ try{
+  const result=await b.request({action:"set_widget_appearance",payload:{
+   size:v.widgetSize||"default",edge:v.widgetEdge||"soft",border:v.widgetBorder||"thin"
+  }});
+  if(result?.ok!==true)console.warn("Native widget appearance was not confirmed",result);
+ }catch(error){console.warn("Native widget appearance sync failed:",error?.message||error)}
 }
 applyFaceSettings(readFaceSettings());
 function initFaceSettings(){
@@ -438,10 +449,14 @@ async function runAction(step,approved=false){
    payload={url};
   }else if(action==="get_desktop_info"){
    payload={};
-  }else throw Error("Only get_desktop_info and open_external_url are currently supported.");
+  }else if(action==="set_widget_appearance"){
+   const face=readFaceSettings();
+   payload={size:face.widgetSize||"default",edge:face.widgetEdge||"soft",border:face.widgetBorder||"thin"};
+  }else throw Error("Only get_desktop_info, open_external_url, and set_widget_appearance are currently supported.");
   const result=await b.request({action,payload});
   if(result?.ok!==true){if(result?.cancelled)return "Desktop action cancelled by user.";throw Error(result?.error||"Bridge did not confirm success.");}
   if(action==="get_desktop_info")return "Windows desktop confirmed: "+String(result.platform||"desktop")+", app "+String(result.appVersion||"unknown")+", display "+String(result.display?.width||"?")+"×"+String(result.display?.height||"?");
+  if(action==="set_widget_appearance")return "Native widget resized and styled: "+payload.size+", "+payload.edge+" corners, "+payload.border+" outline.";
   return "Opened approved HTTPS website: "+payload.url;
  }
  throw Error("Unsupported action type: "+step.type)

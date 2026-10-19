@@ -118,7 +118,7 @@ jobs:
 
             if (panel && !panel.isDestroyed() && panel.isVisible()) {
               const width = Math.min(440, area.width - 24);
-              const height = Math.max(320, Math.min(740, area.height - 110));
+              const height = Math.max(320, Math.min(560, area.height - 110));
               const x = area.x + Math.round((area.width - width) / 2);
               const y = Math.min(
                 area.y + 98,
@@ -236,7 +236,10 @@ jobs:
           function createPanel() {
             panel = new BrowserWindow({
               width: 440,
-              height: 720,
+              height: 560,
+              minWidth: 360,
+              minHeight: 320,
+              resizable: true,
               show: false,
               backgroundColor: '#000000',
               title: 'Bosley Companion',

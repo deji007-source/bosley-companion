@@ -1,4 +1,3 @@
-
 name: Build Bosley Windows App
 
 on:
@@ -15,7 +14,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Get repository
+      - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -23,15 +22,15 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Create desktop wrapper
+      - name: Generate Bosley desktop app
         shell: bash
         run: |
           mkdir -p desktop
 
-          cat > desktop/package.json <<'EOF'
+          cat > desktop/package.json <<'PACKAGE_EOF'
           {
             "name": "bosley-companion-desktop",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "description": "Bosley floating desktop companion",
             "main": "main.cjs",
             "scripts": {
@@ -61,33 +60,66 @@ jobs:
               }
             }
           }
-          EOF
+          PACKAGE_EOF
 
-          cat > desktop/main.cjs <<'EOF'
-          const { app, BrowserWindow, ipcMain, screen } = require('electron');
+          cat > desktop/main.cjs <<'MAIN_EOF'
+          const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
           const path = require('path');
 
           const SITE = 'https://bosley-companion.vercel.app/';
-          let bubble;
-          let panel;
+          let bubble = null;
+          let panel = null;
 
-          function placeWindows() {
+          function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+              '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+          }
+
+          function positionWindows() {
             const area = screen.getPrimaryDisplay().workArea;
-            if (bubble) {
-              bubble.setPosition(area.x + area.width - 100, area.y + 150);
+            if (bubble && !bubble.isDestroyed()) {
+              bubble.setPosition(area.x + area.width - 100, area.y + 140);
             }
-            if (panel) {
-              panel.setPosition(
-                area.x + area.width - 450,
-                area.y + Math.max(10, area.height - 730)
-              );
+            if (panel && !panel.isDestroyed() && panel.isVisible()) {
+              const width = 440;
+              const height = Math.min(740, area.height - 20);
+              panel.setBounds({
+                x: area.x + area.width - width - 16,
+                y: area.y + area.height - height - 12,
+                width,
+                height
+              });
             }
+          }
+
+          function showLoadError(message) {
+            if (!panel || panel.isDestroyed()) return;
+            const safeMessage = escapeHtml(message);
+            const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+              <meta name="viewport" content="width=device-width,initial-scale=1">
+              <title>Bosley — Connection issue</title><style>
+              *{box-sizing:border-box}body{margin:0;background:#101010;color:#f7f7f7;
+              font:15px system-ui,Segoe UI,Arial,sans-serif;padding:34px;display:grid;
+              place-items:center;min-height:100vh}main{max-width:330px}h1{font-size:23px;
+              margin:0 0 12px}p{line-height:1.6;color:#c8c8c8;overflow-wrap:anywhere}
+              button{border:0;border-radius:12px;padding:12px 17px;background:#f5f5f5;
+              color:#111;font-weight:650;cursor:pointer;margin:8px 8px 0 0}
+              button.secondary{background:#282828;color:#fff;border:1px solid #454545}
+              small{display:block;color:#888;margin-top:20px;line-height:1.5}
+              </style></head><body><main><h1>Bosley couldn't load</h1>
+              <p>The desktop panel couldn't display the website.</p><p><strong>Details:</strong> ${safeMessage}</p>
+              <button onclick="location.href='${SITE}'">Try again</button>
+              <button class="secondary" onclick="window.open('${SITE}','_blank')">Open in browser</button>
+              <small>Your Bosley account and Supabase data have not been changed by this message.</small>
+              </main></body></html>`;
+            panel.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html)).catch(() => {});
           }
 
           function createBubble() {
             bubble = new BrowserWindow({
-              width: 84,
-              height: 84,
+              width: 88,
+              height: 88,
               frame: false,
               transparent: true,
               resizable: false,
@@ -95,13 +127,14 @@ jobs:
               alwaysOnTop: true,
               skipTaskbar: true,
               hasShadow: false,
+              backgroundColor: '#00000000',
               webPreferences: {
                 preload: path.join(__dirname, 'preload.cjs'),
                 contextIsolation: true,
-                nodeIntegration: false
+                nodeIntegration: false,
+                sandbox: true
               }
             });
-
             bubble.setAlwaysOnTop(true, 'screen-saver');
             bubble.loadFile(path.join(__dirname, 'bubble.html'));
             bubble.on('closed', () => { bubble = null; });
@@ -109,38 +142,53 @@ jobs:
 
           function createPanel() {
             panel = new BrowserWindow({
-              width: 430,
-              height: 700,
+              width: 440,
+              height: 720,
               show: false,
+              backgroundColor: '#101010',
               title: 'Bosley Companion',
               autoHideMenuBar: true,
               alwaysOnTop: true,
               webPreferences: {
                 contextIsolation: true,
-                nodeIntegration: false
+                nodeIntegration: false,
+                sandbox: true
               }
             });
 
             panel.setAlwaysOnTop(true);
-            panel.loadURL(SITE);
+            panel.webContents.on('did-fail-load', (_event, code, description, failedUrl, isMainFrame) => {
+              if (isMainFrame && !String(failedUrl).startsWith('data:')) {
+                showLoadError(`${code}: ${description} (${failedUrl})`);
+              }
+            });
+            panel.webContents.on('render-process-gone', (_event, details) => {
+              showLoadError(`The page process stopped (${details.reason || 'unknown reason'}).`);
+            });
+            panel.webContents.on('did-finish-load', () => {
+              console.log('Bosley page loaded:', panel && !panel.isDestroyed() ? panel.webContents.getURL() : 'closed');
+            });
+            panel.webContents.setWindowOpenHandler(({ url }) => {
+              if (url.startsWith('https://') || url.startsWith('http://')) shell.openExternal(url);
+              return { action: 'deny' };
+            });
+            panel.loadURL(SITE).catch(error => showLoadError(error.message));
 
-            panel.on('close', (event) => {
+            panel.on('close', event => {
               if (!app.isQuitting) {
                 event.preventDefault();
                 panel.hide();
               }
             });
-
             panel.on('closed', () => { panel = null; });
           }
 
           function togglePanel() {
             if (!panel || panel.isDestroyed()) createPanel();
-
             if (panel.isVisible()) {
               panel.hide();
             } else {
-              placeWindows();
+              positionWindows();
               panel.show();
               panel.focus();
               bubble?.setAlwaysOnTop(true, 'screen-saver');
@@ -150,31 +198,27 @@ jobs:
           app.whenReady().then(() => {
             createBubble();
             createPanel();
-            placeWindows();
-
+            positionWindows();
             ipcMain.on('toggle-panel', togglePanel);
-
-            screen.on('display-metrics-changed', placeWindows);
-            screen.on('display-added', placeWindows);
-            screen.on('display-removed', placeWindows);
+            screen.on('display-metrics-changed', positionWindows);
+            screen.on('display-added', positionWindows);
+            screen.on('display-removed', positionWindows);
           });
 
           app.on('before-quit', () => { app.isQuitting = true; });
-
           app.on('window-all-closed', () => {
             if (process.platform !== 'darwin') app.quit();
           });
-          EOF
+          MAIN_EOF
 
-          cat > desktop/preload.cjs <<'EOF'
+          cat > desktop/preload.cjs <<'PRELOAD_EOF'
           const { contextBridge, ipcRenderer } = require('electron');
-
           contextBridge.exposeInMainWorld('bosleyDesktop', {
             togglePanel: () => ipcRenderer.send('toggle-panel')
           });
-          EOF
+          PRELOAD_EOF
 
-          cat > desktop/bubble.html <<'EOF'
+          cat > desktop/bubble.html <<'BUBBLE_EOF'
           <!doctype html>
           <html lang="en">
           <head>
@@ -182,45 +226,27 @@ jobs:
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
               * { box-sizing: border-box; }
-              html, body {
-                margin: 0;
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
-                background: transparent;
-              }
-              body {
-                display: grid;
-                place-items: center;
-                -webkit-app-region: drag;
-              }
+              html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
+              body { display: grid; place-items: center; -webkit-app-region: drag; }
               button {
-                width: 70px;
-                height: 70px;
-                border: 1.5px solid white;
-                border-radius: 50%;
-                background: #050505;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                gap: 10px;
-                cursor: pointer;
-                box-shadow: 0 3px 16px #0008;
-                -webkit-app-region: no-drag;
+                width: 80px; height: 80px; padding: 0; border: 0; background: transparent;
+                cursor: pointer; display: grid; place-items: center; -webkit-app-region: no-drag;
+                filter: drop-shadow(0 4px 8px #0009); transition: transform 150ms ease;
               }
-              .eye {
-                width: 7px;
-                height: 27px;
-                border-radius: 5px;
-                background: white;
-              }
-              button:hover { transform: scale(1.04); }
+              button:hover { transform: scale(1.06); }
+              svg { width: 78px; height: 78px; overflow: visible; }
             </style>
           </head>
           <body>
             <button aria-label="Open Bosley chat" title="Open Bosley">
-              <span class="eye"></span>
-              <span class="eye"></span>
+              <svg viewBox="0 0 100 100" role="img" aria-label="Bosley hat face">
+                <path d="M29 43 C30 25 37 13 50 12 C63 13 70 25 71 43 L79 60 C81 65 77 69 70 69 H30 C23 69 19 65 21 60 Z"
+                  fill="#050505" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/>
+                <path d="M14 65 Q50 58 86 65 Q92 67 87 72 Q50 82 13 72 Q8 67 14 65 Z"
+                  fill="#050505" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/>
+                <rect x="39" y="34" width="6" height="22" rx="3" fill="#fff"/>
+                <rect x="55" y="34" width="6" height="22" rx="3" fill="#fff"/>
+              </svg>
             </button>
             <script>
               document.querySelector('button').addEventListener('click', () => {
@@ -229,9 +255,9 @@ jobs:
             </script>
           </body>
           </html>
-          EOF
+          BUBBLE_EOF
 
-      - name: Install and build Windows installer
+      - name: Install dependencies and build installer
         shell: bash
         run: |
           cd desktop
@@ -245,4 +271,3 @@ jobs:
           path: desktop/dist/*.exe
           if-no-files-found: error
           retention-days: 14
-          

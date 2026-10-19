@@ -501,10 +501,13 @@ async function queueAutomationInstruction(instruction,confirmation){
  try{
   const sess=db?(await db.auth.getSession()).data.session:null;
   if(!sess||!user){addMsg("bosley","Sign in under Jarvis Workspace first so I can route this request to your account's automation flow.");return}
-  const {error}=await db.from("automation_runs").insert({user_id:user.id,instruction,status:"pending"});
+  // Use the same authenticated remote-action gateway as Bosley Remote.
+  // The gateway scopes the queued request to the current signed-in user.
+  const {data,error}=await db.functions.invoke("remote-action",{body:{type:"automation",instruction}});
   if(error)throw error;
+  if(!data||data.ok!==true)throw Error(data?.error||"The remote automation gateway did not accept the request.");
   addMsg("bosley",confirmation);
-  autoLog("running","Queued remote automation: "+instruction);
+  autoLog("running","Submitted to the shared remote automation queue: "+instruction);
  }catch(error){addMsg("bosley","I could not queue that automation: "+String(error?.message||error));autoLog("error","Automation queue failed: "+String(error?.message||error))}
 }
 function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;const launch=t.match(/^(?:bosley[, ]+)?open\s+(?:google\s+)?chrome[.!]?$/i);if(launch){runAction({type:"desktop_action",action:"launch_app",input:"chrome"}).then(result=>addMsg("bosley",result)).catch(error=>addMsg("bosley","I couldn't open Chrome: "+String(error?.message||error)));return true}const playback=t.match(/^(?:bosley[, ]+)?(play|pause|resume|continue|stop|skip|next song|previous song|restart song)(?:\s+(.+?))?(?:\s+on\s+(spotify|youtube))?[.!]?$/i);if(playback){const verb=playback[1].toLowerCase(),detail=(playback[2]||"").trim(),service=(playback[3]||"spotify").toLowerCase();let instruction;if(verb==="play"){if(!detail){addMsg("bosley","Tell me a song or artist to play, for example “play Billie Jean on Spotify”.");return true}if(/^(another|next|the next song)$/i.test(detail)){instruction="play next song on "+service}else{instruction="play "+detail+" on "+service}}else if(verb==="next song"||verb==="skip"){instruction="play next song on "+service}else if(verb==="previous song"){instruction="play previous song on "+service}else if(verb==="restart song"){instruction="restart current song on "+service}else if(verb==="continue"||verb==="resume"){instruction="resume music on "+service}else{instruction=verb+" music on "+service}queueAutomationInstruction(instruction,"Request queued: "+instruction+". I’ll confirm playback only when the connected automation reports success.");return true}const q=t.toLowerCase();const face=readFaceSettings();let changed=false;

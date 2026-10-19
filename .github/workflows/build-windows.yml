@@ -23,6 +23,11 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install web dependencies and verify production build
+        run: |
+          npm ci
+          npm run build
+
       - name: Generate Bosley desktop app
         shell: bash
         run: |

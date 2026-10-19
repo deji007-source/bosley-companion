@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>Bosley Companion</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{font-family:Manrope,system-ui,sans-serif;color:#f5f5f5;background:#000;--mute:#8a8a8a;--line:#262626;--px:0;--py:0;--es:1}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#000}
+button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
+:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#root{position:relative;z-index:2147483000}
+
+/* ---- Bosley's signature eyes: clean, pupil-free white pills ---- */
+.eyes{display:flex;gap:15px;align-items:center;justify-content:center}
+.eye{display:block;flex:0 0 auto;width:19px;height:29px;border-radius:999px;background:#fff;transform:scale(var(--es));transform-origin:center;transition:transform .25s ease,opacity .25s ease}
+html[data-eyes=listening]{--es:1.08}
+html[data-eyes=thinking] .eye:first-child{transform:scale(var(--es)) rotate(-3deg)}
+html[data-eyes=thinking] .eye:last-child{transform:scale(var(--es)) rotate(3deg)}
+html[data-eyes=speaking] .eye{animation:talk .55s ease-in-out infinite}
+html[data-eyes=error] .eye{opacity:1}
+html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
+@keyframes talk{50%{transform:scale(var(--es),.88)}}
+
+/* ---- collapsed launcher: hat brim, eyes peeking out ---- */
+.stage{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:2147483000}
+.launch{position:relative;display:block;width:108px;height:64px;padding:0;border:1px solid #d8d8d8;border-radius:20px;background:#000;overflow:hidden;transition:border-color .2s}
+.launch:hover{border-color:#fff}
+.launch[data-state=listening],.launch[data-state=thinking]{border-color:#fff}
+.launch[data-state=error]{border-style:dashed;border-color:#8a8a8a}
+.hat{position:absolute;inset:0;width:100%;height:100%}
+.launch .eyes{position:absolute;left:0;right:0;top:33px}
+
+/* ---- panel ---- */
+.panel{position:fixed;left:50%;top:92px;transform:translateX(-50%);width:min(410px,calc(100vw - 24px));height:min(510px,calc(100dvh - 106px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
+@keyframes in{from{opacity:0;transform:translate(-50%,-6px) scale(.97)}}
+.panel.maximized{width:min(640px,calc(100vw - 24px));height:calc(100dvh - 106px);min-height:0;max-height:calc(100dvh - 106px)}
+@media(max-width:520px){.panel.maximized{height:calc(100dvh - 96px);max-height:calc(100dvh - 96px)}}
+.top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #ffffff12}
+.brand{flex:1}.brand strong{font-size:12px;letter-spacing:.14em}.brand small{display:block;margin-top:4px;color:var(--mute);font:10px 'DM Mono',monospace}
+.top button{border:1px solid var(--line);border-radius:8px;background:none;width:30px;height:30px}
+.toggle{margin:10px 14px 0;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:#000;text-align:left;font-size:11px}
+.toggle span{float:right;color:var(--mute);font:9px 'DM Mono',monospace}
+.workspace,.automation{flex:0 1 auto;min-height:0;margin:8px 14px 0;padding:12px;border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:min(34dvh,240px);font-size:11px}
+.toggle{flex:0 0 auto}
+.top,.composer,.bottom{flex:0 0 auto}
+.chat{flex:1 1 auto;min-height:0;overscroll-behavior:contain;scrollbar-gutter:stable}
+.composer{margin-bottom:0}
+.bottom{padding-bottom:max(11px,env(safe-area-inset-bottom))}
+@media(max-width:520px){
+ .panel{height:calc(100dvh - 96px);min-height:0}
+ .workspace,.automation{max-height:26dvh}
+ .chat{padding:12px 14px}
+ .composer{margin-left:10px;margin-right:10px}
+}.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}
+.workspace h3{margin:0 0 5px;font-size:12px}.mute{color:var(--mute);font-size:10px;line-height:1.6}
+html[data-face-size=compact] .eye{width:15px;height:24px}
+html[data-face-size=default] .eye{width:19px;height:29px}
+html[data-face-size=large] .eye{width:23px;height:34px}
+html[data-hat-style=soft] .hat path{stroke:#aaa}
+html[data-hat-style=hidden] .hat{display:none}
+html[data-eye-shape=soft-square] .launch .eye{border-radius:5px}
+html[data-eye-gap=close] .launch .eyes{gap:9px}
+html[data-eye-gap=normal] .launch .eyes{gap:15px}
+html[data-eye-gap=wide] .launch .eyes{gap:21px}
+html[data-widget-edge=soft] .launch{border-radius:24px}
+html[data-widget-edge=balanced] .launch{border-radius:18px}
+html[data-widget-edge=sharp] .launch{border-radius:10px}
+html[data-widget-border=thin] .launch{border-width:1px}
+html[data-widget-border=medium] .launch{border-width:2px}
+html[data-widget-border=bold] .launch{border-width:3px}
+html[data-widget-size=compact] .launch{width:92px;height:56px}
+html[data-widget-size=default] .launch{width:108px;height:64px}
+html[data-widget-size=wide] .launch{width:128px;height:72px}
+html[data-face-preset=calm] .launch .eyes{gap:18px}
+html[data-face-preset=alert] .launch .eye{height:34px}
+html[data-face-preset=alert] .launch .eyes{gap:12px}
+.tabs{display:flex;gap:6px;margin:10px 0}.tabs button{flex:1;padding:7px;border:1px solid var(--line);border-radius:7px;background:none;color:var(--mute)}.tabs .on{border-color:#f2f2f2;color:#fff;background:#0d0d0d}
+.form{display:grid;gap:7px;margin-top:8px}.form input,.form textarea,.form select{width:100%;padding:9px 10px;border:1px solid #333;border-radius:8px;background:#050505;font-size:11px}.form textarea{min-height:48px}
+.row{display:flex;gap:7px}.row>*{flex:1}
+.primary{padding:9px;border:0;border-radius:8px;background:#f5f5f5;color:#000;font-size:11px;font-weight:800}
+.link{border:0;background:none;color:#ddd;font-size:10px;padding:6px 0;text-decoration:underline}
+.fb{font-size:10px;line-height:1.5;margin:7px 0;color:#ddd}
+.items{display:grid;gap:7px;margin-top:10px}.item{display:flex;gap:8px;padding:9px;border:1px solid #222;border-radius:8px}.item main{flex:1;min-width:0}.item strong{font-size:11px;overflow-wrap:anywhere}.item p{margin:5px 0;color:#aaa;font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere}.item small{color:var(--mute);font:8px 'DM Mono',monospace}.item button{border:1px solid #333;border-radius:6px;background:none;color:#aaa}.item.done strong{text-decoration:line-through;color:#777}
+.chat{flex:1;min-height:90px;overflow:auto;padding:16px}
+.msg{margin-bottom:16px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}.msg b{display:block;font:9px 'DM Mono',monospace;margin-bottom:4px}.msg p{margin:0;color:#d8d8d8;white-space:pre-wrap}
+.msg.you{text-align:right}.msg.you p{display:inline-block;text-align:left;padding:9px 12px;border:1px solid #303030;border-radius:12px 4px 12px 12px;background:#080808}
+.msg.sys p{color:var(--mute);font-style:italic}.msg p.err{padding:8px 10px;border:1px dashed #666;border-radius:10px;color:#eee}
+.composer{display:flex;gap:8px;margin:0 14px;padding:7px;border:1px solid #333;border-radius:13px}
+.composer input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px}
+.composer button{border:0;border-radius:8px;padding:8px;background:#f5f5f5;color:#000}
+.bottom{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;color:#666;font:9px 'DM Mono',monospace}
+.bottom button{border:0;background:none;color:#aaa;font:9px 'DM Mono',monospace;padding:4px}
+@media(max-width:520px){.stage{top:10px}.panel{top:84px;height:min(690px,calc(100dvh - 96px))}}
+/* ---- native-widget mode (Electron on Windows / Android overlay WebView) ---- */
+html.widget-mode,html.widget-mode body{width:100%;height:100%;min-height:100%;overflow:hidden;background:transparent}
+html.widget-mode #root{position:relative;width:100%;height:100%;background:transparent;pointer-events:none}
+html.widget-mode .stage{left:auto;right:20px;top:auto;bottom:20px;transform:none;pointer-events:auto;touch-action:none}
+html.widget-mode .launch{box-shadow:0 8px 28px #0008;cursor:grab;touch-action:none}
+html.widget-mode .launch:active{cursor:grabbing}
+html.widget-mode .panel{left:auto;right:16px;top:auto;bottom:92px;transform:none;width:min(410px,calc(100vw - 24px));height:min(680px,calc(100dvh - 108px));min-height:300px;pointer-events:auto;animation:widget-in .18s ease-out}
+@keyframes widget-in{from{opacity:0;transform:translateY(7px) scale(.985)}}
+html.widget-mode .panel[hidden]{display:none!important}
+html.widget-mode .panel .top{cursor:default}
+html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
+@media(max-width:520px){html.widget-mode .panel{right:8px;bottom:88px;width:calc(100vw - 16px);height:calc(100dvh - 100px);max-height:690px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style></head>
+<body><div id="root">
+<main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
+<section class="panel" id="panel" hidden aria-label="Bosley Companion">
+ <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
+ <button class="toggle" id="wstoggle" aria-expanded="false">▤ <b>Jarvis Workspace</b><span id="wsmeta">SIGN IN</span></button>
+ <section class="workspace" id="ws" hidden></section>
+ <button class="toggle" id="facetoggle" aria-expanded="false">◉ <b>Appearance</b><span>FACE SETTINGS</span></button>
+ <section class="workspace" id="facepanel" hidden>
+  <h3>Bosley appearance</h3>
+  <p class="mute">Choose a face preset. Changes are saved on this device and can be updated anytime.</p>
+  <form class="form" id="faceform">
+   <label class="mute" for="facepreset">Face preset</label>
+   <select id="facepreset"><option value="incognito">Incognito (signature)</option><option value="calm">Calm</option><option value="alert">Alert</option></select>
+   <label class="mute" for="facesize">Eye size</label>
+   <select id="facesize"><option value="compact">Compact</option><option value="default">Default</option><option value="large">Large</option></select>
+   <label class="mute" for="hatstyle">Hat outline</label>
+   <select id="hatstyle"><option value="white">Crisp white</option><option value="soft">Soft grey</option><option value="hidden">Hidden</option></select>
+   <label class="mute" for="eyeshape">Eye shape</label>
+   <select id="eyeshape"><option value="pill">Tall rounded pills</option><option value="soft-square">Soft rectangular</option></select>
+   <label class="mute" for="eyegap">Eye spacing</label>
+   <select id="eyegap"><option value="close">Close</option><option value="normal">Balanced</option><option value="wide">Wide</option></select>
+   <label class="mute" for="widgetedge">Rectangle corners</label>
+   <select id="widgetedge"><option value="soft">Rounded edge</option><option value="balanced">Balanced edge</option><option value="sharp">Sharper edge</option></select>
+   <label class="mute" for="widgetborder">White outline thickness</label>
+   <select id="widgetborder"><option value="thin">Fine outline</option><option value="medium">Medium outline</option><option value="bold">Bold outline</option></select>
+   <label class="mute" for="widgetsize">Widget size</label>
+   <select id="widgetsize"><option value="compact">Compact</option><option value="default">Default</option><option value="wide">Wide</option></select>
+   <button class="primary" type="submit">Save appearance</button>
+   <button class="link" type="button" id="facereset">Reset appearance</button>
+   <p class="fb" id="facefeedback" aria-live="polite"></p>
+     <label class="mute" for="voiceprofile">Bosley voice</label>
+   <select id="voiceprofile"><option value="jarvis">Jarvis-style (deep, calm)</option><option value="natural">Natural assistant</option><option value="system">System default</option></select>
+   <button type="button" class="primary" id="voicepreview">▶ Preview voice</button>
+</form>
+ </section>
+ <button class="toggle" id="autotoggle" aria-expanded="false">⚙ <b>Automation</b><span id="autometa">BROWSER MODE</span></button>
+ <section class="automation" id="automation" hidden></section>
+ <section class="chat" id="chat" role="log" aria-live="off"></section>
+ <form class="composer" id="form"><button type="button" id="mic" aria-label="Start voice input">🎙</button><input id="in" placeholder="Message Bosley…" autocomplete="off" maxlength="2000" aria-label="Message"><button id="send" aria-label="Send">➤</button></form>
+ <footer class="bottom"><span>CTRL/ALT+SHIFT+B</span><span><button id="stop" hidden>■ STOP</button><button id="voice">VOICE ON</button><button id="new">NEW CHAT</button></span></footer>
+</section>
+<div class="sr" id="live" aria-live="polite"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// Public anon key only (safe in the browser, protected by RLS). Never place a service-role key here.
+const SUPABASE_URL="https://ywwfqisbmlkjcfoqehph.supabase.co";
+const SUPABASE_PUBLIC_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3d2ZxaXNibWxramNmb3FlaHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODA2MDksImV4cCI6MjA5NTE1NjYwOX0.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
+const CHAT_URL=SUPABASE_URL+"/functions/v1/companion-chat";
+(()=>{
+const $=s=>document.querySelector(s),H=document.documentElement;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const db=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+const RM=matchMedia("(prefers-reduced-motion: reduce)");
+let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
+let automationRuns=[],automationBusy=false;
+let speechOn=true;try{speechOn=JSON.parse(localStorage.getItem("bosley_prefs")||"{}").speechOn!==false}catch{}
+let voiceProfile="jarvis";try{voiceProfile=localStorage.getItem("bosley_voice_profile")||"jarvis"}catch{}
+function chooseBosleyVoice(){
+ if(!("speechSynthesis"in window))return null;
+ const voices=speechSynthesis.getVoices()||[],english=voices.filter(v=>/^en(-|_)/i.test(v.lang)),pool=english.length?english:voices;
+ const score=v=>{const n=(v.name+" "+v.lang).toLowerCase();let p=0;
+ if(/natural|neural|premium|enhanced/.test(n))p+=4;
+ if(voiceProfile==="jarvis"&&/david|guy|daniel|ryan|mark|male/.test(n))p+=5;
+ if(voiceProfile==="natural"&&/natural|neural|premium|enhanced/.test(n))p+=5;
+ if(/zira|female/.test(n))p-=2;if(/robot|novelty/.test(n))p-=8;return p};
+ return voiceProfile==="system"?null:(pool.slice().sort((a,b)=>score(b)-score(a))[0]||null);
+}
+if("speechSynthesis"in window)speechSynthesis.onvoiceschanged=()=>chooseBosleyVoice();
+
+const S={listening:false,speaking:false,busy:false,offline:!navigator.onLine,errUntil:0,backend:null};
+
+/* ---------- eye states: driven only by real events ---------- */
+const eye='<span class="eye" aria-hidden="true"></span>';
+$("#launch").innerHTML='<svg class="hat" viewBox="0 0 108 64" aria-hidden="true"><path d="M31 28 L42 7 Q44 4 48 7 L54 11 L61 7 Q65 4 67 8 L78 28 Z" fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M36 21 Q54 23 73 21 L78 28 L31 28 Z" fill="#171717" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 34 Q19 27 40 27 L68 27 Q89 27 100 34 Q79 40 54 40 Q29 40 8 34 Z" fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M39 30 Q54 32 69 30" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/></svg><span class="eyes">'+eye+eye+'</span>';
+const LABEL={idle:"READY",listening:"LISTENING",thinking:"THINKING",speaking:"SPEAKING",error:"ERROR"};
+function eyes(){
+ const st=S.offline||Date.now()<S.errUntil?"error":S.listening?"listening":S.busy?"thinking":S.speaking?"speaking":"idle";
+ if(H.dataset.eyes!==st){H.dataset.eyes=st;$("#live").textContent=S.offline?"Offline":LABEL[st]}
+ $("#launch").dataset.state=st;
+ const ai=S.backend===true?"AI CONNECTED":S.backend===false?"AI UNREACHABLE":"AI NOT VERIFIED";
+ $("#status").textContent="● "+(S.offline?"OFFLINE":LABEL[st])+" · "+ai;
+}
+function flash(ms=4500){S.errUntil=Date.now()+ms;eyes();setTimeout(eyes,ms+50)}
+function look(x,y){const c=v=>Math.max(-1,Math.min(1,v));H.style.setProperty("--px",c(x).toFixed(2));H.style.setProperty("--py",c(y).toFixed(2))}
+addEventListener("pointermove",e=>{
+ if(RM.matches||S.listening)return;cancelAnimationFrame(raf);
+ raf=requestAnimationFrame(()=>{const r=$(".eye").getBoundingClientRect();look((e.clientX-r.left-r.width/2)/240,(e.clientY-r.top-r.height/2)/240);lastMove=Date.now()})
+},{passive:true});
+function blinkOnce(){H.classList.add("blink");setTimeout(()=>H.classList.remove("blink"),120)}
+(function loop(){setTimeout(()=>{if(!RM.matches&&!document.hidden){blinkOnce();if(Math.random()<.2)setTimeout(blinkOnce,260)}loop()},2500+Math.random()*4000)})();
+setInterval(()=>{if(!RM.matches&&!document.hidden&&!S.listening&&Date.now()-lastMove>3000)look(Math.random()*1.4-.7,Math.random()*.8-.3)},2200);
+addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online",()=>{S.offline=false;eyes()});
+
+/* ---------- customizable face ---------- */
+const FACE_KEY="bosley_face_settings_v1";
+const FACE_DEFAULTS={preset:"incognito",size:"default",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"soft",widgetBorder:"thin",widgetSize:"default"};
+function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
+function applyFaceSettings(v){
+ H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
+ H.dataset.eyeShape=v.eyeShape||"pill";H.dataset.eyeGap=v.eyeGap||"normal";H.dataset.widgetEdge=v.widgetEdge||"soft";H.dataset.widgetBorder=v.widgetBorder||"thin";H.dataset.widgetSize=v.widgetSize||"default";
+ syncNativeWidgetAppearance(v);
+}
+async function syncNativeWidgetAppearance(v){
+ const b=bridge();
+ if(!b||typeof b.request!=="function")return;
+ try{
+  const result=await b.request({action:"set_widget_appearance",payload:{
+   size:v.widgetSize||"default",edge:v.widgetEdge||"soft",border:v.widgetBorder||"thin"
+  }});
+  if(result?.ok!==true)console.warn("Native widget appearance was not confirmed",result);
+ }catch(error){console.warn("Native widget appearance sync failed:",error?.message||error)}
+}
+applyFaceSettings(readFaceSettings());
+function initFaceSettings(){
+ const v=readFaceSettings();applyFaceSettings(v);
+ const form=$("#faceform");if(!form)return;
+ $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
+ $("#voiceprofile").value=voiceProfile; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
+ form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
+ $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#facefeedback").textContent="Appearance reset."};
+}
+$("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
+
+/* ---------- panel ---------- */
+const widgetMode=new URLSearchParams(location.search).get("widget")==="1"||!!window.BosleyDesktop||!!window.BosleyAndroidWidget;
+if(widgetMode)H.classList.add("widget-mode");
+function notifyWidgetSize(open){
+ try{if(window.BosleyDesktop&&typeof window.BosleyDesktop.widgetResize==="function")window.BosleyDesktop.widgetResize(!!open); }catch(e){console.warn("Bosley desktop resize failed",e)}
+ try{if(window.BosleyAndroidWidget&&typeof window.BosleyAndroidWidget.resize==="function")window.BosleyAndroidWidget.resize(!!open); }catch(e){console.warn("Bosley Android resize failed",e)}
+}
+function toggle(open){
+ const p=$("#panel");open=open??p.hidden;p.hidden=!open;
+ $("#launch").setAttribute("aria-expanded",open);$("#launch").setAttribute("aria-label","Bosley Companion: "+(open?"close":"open"));
+ notifyWidgetSize(open);
+ if(open){setTimeout(()=>$("#in").focus(),80)}
+}
+let dragState=null,dragged=false;
+$("#launch").addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="touch")return;dragState={x:e.screenX,y:e.screenY,cx:e.clientX,cy:e.clientY};dragged=false;try{$("#launch").setPointerCapture(e.pointerId)}catch{}},{passive:true});
+$("#launch").addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.screenX-dragState.x,dy=e.screenY-dragState.y;if(Math.abs(dx)+Math.abs(dy)<5)return;dragged=true;
+ try{if(window.BosleyDesktop&&typeof window.BosleyDesktop.moveWindowBy==="function")window.BosleyDesktop.moveWindowBy(dx,dy);else if(window.BosleyAndroidWidget&&typeof window.BosleyAndroidWidget.moveBy==="function")window.BosleyAndroidWidget.moveBy(dx,dy);else{const st=$(".stage"),r=st.getBoundingClientRect();st.style.right="auto";st.style.bottom="auto";st.style.left=Math.max(0,Math.min(innerWidth-108,r.left+dx)) + "px";st.style.top=Math.max(0,Math.min(innerHeight-64,r.top+dy)) + "px"}}catch(err){console.warn("Bosley drag failed",err)}
+ dragState.x=e.screenX;dragState.y=e.screenY;},{passive:true});
+function finishDrag(){dragState=null}
+$("#launch").addEventListener("pointerup",finishDrag);$("#launch").addEventListener("pointercancel",finishDrag);
+$("#launch").onclick=e=>{if(dragged){e.preventDefault();e.stopPropagation();dragged=false;return}toggle()};$("#maximize").onclick=()=>{const p=$("#panel"),max=p.classList.toggle("maximized");$("#maximize").textContent=max?"❐":"□";$("#maximize").setAttribute("aria-label",max?"Restore panel":"Maximize panel");$("#maximize").title=max?"Restore panel":"Maximize panel"};
+$("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
+
+/* ---------- chat ---------- */
+const chat=$("#chat");
+function addMsg(role,text,cls=""){
+ const a=document.createElement("article");a.className="msg "+role+" "+cls;
+ a.innerHTML='<b>'+(role==="you"?"YOU":"BOSLEY")+'</b><p></p>';a.lastChild.textContent=text;chat.appendChild(a);chat.scrollTop=chat.scrollHeight;return a.lastChild;
+}
+const note=t=>addMsg("sys",t);
+async function persistChatExchange(userText,assistantText){
+ if(!db||!user)throw Error("Sign in to save chat history.");
+ if(!conversationId){
+  const {data,error}=await db.from("conversations").insert({user_id:user.id,title:userText.slice(0,80)||"New conversation"}).select("id").single();
+  if(error)throw error;conversationId=data.id;
+ }
+ const first=await db.from("messages").insert({conversation_id:conversationId,user_id:user.id,role:"user",content:userText});
+ if(first.error)throw first.error;
+ const second=await db.from("messages").insert({conversation_id:conversationId,user_id:user.id,role:"assistant",content:assistantText});
+ if(second.error)throw second.error;
+ const updated=await db.from("conversations").update({last_message_at:new Date().toISOString()}).eq("id",conversationId).eq("user_id",user.id);
+ if(updated.error)throw updated.error;
+}
+async function restoreLatestConversation(){
+ if(!db||!user)return;
+ try{
+  const {data:conv,error}=await db.from("conversations").select("id,title").eq("user_id",user.id).order("last_message_at",{ascending:false}).limit(1).maybeSingle();
+  if(error)throw error;
+  conversationId=conv?.id||null;
+  if(!conv)return;
+  const {data:rows,error:messagesError}=await db.from("messages").select("role,content").eq("user_id",user.id).eq("conversation_id",conv.id).order("created_at",{ascending:true}).limit(100);
+  if(messagesError)throw messagesError;
+  history=(rows||[]).filter(m=>m.role==="user"||m.role==="assistant").map(m=>({role:m.role,content:m.content}));
+  chat.innerHTML="";
+  if(!history.length){addMsg("bosley","Welcome back. Start a new message whenever you're ready.");return}
+  history.forEach(m=>addMsg(m.role==="user"?"you":"bosley",m.content));
+ }catch(e){console.warn("Bosley chat restore failed:",e);note("I couldn't restore saved chat history. You can still chat; check your connection or workspace permissions if this keeps happening.")}
+}
+addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace and I'll answer through the Jarvis AI backend. Until a real request succeeds I won't claim it's connected.");
+async function send(text){
+ if(S.busy||!text)return;
+ if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a browser automation command. See Automation → Execution history for the result.");return}
+ addMsg("you",text);
+ const sess=db?(await db.auth.getSession()).data.session:null;
+ if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return}
+ history.push({role:"user",content:text});S.busy=true;eyes();
+ const p=addMsg("bosley","…");const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),30000);
+ try{
+  const r=await fetch(CHAT_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({messages:history.slice(-16)})});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw Error(j.error||"Server returned "+r.status)}
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf="",out="",streamError="";
+  for(;;){
+   const{done,value}=await rd.read();
+   if(done)break;
+   buf+=dec.decode(value,{stream:true}).replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+   let i;
+   while((i=buf.indexOf("\n"))>=0){
+    const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+    if(!line.startsWith("data:"))continue;
+    const d=line.slice(5).trim();
+    if(!d||d==="[DONE]")continue;
+    let packet;
+    try{packet=JSON.parse(d)}catch(parseError){console.warn("Ignoring malformed AI stream event",parseError);continue}
+    if(packet.error){streamError=packet.error.message||"AI provider reported a stream error";continue}
+    const token=packet.choices?.[0]?.delta?.content;
+    if(typeof token==="string"&&token){out+=token;p.textContent=out;chat.scrollTop=chat.scrollHeight}
+   }
+  }
+  if(streamError&&!out)throw Error(streamError);
+  if(!out)throw Error("The AI returned an empty reply. Check the provider key, model availability, and Edge Function logs.");
+  history.push({role:"assistant",content:out});S.backend=true;S.busy=false;eyes();
+  try{await persistChatExchange(text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
+  speak(out);
+ }catch(e){
+  history.pop();S.busy=false;S.backend=false;
+  p.className="err";p.textContent=(e.name==="AbortError"?"The AI took too long to respond. ":"")+(e.name==="AbortError"?"Try again.":"Couldn't get a reply: "+String(e?.message||"Unknown connection error").slice(0,240)+". Your message wasn't answered; try again.");
+  flash();
+ }finally{clearTimeout(to);eyes()}
+}
+$("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim();i.value="";send(t)};
+$("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpeak();addMsg("bosley","New conversation. What's up?")};
+
+/* ---------- voice ---------- */
+function speak(t){
+ if(!speechOn||!("speechSynthesis"in window))return;speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.94:1;u.pitch=voiceProfile==="jarvis"?0.82:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
+ u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;eyes()};u.onend=end;u.onerror=end;speechSynthesis.speak(u);
+}
+function stopSpeak(){if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}
+function setSpeech(v){speechOn=v;if(!v)stopSpeak();$("#voice").textContent="VOICE "+(v?"ON":"OFF");try{localStorage.setItem("bosley_prefs",JSON.stringify({speechOn:v}))}catch{}}
+$("#voice").onclick=()=>setSpeech(!speechOn);$("#stop").onclick=stopSpeak;setSpeech(speechOn);
+function startMic(){
+ const C=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!C){note("Speech recognition isn't supported in this browser. You can type instead.");return}
+ stopSpeak();const r=new C();r.lang=navigator.language||"en-US";r.interimResults=true;r.continuous=false;let fin="";
+ r.onstart=()=>{S.listening=true;$("#mic").textContent="■";$("#mic").setAttribute("aria-label","Stop voice input");look(0,0);eyes()};
+ r.onresult=e=>{let t="";for(const x of e.results){t+=x[0].transcript;if(x.isFinal)fin=t}$("#in").value=t};
+ r.onerror=e=>{note(e.error==="not-allowed"?"Microphone permission denied. Nothing was recorded.":"Microphone error ("+e.error+"). You can type instead.");flash()};
+ r.onend=()=>{S.listening=false;rec=null;$("#mic").textContent="🎙";$("#mic").setAttribute("aria-label","Start voice input");eyes();if(fin){$("#in").value="";send(fin)}};
+ try{r.start();rec=r}catch{note("Couldn't start the microphone. Check browser permissions.");flash()}
+}
+$("#mic").onclick=()=>rec?rec.stop():startMic();
+
+/* ---------- Jarvis workspace (existing tables, RLS-protected) ---------- */
+const ws=$("#ws");
+function fb(t){const e=$("#fb");if(e)e.textContent=t}
+function drawWs(){
+ $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";
+ if(!db){ws.innerHTML='<p class="mute">Supabase library failed to load. Check your connection and refresh.</p>';return}
+ if(!user){ws.innerHTML=`<h3>Jarvis Workspace</h3><p class="mute">Sign in with the same account you use in the Bosley app to see your notes and tasks and to chat with the AI. Creating a new account starts an empty workspace.</p><form class="form" id="auth"><input id="email" type="email" required autocomplete="email" placeholder="Email"><input id="pw" type="password" ${mode==="up"?'minlength="6"':""} required autocomplete="${mode==="up"?"new-password":"current-password"}" placeholder="${mode==="up"?"Password (minimum 6 characters)":"Password"}"><button class="primary">${mode==="up"?"Create account":"Sign in"}</button></form><button class="link" id="sw">${mode==="in"?"New here? Create an account":"Have an account? Sign in"}</button><div class="fb" id="fb"></div>`;
+  $("#sw").onclick=()=>{mode=mode==="in"?"up":"in";drawWs()};
+  $("#auth").onsubmit=async e=>{e.preventDefault();fb("Working…");
+   try{const c={email:$("#email").value.trim(),password:$("#pw").value};const r=mode==="up"?await db.auth.signUp(c):await db.auth.signInWithPassword(c);if(r.error)throw r.error;
+    if(mode==="up"&&!r.data.session){fb("Account created. Check your email to confirm, then sign in.");return}}catch(err){fb(err.message)}};return}
+ const arr=tab==="tasks"?tasks:notes;
+ ws.innerHTML=`<h3>Jarvis Workspace</h3><div class="mute">${esc(user.email)} · <button class="link" id="refresh">Refresh</button> · <button class="link" id="logout">Sign out</button></div><div class="tabs"><button data-tab="tasks" class="${tab==="tasks"?"on":""}">Tasks (${tasks.length})</button><button data-tab="notes" class="${tab==="notes"?"on":""}">Notes (${notes.length})</button></div><form id="itemform" class="form"><input id="title" required maxlength="160" placeholder="${tab==="notes"?"Note title…":"What needs doing?"}"><textarea id="content" maxlength="20000" placeholder="${tab==="notes"?"Write your note…":"Details (optional)"}"></textarea>${tab==="tasks"?'<div class="row"><input id="due" type="datetime-local" aria-label="Due date"><select id="priority" aria-label="Priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>':""}<button class="primary">Save ${tab==="notes"?"note":"task"}</button></form><div class="fb" id="fb"></div><div class="items">${arr.map(x=>tab==="tasks"?`<article class="item ${x.status==="completed"?"done":""}"><button data-toggle="${esc(x.id)}" aria-label="Toggle done">${x.status==="completed"?"✓":"○"}</button><main><strong>${esc(x.title)}</strong>${x.notes?`<p>${esc(x.notes)}</p>`:""}<small>${esc((x.priority||"medium").toUpperCase())}${x.due_at?" · DUE "+esc(new Date(x.due_at).toLocaleString()):""}</small></main><button data-delete="${esc(x.id)}" aria-label="Delete">×</button></article>`:`<article class="item"><main><strong>${esc(x.title)}</strong><p>${esc(x.content||"No content")}</p><small>UPDATED ${esc(x.updated_at?new Date(x.updated_at).toLocaleString():"")}</small></main><button data-delete="${esc(x.id)}" aria-label="Delete">×</button></article>`).join("")||`<p class="mute">No ${tab} yet. Add the first one above.</p>`}</div>`;
+ $("#refresh").onclick=load;$("#logout").onclick=async()=>{const{error}=await db.auth.signOut();if(error)fb(error.message)};
+ ws.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;drawWs()});
+ $("#itemform").onsubmit=async e=>{e.preventDefault();const title=$("#title").value.trim(),content=$("#content").value.trim();if(!title)return;fb("Saving…");
+  try{const r=tab==="notes"?await db.from("eng_notes").insert({user_id:user.id,title,content,tags:[]}):await db.from("tasks").insert({user_id:user.id,title,notes:content||null,due_at:$("#due").value?new Date($("#due").value).toISOString():null,priority:$("#priority").value,status:"open",completed_at:null});if(r.error)throw r.error;await load()}catch(err){fb(err.message)}};
+ ws.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=async()=>{const t=tasks.find(x=>x.id===b.dataset.toggle);if(!t)return;const done=t.status!=="completed";const{error}=await db.from("tasks").update({status:done?"completed":"open",completed_at:done?new Date().toISOString():null}).eq("id",t.id).eq("user_id",user.id);error?fb(error.message):load()});
+ ws.querySelectorAll("[data-delete]").forEach(b=>b.onclick=async()=>{const{error}=await db.from(tab==="notes"?"eng_notes":"tasks").delete().eq("id",b.dataset.delete).eq("user_id",user.id);error?fb(error.message):load()});
+}
+async function load(){
+ if(!db||!user)return;
+ try{const[n,t]=await Promise.all([db.from("eng_notes").select("id,title,content,tags,updated_at").order("updated_at",{ascending:false}),db.from("tasks").select("id,title,notes,due_at,priority,status,completed_at,created_at").order("created_at",{ascending:false})]);
+  if(n.error)throw Error("Notes: "+n.error.message);if(t.error)throw Error("Tasks: "+t.error.message);notes=n.data||[];tasks=t.data||[];drawWs();fb("Synced.")}catch(e){drawWs();fb(e.message||"Sync failed")}
+}
+$("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
+if(db){
+ db.auth.getSession().then(({data})=>{user=data.session?.user||null;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";if(user)restoreLatestConversation()});
+ db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
+}
+
+/* ---------- permissioned automation layer ----------
+   Browser mode intentionally cannot inspect/control arbitrary tabs or desktop apps.
+   Optional desktop bridge contract: window.BosleyDesktop.request({action,payload}) and
+   window.BosleyDesktop.getCapabilities(). Never pass secrets to this bridge. */
+const AUTO_KEY="bosley_automation_v1";
+const autoActions=[
+ {value:"open_url",label:"Open website URL"},{value:"search_web",label:"Search the web"},
+ {value:"create_text_file",label:"Create/download text file"},{value:"draft_message",label:"Draft message (approval required)"},
+ {value:"desktop_action",label:"Desktop bridge action (if installed)"}
+];
+function workflowStorageKey(){return user?.id?AUTO_KEY+":"+user.id:AUTO_KEY}
+function getWorkflows(){try{const a=JSON.parse(localStorage.getItem(workflowStorageKey())||"[]");return Array.isArray(a)?a:[]}catch{return []}}
+function saveWorkflows(a){try{localStorage.setItem(workflowStorageKey(),JSON.stringify(a));return true}catch(e){autoLog("error","Could not save workflows: "+e.message);return false}}
+let workflowSyncUser=null,workflowSyncPromise=null;
+async function syncWorkflows(){
+ if(!db||!user)return [];
+ if(workflowSyncUser===user.id)return getWorkflows();
+ if(workflowSyncPromise)return workflowSyncPromise;
+ const uid=user.id;
+ workflowSyncPromise=(async()=>{
+  const localKey=workflowStorageKey(),legacyKey=AUTO_KEY;
+  let local=getWorkflows();
+  if(localKey!==legacyKey){
+   try{const legacy=JSON.parse(localStorage.getItem(legacyKey)||"[]");if(Array.isArray(legacy)&&legacy.length){const names=new Set(local.map(x=>String(x.name||"").toLowerCase()));for(const wf of legacy){if(wf?.name&&!names.has(wf.name.toLowerCase())){local.push(wf);names.add(wf.name.toLowerCase())}}saveWorkflows(local)}}catch{}
+  }
+  const {data,error}=await db.from("automation_workflows").select("id,user_id,name,steps,updated_at").eq("user_id",uid).order("updated_at",{ascending:false});
+  if(error)throw error;
+  const rows=(data||[]).map(x=>({id:x.id,name:x.name,steps:Array.isArray(x.steps)?x.steps:[]}));
+  const byName=new Map(rows.map(x=>[String(x.name).toLowerCase(),x]));
+  const pending=[];
+  for(const wf of local){if(!wf?.name)continue;const key=wf.name.toLowerCase();if(!byName.has(key)){rows.push(wf);byName.set(key,wf);pending.push(wf)}}
+  saveWorkflows(rows);workflowSyncUser=uid;
+  for(const wf of pending){try{await persistWorkflow(wf)}catch(e){autoLog("error","A local workflow could not sync to cloud: "+e.message)}}
+  return rows;
+ })().finally(()=>{workflowSyncPromise=null});
+ return workflowSyncPromise;
+}
+async function persistWorkflow(wf){
+ if(!db||!user)return false;
+ const {error}=await db.from("automation_workflows").upsert({user_id:user.id,name:wf.name,steps:wf.steps,updated_at:new Date().toISOString()},{onConflict:"user_id,name"});
+ if(error)throw error;
+ workflowSyncUser=user.id;return true;
+}
+function bridge(){return window.BosleyDesktop&&typeof window.BosleyDesktop.request==="function"?window.BosleyDesktop:null}
+function autoLog(status,message){automationRuns.unshift({time:new Date().toLocaleTimeString(),status,message:String(message)});automationRuns=automationRuns.slice(0,12);const el=$("#auto-log");if(el)el.innerHTML=automationRuns.map(r=>`<article class="item"><main><strong class="${r.status==="success"?"ok":r.status==="error"?"warn":""}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`).join("")||'<p class="mute">No automation runs yet.</p>'}
+function normalizeUrl(raw){let u;try{u=new URL(raw.trim())}catch{throw Error("Enter a complete website URL, e.g. https://example.com")};if(!["http:","https:"].includes(u.protocol))throw Error("Only http and https URLs are allowed.");return u.href}
+async function getDesktopBridgeStatus(){
+ const b=bridge();
+ if(!b||typeof b.getCapabilities!=="function"||typeof b.request!=="function")return {connected:false,label:"BROWSER MODE",detail:"No native desktop bridge detected."};
+ try{
+  const caps=await b.getCapabilities();
+  if(!caps||caps.desktopBridge!==true||!Array.isArray(caps.actions))return {connected:false,label:"BRIDGE UNVERIFIED",detail:"The desktop bridge did not return a valid capability declaration."};
+  const info=await b.request({action:"get_desktop_info",payload:{}});
+  if(info?.ok!==true)return {connected:false,label:"BRIDGE UNVERIFIED",detail:"The bridge did not confirm desktop status."};
+  return {connected:true,label:"WINDOWS CONNECTED",detail:"Native bridge active on "+String(info.platform||"desktop")+" · "+String(info.display?.width||"?")+"×"+String(info.display?.height||"?"),capabilities:caps,info};
+ }catch(e){return {connected:false,label:"BRIDGE ERROR",detail:String(e?.message||e).slice(0,180)}}
+}
+async function refreshAutomationStatus(){
+ const meta=$("#autometa");
+ if(!meta)return;
+ meta.textContent="CHECKING…";
+ const status=await getDesktopBridgeStatus();
+ meta.textContent=status.label;
+ meta.title=status.detail;
+}
+async function runAction(step,approved=false){
+ const input=String(step.input||"").trim();
+ if(step.type==="open_url"){const url=normalizeUrl(input);const w=window.open(url,"_blank");if(!w)throw Error("The browser blocked the new tab. Allow pop-ups for Bosley and retry.");try{w.opener=null}catch{};return "Opened website: "+url}
+ if(step.type==="search_web"){if(!input)throw Error("Enter what to search for.");const url="https://www.google.com/search?q="+encodeURIComponent(input);const w=window.open(url,"_blank");if(!w)throw Error("The browser blocked the search tab.");try{w.opener=null}catch{};return "Opened web search for: "+input}
+ if(step.type==="create_text_file") {const name=(step.name||"bosley-note.txt").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";const blob=new Blob([input],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);return "Browser initiated download: "+name}
+ if(step.type==="draft_message"){const recipient=String(step.recipient||"").trim(),body=input;if(!body)throw Error("Message body is empty.");const details="Recipient: "+(recipient||"not specified")+"\n\n"+body;if(!approved){if(!confirm("Bosley prepared this message. Review before sending.\n\n"+details+"\n\nOK = continue to available send integration; Cancel = keep as draft."))return "Draft retained; sending cancelled by user."}
+  const b=bridge();if(!b) {const blob=new Blob([details],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="bosley-message-draft.txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);return "No messaging connector is installed. Draft downloaded; nothing was sent."}
+  if(typeof b.getCapabilities==="function"){const caps=await b.getCapabilities();if(!caps||!Array.isArray(caps.actions)||!caps.actions.includes("send_message"))throw Error("Desktop bridge does not advertise send_message capability; draft was not sent.")}
+  const result=await b.request({action:"send_message",payload:{recipient,body}});if(result?.ok!==true)throw Error(result?.error||"Messaging bridge did not confirm delivery.");return "Message connector confirmed send request."}
+ if(step.type==="desktop_action"){
+  const b=bridge();if(!b||typeof b.getCapabilities!=="function"||typeof b.request!=="function")throw Error("Native desktop bridge unavailable. Rebuild the Windows app with the latest workflow before testing desktop actions.");
+  const action=String(step.action||"").trim();
+  const caps=await b.getCapabilities();
+  if(!caps||caps.desktopBridge!==true||!Array.isArray(caps.actions)||!caps.actions.includes(action))throw Error("The installed bridge does not declare this capability.");
+  let payload={};
+  if(action==="open_external_url"){
+   const url=normalizeUrl(input);
+   if(!url.startsWith("https://"))throw Error("Desktop external links must use HTTPS.");
+   payload={url};
+  }else if(action==="get_desktop_info"){
+   payload={};
+  }else if(action==="set_widget_appearance"){
+   const face=readFaceSettings();
+   payload={size:face.widgetSize||"default",edge:face.widgetEdge||"soft",border:face.widgetBorder||"thin"};
+  }else if(action==="launch_app"){
+   const appName=String(step.app||input||"").trim().toLowerCase();
+   if(!["chrome","google chrome"].includes(appName))throw Error("Only Chrome is currently enabled for native app launching.");
+   payload={app:"chrome"};
+  }else throw Error("Only get_desktop_info, open_external_url, set_widget_appearance, and launch_app are currently supported.");
+  const result=await b.request({action,payload});
+  if(result?.ok!==true){if(result?.cancelled)return "Desktop action cancelled by user.";throw Error(result?.error||"Bridge did not confirm success.");}
+  if(action==="get_desktop_info")return "Windows desktop confirmed: "+String(result.platform||"desktop")+", app "+String(result.appVersion||"unknown")+", display "+String(result.display?.width||"?")+"×"+String(result.display?.height||"?");
+  if(action==="set_widget_appearance")return "Native widget resized and styled: "+payload.size+", "+payload.edge+" corners, "+payload.border+" outline.";
+  if(action==="launch_app")return "Windows confirmed that Chrome launch was requested successfully.";
+  return "Opened approved HTTPS website: "+payload.url;
+ }
+ throw Error("Unsupported action type: "+step.type)
+}
+async function runWorkflow(wf){if(automationBusy)throw Error("An automation workflow is already running.");automationBusy=true;const btn=$("#autorun");if(btn)btn.disabled=true;autoLog("running","Starting workflow: "+wf.name);let completed=0;
+ try{for(const step of wf.steps){autoLog("running","Step "+(completed+1)+"/"+wf.steps.length+": "+(autoActions.find(a=>a.value===step.type)?.label||step.type));const result=await runAction(step,false);completed++;autoLog("success",result)}autoLog("success","Workflow finished: "+wf.name+" ("+completed+" steps completed)")}catch(e){autoLog("error","Workflow stopped after "+completed+" completed step(s): "+(e.message||e));throw e}finally{automationBusy=false;if(btn)btn.disabled=false}}
+function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge(),workflows=getWorkflows();refreshAutomationStatus();if(user&&workflowSyncUser!==user.id&&!workflowSyncPromise){syncWorkflows().then(()=>{if(!el.hidden)drawAutomation()}).catch(e=>autoLog("error","Cloud workflow sync failed: "+e.message))}el.innerHTML=`<h3>Bosley Automation</h3><p class="mute">Browser-safe actions run here. On the rebuilt Windows app, the native bridge currently supports desktop status and confirmed HTTPS link opening only. Other native actions are not enabled.</p><p class="status">Runtime: ${b?"Desktop bridge detected":"Browser-only"} · Saved workflows: ${workflows.length}</p><form id="autoform" class="form"><input id="wf-name" required maxlength="80" placeholder="Workflow name (e.g. Morning research)"><label class="mute" for="wf-action">First step</label><select id="wf-action">${autoActions.map(a=>`<option value="${a.value}">${a.label}</option>`).join("")}</select><input id="wf-input" maxlength="4000" placeholder="URL, search query, message body, or file text" required><input id="wf-extra" maxlength="300" placeholder="Optional: recipient email/handle or filename"><label class="mute" for="wf-file">Optional: choose a local text file to read into the action (browser permission required)</label><input id="wf-file" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json"><input id="wf-bridge" maxlength="64" placeholder="Desktop action ID: get_desktop_info or open_external_url"><div class="actions"><button class="primary" type="submit">Save / add step</button><button type="button" id="autorun-one">Run this step</button></div></form><div class="fb" id="autofb"></div><h3>Saved workflows</h3><div class="items">${workflows.map((w,i)=>`<article class="item"><main><strong>${esc(w.name)}</strong><p>${w.steps.length} step(s) · ${esc(w.steps.map(s=>autoActions.find(a=>a.value===s.type)?.label||s.type).join(" → "))}</p><div class="actions"><button data-run="${i}">Run</button><button data-delete-wf="${i}">Delete</button></div></main></article>`).join("")||'<p class="mute">Save a workflow above; submit again with the same name to add more steps.</p>'}</div><h3>Execution history</h3><div id="auto-log" class="items"></div><p class="mute warn">Safety: opening websites and downloading files are browser actions. A download does not grant Bosley permission to browse your disk. Sending messages is never simulated as success.</p>`;
+ const actionInput=$("#wf-input"),extra=$("#wf-extra"),bridgeInput=$("#wf-bridge"),typeSel=$("#wf-action");$("#wf-file").onchange=async e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>2*1024*1024){$("#autofb").textContent="For safety, selected text files must be 2 MB or smaller.";e.target.value="";return}try{actionInput.value=await f.text();if(!extra.value)extra.value=f.name;$("#autofb").textContent="Loaded selected file contents into the action form. Nothing has been uploaded."}catch(err){$("#autofb").textContent="Could not read file: "+err.message}};function placeholders(){const t=typeSel.value;actionInput.placeholder=t==="open_url"?"https://example.com":t==="search_web"?"Search query":t==="create_text_file"?"Text to save in downloaded file":"Message body / input for action";extra.placeholder=t==="draft_message"?"Recipient (optional)":t==="create_text_file"?"Filename (e.g. notes.txt)":"Optional extra (ignored for this action)";bridgeInput.hidden=t!=="desktop_action"}typeSel.onchange=placeholders;placeholders();
+ $("#autoform").onsubmit=async e=>{e.preventDefault();const type=typeSel.value,step={type,input:actionInput.value.trim()};if(type==="draft_message")step.recipient=extra.value.trim();if(type==="create_text_file")step.name=extra.value.trim()||"bosley-note.txt";if(type==="desktop_action")step.action=bridgeInput.value.trim();const a=getWorkflows(),wf={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name:$("#wf-name").value.trim(),steps:[step]};if(!wf.name){$("#autofb").textContent="Enter a workflow name.";return}const existing=a.find(x=>x.name.toLowerCase()===wf.name.toLowerCase());if(existing){existing.steps.push(step);if(saveWorkflows(a)){try{if(user)await persistWorkflow(existing);autoLog("success","Added step "+existing.steps.length+" to workflow: "+existing.name+(user?" · saved to cloud":" · saved on this device"));drawAutomation()}catch(err){autoLog("error","Saved locally, but cloud save failed: "+err.message);$("#autofb").textContent="Workflow saved on this device, but cloud sync failed: "+err.message}}}else{a.unshift(wf);if(saveWorkflows(a)){try{if(user)await persistWorkflow(wf);autoLog("success","Created workflow: "+wf.name+(user?" · saved to cloud":". Saved on this device")+". Submit again with the same name to append more steps.");drawAutomation()}catch(err){autoLog("error","Saved locally, but cloud save failed: "+err.message);$("#autofb").textContent="Workflow saved on this device, but cloud sync failed: "+err.message}}}};
+ $("#autorun-one").onclick=async()=>{try{await runAction({type:typeSel.value,input:actionInput.value.trim(),recipient:extra.value.trim(),name:extra.value.trim(),action:bridgeInput.value.trim()});autoLog("success","Single action completed.")}catch(e){autoLog("error",e.message);$("#autofb").textContent=e.message}};
+ el.querySelectorAll("[data-run]").forEach(btn=>btn.onclick=async()=>{const wf=getWorkflows()[Number(btn.dataset.run)];if(!wf)return;try{await runWorkflow(wf)}catch(e){$("#autofb").textContent=e.message}});
+ el.querySelectorAll("[data-delete-wf]").forEach(btn=>btn.onclick=async()=>{const a=getWorkflows(),wf=a[Number(btn.dataset.deleteWf)];if(!wf)return;if(user){try{const {error}=await db.from("automation_workflows").delete().eq("user_id",user.id).eq("name",wf.name);if(error)throw error}catch(err){$("#autofb").textContent="Could not delete cloud workflow: "+err.message;return}}a.splice(Number(btn.dataset.deleteWf),1);saveWorkflows(a);drawAutomation()});
+ const log=$("#auto-log");if(log)log.innerHTML=automationRuns.map(r=>`<article class="item"><main><strong class="${r.status==="success"?"ok":r.status==="error"?"warn":""}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`).join("")||'<p class="mute">No automation runs yet.</p>';
+}
+$("#autotoggle").onclick=()=>{const el=$("#automation");el.hidden=!el.hidden;$("#autotoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)drawAutomation()};
+async function queueAutomationInstruction(instruction,confirmation){
+ try{
+  const sess=db?(await db.auth.getSession()).data.session:null;
+  if(!sess||!user){addMsg("bosley","Sign in under Jarvis Workspace first so I can route this request to your account's automation flow.");return}
+  // Use the same authenticated remote-action gateway as Bosley Remote.
+  // The gateway scopes the queued request to the current signed-in user.
+  const {data,error}=await db.functions.invoke("remote-action",{body:{type:"automation",instruction}});
+  if(error)throw error;
+  if(!data||data.ok!==true)throw Error(data?.error||"The remote automation gateway did not accept the request.");
+  addMsg("bosley",confirmation);
+  autoLog("running","Accepted by the shared remote automation gateway (execution not yet confirmed): "+instruction);
+ }catch(error){addMsg("bosley","I could not queue that automation: "+String(error?.message||error));autoLog("error","Automation queue failed: "+String(error?.message||error))}
+}
+function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;const launch=t.match(/^(?:bosley[, ]+)?open\s+(?:google\s+)?chrome[.!]?$/i);if(launch){addMsg("sys","Sending the Chrome launch request to the installed desktop bridge…");runAction({type:"desktop_action",action:"launch_app",input:"chrome"}).then(result=>{addMsg("bosley",result);autoLog("success",result)}).catch(error=>{const message="I couldn't open Chrome: "+String(error?.message||error);addMsg("bosley",message);autoLog("error",message)});return true}const playback=t.match(/^(?:bosley[, ]+)?(play|pause|resume|continue|stop|skip|next song|next track|previous song|previous track|restart song|restart track)(?:\s+(.+?))?(?:\s+on\s+(spotify|youtube))?[.!]?$/i);if(playback){const verb=playback[1].toLowerCase(),detail=(playback[2]||"").trim(),service=(playback[3]||"spotify").toLowerCase();let instruction;if(verb==="play"){if(!detail){addMsg("bosley","Tell me a song or artist to play, for example “play Billie Jean on Spotify”.");return true}if(/^(another|another song|another track|next|the next song|next track|the next track)$/i.test(detail)){instruction="play next song on "+service}else{instruction="play "+detail+" on "+service}}else if(verb==="next song"||verb==="next track"||verb==="skip"){instruction="play next song on "+service}else if(verb==="previous song"||verb==="previous track"){instruction="play previous song on "+service}else if(verb==="restart song"||verb==="restart track"){instruction="restart current song on "+service}else if(verb==="continue"||verb==="resume"){instruction="resume music on "+service}else{instruction=verb+" music on "+service}queueAutomationInstruction(instruction,"Request queued: "+instruction+". I’ll confirm playback only when the connected automation reports success.");return true}const q=t.toLowerCase();const face=readFaceSettings();let changed=false;
+ const mentionsWidget=/\b(widgets?|launcher|floating\s+window|rectangle|corners|edges)\b/.test(q);
+ if(mentionsWidget&&/\b(sharp|sharper|square|less\s+round)\b/.test(q)){face.widgetEdge="sharp";changed=true}
+ else if(mentionsWidget&&/\b(round|rounded|soft|smoother)\b/.test(q)){face.widgetEdge="soft";changed=true}
+ if(mentionsWidget&&/\b(wider|wide|larger|bigger|increase\s+(?:the\s+)?width|more\s+wide)\b/.test(q)){face.widgetSize="wide";changed=true}
+ else if(mentionsWidget&&/\b(smaller|compact|narrower|reduce\s+(?:the\s+)?width)\b/.test(q)){face.widgetSize="compact";changed=true}
+ if(/\b(thicker|bold)\b.*\b(outline|border)\b|\b(outline|border)\b.*\b(thicker|bold)\b/.test(q)){face.widgetBorder="bold";changed=true}
+ else if(/\b(thinner|fine)\b.*\b(outline|border)\b|\b(outline|border)\b.*\b(thinner|fine)\b/.test(q)){face.widgetBorder="thin";changed=true}
+ if(/\b(eyes|eye)\b.*\b(bigger|larger)\b/.test(q)){face.size="large";changed=true}
+ else if(/\b(eyes|eye)\b.*\b(smaller|compact)\b/.test(q)){face.size="compact";changed=true}
+ if(changed){try{localStorage.setItem(FACE_KEY,JSON.stringify(face));applyFaceSettings(face);const parts=[];if(mentionsWidget&&face.widgetSize==="wide")parts.push("wider widget");if(mentionsWidget&&face.widgetSize==="compact")parts.push("compact widget");if(mentionsWidget&&face.widgetEdge==="sharp")parts.push("sharper rectangle corners");if(mentionsWidget&&face.widgetEdge==="soft")parts.push("rounded rectangle corners");if(face.widgetBorder==="bold")parts.push("thicker outline");if(face.widgetBorder==="thin")parts.push("fine outline");if(face.size==="large")parts.push("larger eyes");if(face.size==="compact")parts.push("smaller eyes");addMsg("bosley","Done — set "+(parts.join(", ")||"your appearance")+" and saved it on this device. Open Appearance to fine-tune it.");return true}catch{addMsg("bosley","I couldn't save the appearance change in this browser.");return true}}
+ if((m=t.match(/^(?:bosley,?\s+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(autoLog.bind(null,"success")).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?search(?: the web)? for\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>autoLog("success",r)).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
+
+/* ---------- keyboard ---------- */
+addEventListener("keydown",e=>{
+ if((e.ctrlKey||e.altKey)&&e.shiftKey&&e.key.toLowerCase()==="b"){e.preventDefault();toggle()}
+ if(e.key==="Escape"){if(rec)rec.stop();else if(S.speaking)stopSpeak();else if(!$("#panel").hidden)toggle(false)}
+});
+eyes();
+})();
+</script></body></html>

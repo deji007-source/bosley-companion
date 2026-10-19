@@ -272,12 +272,31 @@ jobs:
             });
 
             panel.webContents.setWindowOpenHandler(({ url }) => {
-              if (
-                url.startsWith('https://') ||
-                url.startsWith('http://')
-              ) {
-                shell.openExternal(url);
+              let target;
+              try { target = new URL(url); } catch {
+                return { action: 'deny' };
               }
+
+              if (target.protocol !== 'https:') {
+                return { action: 'deny' };
+              }
+
+              // Do not let arbitrary page content open links silently.
+              dialog.showMessageBox(panel, {
+                type: 'question',
+                buttons: ['Cancel', 'Open link'],
+                defaultId: 0,
+                cancelId: 0,
+                title: 'Bosley Companion',
+                message: 'Allow this page to open an external link?',
+                detail: target.href
+              }).then(choice => {
+                if (choice.response === 1) {
+                  return shell.openExternal(target.href);
+                }
+              }).catch(error => {
+                console.error('External link request failed:', error.message);
+              });
 
               return { action: 'deny' };
             });
@@ -544,7 +563,9 @@ jobs:
           grep -Fq "sandbox: true" desktop/main.cjs
           grep -Fq "getCapabilities" desktop/preload.cjs
           grep -Fq "contextBridge.exposeInMainWorld('BosleyDesktop'" desktop/preload.cjs
-          echo "Desktop bridge source checks passed."
+          node --check desktop/main.cjs
+          node --check desktop/preload.cjs
+          echo "Desktop bridge source and JavaScript syntax checks passed."
 
       - name: Install dependencies and build installer
         shell: bash

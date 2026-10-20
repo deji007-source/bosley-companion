@@ -18,7 +18,7 @@ const AUTOMATION_PATTERNS = [
 function isAutomationCommand(t) { return AUTOMATION_PATTERNS.some((p) => p.test(t)); }
 
 async function notifyLaptopListener(userId, instruction) {
-  const channel = sb.channel(\`bosley-laptop-\${userId}\`);
+  const channel = sb.channel("bosley-laptop-" + userId);
   try {
     const status = await channel.send({ type: "broadcast", event: "automation", payload: { instruction } });
     return status === "ok";

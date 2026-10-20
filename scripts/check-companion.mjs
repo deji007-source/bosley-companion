@@ -52,6 +52,8 @@ const requiredContracts = [
   ["Panel hides the web launcher", /body\.panel-open:not\(\.desktop-panel\) \.stage\{display:none!important\}/],
   ["Native launcher hidden in panel window", /html\.widget-mode \.stage\{display:none!important\}/],
   ["Top-bezel web panel", /\.panel\{position:fixed;left:50%;top:0/],
+  ["Remote automation distinguishes queued from delivered", /DELIVERED TO LISTENER:[\s\S]*QUEUED — DELIVERY UNCONFIRMED:[\s\S]*autoLog\(delivered\?"delivered":"queued"/],
+  ["Remote status never implies execution confirmation", /DELIVERED TO LISTENER:[^"]*Execution is not yet confirmed/],
 ];
 
 for (const [label, pattern] of requiredContracts) {

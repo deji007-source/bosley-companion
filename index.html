@@ -228,7 +228,7 @@ function initFaceSettings(){
  $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
 $("#voiceprofile").value=voiceProfile;
 $("#voiceprofile").addEventListener("change",()=>{voiceProfile=$("#voiceprofile").value||"jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};if("speechSynthesis"in window)speechSynthesis.cancel();const labels={jarvis:"Jarvis-style voice selected. Bosley will use the deepest suitable voice available on this device.",natural:"Natural assistant voice selected.",system:"System default voice selected."};$("#facefeedback").textContent=labels[voiceProfile]||labels.jarvis;});
- $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#facefeedback").textContent="Appearance reset."};
+ $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#voiceprofile").value="jarvis";voiceProfile="jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};$("#facefeedback").textContent="Appearance and voice reset."};
 }
 $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
 
@@ -338,7 +338,7 @@ $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpea
 /* ---------- voice ---------- */
 function speak(t){
  if(!speechOn||!("speechSynthesis"in window))return;speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.9:1;u.pitch=voiceProfile==="jarvis"?0.74:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
+ const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.lang="en-GB";u.rate=voiceProfile==="jarvis"?0.88:1;u.pitch=voiceProfile==="jarvis"?0.72:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
  u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;eyes()};u.onend=end;u.onerror=end;speechSynthesis.speak(u);
 }
 function stopSpeak(){if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}

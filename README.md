@@ -15,11 +15,12 @@ The currently maintained companion experience is the root `index.html`, which co
 - Supabase authentication and a chat Edge Function that streams AI responses.
 - Per-user conversation/message persistence in Supabase.
 - Per-user workflow storage using `automation_workflows`.
+- Saved workflow command dispatch: a chat message such as `Open Spotify`, `run Open Spotify`, or `run my Morning research automation` is matched against the signed-in user’s saved workflow names before the AI-chat fallback. Matching is case-insensitive and ignores punctuation. A matched workflow runs its configured steps in order and reports completion/failure from the local workflow runner.
 - Browser-safe workflow actions such as opening URLs, web search, creating a text file, and preparing a message draft.
 - Voice-related Edge Functions and browser speech features, subject to browser/device support.
 - Remote action queue and an OS-agent polling endpoint.
 
-Some of these integrations have been implemented in code but still require end-to-end testing against the deployed app. Do not assume a feature is operational merely because its function or UI exists.
+Saved-workflow command dispatch and the new Windows installer require end-to-end testing on the deployed app. A workflow that depends on browser pop-ups can still fail if the browser blocks them. A successful workflow run only confirms the individual actions that the runner itself confirms; queued remote/laptop actions are not treated as completed until the listener or agent confirms execution. Do not assume a feature is operational merely because its function or UI exists.
 
 ## Important limitations
 

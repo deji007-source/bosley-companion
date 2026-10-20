@@ -32,6 +32,10 @@ const requiredContracts = [
   ["Voice profile tuning", /u\.pitch=voiceProfile==="jarvis"\?0\.74:1/],
   ["Panel hides the web launcher", /body\.panel-open:not\(\.desktop-panel\) \.stage\{display:none!important\}/],
   ["Native launcher hidden in panel window", /html\.widget-mode \.stage\{display:none!important\}/],
+  ["Sharper collapsed widget corners", /\.launch\{[^}]*border-radius:2px/],
+  ["Larger signature widget eyes", /\.launch \.eye\{width:27px;height:39px\}/],
+  ["Panel utilities use one-at-a-time accordion", /function openUtilityPanel\(which\)/],
+  ["Panel stays attached to top bezel", /\.panel\{position:fixed;left:50%;top:0/],
   ["Top-bezel web panel", /\.panel\{position:fixed;left:50%;top:0/],
 ];
 

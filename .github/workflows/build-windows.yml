@@ -85,11 +85,11 @@ jobs:
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;
           let panel = null;
-          let widgetAppearance = { size: 'wide', edge: 'sharp', border: 'thin' };
+          let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
           const WIDGET_SIZES = {
-            compact: { width: 120, height: 76 },
-            default: { width: 140, height: 88 },
-            wide: { width: 156, height: 96 }
+            compact: { width: 112, height: 72 },
+            default: { width: 128, height: 80 },
+            wide: { width: 144, height: 88 }
           };
 
           function escapeHtml(value) {
@@ -111,7 +111,7 @@ jobs:
               const bubbleHeight = dimensions.height;
 
               bubble.setBounds({
-                x: area.x + area.width - bubbleWidth,
+                x: area.x + Math.round((area.width - bubbleWidth) / 2),
                 y: area.y,
                 width: bubbleWidth,
                 height: bubbleHeight
@@ -122,12 +122,9 @@ jobs:
 
             if (panel && !panel.isDestroyed() && panel.isVisible()) {
               const width = Math.min(440, area.width - 24);
-              const height = Math.max(320, Math.min(560, area.height - 110));
+              const height = Math.max(320, Math.min(680, area.height));
               const x = area.x + Math.round((area.width - width) / 2);
-              const y = Math.min(
-                area.y + 98,
-                area.y + area.height - height
-              );
+              const y = area.y;
 
               panel.setBounds({ x, y, width, height });
             }
@@ -329,8 +326,17 @@ jobs:
               }
             });
 
+            panel.on('hide', () => {
+              if (!app.isQuitting && bubble && !bubble.isDestroyed()) {
+                positionWindows();
+                bubble.showInactive();
+                bubble.setAlwaysOnTop(true, 'screen-saver');
+              }
+            });
+
             panel.on('closed', () => {
               panel = null;
+              if (!app.isQuitting && bubble && !bubble.isDestroyed()) bubble.showInactive();
             });
           }
 
@@ -342,10 +348,11 @@ jobs:
             if (panel.isVisible()) {
               panel.hide();
             } else {
+              if (bubble && !bubble.isDestroyed()) bubble.hide();
               positionWindows();
               panel.show();
               panel.focus();
-              bubble?.setAlwaysOnTop(true, 'screen-saver');
+              panel.setAlwaysOnTop(true, 'screen-saver');
             }
           }
 
@@ -543,8 +550,8 @@ jobs:
               }
 
               button {
-                width: 140px;
-                height: 88px;
+                width: 128px;
+                height: 80px;
                 padding: 5px;
                 border: 1px solid #fff;
                 border-radius: 4px;
@@ -571,8 +578,8 @@ jobs:
               }
 
               svg {
-                width: 124px;
-                height: 72px;
+                width: 128px;
+                height: 80px;
                 display: block;
               }
             </style>
@@ -595,17 +602,17 @@ jobs:
                 <path d="M8 34 Q19 27 40 27 L68 27 Q89 27 100 34 Q79 40 54 40 Q29 40 8 34 Z"
                   fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
                 <path d="M39 30 Q54 32 69 30" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
-                <rect x="37" y="32" width="10" height="24" rx="5" fill="#fff"/>
-                <rect x="61" y="32" width="10" height="24" rx="5" fill="#fff"/>
+                <rect x="35" y="29" width="13" height="30" rx="6.5" fill="#fff"/>
+                <rect x="60" y="29" width="13" height="30" rx="6.5" fill="#fff"/>
               </svg>
             </button>
 
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 104, height: 68 },
+                compact: { width: 112, height: 72 },
                 default: { width: 128, height: 80 },
-                wide: { width: 140, height: 88 }
+                wide: { width: 144, height: 88 }
               };
               function applyAppearance(value) {
                 if (!value) return;

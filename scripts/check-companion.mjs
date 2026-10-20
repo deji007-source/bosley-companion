@@ -24,6 +24,8 @@ const requiredContracts = [
   ["Listener delivery feedback", /data\.listenerNotified===true/],
   ["Music next-track route", /play next song on /],
   ["Automation failure feedback", /Automation queue failed:/],
+  ["Bosley persona and dry humour instructions", /lightly witty British-style butler tone/],
+  ["Jarvis voice uses measured en-GB speech", /u\.lang="en-GB".*u\.rate=voiceProfile==="jarvis"\?0\.88/s],
   ["Native bridge opens website shortcuts", /action:"open_external_url",input:url/],
   ["Automation confirmations speak aloud", /addMsg\("bosley",confirmation\);speak\(confirmation\)/],
   ["Web app shortcuts", /youtube:"https:\/\/www\.youtube\.com\/"/],

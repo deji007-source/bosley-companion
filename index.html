@@ -105,6 +105,35 @@ html.widget-mode .panel .top{cursor:default}
 html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 @media(max-width:520px){html.widget-mode .panel{left:0;transform:none;width:100vw;height:100dvh;max-height:100dvh}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* Responsive layout guardrails: preserve the top bezel anchor and keep the composer reachable. */
+.panel{box-sizing:border-box}
+.panel>*{min-width:0}
+.chat,.workspace,.automation,.utility-body{min-width:0;overflow-wrap:anywhere}
+.chat{overscroll-behavior:contain}
+.composer{flex-shrink:0}
+.composer input{min-width:0;width:100%}
+@media(max-width:520px){
+ .panel{width:calc(100vw - 8px)!important;height:min(var(--panel-height),100dvh)!important;min-height:min(320px,100dvh);border-radius:0 0 12px 12px}
+ .panel.maximized{width:100vw!important;height:100dvh!important;max-height:100dvh}
+ .top{padding:9px 10px;gap:8px}
+ .toggle{margin-left:8px;margin-right:8px;padding:8px}
+ .workspace,.automation{margin-left:8px;margin-right:8px;padding:9px;max-height:24dvh}
+ .chat{padding:10px 11px}
+ .composer{margin-left:8px;margin-right:8px;gap:5px}
+ .quick-actions{max-width:100%;overflow-x:auto}
+}
+@media(max-height:520px){
+ .panel{height:100dvh!important;min-height:0;max-height:100dvh}
+ .top{padding-top:6px;padding-bottom:6px}
+ .workspace,.automation{max-height:20dvh}
+ .chat{min-height:48px}
+}
+@media(prefers-reduced-motion:reduce){
+ .panel{animation:none!important;transition:none!important}
+ *,*::before,*::after{scroll-behavior:auto!important}
+}
+
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>

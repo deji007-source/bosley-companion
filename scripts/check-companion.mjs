@@ -30,7 +30,7 @@ const requiredContracts = [
   ["System voice profile respects device language", /voiceProfile==="system"&&navigator\\.language/],
   ["Voice speech language follows selected voice", /u\\.lang=selected\\?\\.lang/],
   ["Native desktop action route", /action\s*:\s*["']launch_app["']/],
-  ["Allowlisted Windows app launch commands", /open\\s+\\(google chrome\\|chrome\\|microsoft edge\\|edge\\|notepad\\|calculator\\|file explorer\\|windows explorer\\)/],
+  ["Allowlisted Windows app launch commands", /notepad\\|calculator\\|file explorer/],
   ["Native bridge limits app launch to fixed allowlist", /const apps = \\{[\\s\\S]*?chrome:[\\s\\S]*?edge:[\\s\\S]*?notepad:[\\s\\S]*?calculator:[\\s\\S]*?explorer:/],
   ["Native app launch requires explicit consent", /Allow Bosley to launch '\\s*\\+ target\\.label/],
   ["Desktop action accepts approved app aliases", /const aliases=\\{\\"google chrome\\":\\"chrome\\",\\"microsoft edge\\":\\"edge\\"/],

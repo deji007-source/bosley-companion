@@ -82,6 +82,7 @@ html[data-face-preset=alert] .launch .eyes{gap:12px}
 .fb{font-size:10px;line-height:1.5;margin:7px 0;color:#ddd}
 .items{display:grid;gap:7px;margin-top:10px}.item{display:flex;gap:8px;padding:9px;border:1px solid #222;border-radius:8px}.item main{flex:1;min-width:0}.item strong{font-size:11px;overflow-wrap:anywhere}.item p{margin:5px 0;color:#aaa;font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere}.item small{color:var(--mute);font:8px 'DM Mono',monospace}.item button{border:1px solid #333;border-radius:6px;background:none;color:#aaa}.item.done strong{text-decoration:line-through;color:#777}
 .chat{flex:1 1 0;min-height:72px;overflow:auto;padding:14px 16px;scrollbar-width:thin;scrollbar-color:#333 #000}
+.quick-actions{display:flex;flex:0 0 auto;gap:6px;padding:8px 12px 0;overflow-x:auto;scrollbar-width:none}.quick-actions::-webkit-scrollbar{display:none}.quick-actions button{flex:0 0 auto;border:1px solid #292929;border-radius:7px;background:#080808;color:#ddd;padding:8px 10px;font-size:10px;white-space:nowrap}.quick-actions button:hover{border-color:#fff;color:#fff}.quick-actions button.primary{background:#f3f3f3;color:#080808;border-color:#f3f3f3;font-weight:700}.quick-actions button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .msg{margin-bottom:16px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}.msg b{display:block;font:9px 'DM Mono',monospace;margin-bottom:4px}.msg p{margin:0;color:#d8d8d8;white-space:pre-wrap}
 .msg.you{text-align:right}.msg.you p{display:inline-block;text-align:left;padding:9px 12px;border:1px solid #303030;border-radius:12px 4px 12px 12px;background:#080808}
 .msg.sys p{color:var(--mute);font-style:italic}.msg p.err{padding:8px 10px;border:1px dashed #666;border-radius:10px;color:#eee}
@@ -142,6 +143,7 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
  </section>
  <button class="toggle" id="autotoggle" aria-expanded="false">⚙ <b>Automation</b><span id="autometa">BROWSER MODE</span></button>
  <section class="automation" id="automation" hidden></section>
+ <nav class="quick-actions" aria-label="Bosley quick actions"><button type="button" class="primary" data-prompt="morning">☀ Morning Mode</button><button type="button" data-prompt="plan">Plan my day</button><button type="button" data-prompt="focus">Focus session</button><button type="button" data-prompt="joke">A little wit</button></nav>
  <section class="chat" id="chat" role="log" aria-live="off"></section>
  <form class="composer" id="form"><button type="button" id="mic" aria-label="Start voice input">🎙</button><input id="in" placeholder="Message Bosley…" autocomplete="off" maxlength="2000" aria-label="Message"><button id="send" aria-label="Send">➤</button></form>
  <footer class="bottom"><span>CTRL/ALT+SHIFT+B</span><span><button id="stop" hidden>■ STOP</button><button id="voice">VOICE ON</button><button id="new">NEW CHAT</button></span></footer>
@@ -330,6 +332,8 @@ async function send(text){
  }finally{clearTimeout(to);eyes()}
 }
 $("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim();i.value="";send(t)};
+const quickPrompts={morning:"Good morning, Bosley. Start Morning Mode: give me a concise, practical briefing for this morning; help me choose my top three priorities, ask what appointments or deadlines I have if you need them, and suggest a sensible first task. Be witty but brief. Do not invent calendar events, weather, news, or completed actions.",plan:"Help me plan today. Ask me for my tasks and deadlines, then organise them into a realistic priority list with breaks.",focus:"Start a focus session with me: ask what I want to finish, help define a clear outcome, and suggest a focused 25-minute work block. Do not claim a timer is running unless one is actually available.",joke:"Bosley, give me one clever, dry, good-natured joke, then ask what I would like to tackle."};
+document.querySelectorAll("[data-prompt]").forEach(button=>button.addEventListener("click",()=>{const prompt=quickPrompts[button.dataset.prompt];if(prompt)send(prompt)}));
 $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpeak();addMsg("bosley","New conversation. What's up?")};
 
 /* ---------- voice ---------- */

@@ -21,18 +21,19 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 @keyframes talk{50%{transform:scale(var(--es),.88)}}
 
 /* ---- collapsed launcher: hat brim, eyes peeking out ---- */
-.stage{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:2147483000}
-.launch{position:relative;display:block;width:108px;height:64px;padding:0;border:1px solid #d8d8d8;border-radius:20px;background:#000;overflow:hidden;transition:border-color .2s}
+.stage{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:2147483000}
+.launch{position:relative;display:block;width:120px;height:72px;padding:0;border:1px solid #d8d8d8;border-radius:2px;background:#000;overflow:hidden;transition:border-color .2s}
 .launch:hover{border-color:#fff}
+body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .launch[data-state=listening],.launch[data-state=thinking]{border-color:#fff}
 .launch[data-state=error]{border-style:dashed;border-color:#8a8a8a}
 .hat{position:absolute;inset:0;width:100%;height:100%}
 .launch .eyes{position:absolute;left:0;right:0;top:33px}
 
 /* ---- panel ---- */
-.panel{position:fixed;left:50%;top:92px;transform:translateX(-50%);width:min(410px,calc(100vw - 24px));height:min(510px,calc(100dvh - 106px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
+.panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(410px,calc(100vw - 24px));height:min(510px,calc(100dvh - 8px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
 @keyframes in{from{opacity:0;transform:translate(-50%,-6px) scale(.97)}}
-.panel.maximized{width:min(640px,calc(100vw - 24px));height:calc(100dvh - 106px);min-height:0;max-height:calc(100dvh - 106px)}
+.panel.maximized{width:min(640px,calc(100vw - 24px));height:100dvh;min-height:0;max-height:100dvh}
 @media(max-width:520px){.panel.maximized{height:calc(100dvh - 96px);max-height:calc(100dvh - 96px)}}
 .top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #ffffff12}
 .brand{flex:1}.brand strong{font-size:12px;letter-spacing:.14em}.brand small{display:block;margin-top:4px;color:var(--mute);font:10px 'DM Mono',monospace}
@@ -53,8 +54,8 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 }.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}
 .workspace h3{margin:0 0 5px;font-size:12px}.mute{color:var(--mute);font-size:10px;line-height:1.6}
 html[data-face-size=compact] .eye{width:15px;height:24px}
-html[data-face-size=default] .eye{width:19px;height:29px}
-html[data-face-size=large] .eye{width:23px;height:34px}
+html[data-face-size=default] .eye{width:25px;height:36px}
+html[data-face-size=large] .eye{width:29px;height:42px}
 html[data-hat-style=soft] .hat path{stroke:#aaa}
 html[data-hat-style=hidden] .hat{display:none}
 html[data-eye-shape=soft-square] .launch .eye{border-radius:5px}
@@ -63,13 +64,13 @@ html[data-eye-gap=normal] .launch .eyes{gap:15px}
 html[data-eye-gap=wide] .launch .eyes{gap:21px}
 html[data-widget-edge=soft] .launch{border-radius:24px}
 html[data-widget-edge=balanced] .launch{border-radius:18px}
-html[data-widget-edge=sharp] .launch{border-radius:10px}
+html[data-widget-edge=sharp] .launch{border-radius:2px}
 html[data-widget-border=thin] .launch{border-width:1px}
 html[data-widget-border=medium] .launch{border-width:2px}
 html[data-widget-border=bold] .launch{border-width:3px}
-html[data-widget-size=compact] .launch{width:92px;height:56px}
-html[data-widget-size=default] .launch{width:108px;height:64px}
-html[data-widget-size=wide] .launch{width:128px;height:72px}
+html[data-widget-size=compact] .launch{width:108px;height:68px}
+html[data-widget-size=default] .launch{width:120px;height:72px}
+html[data-widget-size=wide] .launch{width:136px;height:80px}
 html[data-face-preset=calm] .launch .eyes{gap:18px}
 html[data-face-preset=alert] .launch .eye{height:34px}
 html[data-face-preset=alert] .launch .eyes{gap:12px}
@@ -89,19 +90,19 @@ html[data-face-preset=alert] .launch .eyes{gap:12px}
 .composer button{border:0;border-radius:8px;padding:8px;background:#f5f5f5;color:#000}
 .bottom{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;color:#666;font:9px 'DM Mono',monospace}
 .bottom button{border:0;background:none;color:#aaa;font:9px 'DM Mono',monospace;padding:4px}
-@media(max-width:520px){.stage{top:10px}.panel{top:84px;height:min(690px,calc(100dvh - 96px))}}
+@media(max-width:520px){.stage{top:0}.panel{top:0;height:100dvh;max-height:100dvh;border-radius:0}}
 /* ---- native-widget mode (Electron on Windows / Android overlay WebView) ---- */
 html.widget-mode,html.widget-mode body{width:100%;height:100%;min-height:100%;overflow:hidden;background:transparent}
 html.widget-mode #root{position:relative;width:100%;height:100%;background:transparent;pointer-events:none}
-html.widget-mode .stage{left:auto;right:20px;top:auto;bottom:20px;transform:none;pointer-events:auto;touch-action:none}
-html.widget-mode .launch{box-shadow:0 8px 28px #0008;cursor:grab;touch-action:none}
+html.widget-mode .stage{display:none!important}
+html.widget-mode .launch{box-shadow:none;cursor:grab;touch-action:none}
 html.widget-mode .launch:active{cursor:grabbing}
-html.widget-mode .panel{left:auto;right:16px;top:auto;bottom:92px;transform:none;width:min(410px,calc(100vw - 24px));height:min(680px,calc(100dvh - 108px));min-height:300px;pointer-events:auto;animation:widget-in .18s ease-out}
+html.widget-mode .panel{left:50%;right:auto;top:0;bottom:auto;transform:translateX(-50%);width:100%;height:100dvh;max-height:100dvh;min-height:0;border-radius:0;box-shadow:none;pointer-events:auto;animation:widget-in .18s ease-out}
 @keyframes widget-in{from{opacity:0;transform:translateY(7px) scale(.985)}}
 html.widget-mode .panel[hidden]{display:none!important}
 html.widget-mode .panel .top{cursor:default}
 html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
-@media(max-width:520px){html.widget-mode .panel{right:8px;bottom:88px;width:calc(100vw - 16px);height:calc(100dvh - 100px);max-height:690px}}
+@media(max-width:520px){html.widget-mode .panel{left:0;transform:none;width:100vw;height:100dvh;max-height:100dvh}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style></head>
 <body><div id="root">
@@ -200,7 +201,7 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 
 /* ---------- customizable face ---------- */
 const FACE_KEY="bosley_face_settings_v1";
-const FACE_DEFAULTS={preset:"incognito",size:"default",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"soft",widgetBorder:"thin",widgetSize:"default"};
+const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default"};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function applyFaceSettings(v){
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
@@ -237,7 +238,7 @@ function notifyWidgetSize(open){
  try{if(window.BosleyAndroidWidget&&typeof window.BosleyAndroidWidget.resize==="function")window.BosleyAndroidWidget.resize(!!open); }catch(e){console.warn("Bosley Android resize failed",e)}
 }
 function toggle(open){
- const p=$("#panel");open=open??p.hidden;p.hidden=!open;
+ const p=$("#panel");open=open??p.hidden;p.hidden=!open;document.body.classList.toggle("panel-open",!!open);
  $("#launch").setAttribute("aria-expanded",open);$("#launch").setAttribute("aria-label","Bosley Companion: "+(open?"close":"open"));
  notifyWidgetSize(open);
  if(open){setTimeout(()=>$("#in").focus(),80)}
@@ -334,7 +335,7 @@ $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpea
 /* ---------- voice ---------- */
 function speak(t){
  if(!speechOn||!("speechSynthesis"in window))return;speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.94:1;u.pitch=voiceProfile==="jarvis"?0.82:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
+ const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.9:1;u.pitch=voiceProfile==="jarvis"?0.74:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
  u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;eyes()};u.onend=end;u.onerror=end;speechSynthesis.speak(u);
 }
 function stopSpeak(){if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}
@@ -507,7 +508,9 @@ async function queueAutomationInstruction(instruction,confirmation){
   if(error)throw error;
   if(!data||data.ok!==true)throw Error(data?.error||"The remote automation gateway did not accept the request.");
   addMsg("bosley",confirmation);
-  autoLog("running","Accepted by the shared remote automation gateway (execution not yet confirmed): "+instruction);
+  const delivery = data.listenerNotified===true ? "The laptop listener was notified; execution is not yet confirmed." : "The request was queued, but the laptop listener was not confirmed online.";
+  autoLog(data.listenerNotified===true?"running":"warning",delivery+" "+instruction);
+  if(data.listenerNotified!==true)addMsg("bosley","I queued the request, but I could not confirm delivery to the laptop listener. Check that it is connected before retrying.");
  }catch(error){addMsg("bosley","I could not queue that automation: "+String(error?.message||error));autoLog("error","Automation queue failed: "+String(error?.message||error))}
 }
 function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;const launch=t.match(/^(?:bosley[, ]+)?open\s+(?:google\s+)?chrome[.!]?$/i);if(launch){addMsg("sys","Sending the Chrome launch request to the installed desktop bridge…");runAction({type:"desktop_action",action:"launch_app",input:"chrome"}).then(result=>{addMsg("bosley",result);autoLog("success",result)}).catch(error=>{const message="I couldn't open Chrome: "+String(error?.message||error);addMsg("bosley",message);autoLog("error",message)});return true}const playback=t.match(/^(?:bosley[, ]+)?(play|pause|resume|continue|stop|skip|next song|next track|previous song|previous track|restart song|restart track)(?:\s+(.+?))?(?:\s+on\s+(spotify|youtube))?[.!]?$/i);if(playback){const verb=playback[1].toLowerCase(),detail=(playback[2]||"").trim(),service=(playback[3]||"spotify").toLowerCase();let instruction;if(verb==="play"){if(!detail){addMsg("bosley","Tell me a song or artist to play, for example “play Billie Jean on Spotify”.");return true}if(/^(another|another song|another track|next|the next song|next track|the next track)$/i.test(detail)){instruction="play next song on "+service}else{instruction="play "+detail+" on "+service}}else if(verb==="next song"||verb==="next track"||verb==="skip"){instruction="play next song on "+service}else if(verb==="previous song"||verb==="previous track"){instruction="play previous song on "+service}else if(verb==="restart song"||verb==="restart track"){instruction="restart current song on "+service}else if(verb==="continue"||verb==="resume"){instruction="resume music on "+service}else{instruction=verb+" music on "+service}queueAutomationInstruction(instruction,"Request queued: "+instruction+". I’ll confirm playback only when the connected automation reports success.");return true}const q=t.toLowerCase();const face=readFaceSettings();let changed=false;
@@ -521,7 +524,7 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;con
  if(/\b(eyes|eye)\b.*\b(bigger|larger)\b/.test(q)){face.size="large";changed=true}
  else if(/\b(eyes|eye)\b.*\b(smaller|compact)\b/.test(q)){face.size="compact";changed=true}
  if(changed){try{localStorage.setItem(FACE_KEY,JSON.stringify(face));applyFaceSettings(face);const parts=[];if(mentionsWidget&&face.widgetSize==="wide")parts.push("wider widget");if(mentionsWidget&&face.widgetSize==="compact")parts.push("compact widget");if(mentionsWidget&&face.widgetEdge==="sharp")parts.push("sharper rectangle corners");if(mentionsWidget&&face.widgetEdge==="soft")parts.push("rounded rectangle corners");if(face.widgetBorder==="bold")parts.push("thicker outline");if(face.widgetBorder==="thin")parts.push("fine outline");if(face.size==="large")parts.push("larger eyes");if(face.size==="compact")parts.push("smaller eyes");addMsg("bosley","Done — set "+(parts.join(", ")||"your appearance")+" and saved it on this device. Open Appearance to fine-tune it.");return true}catch{addMsg("bosley","I couldn't save the appearance change in this browser.");return true}}
- if((m=t.match(/^(?:bosley,?\s+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(autoLog.bind(null,"success")).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?search(?: the web)? for\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>autoLog("success",r)).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
+ if((m=t.match(/^(?:bosley[, ]+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","I couldn’t open that link: "+e.message);autoLog("error",e.message)});return true}const sites={youtube:"https://www.youtube.com/",google:"https://www.google.com/",gmail:"https://mail.google.com/",spotify:"https://open.spotify.com/",github:"https://github.com/",whatsapp:"https://web.whatsapp.com/",telegram:"https://web.telegram.org/"};if((m=t.match(/^(?:bosley[, ]+)?open\s+(youtube|google|gmail|spotify|github|whatsapp|telegram)[.!]?$/i))){const url=sites[m[1].toLowerCase()];runAction({type:"open_url",input:url}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","I couldn’t open "+m[1]+": "+e.message);autoLog("error",e.message)});return true}if((m=t.match(/^(?:bosley[, ]+)?(?:search(?: the web)? for|look up|find online)\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","Search failed: "+e.message);autoLog("error",e.message)});return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
 
 /* ---------- keyboard ---------- */
 addEventListener("keydown",e=>{

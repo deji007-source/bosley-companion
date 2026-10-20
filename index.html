@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>Bosley Companion</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
-:root{font-family:Manrope,system-ui,sans-serif;color:#f5f5f5;background:#000;--mute:#8a8a8a;--line:#262626;--px:0;--py:0;--es:1}
+:root{font-family:Manrope,system-ui,sans-serif;color:#f5f5f5;background:#000;--mute:#8a8a8a;--line:#262626;--px:0;--py:0;--es:1;--text-scale:1}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#000}
 button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
 :focus-visible{outline:2px solid #fff;outline-offset:2px}
@@ -38,9 +38,9 @@ body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #ffffff12}
 .brand{flex:1}.brand strong{font-size:12px;letter-spacing:.14em}.brand small{display:block;margin-top:4px;color:var(--mute);font:10px 'DM Mono',monospace}
 .top button{border:1px solid var(--line);border-radius:8px;background:none;width:30px;height:30px}
-.toggle{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin:7px 12px 0;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#050505;text-align:left;font-size:11px;min-height:36px}.toggle b{font-weight:700}.toggle span{margin-left:auto;float:none;white-space:nowrap}
+.toggle{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin:7px 12px 0;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#050505;text-align:left;font-size:calc(11px * var(--text-scale));min-height:36px}.toggle b{font-weight:700}.toggle span{margin-left:auto;float:none;white-space:nowrap}
 .toggle span{color:var(--mute);font:9px 'DM Mono',monospace}
-.workspace,.automation{flex:0 1 auto;min-height:0;margin:6px 12px 0;padding:12px;border:1px solid #242424;border-radius:8px;overflow:auto;max-height:min(28dvh,190px);font-size:11px;overscroll-behavior:contain}
+.workspace,.automation{flex:0 1 auto;min-height:0;margin:6px 12px 0;padding:12px;border:1px solid #242424;border-radius:8px;overflow:auto;max-height:min(28dvh,190px);font-size:calc(11px * var(--text-scale));overscroll-behavior:contain}
 .toggle{flex:0 0 auto}
 .top,.composer,.bottom{flex:0 0 auto}
 .chat{flex:1 1 auto;min-height:0;overscroll-behavior:contain;scrollbar-gutter:stable}
@@ -52,7 +52,7 @@ body.panel-open:not(.desktop-panel) .stage{display:none!important}
  .chat{padding:12px 14px}
  .composer{margin-left:10px;margin-right:10px}
 }.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}
-.workspace h3{margin:0 0 5px;font-size:12px}.mute{color:var(--mute);font-size:10px;line-height:1.6}
+.workspace h3{margin:0 0 5px;font-size:12px}.mute{color:var(--mute);font-size:calc(10px * var(--text-scale));line-height:1.6}
 html[data-face-size=compact] .eye{width:15px;height:24px}
 html[data-face-size=default] .eye{width:25px;height:36px}
 html[data-face-size=large] .eye{width:29px;height:42px}
@@ -81,15 +81,15 @@ html[data-face-preset=alert] .launch .eyes{gap:12px}
 .link{border:0;background:none;color:#ddd;font-size:10px;padding:6px 0;text-decoration:underline}
 .fb{font-size:10px;line-height:1.5;margin:7px 0;color:#ddd}
 .items{display:grid;gap:7px;margin-top:10px}.item{display:flex;gap:8px;padding:9px;border:1px solid #222;border-radius:8px}.item main{flex:1;min-width:0}.item strong{font-size:11px;overflow-wrap:anywhere}.item p{margin:5px 0;color:#aaa;font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere}.item small{color:var(--mute);font:8px 'DM Mono',monospace}.item button{border:1px solid #333;border-radius:6px;background:none;color:#aaa}.item.done strong{text-decoration:line-through;color:#777}
-.chat{flex:1 1 0;min-height:72px;overflow:auto;padding:14px 16px;scrollbar-width:thin;scrollbar-color:#333 #000}
-.quick-actions{display:flex;flex:0 0 auto;gap:6px;padding:8px 12px 0;overflow-x:auto;scrollbar-width:none}.quick-actions::-webkit-scrollbar{display:none}.quick-actions button{flex:0 0 auto;border:1px solid #292929;border-radius:7px;background:#080808;color:#ddd;padding:8px 10px;font-size:10px;white-space:nowrap}.quick-actions button:hover{border-color:#fff;color:#fff}.quick-actions button.primary{background:#f3f3f3;color:#080808;border-color:#f3f3f3;font-weight:700}.quick-actions button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.chat{flex:1 1 0;min-height:72px;overflow:auto;padding:14px 16px;font-size:calc(13px * var(--text-scale));scrollbar-width:thin;scrollbar-color:#333 #000}
+.quick-actions{display:flex;flex:0 0 auto;gap:6px;padding:8px 12px 0;overflow-x:auto;scrollbar-width:none}.quick-actions::-webkit-scrollbar{display:none}.quick-actions button{flex:0 0 auto;border:1px solid #292929;border-radius:7px;background:#080808;color:#ddd;padding:8px 10px;font-size:calc(10px * var(--text-scale));white-space:nowrap}.quick-actions button:hover{border-color:#fff;color:#fff}.quick-actions button.primary{background:#f3f3f3;color:#080808;border-color:#f3f3f3;font-weight:700}.quick-actions button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .msg{margin-bottom:16px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}.msg b{display:block;font:9px 'DM Mono',monospace;margin-bottom:4px}.msg p{margin:0;color:#d8d8d8;white-space:pre-wrap}
 .msg.you{text-align:right}.msg.you p{display:inline-block;text-align:left;padding:9px 12px;border:1px solid #303030;border-radius:12px 4px 12px 12px;background:#080808}
 .msg.sys p{color:var(--mute);font-style:italic}.msg p.err{padding:8px 10px;border:1px dashed #666;border-radius:10px;color:#eee}
-.composer{display:flex;flex:0 0 auto;gap:8px;margin:0 12px;padding:7px;border:1px solid #333;border-radius:9px;background:#030303}
+.composer{display:flex;flex:0 0 auto;gap:8px;margin:0 12px;padding:7px;border:1px solid #333;border-radius:9px;background:#030303;font-size:calc(12px * var(--text-scale))}.composer input{font-size:inherit}
 .composer input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px}
 .composer button{border:0;border-radius:8px;padding:8px;background:#f5f5f5;color:#000}
-.bottom{display:flex;flex:0 0 auto;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;color:#666;font:9px 'DM Mono',monospace;border-top:1px solid #ffffff0d}
+.bottom{display:flex;flex:0 0 auto;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;color:#666;font:calc(9px * var(--text-scale)) 'DM Mono',monospace;border-top:1px solid #ffffff0d}
 .bottom button{border:0;background:none;color:#aaa;font:9px 'DM Mono',monospace;padding:4px}
 @media(max-width:520px){.stage{top:0}.panel{top:0;height:100dvh;max-height:100dvh;min-height:0;border-radius:0}.launch .eye{width:27px;height:39px}.workspace,.automation{max-height:24dvh}}
 /* ---- native-widget mode (Electron on Windows / Android overlay WebView) ---- */
@@ -117,7 +117,7 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
   <h3>Bosley appearance</h3>
   <p class="mute">Choose a face preset. Changes are saved on this device and can be updated anytime.</p>
   <form class="form" id="faceform">
-   <label class="mute" for="facepreset">Face preset</label>
+   <label class="mute" for="textscale">Panel text size <output id="textscalevalue">100%</output></label><input id="textscale" type="range" min="85" max="130" step="5" value="100" aria-label="Panel text size" /><label class="mute" for="facepreset">Face preset</label>
    <select id="facepreset"><option value="incognito">Incognito (signature)</option><option value="calm">Calm</option><option value="alert">Alert</option></select>
    <label class="mute" for="facesize">Eye size</label>
    <select id="facesize"><option value="compact">Compact</option><option value="default">Default</option><option value="large">Large</option></select>
@@ -203,9 +203,10 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 
 /* ---------- customizable face ---------- */
 const FACE_KEY="bosley_face_settings_v1";
-const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default"};
+const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default",textScale:100};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function applyFaceSettings(v){
+ H.style.setProperty("--text-scale",String(Math.max(85,Math.min(130,Number(v.textScale)||100))/100));
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
  H.dataset.eyeShape=v.eyeShape||"pill";H.dataset.eyeGap=v.eyeGap||"normal";H.dataset.widgetEdge=v.widgetEdge||"soft";H.dataset.widgetBorder=v.widgetBorder||"thin";H.dataset.widgetSize=v.widgetSize||"default";
  syncNativeWidgetAppearance(v);
@@ -225,8 +226,9 @@ function initFaceSettings(){
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
- $("#voiceprofile").value=voiceProfile; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
- form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ $("#voiceprofile").value=voiceProfile;$("#textscale").value=String(v.textScale||100);$("#textscalevalue").textContent=(v.textScale||100)+"%"; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
+ form.querySelectorAll("select,input").forEach(control=>control.addEventListener("input",()=>{const scale=Number($("#textscale").value)||100;H.style.setProperty("--text-scale",String(scale/100));$("#textscalevalue").textContent=scale+"%";const live={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value,textScale:scale};applyFaceSettings(live);voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile);localStorage.setItem(FACE_KEY,JSON.stringify(live));$("#facefeedback").textContent="Changes applied instantly and saved on this device."}catch{$("#facefeedback").textContent="Changes applied for this session."}}));
+ form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value,textScale:Number($("#textscale").value)};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
  $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
  $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#facefeedback").textContent="Appearance reset."};
 }

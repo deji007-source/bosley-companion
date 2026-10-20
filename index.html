@@ -55,7 +55,7 @@ body.panel-open:not(.desktop-panel) .stage{display:none!important}
  .composer{margin-left:10px;margin-right:10px}
  .top{padding:10px 12px}
  .toggle{margin-left:10px;margin-right:10px}
-}.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}
+}.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}.automation .delivered{color:#b7cbe6}
 .workspace h3{margin:0 0 5px;font-size:12px}.mute{color:var(--mute);font-size:10px;line-height:1.6}
 html[data-face-size=compact] .eye{width:15px;height:24px}
 html[data-face-size=default] .eye{width:25px;height:36px}
@@ -167,7 +167,7 @@ let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
 function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").slice(0,12):[]}catch{automationRuns=[]}}
-function renderAutomationHistory(){const el=$("#auto-log");if(!el)return;el.innerHTML=automationRuns.map(r=>`<article class="item"><main><strong class="${r.status==="success"?"ok":r.status==="error"?"warn":""}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`).join("")||'<p class="mute">No automation runs yet.</p>'}
+function renderAutomationHistory(){const el=$("#auto-log");if(!el)return;el.innerHTML=automationRuns.map(r=>{const cls=r.status==="success"?"ok":["error","warning","queued"].includes(r.status)?"warn":r.status==="delivered"?"delivered":"";return `<article class="item"><main><strong class="${cls}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`}).join("")||'<p class="mute">No automation runs yet.</p>'}
 let speechOn=true;try{speechOn=JSON.parse(localStorage.getItem("bosley_prefs")||"{}").speechOn!==false}catch{}
 let voiceProfile="jarvis";try{voiceProfile=localStorage.getItem("bosley_voice_profile")||"jarvis"}catch{}
 function chooseBosleyVoice(){
@@ -544,8 +544,9 @@ async function queueAutomationInstruction(instruction,confirmation){
   if(error)throw error;
   if(!data||data.ok!==true)throw Error(data?.error||"The remote automation gateway did not accept the request.");
   addMsg("bosley",confirmation);
-  const delivery = data.listenerNotified===true ? "The laptop listener was notified; execution is not yet confirmed." : "The request was queued, but the laptop listener was not confirmed online.";
-  autoLog(data.listenerNotified===true?"running":"warning",delivery+" "+instruction);
+  const delivered = data.listenerNotified===true;
+  const delivery = delivered ? "DELIVERED TO LISTENER: the laptop listener was notified. Execution is not yet confirmed." : "QUEUED — DELIVERY UNCONFIRMED: the request was accepted, but the laptop listener was not confirmed online.";
+  autoLog(delivered?"delivered":"queued",delivery+" Instruction: "+instruction);
   if(data.listenerNotified!==true)addMsg("bosley","I queued the request, but I could not confirm delivery to the laptop listener. Check that it is connected before retrying.");
  }catch(error){addMsg("bosley","I could not queue that automation: "+String(error?.message||error));autoLog("error","Automation queue failed: "+String(error?.message||error))}
 }

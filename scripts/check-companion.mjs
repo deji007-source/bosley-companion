@@ -22,6 +22,7 @@ const requiredContracts = [
   ["Website commands run before AI chat fallback", /dispatchKnownWebsiteCommand\(t\)[\s\S]*if\(dispatchAutomationCommand\(text\)\)/],
   ["Website launch errors are surfaced", /I couldn.t open \+name[\s\S]*autoLog\("error",message\)/],
   ["Saved workflow command matching", /function findWorkflowCommand\(raw\)[\s\S]*normalizeWorkflowCommand\(w\.name\)===candidate/],
+  ["Automation panel includes saved workflow command examples", /Try a saved automation in chat[\s\S]*Please run my Morning Research automation[\s\S]*matched before website shortcuts and general chat/],
   ["Saved workflow commands tolerate polite natural language", /function normalizeWorkflowCommand\(value\)[\s\S]*kindly[\s\S]*function findWorkflowCommand\(raw\)[\s\S]*stripIntent/],
   ["Saved workflow commands refresh before matching", /await syncWorkflows\(\)[\s\S]*dispatchAutomationCommand\(text\)/],
   ["Saved workflow execution reports runner outcome", /await runWorkflow\(saved\)[\s\S]*Completed saved automation:/],

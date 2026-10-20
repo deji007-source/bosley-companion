@@ -377,7 +377,14 @@ jobs:
           function isTrustedPanelSender(event) {
             const frameUrl = event.senderFrame?.url || '';
             try {
-              return new URL(frameUrl).origin === new URL(SITE).origin;
+              const parsed = new URL(frameUrl);
+              if (parsed.origin === new URL(SITE).origin) return true;
+              if (parsed.protocol !== 'file:') return false;
+
+              // The bundled local UI is trusted only when it is this packaged file.
+              const localPath = path.resolve(decodeURIComponent(parsed.pathname));
+              const expectedPath = path.resolve(path.join(__dirname, 'index.html'));
+              return localPath.toLowerCase() === expectedPath.toLowerCase();
             } catch {
               return false;
             }

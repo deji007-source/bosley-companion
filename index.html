@@ -298,7 +298,7 @@ async function send(text){
  history.push({role:"user",content:text});S.busy=true;eyes();
  const p=addMsg("bosley","…");const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),30000);
  try{
-  const r=await fetch(CHAT_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({messages:history.slice(-16)})});
+  const r=await fetch(CHAT_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({messages:[{role:"system",content:"You are Bosley, a capable personal AI companion with a calm, composed, lightly witty British-style butler tone inspired by a cinematic AI assistant. Be warm, observant, concise, and naturally humorous when appropriate; use clever dry wit, gentle teasing, and occasional playful one-liners, never overdo jokes or make fun of the user. Be genuinely useful: answer clearly, ask only necessary follow-up questions, offer practical next steps, and proactively suggest relevant help for the user’s morning routine, planning, reminders, research, writing, and supported desktop actions. Never claim to have performed an action unless a tool result confirms it. Do not imitate any specific actor or reproduce a copyrighted character’s exact voice; use the selected available system voice with a low, measured, composed delivery."},...history.slice(-16)]})});
   if(!r.ok){const j=await r.json().catch(()=>({}));throw Error(j.error||"Server returned "+r.status)}
   const rd=r.body.getReader(),dec=new TextDecoder();let buf="",out="",streamError="";
   for(;;){
@@ -335,7 +335,7 @@ $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpea
 /* ---------- voice ---------- */
 function speak(t){
  if(!speechOn||!("speechSynthesis"in window))return;speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.9:1;u.pitch=voiceProfile==="jarvis"?0.74:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
+ const u=new SpeechSynthesisUtterance(t);u.lang="en-GB";const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.88:1;u.pitch=voiceProfile==="jarvis"?0.72:1;u.volume=1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
  u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;eyes()};u.onend=end;u.onerror=end;speechSynthesis.speak(u);
 }
 function stopSpeak(){if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}

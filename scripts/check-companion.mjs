@@ -18,6 +18,9 @@ for (const [index, source] of inlineScripts.entries()) {
 
 const requiredContracts = [
   ["Chrome command route", /open\s+(?:google\s+)?chrome/i],
+  ["Allowlisted website launch commands", /function dispatchKnownWebsiteCommand\(raw\)[\s\S]*"spotify":"https:\/\/open\.spotify\.com\/"[\s\S]*runAction\(\{type:"open_url",input:url\}\)/],
+  ["Website commands run before AI chat fallback", /dispatchKnownWebsiteCommand\(t\)[\s\S]*if\(dispatchAutomationCommand\(text\)\)/],
+  ["Website launch errors are surfaced", /I couldn.t open \+name[\s\S]*autoLog\("error",message\)/],
   ["Saved workflow command matching", /function findWorkflowCommand\(raw\)[\s\S]*normalizeWorkflowCommand\(w\.name\)===candidate/],
   ["Saved workflow commands refresh before matching", /await syncWorkflows\(\)[\s\S]*dispatchAutomationCommand\(text\)/],
   ["Saved workflow execution reports runner outcome", /await runWorkflow\(saved\)[\s\S]*Completed saved automation:/],

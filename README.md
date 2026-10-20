@@ -15,6 +15,7 @@ The currently maintained companion experience is the root `index.html`, which co
 - Supabase authentication and a chat Edge Function that streams AI responses.
 - Per-user conversation/message persistence in Supabase.
 - Per-user workflow storage using `automation_workflows`.
+- Automation execution history persists locally per signed-in user (up to 12 recent status entries), survives page refreshes, and can be cleared from the Automation panel. History stays in that browser's local storage; it is not uploaded to the cloud.
 - Saved-workflow command dispatch: chat messages such as `Open Spotify`, `run Open Spotify`, and `run my Morning Research automation` are matched to the signed-in user's saved workflow names before AI chat fallback. Matching ignores case and punctuation; the existing workflow runner executes configured steps and records step-level results.
 - Voice profiles: Jarvis-style, natural assistant, and system default. Voice selection prioritizes available English voices, reports the actual selected device voice when available, follows the selected voice's language, and falls back to browser/device defaults when voice metadata is unavailable. The Jarvis-style profile uses slower, lower-pitch speech settings; exact timbre depends on the browser and operating system.
 - Browser-safe workflow actions such as opening URLs, web search, creating a text file, and preparing a message draft.

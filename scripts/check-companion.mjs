@@ -18,6 +18,11 @@ for (const [index, source] of inlineScripts.entries()) {
 
 const requiredContracts = [
   ["Chrome command route", /open\s+(?:google\s+)?chrome/i],
+  ["Saved workflow command matching", /function findWorkflowCommand\(raw\)[\s\S]*normalizeWorkflowCommand\(w\.name\)===candidate/],
+  ["Saved workflow commands refresh before matching", /await syncWorkflows\(\)[\s\S]*dispatchAutomationCommand\(text\)/],
+  ["Saved workflow execution reports runner outcome", /await runWorkflow\(saved\)[\s\S]*Completed saved automation:/],
+  ["Voice profile control persists changes", /voiceprofile[\s\S]*addEventListener\("change"/],
+  ["Jarvis voice uses measured en-GB speech", /u\.lang="en-GB".*u\.rate=voiceProfile==="jarvis"\?0\.88/s],
   ["Native desktop action route", /action\s*:\s*["']launch_app["']/],
   ["Shared remote-action gateway", /functions\.invoke\(["']remote-action["']/],
   ["Queued is not reported as executed", /execution is not yet confirmed/i],

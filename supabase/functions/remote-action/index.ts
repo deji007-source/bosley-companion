@@ -16,7 +16,7 @@ async function authenticatedUser(req: Request) {
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 
 async function notifyLaptopListener(userId: string, instruction: string): Promise<boolean> {
-  const channel = sb.channel(\`bosley-laptop-\${userId}\`);
+  const channel = sb.channel("bosley-laptop-" + userId);
   try {
     const status = await channel.send({ type: "broadcast", event: "automation", payload: { instruction } });
     return status === "ok";

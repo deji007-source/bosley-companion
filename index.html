@@ -22,25 +22,25 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 
 /* ---- collapsed launcher: hat brim, eyes peeking out ---- */
 .stage{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:2147483000}
-.launch{position:relative;display:block;width:120px;height:72px;padding:0;border:1px solid #d8d8d8;border-radius:2px;background:#000;overflow:hidden;transition:border-color .2s}
+.launch{position:relative;display:block;width:128px;height:78px;padding:0;border:1px solid #fff;border-radius:2px;background:#000;overflow:hidden;transition:border-color .2s;box-shadow:none}
 .launch:hover{border-color:#fff}
 body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .launch[data-state=listening],.launch[data-state=thinking]{border-color:#fff}
 .launch[data-state=error]{border-style:dashed;border-color:#8a8a8a}
 .hat{position:absolute;inset:0;width:100%;height:100%}
-.launch .eyes{position:absolute;left:0;right:0;top:33px}
+.launch .eyes{position:absolute;left:0;right:0;top:28px}.launch .eye{width:27px;height:39px}.launch .hat{opacity:.96}
 
 /* ---- panel ---- */
-.panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(410px,calc(100vw - 24px));height:min(510px,calc(100dvh - 8px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
+.panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(430px,calc(100vw - 16px));height:min(560px,100dvh);max-height:100dvh;min-height:min(360px,100dvh);display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
 @keyframes in{from{opacity:0;transform:translate(-50%,-6px) scale(.97)}}
 .panel.maximized{width:min(640px,calc(100vw - 24px));height:100dvh;min-height:0;max-height:100dvh}
 @media(max-width:520px){.panel.maximized{height:calc(100dvh - 96px);max-height:calc(100dvh - 96px)}}
 .top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #ffffff12}
 .brand{flex:1}.brand strong{font-size:12px;letter-spacing:.14em}.brand small{display:block;margin-top:4px;color:var(--mute);font:10px 'DM Mono',monospace}
 .top button{border:1px solid var(--line);border-radius:8px;background:none;width:30px;height:30px}
-.toggle{margin:10px 14px 0;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:#000;text-align:left;font-size:11px}
-.toggle span{float:right;color:var(--mute);font:9px 'DM Mono',monospace}
-.workspace,.automation{flex:0 1 auto;min-height:0;margin:8px 14px 0;padding:12px;border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:min(34dvh,240px);font-size:11px}
+.toggle{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin:7px 12px 0;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#050505;text-align:left;font-size:11px;min-height:36px}.toggle b{font-weight:700}.toggle span{margin-left:auto;float:none;white-space:nowrap}
+.toggle span{color:var(--mute);font:9px 'DM Mono',monospace}
+.workspace,.automation{flex:0 1 auto;min-height:0;margin:6px 12px 0;padding:12px;border:1px solid #242424;border-radius:8px;overflow:auto;max-height:min(28dvh,190px);font-size:11px;overscroll-behavior:contain}
 .toggle{flex:0 0 auto}
 .top,.composer,.bottom{flex:0 0 auto}
 .chat{flex:1 1 auto;min-height:0;overscroll-behavior:contain;scrollbar-gutter:stable}
@@ -62,15 +62,15 @@ html[data-eye-shape=soft-square] .launch .eye{border-radius:5px}
 html[data-eye-gap=close] .launch .eyes{gap:9px}
 html[data-eye-gap=normal] .launch .eyes{gap:15px}
 html[data-eye-gap=wide] .launch .eyes{gap:21px}
-html[data-widget-edge=soft] .launch{border-radius:24px}
+html[data-widget-edge=soft] .launch{border-radius:2px}
 html[data-widget-edge=balanced] .launch{border-radius:18px}
 html[data-widget-edge=sharp] .launch{border-radius:2px}
 html[data-widget-border=thin] .launch{border-width:1px}
 html[data-widget-border=medium] .launch{border-width:2px}
 html[data-widget-border=bold] .launch{border-width:3px}
-html[data-widget-size=compact] .launch{width:108px;height:68px}
-html[data-widget-size=default] .launch{width:120px;height:72px}
-html[data-widget-size=wide] .launch{width:136px;height:80px}
+html[data-widget-size=compact] .launch{width:116px;height:74px}
+html[data-widget-size=default] .launch{width:128px;height:78px}
+html[data-widget-size=wide] .launch{width:140px;height:84px}
 html[data-face-preset=calm] .launch .eyes{gap:18px}
 html[data-face-preset=alert] .launch .eye{height:34px}
 html[data-face-preset=alert] .launch .eyes{gap:12px}
@@ -81,16 +81,16 @@ html[data-face-preset=alert] .launch .eyes{gap:12px}
 .link{border:0;background:none;color:#ddd;font-size:10px;padding:6px 0;text-decoration:underline}
 .fb{font-size:10px;line-height:1.5;margin:7px 0;color:#ddd}
 .items{display:grid;gap:7px;margin-top:10px}.item{display:flex;gap:8px;padding:9px;border:1px solid #222;border-radius:8px}.item main{flex:1;min-width:0}.item strong{font-size:11px;overflow-wrap:anywhere}.item p{margin:5px 0;color:#aaa;font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere}.item small{color:var(--mute);font:8px 'DM Mono',monospace}.item button{border:1px solid #333;border-radius:6px;background:none;color:#aaa}.item.done strong{text-decoration:line-through;color:#777}
-.chat{flex:1;min-height:90px;overflow:auto;padding:16px}
+.chat{flex:1 1 0;min-height:72px;overflow:auto;padding:14px 16px;scrollbar-width:thin;scrollbar-color:#333 #000}
 .msg{margin-bottom:16px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}.msg b{display:block;font:9px 'DM Mono',monospace;margin-bottom:4px}.msg p{margin:0;color:#d8d8d8;white-space:pre-wrap}
 .msg.you{text-align:right}.msg.you p{display:inline-block;text-align:left;padding:9px 12px;border:1px solid #303030;border-radius:12px 4px 12px 12px;background:#080808}
 .msg.sys p{color:var(--mute);font-style:italic}.msg p.err{padding:8px 10px;border:1px dashed #666;border-radius:10px;color:#eee}
-.composer{display:flex;gap:8px;margin:0 14px;padding:7px;border:1px solid #333;border-radius:13px}
+.composer{display:flex;flex:0 0 auto;gap:8px;margin:0 12px;padding:7px;border:1px solid #333;border-radius:9px;background:#030303}
 .composer input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px}
 .composer button{border:0;border-radius:8px;padding:8px;background:#f5f5f5;color:#000}
-.bottom{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;color:#666;font:9px 'DM Mono',monospace}
+.bottom{display:flex;flex:0 0 auto;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;color:#666;font:9px 'DM Mono',monospace;border-top:1px solid #ffffff0d}
 .bottom button{border:0;background:none;color:#aaa;font:9px 'DM Mono',monospace;padding:4px}
-@media(max-width:520px){.stage{top:0}.panel{top:0;height:100dvh;max-height:100dvh;border-radius:0}}
+@media(max-width:520px){.stage{top:0}.panel{top:0;height:100dvh;max-height:100dvh;min-height:0;border-radius:0}.launch .eye{width:27px;height:39px}.workspace,.automation{max-height:24dvh}}
 /* ---- native-widget mode (Electron on Windows / Android overlay WebView) ---- */
 html.widget-mode,html.widget-mode body{width:100%;height:100%;min-height:100%;overflow:hidden;background:transparent}
 html.widget-mode #root{position:relative;width:100%;height:100%;background:transparent;pointer-events:none}
@@ -228,7 +228,7 @@ function initFaceSettings(){
  $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
  $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#facefeedback").textContent="Appearance reset."};
 }
-$("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
+$("#facetoggle").onclick=()=>{openUtilityPanel("#facepanel");if(!$("#facepanel").hidden)initFaceSettings()};
 
 /* ---------- panel ---------- */
 const widgetMode=new URLSearchParams(location.search).get("widget")==="1"||!!window.BosleyDesktop||!!window.BosleyAndroidWidget;
@@ -378,7 +378,7 @@ async function load(){
  try{const[n,t]=await Promise.all([db.from("eng_notes").select("id,title,content,tags,updated_at").order("updated_at",{ascending:false}),db.from("tasks").select("id,title,notes,due_at,priority,status,completed_at,created_at").order("created_at",{ascending:false})]);
   if(n.error)throw Error("Notes: "+n.error.message);if(t.error)throw Error("Tasks: "+t.error.message);notes=n.data||[];tasks=t.data||[];drawWs();fb("Synced.")}catch(e){drawWs();fb(e.message||"Sync failed")}
 }
-$("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
+function openUtilityPanel(which){const pairs=[["#ws","#wstoggle"],["#facepanel","#facetoggle"],["#automation","#autotoggle"]];for(const [section,button] of pairs){const active=section===which;$(section).hidden=active?!$(section).hidden:true;$(button).setAttribute("aria-expanded",String(!$(section).hidden));}}\n$("#wstoggle").onclick=()=>{openUtilityPanel("#ws");if(!ws.hidden){drawWs();if(user)load()}};
 if(db){
  db.auth.getSession().then(({data})=>{user=data.session?.user||null;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";if(user)restoreLatestConversation()});
  db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
@@ -497,7 +497,7 @@ function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge
  el.querySelectorAll("[data-delete-wf]").forEach(btn=>btn.onclick=async()=>{const a=getWorkflows(),wf=a[Number(btn.dataset.deleteWf)];if(!wf)return;if(user){try{const {error}=await db.from("automation_workflows").delete().eq("user_id",user.id).eq("name",wf.name);if(error)throw error}catch(err){$("#autofb").textContent="Could not delete cloud workflow: "+err.message;return}}a.splice(Number(btn.dataset.deleteWf),1);saveWorkflows(a);drawAutomation()});
  const log=$("#auto-log");if(log)log.innerHTML=automationRuns.map(r=>`<article class="item"><main><strong class="${r.status==="success"?"ok":r.status==="error"?"warn":""}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`).join("")||'<p class="mute">No automation runs yet.</p>';
 }
-$("#autotoggle").onclick=()=>{const el=$("#automation");el.hidden=!el.hidden;$("#autotoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)drawAutomation()};
+$("#autotoggle").onclick=()=>{openUtilityPanel("#automation");if(!$("#automation").hidden)drawAutomation()};
 async function queueAutomationInstruction(instruction,confirmation){
  try{
   const sess=db?(await db.auth.getSession()).data.session:null;

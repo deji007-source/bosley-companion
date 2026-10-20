@@ -121,8 +121,8 @@ jobs:
             }
 
             if (panel && !panel.isDestroyed() && panel.isVisible()) {
-              const width = Math.min(440, area.width - 24);
-              const height = Math.max(320, Math.min(680, area.height));
+              const width = Math.max(340, Math.min(620, area.width - 24));
+              const height = Math.max(320, Math.min(760, area.height));
               const x = area.x + Math.round((area.width - width) / 2);
               const y = area.y;
 
@@ -372,7 +372,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'set_panel_size', 'launch_app']
             };
           });
 
@@ -415,7 +415,7 @@ jobs:
                 const area = screen.getPrimaryDisplay().workArea;
                 bubble.setBounds({
                   x: area.x + Math.round((area.width - dimensions.width) / 2),
-                  y: area.y + 12,
+                  y: area.y,
                   width: dimensions.width,
                   height: dimensions.height
                 });
@@ -423,6 +423,21 @@ jobs:
                 bubble.setAlwaysOnTop(true, 'screen-saver');
               }
               return { ok: true, appearance: widgetAppearance };
+            }
+            if (request.action === 'set_panel_size') {
+              const area = screen.getPrimaryDisplay().workArea;
+              const requestedWidth = Number(request.payload?.width);
+              const requestedHeight = Number(request.payload?.height);
+              if (!Number.isFinite(requestedWidth) || !Number.isFinite(requestedHeight)) {
+                throw new Error('Panel width and height must be valid numbers');
+              }
+              const width = Math.max(340, Math.min(620, Math.round(requestedWidth), area.width - 24));
+              const height = Math.max(320, Math.min(760, Math.round(requestedHeight), area.height));
+              const x = area.x + Math.round((area.width - width) / 2);
+              if (panel && !panel.isDestroyed()) {
+                panel.setBounds({ x, y: area.y, width, height });
+              }
+              return { ok: true, width, height, topAligned: true };
             }
             if (request.action === 'launch_app') {
               const appId = String(request.payload?.app || '').toLowerCase();
@@ -648,6 +663,7 @@ jobs:
           grep -Fq "get_desktop_info" desktop/main.cjs
           grep -Fq "open_external_url" desktop/main.cjs
           grep -Fq "set_widget_appearance" desktop/main.cjs
+          grep -Fq "set_panel_size" desktop/main.cjs
           grep -Fq "launch_app" desktop/main.cjs
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs

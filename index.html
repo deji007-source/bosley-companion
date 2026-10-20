@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>Bosley Companion</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
-:root{font-family:Manrope,system-ui,sans-serif;color:#f5f5f5;background:#000;--mute:#8a8a8a;--line:#262626;--px:0;--py:0;--es:1;--text-scale:1}
+:root{font-family:Manrope,system-ui,sans-serif;color:#f5f5f5;background:#000;--mute:#8a8a8a;--line:#262626;--px:0;--py:0;--es:1;--text-scale:1;--panel-width:430px;--panel-height:560px}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#000}
 button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
 :focus-visible{outline:2px solid #fff;outline-offset:2px}
@@ -31,7 +31,7 @@ body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .launch .eyes{position:absolute;left:0;right:0;top:28px}.launch .eye{width:27px;height:39px}.launch .hat{opacity:.96}
 
 /* ---- panel ---- */
-.panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(430px,calc(100vw - 16px));height:min(560px,100dvh);max-height:100dvh;min-height:min(360px,100dvh);display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
+.panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(var(--panel-width),calc(100vw - 16px));height:min(var(--panel-height),100dvh);max-height:100dvh;min-height:min(360px,100dvh);display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
 @keyframes in{from{opacity:0;transform:translate(-50%,-6px) scale(.97)}}
 .panel.maximized{width:min(640px,calc(100vw - 24px));height:100dvh;min-height:0;max-height:100dvh}
 @media(max-width:520px){.panel.maximized{height:calc(100dvh - 96px);max-height:calc(100dvh - 96px)}}
@@ -117,7 +117,7 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
   <h3>Bosley appearance</h3>
   <p class="mute">Choose a face preset. Changes are saved on this device and can be updated anytime.</p>
   <form class="form" id="faceform">
-   <label class="mute" for="textscale">Panel text size <output id="textscalevalue">100%</output></label><input id="textscale" type="range" min="85" max="130" step="5" value="100" aria-label="Panel text size" /><label class="mute" for="facepreset">Face preset</label>
+   <label class="mute" for="textscale">Panel text size <output id="textscalevalue">100%</output></label><input id="textscale" type="range" min="85" max="130" step="5" value="100" aria-label="Panel text size" /><label class="mute" for="panelwidth">Panel width <output id="panelwidthvalue">430 px</output></label><input id="panelwidth" type="range" min="340" max="620" step="10" value="430" aria-label="Panel width" /><label class="mute" for="panelheight">Panel height <output id="panelheightvalue">560 px</output></label><input id="panelheight" type="range" min="420" max="760" step="10" value="560" aria-label="Panel height" /><label class="mute" for="facepreset">Face preset</label>
    <select id="facepreset"><option value="incognito">Incognito (signature)</option><option value="calm">Calm</option><option value="alert">Alert</option></select>
    <label class="mute" for="facesize">Eye size</label>
    <select id="facesize"><option value="compact">Compact</option><option value="default">Default</option><option value="large">Large</option></select>
@@ -203,10 +203,12 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 
 /* ---------- customizable face ---------- */
 const FACE_KEY="bosley_face_settings_v1";
-const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default",textScale:100};
+const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default",textScale:100,panelWidth:430,panelHeight:560};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function applyFaceSettings(v){
  H.style.setProperty("--text-scale",String(Math.max(85,Math.min(130,Number(v.textScale)||100))/100));
+ H.style.setProperty("--panel-width",Math.max(340,Math.min(620,Number(v.panelWidth)||430))+"px");
+ H.style.setProperty("--panel-height",Math.max(420,Math.min(760,Number(v.panelHeight)||560))+"px");
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
  H.dataset.eyeShape=v.eyeShape||"pill";H.dataset.eyeGap=v.eyeGap||"normal";H.dataset.widgetEdge=v.widgetEdge||"soft";H.dataset.widgetBorder=v.widgetBorder||"thin";H.dataset.widgetSize=v.widgetSize||"default";
  syncNativeWidgetAppearance(v);
@@ -226,9 +228,9 @@ function initFaceSettings(){
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
- $("#voiceprofile").value=voiceProfile;$("#textscale").value=String(v.textScale||100);$("#textscalevalue").textContent=(v.textScale||100)+"%"; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
- form.querySelectorAll("select,input").forEach(control=>control.addEventListener("input",()=>{const scale=Number($("#textscale").value)||100;H.style.setProperty("--text-scale",String(scale/100));$("#textscalevalue").textContent=scale+"%";const live={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value,textScale:scale};applyFaceSettings(live);voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile);localStorage.setItem(FACE_KEY,JSON.stringify(live));$("#facefeedback").textContent="Changes applied instantly and saved on this device."}catch{$("#facefeedback").textContent="Changes applied for this session."}}));
- form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value,textScale:Number($("#textscale").value)};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ $("#voiceprofile").value=voiceProfile;$("#textscale").value=String(v.textScale||100);$("#textscalevalue").textContent=(v.textScale||100)+"%";$("#panelwidth").value=String(v.panelWidth||430);$("#panelwidthvalue").textContent=(v.panelWidth||430)+" px";$("#panelheight").value=String(v.panelHeight||560);$("#panelheightvalue").textContent=(v.panelHeight||560)+" px"; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
+ form.querySelectorAll("select,input").forEach(control=>control.addEventListener("input",()=>{const scale=Number($("#textscale").value)||100;H.style.setProperty("--text-scale",String(scale/100));$("#textscalevalue").textContent=scale+"%";const live={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value,textScale:scale,panelWidth:Number($("#panelwidth").value),panelHeight:Number($("#panelheight").value)};$("#panelwidthvalue").textContent=live.panelWidth+" px";$("#panelheightvalue").textContent=live.panelHeight+" px";applyFaceSettings(live);voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile);localStorage.setItem(FACE_KEY,JSON.stringify(live));$("#facefeedback").textContent="Changes applied instantly and saved on this device."}catch{$("#facefeedback").textContent="Changes applied for this session."}}));
+ form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value,textScale:Number($("#textscale").value),panelWidth:Number($("#panelwidth").value),panelHeight:Number($("#panelheight").value)};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
  $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
  $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#facefeedback").textContent="Appearance reset."};
 }

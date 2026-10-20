@@ -32,6 +32,8 @@ const requiredContracts = [
   ["Voice profile tuning", /u\.pitch=voiceProfile==="jarvis"\?0\.74:1/],
   ["Panel hides the web launcher", /body\.panel-open:not\(\.desktop-panel\) \.stage\{display:none!important\}/],
   ["Native launcher hidden in panel window", /html\.widget-mode \.stage\{display:none!important\}/],
+  ["Editable panel text size control", /id="textscale" type="range" min="85" max="130"/],
+  ["Text size changes apply and save immediately", /textscalevalue[\s\S]*localStorage\.setItem\(FACE_KEY,JSON\.stringify\(live\)\)/],
   ["Morning Mode quick action", /data-prompt="morning"/],
   ["Morning Mode avoids invented live facts", /Do not invent calendar events, weather, news, or completed actions/],
   ["Day planning quick action", /data-prompt="plan"/],

@@ -32,6 +32,8 @@ const requiredContracts = [
   ["Voice profile tuning", /u\.pitch=voiceProfile==="jarvis"\?0\.74:1/],
   ["Panel hides the web launcher", /body\.panel-open:not\(\.desktop-panel\) \.stage\{display:none!important\}/],
   ["Native launcher hidden in panel window", /html\.widget-mode \.stage\{display:none!important\}/],
+  ["Native panel size follows UI dimensions", /syncNativePanelSize\(v\)[\s\S]*action:"set_panel_size",payload:\{width:Number\(v\.panelWidth\)[\s\S]*topAligned:true/],
+  ["Native panel size action is allowlisted", /actions: \[[^\]]*set_panel_size/],
   ["Mobile panel layout keeps top bezel and usable width", /@media\(max-width:520px\)[\s\S]*\.panel\{width:calc\(100vw - 8px\)!important;height:min\(var\(--panel-height\),100dvh\)!important/],
   ["Short screens keep composer reachable", /@media\(max-height:520px\)[\s\S]*\.chat\{min-height:48px\}/],
   ["Reduced-motion preference respected", /@media\(prefers-reduced-motion:reduce\)[\s\S]*\.panel\{animation:none!important/],

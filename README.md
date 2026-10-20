@@ -18,6 +18,7 @@ The currently maintained companion experience is the root `index.html`, which co
 - Saved-workflow command dispatch: chat messages such as `Open Spotify`, `run Open Spotify`, and `run my Morning Research automation` are matched to the signed-in user's saved workflow names before AI chat fallback. Matching ignores case and punctuation; the existing workflow runner executes configured steps and records step-level results.
 - Voice profiles: Jarvis-style, natural assistant, and system default. Voice selection prioritizes available English voices, reports the actual selected device voice when available, follows the selected voice's language, and falls back to browser/device defaults when voice metadata is unavailable. The Jarvis-style profile uses slower, lower-pitch speech settings; exact timbre depends on the browser and operating system.
 - Browser-safe workflow actions such as opening URLs, web search, creating a text file, and preparing a message draft.
+- Allowlisted natural-language website launch commands in chat, including `open Spotify`, `open Google`, `open YouTube`, `open Gmail`, `open Google Drive`, `open WhatsApp`, `open Telegram`, `open GitHub`, `open ChatGPT`, `open Notion`, and `open Discord`. These open the corresponding website in a browser tab; they do not guarantee launch of a native desktop app. Browser pop-up permission is required.
 - Voice-related Edge Functions and browser speech features, subject to browser/device support.
 - Remote action queue and an OS-agent polling endpoint.
 

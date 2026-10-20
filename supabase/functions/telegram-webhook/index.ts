@@ -278,51 +278,51 @@ async function handleProjectCommand(userId, chatId, text, rawText) {
 }
 
 async function handleOsCommand(userId, chatId, text) {
+  async function queueOs(action, fields, instruction, successMessage) {
+    const { error } = await sb.from("os_commands").insert({ user_id: userId, action, ...fields });
+    if (error) { await reply(chatId, "Could not queue that — try again?"); return; }
+    const listenerNotified = await notifyLaptopListener(userId, instruction);
+    await reply(chatId, listenerNotified ? "Sent to laptop listener: " + successMessage : "Queued, but the laptop listener did not confirm receiving it. Check that the listener is connected.");
+  }
   if (text === "list windows") {
-    const { error } = await sb.from("os_commands").insert({ user_id: userId, action: "list_windows" });
-    await reply(chatId, error ? "Couldn't queue that \u2014 try again?" : `\ud83d\udda5\ufe0f Queued \u2014 check the agent's console window for the list.`);
+    await queueOs("list_windows", {}, "list windows", "list windows");
     return true;
   }
   const click = text.match(CLICK_RE);
   if (click) {
     const [, target] = click;
-    const { error } = await sb.from("os_commands").insert({ user_id: userId, action: "click_text", target });
-    await reply(chatId, error ? "Couldn't queue that \u2014 try again?" : `\ud83d\uddb1\ufe0f Queued: click \"${target}\". _(reads what's on screen right now \u2014 needs the laptop agent running)_`);
+    await queueOs("click_text", { target }, "click " + target, "click " + target);
     return true;
   }
   const typeMatch = text.match(TYPE_RE);
   if (typeMatch) {
     const [, param] = typeMatch;
-    const { error } = await sb.from("os_commands").insert({ user_id: userId, action: "type_text", param });
-    await reply(chatId, error ? "Couldn't queue that \u2014 try again?" : `\u2328\ufe0f Queued: type \"${param}\". _(types into whatever's currently focused)_`);
+    await queueOs("type_text", { param }, "type " + param, "type text");
     return true;
   }
   const move = text.match(MOVE_WINDOW_RE);
   if (move) {
     const [, target, param] = move;
-    const { error } = await sb.from("os_commands").insert({ user_id: userId, action: "move_window", target, param });
-    await reply(chatId, error ? "Couldn't queue that \u2014 try again?" : `\ud83d\udda5\ufe0f Queued: move ${target} to desktop ${param}. _(needs the laptop agent running)_`);
+    await queueOs("move_window", { target, param }, "move " + target + " to desktop " + param, "move window");
     return true;
   }
   const switchD = text.match(SWITCH_DESKTOP_RE);
   if (switchD) {
     const [, param] = switchD;
-    const { error } = await sb.from("os_commands").insert({ user_id: userId, action: "switch_desktop", param });
-    await reply(chatId, error ? "Couldn't queue that \u2014 try again?" : `\ud83d\udda5\ufe0f Queued: switch to desktop ${param}. _(needs the laptop agent running)_`);
+    await queueOs("switch_desktop", { param }, "switch to desktop " + param, "switch desktop");
     return true;
   }
   const focus = text.match(FOCUS_RE);
   if (focus) {
     const [, target] = focus;
-    const { error } = await sb.from("os_commands").insert({ user_id: userId, action: "focus_window", target });
-    await reply(chatId, error ? "Couldn't queue that \u2014 try again?" : `\ud83d\udda5\ufe0f Queued: focus ${target}. _(needs the laptop agent running)_`);
+    await queueOs("focus_window", { target }, "focus " + target, "focus window");
     return true;
   }
   const minMax = text.match(MIN_MAX_RE);
   if (minMax) {
     const [, action, target] = minMax;
-    const { error } = await sb.from("os_commands").insert({ user_id: userId, action: action.toLowerCase() + "_window", target });
-    await reply(chatId, error ? "Couldn't queue that \u2014 try again?" : `\ud83d\udda5\ufe0f Queued: ${action} ${target}. _(needs the laptop agent running)_`);
+    const osAction = action.toLowerCase() + "_window";
+    await queueOs(osAction, { target }, action + " " + target, action + " window");
     return true;
   }
   return false;

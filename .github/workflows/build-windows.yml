@@ -44,7 +44,7 @@ jobs:
           cat > desktop/package.json <<'PACKAGE_EOF'
           {
             "name": "bosley-companion-desktop",
-            "version": "1.0.2",
+            "version": "1.0.3",
             "description": "Bosley floating desktop companion",
             "main": "main.cjs",
             "scripts": {
@@ -315,7 +315,20 @@ jobs:
               return { action: 'deny' };
             });
 
+            // Never leave a blank native window if the hosted page stalls.
+            let mainFrameFinished = false;
+            panel.webContents.once('did-finish-load', () => {
+              mainFrameFinished = true;
+            });
+            const startupTimeout = setTimeout(() => {
+              if (!mainFrameFinished && panel && !panel.isDestroyed()) {
+                showLoadError('The website did not finish loading within 15 seconds. Check your internet connection, then retry.');
+              }
+            }, 15000);
+
+            panel.webContents.once('did-finish-load', () => clearTimeout(startupTimeout));
             panel.loadURL(SITE).catch(error => {
+              clearTimeout(startupTimeout);
               showLoadError(error.message);
             });
 

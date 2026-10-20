@@ -44,7 +44,7 @@ jobs:
           cat > desktop/package.json <<'PACKAGE_EOF'
           {
             "name": "bosley-companion-desktop",
-            "version": "1.0.3",
+            "version": "1.0.4",
             "description": "Bosley floating desktop companion",
             "main": "main.cjs",
             "scripts": {
@@ -63,7 +63,8 @@ jobs:
               "files": [
                 "main.cjs",
                 "preload.cjs",
-                "bubble.html"
+                "bubble.html",
+                "index.html"
               ],
               "win": {
                 "target": "nsis"
@@ -75,6 +76,8 @@ jobs:
             }
           }
           PACKAGE_EOF
+
+          cp dist/index.html desktop/index.html
 
           cat > desktop/main.cjs <<'MAIN_EOF'
           const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
@@ -327,9 +330,11 @@ jobs:
             }, 15000);
 
             panel.webContents.once('did-finish-load', () => clearTimeout(startupTimeout));
-            panel.loadURL(SITE).catch(error => {
+            // Prefer the bundled app so the desktop UI does not depend on Vercel
+            // being reachable just to render the panel.
+            panel.loadFile(path.join(__dirname, 'index.html')).catch(error => {
               clearTimeout(startupTimeout);
-              showLoadError(error.message);
+              showLoadError('Local app failed to load: ' + error.message);
             });
 
             panel.on('close', event => {
@@ -679,6 +684,8 @@ jobs:
           test -s desktop/main.cjs
           test -s desktop/preload.cjs
           test -s desktop/bubble.html
+          test -s desktop/index.html
+          grep -Fq "panel.loadFile(path.join(__dirname, 'index.html'))" desktop/main.cjs
           grep -Fq "bosley:capabilities" desktop/main.cjs
           grep -Fq "bosley:request" desktop/main.cjs
           grep -Fq "get_desktop_info" desktop/main.cjs

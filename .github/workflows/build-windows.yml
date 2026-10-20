@@ -425,35 +425,58 @@ jobs:
               return { ok: true, appearance: widgetAppearance };
             }
             if (request.action === 'launch_app') {
-              const appId = String(request.payload?.app || '').toLowerCase();
-              // Fixed allowlist only: never accept executable paths or shell commands from the web page.
+              const appId = String(request.payload?.app || '').toLowerCase().trim();
+              // Fixed executable allowlist only: never accept paths, arguments, or shell commands from chat.
               if (process.platform !== 'win32') {
                 throw new Error('App launching is currently supported by the Windows desktop build only.');
               }
-              if (appId !== 'chrome') {
-                throw new Error('This first app-launch action supports Chrome only.');
-              }
+              const apps = {
+                chrome: {
+                  label: 'Google Chrome',
+                  candidates: [
+                    path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+                    path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+                    path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'Application', 'chrome.exe')
+                  ]
+                },
+                edge: {
+                  label: 'Microsoft Edge',
+                  candidates: [
+                    path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+                    path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Microsoft', 'Edge', 'Application', 'msedge.exe')
+                  ]
+                },
+                notepad: {
+                  label: 'Notepad',
+                  candidates: [path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'notepad.exe')]
+                },
+                calculator: {
+                  label: 'Calculator',
+                  candidates: [path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'calc.exe')]
+                },
+                explorer: {
+                  label: 'File Explorer',
+                  candidates: [path.join(process.env.WINDIR || 'C:\\Windows', 'explorer.exe')]
+                }
+              };
+              const target = apps[appId];
+              if (!target) throw new Error('Supported Windows apps: Chrome, Edge, Notepad, Calculator, and File Explorer.');
               const choice = await dialog.showMessageBox(panel, {
                 type: 'question',
-                buttons: ['Cancel', 'Open Chrome'],
+                buttons: ['Cancel', 'Open app'],
                 defaultId: 0,
                 cancelId: 0,
                 title: 'Bosley Companion',
-                message: 'Allow Bosley to launch Google Chrome?',
-                detail: 'Bosley can only launch the approved Chrome application. No command or executable path was supplied by chat.'
+                message: 'Allow Bosley to launch ' + target.label + '?',
+                detail: 'Only this approved application can be launched. Bosley will not run arbitrary commands or paths.'
               });
               if (choice.response !== 1) return { ok: false, cancelled: true };
-              const candidates = [
-                path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Google', 'Chrome', 'Application', 'chrome.exe'),
-                path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Google', 'Chrome', 'Application', 'chrome.exe'),
-                path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'Application', 'chrome.exe')
-              ];
-              const executable = candidates.find(candidate => candidate && fs.existsSync(candidate));
-              if (!executable) throw new Error('Chrome was not found in its standard Windows installation folders.');
+              const executable = target.candidates.find(candidate => candidate && fs.existsSync(candidate));
+              if (!executable) throw new Error(target.label + ' was not found in its standard Windows installation folders.');
               const child = spawn(executable, [], { detached: true, stdio: 'ignore', windowsHide: true });
               child.on('error', () => {});
               child.unref();
-              return { ok: true, launched: 'chrome' };
+              return { ok: true, launched: appId, label: target.label };
             }
             if (request.action === 'open_external_url') {
               const rawUrl = String(request.payload?.url || '');

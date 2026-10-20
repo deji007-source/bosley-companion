@@ -19,6 +19,7 @@ The currently maintained companion experience is the root `index.html`, which co
 - Voice profiles: Jarvis-style, natural assistant, and system default. Voice selection prioritizes available English voices, reports the actual selected device voice when available, follows the selected voice's language, and falls back to browser/device defaults when voice metadata is unavailable. The Jarvis-style profile uses slower, lower-pitch speech settings; exact timbre depends on the browser and operating system.
 - Browser-safe workflow actions such as opening URLs, web search, creating a text file, and preparing a message draft.
 - Allowlisted natural-language website launch commands in chat, including `open Spotify`, `open Google`, `open YouTube`, `open Gmail`, `open Google Drive`, `open WhatsApp`, `open Telegram`, `open GitHub`, `open ChatGPT`, `open Notion`, and `open Discord`. These open the corresponding website in a browser tab; they do not guarantee launch of a native desktop app. Browser pop-up permission is required.
+- Allowlisted Windows desktop launch commands for `Chrome`, `Edge`, `Notepad`, `Calculator`, and `File Explorer`. These require the installed Windows desktop companion and a user confirmation dialog; the website-only version cannot launch native apps. Arbitrary commands, executable paths, and shell arguments are not accepted.
 - Voice-related Edge Functions and browser speech features, subject to browser/device support.
 - Remote action queue and an OS-agent polling endpoint.
 

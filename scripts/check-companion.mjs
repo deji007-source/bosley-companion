@@ -24,6 +24,8 @@ const requiredContracts = [
   ["Listener delivery feedback", /data\.listenerNotified===true/],
   ["Music next-track route", /play next song on /],
   ["Automation failure feedback", /Automation queue failed:/],
+  ["Native bridge opens website shortcuts", /action:"open_external_url",input:url/],
+  ["Automation confirmations speak aloud", /addMsg\("bosley",confirmation\);speak\(confirmation\)/],
   ["Web app shortcuts", /youtube:"https:\/\/www\.youtube\.com\/"/],
   ["Voice profile tuning", /u\.pitch=voiceProfile==="jarvis"\?0\.74:1/],
   ["Panel hides the web launcher", /body\.panel-open:not\(\.desktop-panel\) \.stage\{display:none!important\}/],

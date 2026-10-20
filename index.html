@@ -201,7 +201,7 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 
 /* ---------- customizable face ---------- */
 const FACE_KEY="bosley_face_settings_v1";
-const FACE_DEFAULTS={preset:"incognito",size:"default",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"soft",widgetBorder:"thin",widgetSize:"default"};
+const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default"};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function applyFaceSettings(v){
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
@@ -335,7 +335,7 @@ $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpea
 /* ---------- voice ---------- */
 function speak(t){
  if(!speechOn||!("speechSynthesis"in window))return;speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.94:1;u.pitch=voiceProfile==="jarvis"?0.82:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
+ const u=new SpeechSynthesisUtterance(t);const selected=chooseBosleyVoice();if(selected)u.voice=selected;u.rate=voiceProfile==="jarvis"?0.9:1;u.pitch=voiceProfile==="jarvis"?0.74:1;const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
  u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;eyes()};u.onend=end;u.onerror=end;speechSynthesis.speak(u);
 }
 function stopSpeak(){if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}
@@ -522,7 +522,7 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();let m;con
  if(/\b(eyes|eye)\b.*\b(bigger|larger)\b/.test(q)){face.size="large";changed=true}
  else if(/\b(eyes|eye)\b.*\b(smaller|compact)\b/.test(q)){face.size="compact";changed=true}
  if(changed){try{localStorage.setItem(FACE_KEY,JSON.stringify(face));applyFaceSettings(face);const parts=[];if(mentionsWidget&&face.widgetSize==="wide")parts.push("wider widget");if(mentionsWidget&&face.widgetSize==="compact")parts.push("compact widget");if(mentionsWidget&&face.widgetEdge==="sharp")parts.push("sharper rectangle corners");if(mentionsWidget&&face.widgetEdge==="soft")parts.push("rounded rectangle corners");if(face.widgetBorder==="bold")parts.push("thicker outline");if(face.widgetBorder==="thin")parts.push("fine outline");if(face.size==="large")parts.push("larger eyes");if(face.size==="compact")parts.push("smaller eyes");addMsg("bosley","Done — set "+(parts.join(", ")||"your appearance")+" and saved it on this device. Open Appearance to fine-tune it.");return true}catch{addMsg("bosley","I couldn't save the appearance change in this browser.");return true}}
- if((m=t.match(/^(?:bosley,?\s+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(autoLog.bind(null,"success")).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?search(?: the web)? for\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>autoLog("success",r)).catch(e=>autoLog("error",e.message));return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
+ if((m=t.match(/^(?:bosley[, ]+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","I couldn’t open that link: "+e.message);autoLog("error",e.message)});return true}const sites={youtube:"https://www.youtube.com/",google:"https://www.google.com/",gmail:"https://mail.google.com/",spotify:"https://open.spotify.com/",github:"https://github.com/",whatsapp:"https://web.whatsapp.com/",telegram:"https://web.telegram.org/"};if((m=t.match(/^(?:bosley[, ]+)?open\s+(youtube|google|gmail|spotify|github|whatsapp|telegram)[.!]?$/i))){const url=sites[m[1].toLowerCase()];runAction({type:"open_url",input:url}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","I couldn’t open "+m[1]+": "+e.message);autoLog("error",e.message)});return true}if((m=t.match(/^(?:bosley[, ]+)?(?:search(?: the web)? for|look up|find online)\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","Search failed: "+e.message);autoLog("error",e.message)});return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
 
 /* ---------- keyboard ---------- */
 addEventListener("keydown",e=>{

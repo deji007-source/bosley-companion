@@ -79,7 +79,12 @@ jobs:
           PACKAGE_EOF
 
           cp dist/index.html desktop/index.html
-          cp -R dist/assets desktop/assets
+          # Vite currently inlines the app's JavaScript and CSS into index.html.
+          # Copy asset files when emitted, but don't fail when the build is self-contained.
+          mkdir -p desktop/assets
+          if [ -d dist/assets ]; then
+            cp -R dist/assets/. desktop/assets/
+          fi
 
           cat > desktop/main.cjs <<'MAIN_EOF'
           const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
@@ -695,8 +700,9 @@ jobs:
           test -s desktop/preload.cjs
           test -s desktop/bubble.html
           test -s desktop/index.html
-          test -s desktop/assets
-          find desktop/assets -type f -print -quit | grep -q .
+          test -d desktop/assets
+          grep -q '<script' desktop/index.html
+          grep -q '</html>' desktop/index.html
           grep -Fq "panel.loadFile(path.join(__dirname, 'index.html'))" desktop/main.cjs
           grep -Fq "bosley:capabilities" desktop/main.cjs
           grep -Fq "bosley:request" desktop/main.cjs

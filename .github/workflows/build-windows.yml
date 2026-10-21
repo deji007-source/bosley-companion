@@ -64,7 +64,8 @@ jobs:
                 "main.cjs",
                 "preload.cjs",
                 "bubble.html",
-                "index.html"
+                "index.html",
+                "assets/**"
               ],
               "win": {
                 "target": "nsis"
@@ -78,6 +79,7 @@ jobs:
           PACKAGE_EOF
 
           cp dist/index.html desktop/index.html
+          cp -R dist/assets desktop/assets
 
           cat > desktop/main.cjs <<'MAIN_EOF'
           const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
@@ -693,6 +695,8 @@ jobs:
           test -s desktop/preload.cjs
           test -s desktop/bubble.html
           test -s desktop/index.html
+          test -s desktop/assets
+          find desktop/assets -type f -print -quit | grep -q .
           grep -Fq "panel.loadFile(path.join(__dirname, 'index.html'))" desktop/main.cjs
           grep -Fq "bosley:capabilities" desktop/main.cjs
           grep -Fq "bosley:request" desktop/main.cjs

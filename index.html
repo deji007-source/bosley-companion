@@ -90,7 +90,7 @@ html[data-face-preset=alert] .launch .eyes{gap:12px}
 .msg.you{text-align:right}.msg.you p{display:inline-block;text-align:left;padding:9px 12px;border:1px solid #303030;border-radius:12px 4px 12px 12px;background:#080808}
 .msg.sys p{color:var(--mute);font-style:italic}.msg p.err{padding:8px 10px;border:1px dashed #666;border-radius:10px;color:#eee}
 .composer{display:flex;gap:8px;margin:0 14px;padding:7px;border:1px solid #333;border-radius:13px}
-.composer input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px}
+.composer input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px}.image-attachment{display:flex;align-items:center;gap:10px;margin:0 14px 8px;padding:8px;border:1px solid #333;border-radius:12px;background:#080808}.image-attachment img{width:48px;height:48px;object-fit:cover;border-radius:7px;background:#111}.image-attachment div{flex:1;min-width:0}.image-attachment strong,.image-attachment small{display:block;font-size:10px}.image-attachment small{margin-top:4px;color:var(--mute)}.image-attachment button{border:1px solid #333;border-radius:7px;background:#111;padding:5px 10px;font-size:18px}.composer #camera,.composer #mic{border:1px solid #333;border-radius:9px;background:#050505;color:#fff;padding:7px;min-width:34px}.msg .chat-image{display:block;max-width:min(220px,100%);max-height:180px;object-fit:contain;margin:7px 0 0 auto;border:1px solid #333;border-radius:9px}
 .composer button{border:0;border-radius:8px;padding:8px;background:#f5f5f5;color:#000}
 .bottom{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;color:#666;font:9px 'DM Mono',monospace}
 .bottom button{border:0;background:none;color:#aaa;font:9px 'DM Mono',monospace;padding:4px}
@@ -147,7 +147,7 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
  <button class="toggle" id="autotoggle" aria-expanded="false">⚙ <b>Automation</b><span id="autometa">BROWSER MODE</span></button>
  <section class="automation" id="automation" hidden></section>
  <section class="chat" id="chat" role="log" aria-live="off"></section>
- <form class="composer" id="form"><button type="button" id="mic" aria-label="Start voice input">🎙</button><input id="in" placeholder="Message Bosley…" autocomplete="off" maxlength="2000" aria-label="Message"><button id="send" aria-label="Send">➤</button></form>
+ <div class="image-attachment" id="imageattachment" hidden><img id="imagepreview" alt="Image ready to send to Bosley"><div><strong>Image attached</strong><small>Sent only when you press send</small></div><button type="button" id="removeimage" aria-label="Remove attached image">×</button></div><input id="camera-input" type="file" accept="image/*" capture="environment" hidden><form class="composer" id="form"><button type="button" id="camera" aria-label="Capture or attach an image" title="Camera / attach image">▧</button><button type="button" id="mic" aria-label="Start voice input">🎙</button><input id="in" placeholder="Message Bosley…" autocomplete="off" maxlength="2000" aria-label="Message"><button id="send" aria-label="Send">➤</button></form>
  <footer class="bottom"><span>CTRL/ALT+SHIFT+B</span><span><button id="stop" hidden>■ STOP</button><button id="voice">VOICE ON</button><button id="new">NEW CHAT</button></span></footer>
 </section>
 <div class="sr" id="live" aria-live="polite"></div>
@@ -312,14 +312,16 @@ async function restoreLatestConversation(){
  }catch(e){console.warn("Bosley chat restore failed:",e);note("I couldn't restore saved chat history. You can still chat; check your connection or workspace permissions if this keeps happening.")}
 }
 addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace and I'll answer through the Jarvis AI backend. Until a real request succeeds I won't claim it's connected.");
-async function send(text){
- if(S.busy||!text)return;
+async function send(text,imageData=null){
+ if(S.busy||(!text&&!imageData))return;
  if(user){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
  if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return}
- addMsg("you",text);
+ addMsg("you",imageData?(text||"What is in this image?"):text);
+ if(imageData){const last=chat.lastElementChild;const img=document.createElement("img");img.className="chat-image";img.alt="Image sent to Bosley";img.src=imageData;last?.appendChild(img)}
  const sess=db?(await db.auth.getSession()).data.session:null;
  if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return}
- history.push({role:"user",content:text});S.busy=true;eyes();
+ const userContent=imageData?[{type:"text",text:text||"Please describe and help me understand this image."},{type:"image_url",image_url:{url:imageData}}]:text;
+ history.push({role:"user",content:userContent});S.busy=true;eyes();
  const p=addMsg("bosley","…");const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),30000);
  try{
   const r=await fetch(CHAT_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({messages:history.slice(-16)})});
@@ -345,7 +347,7 @@ async function send(text){
   if(streamError&&!out)throw Error(streamError);
   if(!out)throw Error("The AI returned an empty reply. Check the provider key, model availability, and Edge Function logs.");
   history.push({role:"assistant",content:out});S.backend=true;S.busy=false;eyes();
-  try{await persistChatExchange(text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
+  try{await persistChatExchange(imageData?"[Image attached] "+(text||"Please describe this image."):text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
   speak(out);
  }catch(e){
   history.pop();S.busy=false;S.backend=false;
@@ -353,7 +355,12 @@ async function send(text){
   flash();
  }finally{clearTimeout(to);eyes()}
 }
-$("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim();i.value="";send(t)};
+let pendingImageData=null;
+function clearImageAttachment(){pendingImageData=null;$("#camera-input").value="";$("#imageattachment").hidden=true;$("#imagepreview").removeAttribute("src")}
+$("#camera").onclick=()=>$("#camera-input").click();
+$("#removeimage").onclick=clearImageAttachment;
+$("#camera-input").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){note("Please choose an image file.");clearImageAttachment();return}if(file.size>15*1024*1024){note("That image is too large. Choose an image under 15 MB.");clearImageAttachment();return}try{const source=await createImageBitmap(file);const scale=Math.min(1,1280/Math.max(source.width,source.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));const ctx=canvas.getContext("2d");if(!ctx)throw Error("Image processing is unavailable.");ctx.drawImage(source,0,0,canvas.width,canvas.height);source.close?.();pendingImageData=canvas.toDataURL("image/jpeg",0.82);$("#imagepreview").src=pendingImageData;$("#imageattachment").hidden=false}catch(error){clearImageAttachment();note("I couldn't prepare that image: "+String(error?.message||"unsupported image").slice(0,160))}});
+$("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim(),img=pendingImageData;if(!t&&!img)return;i.value="";clearImageAttachment();send(t,img)};
 $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpeak();addMsg("bosley","New conversation. What's up?")};
 
 /* ---------- voice ---------- */

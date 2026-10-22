@@ -122,7 +122,7 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
- <header class="top"><div class="brand"><strong>BOSLEY <span style="font-weight:500;letter-spacing:.04em;color:#aaa">CHAT COPILOT</span></strong><small id="status">● READY</small></div><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
+ <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
  <nav class="modebar" id="voicemodes" aria-label="Assistant mode">
   <button type="button" class="on" data-mode="agent" aria-pressed="true">◈ Agent</button>
   <button type="button" data-mode="dictate" aria-pressed="false">≋ Dictate</button>
@@ -170,6 +170,16 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 </div>
 <div id="startup-error" hidden role="alert"><strong>Bosley encountered a startup error</strong><span id="startup-error-message">The interface could not finish initializing.</span><code>Try reloading the app. If this persists, share this error text with support.</code></div>
 <script>
+window.addEventListener("unhandledrejection", event => {
+  const reason = event.reason;
+  const message = String(reason?.message || reason || "Unknown asynchronous startup error");
+  const panel = document.getElementById("startup-error");
+  const detail = document.getElementById("startup-error-message");
+  if (panel && detail) {
+    detail.textContent = "Async error: " + message;
+    panel.hidden = false;
+  }
+});
 window.addEventListener("error", event => {
   const message = String(event.message || "Unknown JavaScript error");
   const source = String(event.filename || "");

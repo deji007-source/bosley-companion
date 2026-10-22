@@ -154,7 +154,9 @@ jobs:
           }
 
           function positionWindows() {
-            const area = screen.getPrimaryDisplay().workArea;
+            const display = screen.getPrimaryDisplay();
+            const area = display.workArea;
+            const bounds = display.bounds;
 
             if (bubble && !bubble.isDestroyed()) {
               const dimensions = WIDGET_SIZES[widgetAppearance.size] || WIDGET_SIZES.default;
@@ -162,8 +164,8 @@ jobs:
               const bubbleHeight = dimensions.height;
 
               bubble.setBounds({
-                x: area.x + Math.round((area.width - bubbleWidth) / 2),
-                y: area.y,
+                x: bounds.x + Math.round((bounds.width - bubbleWidth) / 2),
+                y: bounds.y,
                 width: bubbleWidth,
                 height: bubbleHeight
               });
@@ -174,8 +176,8 @@ jobs:
             if (panel && !panel.isDestroyed() && panel.isVisible()) {
               const width = Math.min(460, area.width - 16);
               const height = Math.max(320, Math.min(720, area.height));
-              const x = area.x + Math.round((area.width - width) / 2);
-              const y = area.y;
+              const x = bounds.x + Math.round((bounds.width - width) / 2);
+              const y = bounds.y;
 
               panel.setBounds({ x, y, width, height });
             }
@@ -721,8 +723,9 @@ jobs:
               }
 
               button {
-                border-radius: var(--widget-radius, 999px);
+                border-radius: 0 0 22px 22px;
                 border-width: var(--widget-border-width, 1px);
+                clip-path: polygon(0 0,100% 0,100% 54%,97% 68%,91% 82%,80% 93%,64% 100%,36% 100%,20% 93%,9% 82%,3% 68%,0 54%);
               }
 
               .wordmark { font: 700 10px/1 system-ui, Segoe UI, Arial, sans-serif; letter-spacing: .24em; white-space: nowrap; }

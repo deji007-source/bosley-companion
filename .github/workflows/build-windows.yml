@@ -60,7 +60,7 @@ jobs:
           cat > desktop/package.json <<'PACKAGE_EOF'
           {
             "name": "bosley-companion-desktop",
-            "version": "1.0.9",
+            "version": "1.1.0",
             "description": "Bosley floating desktop companion",
             "main": "main.cjs",
             "scripts": {
@@ -805,6 +805,8 @@ jobs:
           grep -q '</html>' desktop/index.html
           grep -Fq 'id="startup-error"' desktop/index.html
           grep -Fq 'id="voicemodes"' desktop/index.html
+          grep -Fq 'id="activitytoggle"' desktop/index.html
+          grep -Fq 'function activityEvent' desktop/index.html
           grep -Fq 'function setVoiceMode(next)' desktop/index.html
           grep -Fq 'BOSLEY</span>' desktop/bubble.html
           grep -Fq 'loadHostedFallback' desktop/main.cjs

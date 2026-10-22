@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { readFileSync as readText } from "node:fs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
@@ -14,6 +15,8 @@ for (const [index, source] of inlineScripts.entries()) {
     "Inline script " + (index + 1) + " must be valid JavaScript",
   );
 }
+
+const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 
 const contracts = [
   ["Desktop bridge action", 'launch_app'],
@@ -59,4 +62,7 @@ const contracts = [
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);
 }
-console.log("Bosley regression checks passed: " + inlineScripts.length + " inline script(s), " + contracts.length + " contracts.");
+assert.ok(androidInstaller.includes("public void speakText(PluginCall call)"), "Missing native Android text-to-speech bridge");
+assert.ok(androidInstaller.includes("public void stopSpeaking(PluginCall call)"), "Missing native Android speech cancellation bridge");
+assert.ok(androidInstaller.includes("TextToSpeech.QUEUE_FLUSH"), "Native Android speech should replace queued speech");
+console.log("Bosley regression checks passed: " + inlineScripts.length + " inline script(s), " + contracts.length + " UI contracts, and Android TTS bridge contracts.");

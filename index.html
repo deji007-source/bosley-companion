@@ -390,7 +390,11 @@ let pendingImageData=null;
 function clearImageAttachment(){pendingImageData=null;$("#camera-input").value="";$("#imageattachment").hidden=true;$("#imagepreview").removeAttribute("src")}
 $("#camera").onclick=()=>$("#camera-input").click();
 const screenButton=$("#screen");
-if(screenButton&&window.BosleyDesktop&&typeof window.BosleyDesktop.request==="function")screenButton.hidden=false;
+if(screenButton&&window.BosleyDesktop&&typeof window.BosleyDesktop.getCapabilities==="function"){
+ window.BosleyDesktop.getCapabilities().then(capabilities=>{
+  screenButton.hidden=!Array.isArray(capabilities?.actions)||!capabilities.actions.includes("capture_screen");
+ }).catch(()=>{screenButton.hidden=true});
+}
 if(screenButton)screenButton.onclick=async()=>{
  if(screenButton.disabled)return;
  const desktop=window.BosleyDesktop;

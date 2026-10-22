@@ -84,7 +84,8 @@ jobs:
                 "assets/**"
               ],
               "win": {
-                "target": "nsis"
+                "target": "nsis",
+                "icon": "assets/bosley.ico"
               },
               "nsis": {
                 "oneClick": false,
@@ -833,6 +834,13 @@ jobs:
           node --check desktop/main.cjs
           node --check desktop/preload.cjs
           echo "Desktop bridge source and JavaScript syntax checks passed."
+
+      - name: Generate Bosley app icon
+        shell: bash
+        run: |
+          python -m pip install Pillow
+          python scripts/generate-app-icons.py
+          cp assets/icons/bosley.ico desktop/assets/bosley.ico
 
       - name: Install dependencies and build installer
         shell: bash

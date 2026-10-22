@@ -78,7 +78,7 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void show(PluginCall call){
     if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(getContext())){call.reject("Overlay permission is required. Tap Enable floating widget and allow display over other apps.");return;}
     Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_SHOW);
-    if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(i);else getContext().startService(i);
+    getContext().startService(i);
     JSObject r=new JSObject();r.put("visible",true);call.resolve(r);
   }
   @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);getContext().startService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}

@@ -266,7 +266,23 @@ document.addEventListener("DOMContentLoaded",()=>{
  for(const v of views){const b=document.getElementById(v.button);if(b)b.addEventListener("click",e=>{e.preventDefault();e.stopImmediatePropagation();show(v.panel)},true)}
  document.getElementById("dock-open")?.addEventListener("click",()=>show(active||"ws"));
  const signInShortcut=document.getElementById("signin-open");
- if(signInShortcut)signInShortcut.addEventListener("click",()=>{show("ws");if(typeof drawWs==="function")drawWs();const emailField=document.getElementById("email");if(emailField)setTimeout(()=>emailField.focus(),80)});
+ if(signInShortcut)signInShortcut.addEventListener("click",()=>{
+  try{
+   show("ws");
+   const workspace=document.getElementById("ws");
+   if(workspace)workspace.hidden=false;
+   if(typeof drawWs==="function")drawWs();
+   if(workspace&&!workspace.innerHTML.trim())workspace.innerHTML='<h3>Sign in to Bosley</h3><p class="mute">The sign-in form did not load. Please reload the page and try again.</p><button type="button" class="primary" id="ws-retry">Retry sign-in</button>';
+   const retry=document.getElementById("ws-retry");
+   if(retry)retry.onclick=()=>{try{drawWs()}catch(e){workspace.innerHTML='<p class="mute">Sign-in could not initialize. Reload Bosley and try again.</p>'}};
+   const emailField=document.getElementById("email");
+   if(emailField)setTimeout(()=>emailField.focus(),80);
+  }catch(err){
+   const workspace=document.getElementById("ws");
+   if(workspace){workspace.hidden=false;workspace.innerHTML='<h3>Sign in to Bosley</h3><p class="mute">Sign-in could not initialize. Reload the page and try again.</p>';}
+   console.error("Bosley sign-in failed to open",err);
+  }
+ });
  document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dock.hidden){dock.hidden=true;active="";tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))}});
 })();
@@ -569,7 +585,8 @@ const ws=$("#ws");
 function fb(t){const e=$("#fb");if(e)e.textContent=t}
 function drawWs(){
  $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";
- if(!db){ws.innerHTML='<p class="mute">Supabase library failed to load. Check your connection and refresh.</p>';return}
+ if(!ws){return}
+ if(!db){ws.innerHTML='<h3>Sign in to Bosley</h3><p class="mute">The account service did not load. Check your connection, then reload the page.</p><button type="button" class="primary" id="ws-reload">Reload Bosley</button>';const reload=$("#ws-reload");if(reload)reload.onclick=()=>location.reload();return}
  if(!user){ws.innerHTML=`<h3>Jarvis Workspace</h3><p class="mute">Sign in with the same account you use in the Bosley app to see your notes and tasks and to chat with the AI. Creating a new account starts an empty workspace.</p><form class="form" id="auth"><input id="email" type="email" required autocomplete="email" placeholder="Email"><input id="pw" type="password" ${mode==="up"?'minlength="6"':""} required autocomplete="${mode==="up"?"new-password":"current-password"}" placeholder="${mode==="up"?"Password (minimum 6 characters)":"Password"}"><button class="primary">${mode==="up"?"Create account":"Sign in"}</button></form><button class="link" id="sw">${mode==="in"?"New here? Create an account":"Have an account? Sign in"}</button><div class="fb" id="fb"></div>`;
   $("#sw").onclick=()=>{mode=mode==="in"?"up":"in";drawWs()};
   $("#auth").onsubmit=async e=>{e.preventDefault();fb("Working…");

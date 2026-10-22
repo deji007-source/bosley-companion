@@ -67,7 +67,6 @@ public class BosleyOverlayService extends Service {
   void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   @Override public void onDestroy(){removeBar();super.onDestroy();}
-  @Override public void onDestroy(){try{if(bosleyTts!=null){bosleyTts.stop();bosleyTts.shutdown();bosleyTts=null;}}catch(Exception ignored){}super.handleOnDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
 }''')
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;

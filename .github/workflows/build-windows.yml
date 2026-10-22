@@ -94,7 +94,9 @@ jobs:
           }
           PACKAGE_EOF
 
-          cp dist/index.html desktop/index.html
+          # Package the same standalone UI that is deployed as the working website.
+          # dist/index.html is a separate React shell, not the production companion UI.
+          cp index.html desktop/index.html
           # Vite currently inlines the app's JavaScript and CSS into index.html.
           # Copy asset files when emitted, but don't fail when the build is self-contained.
           mkdir -p desktop/assets
@@ -116,11 +118,12 @@ jobs:
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;
           let panel = null;
+          let usingHostedFallback = false;
           let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
           const WIDGET_SIZES = {
-            compact: { width: 112, height: 72 },
-            default: { width: 128, height: 80 },
-            wide: { width: 144, height: 88 }
+            compact: { width: 152, height: 36 },
+            default: { width: 176, height: 40 },
+            wide: { width: 200, height: 44 }
           };
 
           function escapeHtml(value) {
@@ -235,6 +238,14 @@ jobs:
             ).catch(() => {});
           }
 
+          function loadHostedFallback(reason) {
+            if (!panel || panel.isDestroyed()) return;
+            if (usingHostedFallback) { showLoadError(reason || 'The bundled and hosted interfaces could not be loaded.'); return; }
+            usingHostedFallback = true;
+            console.error('Bosley local UI fallback:', reason);
+            panel.loadURL(SITE).catch(error => showLoadError((reason ? reason + '\n\n' : '') + 'The hosted fallback also failed: ' + error.message));
+          }
+
           function createBubble() {
             const dimensions = WIDGET_SIZES[widgetAppearance.size] || WIDGET_SIZES.default;
             bubble = new BrowserWindow({
@@ -291,9 +302,12 @@ jobs:
               'did-fail-load',
               (_event, code, description, failedUrl, isMainFrame) => {
                 if (isMainFrame && !String(failedUrl).startsWith('data:')) {
-                  showLoadError(
-                    `${code}: ${description} (${failedUrl})`
-                  );
+                  const detail = `${code}: ${description} (${failedUrl})`;
+                  if (!usingHostedFallback && String(failedUrl).startsWith('file:')) {
+                    loadHostedFallback('The bundled interface failed to load: ' + detail);
+                  } else {
+                    showLoadError(detail);
+                  }
                 }
               }
             );
@@ -301,19 +315,30 @@ jobs:
             panel.webContents.on(
               'render-process-gone',
               (_event, details) => {
-                showLoadError(
-                  `The page process stopped (${details.reason || 'unknown reason'}).`
-                );
+                const detail = `The page process stopped (${details.reason || 'unknown reason'}).`;
+                if (!usingHostedFallback) loadHostedFallback(detail);
+                else showLoadError(detail);
               }
             );
 
             panel.webContents.on('did-finish-load', () => {
-              console.log(
-                'Bosley page loaded:',
-                panel && !panel.isDestroyed()
-                  ? panel.webContents.getURL()
-                  : 'closed'
-              );
+              if (!panel || panel.isDestroyed()) return;
+              const loadedUrl = panel.webContents.getURL();
+              console.log('Bosley page loaded:', loadedUrl);
+              // A file can load successfully while its UI bootstrap silently fails.
+              if (loadedUrl.startsWith('file:') && !usingHostedFallback) {
+                setTimeout(() => {
+                  if (!panel || panel.isDestroyed() || usingHostedFallback) return;
+                  panel.webContents.executeJavaScript("(() => { const b=document.body; const r=b&&b.getBoundingClientRect(); return {textLength:(b?.innerText||'').trim().length, childCount:b?.children?.length||0, width:r?.width||0, height:r?.height||0}; })()")
+                    .then(state => {
+                      if (!panel || panel.isDestroyed() || usingHostedFallback) return;
+                      if (!state || state.childCount === 0 || state.width === 0 || state.height === 0 || state.textLength < 10) {
+                        loadHostedFallback('The local app opened but did not render its interface.');
+                      }
+                    })
+                    .catch(error => loadHostedFallback('Could not verify the local interface: ' + error.message));
+                }, 3500);
+              }
             });
 
             panel.webContents.setWindowOpenHandler(({ url }) => {
@@ -658,23 +683,28 @@ jobs:
               }
 
               button {
-                width: 128px;
-                height: 80px;
-                padding: 5px;
+                width: 176px;
+                height: 40px;
+                padding: 3px 12px;
                 border: 1px solid #fff;
-                border-radius: 4px;
+                border-radius: 999px;
                 background: #000;
+                color: #fff;
                 cursor: pointer;
-                display: grid;
-                place-items: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
                 -webkit-app-region: no-drag;
-                transition: border-color 120ms ease;
+                transition: border-color 120ms ease, background 120ms ease;
               }
 
               button {
-                border-radius: var(--widget-radius, 14px);
+                border-radius: var(--widget-radius, 999px);
                 border-width: var(--widget-border-width, 1px);
               }
+
+              .wordmark { font: 700 10px/1 system-ui, Segoe UI, Arial, sans-serif; letter-spacing: .24em; white-space: nowrap; }
 
               button:hover {
                 border-color: #fff;
@@ -685,18 +715,14 @@ jobs:
                 outline-offset: 2px;
               }
 
-              svg {
-                width: 128px;
-                height: 80px;
-                display: block;
-              }
+              svg { width: 46px; height: 28px; display: block; flex: 0 0 auto; }
             </style>
           </head>
 
           <body>
             <button
-              aria-label="Open Bosley chat"
-              title="Open Bosley"
+              aria-label="Open Bosley Companion"
+              title="Open Bosley Companion"
             >
               <svg
                 viewBox="0 0 108 64"
@@ -713,14 +739,15 @@ jobs:
                 <rect x="35" y="29" width="13" height="30" rx="6.5" fill="#fff"/>
                 <rect x="60" y="29" width="13" height="30" rx="6.5" fill="#fff"/>
               </svg>
+              <span class="wordmark">BOSLEY</span>
             </button>
 
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 112, height: 72 },
-                default: { width: 128, height: 80 },
-                wide: { width: 144, height: 88 }
+                compact: { width: 152, height: 36 },
+                default: { width: 176, height: 40 },
+                wide: { width: 200, height: 44 }
               };
               function applyAppearance(value) {
                 if (!value) return;
@@ -731,8 +758,8 @@ jobs:
                   ({ thin: '1px', medium: '2px', bold: '3px' })[value.border] || '1px');
                 button.style.width = size.width + 'px';
                 button.style.height = size.height + 'px';
-                document.querySelector('svg').style.width = Math.max(72, size.width - 14) + 'px';
-                document.querySelector('svg').style.height = Math.max(42, size.height - 12) + 'px';
+                document.querySelector('svg').style.width = Math.max(38, Math.min(52, Math.round(size.width * 0.27))) + 'px';
+                document.querySelector('svg').style.height = Math.max(24, Math.min(30, size.height - 10)) + 'px';
               }
               if (window.bosleyDesktop.onWidgetAppearance) {
                 window.bosleyDesktop.onWidgetAppearance(applyAppearance);
@@ -755,6 +782,11 @@ jobs:
           test -d desktop/assets
           grep -q '<script' desktop/index.html
           grep -q '</html>' desktop/index.html
+          grep -Fq 'id="startup-error"' desktop/index.html
+          grep -Fq 'id="voicemodes"' desktop/index.html
+          grep -Fq 'function setVoiceMode(next)' desktop/index.html
+          grep -Fq 'BOSLEY</span>' desktop/bubble.html
+          grep -Fq 'loadHostedFallback' desktop/main.cjs
           grep -Fq './assets/supabase.js' desktop/index.html
           test -s desktop/assets/supabase.js
           grep -Fq "panel.loadFile(path.join(__dirname, 'index.html'))" desktop/main.cjs

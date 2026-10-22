@@ -46,6 +46,7 @@ const contracts = [
   ["Widget side dock click support", "html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}"],
   ["Compact Dynamic Island launcher", "html.widget-mode .launch{border:2px solid #fff!important;border-radius:999px!important;clip-path:none!important"],
   ["Native Android speech recognition", "startNativeSpeechRecognition"],
+  ["Native Android text-to-speech", "public void speakText(PluginCall call)"],
   ["Android microphone uses native speech recognition", "Android voice input couldn't start"],
   ["Android mic button native speech routing", "overlayPlugin.startNativeSpeechRecognition"],
   ["Tap panel and hold voice routing", "consumeLaunchAction"],

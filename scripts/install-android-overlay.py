@@ -78,7 +78,7 @@ import com.getcapacitor.annotation.*;
 @CapacitorPlugin(name="BosleyOverlay", permissions={@Permission(alias="microphone", strings={android.Manifest.permission.RECORD_AUDIO})})
 public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void startNativeSpeechRecognition(PluginCall call){
-    Intent speech=new android.speech.RecognizerIntent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+    Intent speech=new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
     speech.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
     speech.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE,java.util.Locale.getDefault().toLanguageTag());
     speech.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT,"Speak to Bosley");

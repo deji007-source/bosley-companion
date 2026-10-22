@@ -480,7 +480,7 @@ async function handleNativeQuickAction(){
   toggle(true);
   if(action==="voice"){
    setVoiceMode("agent");
-   setTimeout(()=>{try{$("#mic").focus();note("Voice mode ready. Press and hold the microphone, then release to submit.");}catch{}},180);
+   setTimeout(()=>{try{$("#mic").focus();note("Requesting microphone access…");startMic();}catch(error){console.warn("Could not start Bosley voice mode",error)}},180);
   }else setTimeout(()=>$("#in").focus(),180);
  }catch(error){console.warn("Bosley quick action could not be read",error)}
 }
@@ -642,9 +642,18 @@ function setVoiceMode(next){
 }
 document.querySelectorAll("#voicemodes [data-mode]").forEach(button=>button.addEventListener("click",()=>setVoiceMode(button.dataset.mode)));
 setVoiceMode("agent");
-function startMic(){
+let androidMicPermissionGranted=false,androidMicPermissionPending=false;
+async function startMic(){
+ const overlayPlugin=window.Capacitor?.Plugins?.BosleyOverlay;
+ if(overlayPlugin&&typeof overlayPlugin.requestMicrophonePermission==="function"&&!androidMicPermissionGranted){
+  if(androidMicPermissionPending)return;
+  androidMicPermissionPending=true;
+  try{const permission=await overlayPlugin.requestMicrophonePermission();androidMicPermissionGranted=!!permission?.granted;if(!androidMicPermissionGranted){note("Microphone permission is required. Allow it in Android settings, then try again.");return}}
+  catch(error){note("Microphone permission denied. Open Android Settings → Apps → Bosley Companion → Permissions → Microphone, allow access, then try again.");console.warn("Android microphone permission failed",error);return}
+  finally{androidMicPermissionPending=false}
+ }
  const C=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!C){note("Speech recognition isn't supported in this browser. You can type instead.");return}
+ if(!C){note("Speech recognition isn't supported in this Android WebView. You can type instead.");return}
  stopSpeak();const r=new C();r.lang=navigator.language||"en-US";r.interimResults=true;r.continuous=false;let fin="";
  r.onstart=()=>{S.listening=true;$("#mic").textContent="■";$("#mic").setAttribute("aria-label","Stop voice input");look(0,0);eyes()};
  r.onresult=e=>{let t="";for(const x of e.results){t+=x[0].transcript;if(x.isFinal)fin=t}$("#in").value=t};

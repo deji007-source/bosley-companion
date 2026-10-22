@@ -77,6 +77,22 @@ import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
 @CapacitorPlugin(name="BosleyOverlay", permissions={@Permission(alias="microphone", strings={android.Manifest.permission.RECORD_AUDIO})})
 public class BosleyOverlayPlugin extends Plugin {
+  @PluginMethod public void startNativeSpeechRecognition(PluginCall call){
+    Intent speech=new android.speech.RecognizerIntent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+    speech.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+    speech.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE,java.util.Locale.getDefault().toLanguageTag());
+    speech.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT,"Speak to Bosley");
+    try{startActivityForResult(call,speech,"nativeSpeechRecognitionResult");}
+    catch(Exception e){call.reject("Android speech recognition is unavailable. Enable a speech recognition service, then try again.",e);}
+  }
+  @ActivityCallback private void nativeSpeechRecognitionResult(PluginCall call,ActivityResult result){
+    JSObject response=new JSObject();
+    if(result.getResultCode()==android.app.Activity.RESULT_OK&&result.getData()!=null){
+      java.util.ArrayList<String> matches=result.getData().getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS);
+      response.put("text",matches!=null&&!matches.isEmpty()?matches.get(0):"");
+    }else response.put("text","");
+    call.resolve(response);
+  }
   @PluginMethod public void requestMicrophonePermission(PluginCall call){
     if(getPermissionState("microphone")!=PermissionState.GRANTED){
       requestPermissionForAlias("microphone",call,"microphonePermissionCallback");return;

@@ -144,6 +144,12 @@ html.widget-mode #side-dock{left:auto;right:8px;top:8px;width:min(310px,calc(100
 #dock-launcher button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media(max-width:520px){#dock-launcher{right:6px;top:38%;padding:5px;gap:5px}#dock-launcher button{width:32px;height:32px}}
 html.widget-mode #dock-launcher{right:6px;top:40%}
+
+/* In transparent desktop-widget mode, explicitly re-enable interaction on the side dock. */
+html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}
+html.widget-mode #dock-launcher button,html.widget-mode #side-dock button,html.widget-mode #side-dock input,html.widget-mode #side-dock textarea,html.widget-mode #side-dock select{pointer-events:auto!important}
+/* Incognito bezel silhouette: soft curved body with inward shoulders at the screen edge. */
+html.widget-mode .launch{border-radius:0 0 30px 30px;clip-path:polygon(0 0,100% 0,100% 60%,96% 73%,88% 86%,76% 95%,62% 100%,38% 100%,24% 95%,12% 86%,4% 73%,0 60%);}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>

@@ -118,6 +118,24 @@ html.widget-mode .panel .top{cursor:default}
 html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 @media(max-width:520px){html.widget-mode .panel{left:0;transform:none;width:100vw;height:100dvh;max-height:100dvh}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* ---- detachable side views: keep the conversation panel uncluttered ---- */
+#side-dock{position:fixed;z-index:2147482990;top:12px;left:calc(50% + 230px);width:min(330px,calc(100vw - 470px));height:min(620px,calc(100dvh - 24px));min-width:260px;display:flex;flex-direction:column;border:1px solid #292929;border-radius:16px;background:#050505;box-shadow:0 18px 60px #000b;overflow:hidden;color:#f5f5f5}
+#side-dock[hidden]{display:none!important}
+#side-dock .dock-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #ffffff16}
+#side-dock .dock-title{flex:1;font-size:10px;font-weight:800;letter-spacing:.13em;color:#ddd}
+#side-dock .dock-close{width:28px;height:28px;border:1px solid #333;border-radius:8px;background:#090909;color:#ddd}
+#side-dock .dock-tabs{display:flex;gap:5px;padding:8px;border-bottom:1px solid #ffffff12;overflow-x:auto}
+#side-dock .dock-tabs button{flex:0 0 auto;padding:7px 9px;border:1px solid #292929;border-radius:8px;background:#090909;color:#999;font-size:10px}
+#side-dock .dock-tabs button.on{border-color:#ddd;background:#eee;color:#000}
+#side-dock .dock-body{min-height:0;flex:1;overflow:auto;padding:10px}
+#side-dock .dock-body>.workspace,#side-dock .dock-body>.automation{display:block!important;max-height:none;width:100%;margin:0;padding:4px;border:0;border-radius:0;overflow:visible}
+#side-dock .dock-body>.workspace[hidden],#side-dock .dock-body>.automation[hidden]{display:none!important}
+#side-dock .dock-body>.toggle{display:none!important}
+#side-dock .dock-body .form input,#side-dock .dock-body .form textarea,#side-dock .dock-body .form select{font-size:12px}
+@media(max-width:900px){#side-dock{left:auto;right:8px;top:8px;width:min(330px,calc(100vw - 16px));height:min(58dvh,620px);min-width:0;z-index:2147483001;box-shadow:0 12px 45px #000d}}
+@media(max-width:520px){#side-dock{top:auto;bottom:8px;right:8px;width:calc(100vw - 16px);height:min(56dvh,520px);border-radius:14px}}
+html.widget-mode #side-dock{left:auto;right:8px;top:8px;width:min(310px,calc(100vw - 16px));height:min(58dvh,600px);min-width:0}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
@@ -168,6 +186,8 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
  <div class="image-attachment" id="imageattachment" hidden><img id="imagepreview" alt="Image ready to send to Bosley"><div><strong>Image attached</strong><small>Sent only when you press send</small></div><button type="button" id="removeimage" aria-label="Remove attached image">×</button></div><input id="camera-input" type="file" accept="image/*" capture="environment" hidden><form class="composer" id="form"><button type="button" id="camera" aria-label="Capture or attach an image" title="Camera / attach image">▧</button><button type="button" id="screen" aria-label="Capture primary screen" title="Capture screen (Windows desktop only)" hidden>▣</button><button type="button" id="mic" aria-label="Start voice input">🎙</button><input id="in" placeholder="Message Bosley…" autocomplete="off" maxlength="2000" aria-label="Message"><button id="send" aria-label="Send">➤</button></form>
  <footer class="bottom"><span>CTRL/ALT+SHIFT+B</span><span><button id="stop" hidden>■ STOP</button><button id="voice">VOICE ON</button><button id="new">NEW CHAT</button></span></footer>
 </section>
+
+<aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
 <div id="startup-error" hidden role="alert"><strong>Bosley encountered a startup error</strong><span id="startup-error-message">The interface could not finish initializing.</span><code>Try reloading the app. If this persists, share this error text with support.</code></div>
@@ -193,6 +213,24 @@ window.addEventListener("error", event => {
     panel.hidden = false;
   }
 });
+
+/* Side-view dock: workspace, appearance, automation and activity open beside chat. */
+(()=>{
+ const dock=document.getElementById("side-dock"),tabs=document.getElementById("dock-tabs"),body=document.getElementById("dock-body");
+ if(!dock||!tabs||!body)return;
+ const views=[
+  {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{if(typeof drawWs==="function"){drawWs();if(typeof user!=="undefined"&&user&&typeof load==="function")load()}}},
+  {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{if(typeof initFaceSettings==="function")initFaceSettings()}},
+  {button:"autotoggle",panel:"automation",label:"Automation",init:()=>{if(typeof drawAutomation==="function")drawAutomation()}},
+  {button:"activitytoggle",panel:"activity",label:"Activity",init:()=>{if(typeof renderActivity==="function")renderActivity()}}
+ ];
+ let active="";
+ for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if(!b||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;b.hidden=true;b.setAttribute("aria-expanded","false");tab.addEventListener("click",()=>show(v.panel));}
+ function show(id){const v=views.find(x=>x.panel===id);if(!v)return;const p=document.getElementById(id);if(!p)return;const wasActive=active===id&&!dock.hidden;if(wasActive){dock.hidden=true;active="";}else{dock.hidden=false;active=id;for(const x of views){const panel=document.getElementById(x.panel),tab=tabs.querySelector('[data-view="'+x.panel+'"]'),button=document.getElementById(x.button);if(panel)panel.hidden=x.panel!==id;if(tab)tab.classList.toggle("on",x.panel===id);if(button)button.setAttribute("aria-expanded",String(x.panel===id));}try{v.init&&v.init()}catch(e){console.warn("Bosley side view failed to initialize",e)}}}
+ for(const v of views){const b=document.getElementById(v.button);if(b)b.addEventListener("click",e=>{e.preventDefault();e.stopImmediatePropagation();show(v.panel)},true)}
+ document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dock.hidden){dock.hidden=true;active="";tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))}});
+})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>

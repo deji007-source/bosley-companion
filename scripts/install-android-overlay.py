@@ -30,7 +30,7 @@ import android.graphics.PixelFormat;
 
 public class BosleyOverlayService extends Service {
   static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY";
-  int widgetWidth=150,widgetHeight=46,cornerDp=25,borderDp=2,eyeWidth=9,eyeHeight=24,eyeGapDp=16; String eyeShape="pill";
+  int widgetWidth=120,widgetHeight=72,cornerDp=24,borderDp=2,eyeWidth=29,eyeHeight=42,eyeGapDp=15; String eyeShape="pill";
   WindowManager wm; View bar; WindowManager.LayoutParams lp;
   @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);}
   @Override public int onStartCommand(Intent i,int flags,int id){
@@ -45,7 +45,7 @@ public class BosleyOverlayService extends Service {
     GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(3,3,3));bg.setCornerRadius(dp(cornerDp));bg.setStroke(dp(borderDp),Color.WHITE);frame.setBackground(bg);frame.setPadding(dp(3),dp(3),dp(3),dp(3));
     LinearLayout inner=new LinearLayout(this);inner.setGravity(Gravity.CENTER);inner.setOrientation(LinearLayout.HORIZONTAL);
     GradientDrawable edge=new GradientDrawable();edge.setColor(Color.TRANSPARENT);edge.setCornerRadius(dp(Math.max(1,cornerDp-borderDp)));edge.setStroke(dp(1),0x66FFFFFF);inner.setBackground(edge);
-    inner.setPadding(dp(23),dp(9),dp(23),dp(9));
+    inner.setPadding(dp(3),dp(3),dp(3),dp(3));
     for(int n=0;n<2;n++){View eye=new View(this);GradientDrawable e=new GradientDrawable();e.setColor(Color.WHITE);e.setCornerRadius(dp("soft-square".equals(eyeShape)?4:Math.max(1,eyeWidth)));eye.setBackground(e);LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(dp(eyeWidth),dp(eyeHeight));if(n==1)ep.leftMargin=dp(eyeGapDp);inner.addView(eye,ep);}
     frame.addView(inner,new LinearLayout.LayoutParams(-1,-2));bar=frame;
     lp=new WindowManager.LayoutParams(dp(widgetWidth),dp(widgetHeight),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
@@ -91,7 +91,7 @@ public class BosleyOverlayPlugin extends Plugin {
   private Intent styledIntent(PluginCall call,String action){
     Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(action);
     JSObject p=call.getObject("payload",new JSObject());String size=p.getString("widgetSize","default"),edge=p.getString("widgetEdge","soft"),border=p.getString("widgetBorder","medium"),eyeShape=p.getString("eyeShape","pill"),eyeGap=p.getString("eyeGap","normal"),faceSize=p.getString("size","default");
-    int w="compact".equals(size)?128:("wide".equals(size)?184:150),h="compact".equals(size)?42:("wide".equals(size)?54:46);int c="sharp".equals(edge)?5:("balanced".equals(edge)?14:25);int b="thin".equals(border)?1:("bold".equals(border)?3:2);int ew="compact".equals(faceSize)?7:("large".equals(faceSize)?12:9),eh="compact".equals(faceSize)?19:("large".equals(faceSize)?31:24);int gap="close".equals(eyeGap)?10:("wide".equals(eyeGap)?23:16);
+    int w="compact".equals(size)?108:("wide".equals(size)?136:120),h="compact".equals(size)?68:("wide".equals(size)?80:72);int c="sharp".equals(edge)?2:("balanced".equals(edge)?18:24);int b="thin".equals(border)?1:("bold".equals(border)?3:2);int ew="compact".equals(faceSize)?15:("default".equals(faceSize)?25:29),eh="compact".equals(faceSize)?24:("default".equals(faceSize)?36:42);int gap="close".equals(eyeGap)?9:("wide".equals(eyeGap)?21:15);
     i.putExtra("widgetWidth",w);i.putExtra("widgetHeight",h);i.putExtra("cornerDp",c);i.putExtra("borderDp",b);i.putExtra("eyeWidth",ew);i.putExtra("eyeHeight",eh);i.putExtra("eyeGapDp",gap);i.putExtra("eyeShape",eyeShape);return i;
   }
   @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);getContext().startService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}

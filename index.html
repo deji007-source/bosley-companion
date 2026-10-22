@@ -136,6 +136,14 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 @media(max-width:900px){#side-dock{left:auto;right:8px;top:8px;width:min(330px,calc(100vw - 16px));height:min(58dvh,620px);min-width:0;z-index:2147483001;box-shadow:0 12px 45px #000d}}
 @media(max-width:520px){#side-dock{top:auto;bottom:8px;right:8px;width:calc(100vw - 16px);height:min(56dvh,520px);border-radius:14px}}
 html.widget-mode #side-dock{left:auto;right:8px;top:8px;width:min(310px,calc(100vw - 16px));height:min(58dvh,600px);min-width:0}
+
+/* Always-visible compact launcher for detached views */
+#dock-launcher{position:fixed;z-index:2147483002;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;padding:7px;border:1px solid #292929;border-radius:13px;background:#050505eF;box-shadow:0 10px 35px #0009}
+#dock-launcher button{width:34px;height:34px;padding:0;border:1px solid #292929;border-radius:9px;background:#0b0b0b;color:#bbb;font-size:14px}
+#dock-launcher button.on{background:#eee;color:#000;border-color:#eee}
+#dock-launcher button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media(max-width:520px){#dock-launcher{right:6px;top:38%;padding:5px;gap:5px}#dock-launcher button{width:32px;height:32px}}
+html.widget-mode #dock-launcher{right:6px;top:40%}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
@@ -187,6 +195,8 @@ html.widget-mode #side-dock{left:auto;right:8px;top:8px;width:min(310px,calc(100
  <footer class="bottom"><span>CTRL/ALT+SHIFT+B</span><span><button id="stop" hidden>■ STOP</button><button id="voice">VOICE ON</button><button id="new">NEW CHAT</button></span></footer>
 </section>
 
+
+<nav id="dock-launcher" aria-label="Open Bosley side views"><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button></nav>
 <aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
@@ -226,7 +236,8 @@ window.addEventListener("error", event => {
  ];
  let active="";
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if(!b||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;b.hidden=true;b.setAttribute("aria-expanded","false");tab.addEventListener("click",()=>show(v.panel));}
- function show(id){const v=views.find(x=>x.panel===id);if(!v)return;const p=document.getElementById(id);if(!p)return;const wasActive=active===id&&!dock.hidden;if(wasActive){dock.hidden=true;active="";}else{dock.hidden=false;active=id;for(const x of views){const panel=document.getElementById(x.panel),tab=tabs.querySelector('[data-view="'+x.panel+'"]'),button=document.getElementById(x.button);if(panel)panel.hidden=x.panel!==id;if(tab)tab.classList.toggle("on",x.panel===id);if(button)button.setAttribute("aria-expanded",String(x.panel===id));}try{v.init&&v.init()}catch(e){console.warn("Bosley side view failed to initialize",e)}}}
+ document.querySelectorAll("#dock-launcher [data-open-view]").forEach(button=>button.addEventListener("click",()=>show(button.dataset.openView)));
+ function show(id){const v=views.find(x=>x.panel===id);if(!v)return;const p=document.getElementById(id);if(!p)return;const wasActive=active===id&&!dock.hidden;if(wasActive){dock.hidden=true;active="";}else{dock.hidden=false;active=id;for(const x of views){const panel=document.getElementById(x.panel),tab=tabs.querySelector('[data-view="'+x.panel+'"]'),button=document.getElementById(x.button),launcher=document.querySelector('#dock-launcher [data-open-view="'+x.panel+'"]');if(panel)panel.hidden=x.panel!==id;if(tab)tab.classList.toggle("on",x.panel===id);if(launcher)launcher.classList.toggle("on",x.panel===id);if(button)button.setAttribute("aria-expanded",String(x.panel===id));}try{v.init&&v.init()}catch(e){console.warn("Bosley side view failed to initialize",e)}}}
  for(const v of views){const b=document.getElementById(v.button);if(b)b.addEventListener("click",e=>{e.preventDefault();e.stopImmediatePropagation();show(v.panel)},true)}
  document.getElementById("dock-open")?.addEventListener("click",()=>show(active||"ws"));
  document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});

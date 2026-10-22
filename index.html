@@ -26,13 +26,13 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 
 /* ---- collapsed launcher: hat brim, eyes peeking out ---- */
 .stage{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:2147483000}
-.launch{position:relative;display:block;width:120px;height:72px;padding:0;border:1px solid #d8d8d8;border-radius:0 0 28px 28px;background:#000;overflow:hidden;clip-path:polygon(0 0,100% 0,100% 54%,97% 68%,91% 82%,80% 93%,64% 100%,36% 100%,20% 93%,9% 82%,3% 68%,0 54%);transition:border-color .2s}
+.launch{position:relative;display:block;width:96px;height:42px;padding:0;border:1px solid #fff;border-radius:24px;background:#020202;overflow:hidden;clip-path:none;box-shadow:0 0 0 2px #ffffff18,inset 0 0 0 1px #ffffff18;transition:border-color .2s}
 .launch:hover{border-color:#fff}
 body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .launch[data-state=listening],.launch[data-state=thinking]{border-color:#fff}
 .launch[data-state=error]{border-style:dashed;border-color:#8a8a8a}
 .hat{position:absolute;inset:0;width:100%;height:100%}
-.launch .eyes{position:absolute;left:0;right:0;top:33px}
+.launch .eyes{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
 
 /* ---- panel ---- */
 .panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(440px,calc(100vw - 16px));height:min(510px,calc(100dvh - 8px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-top:0;border-radius:0 0 24px 24px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
@@ -70,12 +70,12 @@ body.panel-open:not(.desktop-panel) .stage{display:none!important}
  .toggle{margin-left:10px;margin-right:10px}
 }.automation h3{margin:0 0 5px;font-size:12px}.automation .form textarea{min-height:64px}.automation .item{align-items:flex-start}.automation .status{font:9px 'DM Mono',monospace;color:#aaa;white-space:pre-wrap;overflow-wrap:anywhere}.automation .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.automation .actions button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;font-size:10px}.automation .actions .primary{background:#f5f5f5;color:#000;border:0}.automation .warn{color:#e7c88d}.automation .ok{color:#b7e6b7}.automation .delivered{color:#b7cbe6}
 .workspace h3{margin:0 0 5px;font-size:12px}.mute{color:var(--mute);font-size:10px;line-height:1.6}
-html[data-face-size=compact] .eye{width:15px;height:24px}
-html[data-face-size=default] .eye{width:25px;height:36px}
-html[data-face-size=large] .eye{width:29px;height:42px}
+html[data-face-size=compact] .launch .eye{width:10px;height:18px;border-radius:6px}
+html[data-face-size=default] .launch .eye{width:12px;height:22px;border-radius:7px}
+html[data-face-size=large] .launch .eye{width:14px;height:24px;border-radius:7px}
 html[data-hat-style=soft] .hat path{stroke:#aaa}
 html[data-hat-style=hidden] .hat{display:none}
-html[data-eye-shape=soft-square] .launch .eye{border-radius:5px}
+html[data-eye-shape=soft-square] .launch .eye{border-radius:6px}
 html[data-eye-gap=close] .launch .eyes{gap:9px}
 html[data-eye-gap=normal] .launch .eyes{gap:15px}
 html[data-eye-gap=wide] .launch .eyes{gap:21px}
@@ -85,9 +85,9 @@ html[data-widget-edge=sharp] .launch{border-radius:2px}
 html[data-widget-border=thin] .launch{border-width:1px}
 html[data-widget-border=medium] .launch{border-width:2px}
 html[data-widget-border=bold] .launch{border-width:3px}
-html[data-widget-size=compact] .launch{width:108px;height:68px}
-html[data-widget-size=default] .launch{width:120px;height:72px}
-html[data-widget-size=wide] .launch{width:136px;height:80px}
+html[data-widget-size=compact] .launch{width:88px;height:40px}
+html[data-widget-size=default] .launch{width:96px;height:42px}
+html[data-widget-size=wide] .launch{width:108px;height:46px}
 html[data-face-preset=calm] .launch .eyes{gap:18px}
 html[data-face-preset=alert] .launch .eye{height:34px}
 html[data-face-preset=alert] .launch .eyes{gap:12px}
@@ -167,7 +167,7 @@ html.widget-mode #dock-launcher{right:6px;top:40%}
 html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}
 html.widget-mode #dock-launcher button,html.widget-mode #side-dock button,html.widget-mode #side-dock input,html.widget-mode #side-dock textarea,html.widget-mode #side-dock select{pointer-events:auto!important}
 /* Incognito bezel silhouette: soft curved body with inward shoulders at the screen edge. */
-html.widget-mode .launch{border:2px solid #fff!important;border-top:0!important;border-radius:0 0 26px 26px!important;clip-path:none!important;box-shadow:0 0 0 2px #ffffff24,inset 0 0 0 1px #ffffff18;overflow:hidden;background:#020202;}html.widget-mode .launch::after{content:"";position:absolute;inset:0;border:1px solid #fff;border-top:0;border-radius:0 0 23px 23px;pointer-events:none;}html.widget-mode .launch .eyes{top:30px;}
+html.widget-mode .launch{width:88px!important;height:40px!important;min-width:88px;border:1.5px solid #fff!important;border-radius:24px!important;clip-path:none!important;box-shadow:0 0 0 2px #ffffff20,inset 0 0 0 1px #ffffff18;overflow:hidden;background:#020202;}html.widget-mode .launch::after{content:"";position:absolute;inset:3px;border:1px solid #ffffff70;border-radius:20px;pointer-events:none;}html.widget-mode .launch .eyes{top:50%;transform:translateY(-50%);gap:10px;}html.widget-mode .launch .eye{width:10px;height:18px;border-radius:6px;}
 
 /* Startup account gate: never expose the companion workspace before authentication. */
 #auth-gate{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:20px;background:#000f;backdrop-filter:blur(12px)}
@@ -409,7 +409,7 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 
 /* ---------- customizable face ---------- */
 const FACE_KEY="bosley_face_settings_v1";
-const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"soft",widgetBorder:"thin",widgetSize:"default"};
+const FACE_DEFAULTS={preset:"incognito",size:"compact",hat:"white",eyeShape:"soft-square",eyeGap:"normal",widgetEdge:"soft",widgetBorder:"thin",widgetSize:"compact"};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function applyFaceSettings(v){
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;

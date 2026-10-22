@@ -749,6 +749,16 @@ jobs:
           npm install
           npm run dist
 
+      - name: Verify Windows installer and unpacked executable
+        shell: bash
+        run: |
+          test -d desktop/dist/win-unpacked
+          test -s "desktop/dist/win-unpacked/Bosley Companion.exe"
+          installer="$(find desktop/dist -maxdepth 1 -type f -name '*.exe' -size +1k -print -quit)"
+          test -n "$installer"
+          test -s "$installer"
+          echo "Installer artifact verified: $installer"
+
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:

@@ -60,7 +60,7 @@ jobs:
           cat > desktop/package.json <<'PACKAGE_EOF'
           {
             "name": "bosley-companion-desktop",
-            "version": "1.0.5",
+            "version": "1.0.6",
             "description": "Bosley floating desktop companion",
             "main": "main.cjs",
             "scripts": {
@@ -387,7 +387,7 @@ jobs:
             // being reachable just to render the panel.
             panel.loadFile(path.join(__dirname, 'index.html')).catch(error => {
               clearTimeout(startupTimeout);
-              showLoadError('Local app failed to load: ' + error.message);
+              loadHostedFallback('Local app failed to load: ' + error.message);
             });
 
             panel.on('close', event => {
@@ -787,6 +787,7 @@ jobs:
           grep -Fq 'function setVoiceMode(next)' desktop/index.html
           grep -Fq 'BOSLEY</span>' desktop/bubble.html
           grep -Fq 'loadHostedFallback' desktop/main.cjs
+          grep -Fq 'The local app opened but did not render its interface.' desktop/main.cjs
           grep -Fq './assets/supabase.js' desktop/index.html
           test -s desktop/assets/supabase.js
           grep -Fq "panel.loadFile(path.join(__dirname, 'index.html'))" desktop/main.cjs

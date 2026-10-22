@@ -8,6 +8,8 @@ manifest = root / "app/src/main/AndroidManifest.xml"
 if not manifest.exists():
     raise SystemExit("Generated AndroidManifest.xml not found")
 text = manifest.read_text()
+if "android.permission.RECORD_AUDIO" not in text:
+    text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
     text = text.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1) if 'xmlns:tools=' not in text else text
     text = text.replace("<application", '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <application', 1)
@@ -73,8 +75,19 @@ import android.os.Build;
 import android.provider.Settings;
 import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
-@CapacitorPlugin(name="BosleyOverlay")
+@CapacitorPlugin(name="BosleyOverlay", permissions={@Permission(alias="microphone", strings={android.Manifest.permission.RECORD_AUDIO})})
 public class BosleyOverlayPlugin extends Plugin {
+  @PluginMethod public void requestMicrophonePermission(PluginCall call){
+    if(getPermissionState("microphone")!=PermissionState.GRANTED){
+      requestPermissionForAlias("microphone",call,"microphonePermissionCallback");return;
+    }
+    JSObject r=new JSObject();r.put("granted",true);call.resolve(r);
+  }
+  @PermissionCallback private void microphonePermissionCallback(PluginCall call){
+    boolean granted=getPermissionState("microphone")==PermissionState.GRANTED;
+    JSObject r=new JSObject();r.put("granted",granted);
+    if(granted)call.resolve(r);else call.reject("Microphone permission was not granted. Allow microphone access in Android app settings.");
+  }
   @PluginMethod public void requestPermission(PluginCall call){
     if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(getContext())){
       Intent i=new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:"+getContext().getPackageName()));

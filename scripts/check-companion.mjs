@@ -29,6 +29,8 @@ const contracts = [
   ["Dictation voice mode", 'data-mode="dictate"'],
   ["Edit voice mode", 'data-mode="edit"'],
   ["Mode-aware speech handling", 'function setVoiceMode(next)'],
+  ["Chat Copilot branding", "CHAT COPILOT"],
+  ["Keyboard shortcuts for Agent, Dictate and Edit", "Ctrl/Alt+Shift+3"],
   ["Spoken mode command router", "function handleVoiceModeCommand(raw)"],
   ["Voice command microphone restart", "Listening again in a moment."],
   ["Edit mode prompt", 'Please edit the text below according to my request'],

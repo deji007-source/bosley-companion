@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>Bosley Companion</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
 :root{font-family:Manrope,system-ui,sans-serif;color:#f5f5f5;background:#000;--mute:#8a8a8a;--line:#262626;--px:0;--py:0;--es:1}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#000}
 button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
@@ -36,6 +35,12 @@ body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .panel.maximized{width:min(640px,calc(100vw - 24px));height:100dvh;min-height:0;max-height:100dvh}
 @media(max-width:520px){.panel.maximized{height:calc(100dvh - 96px);max-height:calc(100dvh - 96px)}}
 .top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #ffffff12}
+.modebar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:10px 14px 0;padding:4px;border:1px solid #242424;border-radius:12px;background:linear-gradient(135deg,#101010,#050505)}
+.modebar button{min-width:0;padding:8px 4px;border:1px solid transparent;border-radius:8px;background:transparent;color:#999;font-size:10px;font-weight:700;letter-spacing:.02em}
+.modebar button.on{border-color:#383838;background:#181818;color:#fff;box-shadow:inset 0 1px #ffffff12}
+.modehint{margin:7px 18px 0;color:#888;font-size:9px;line-height:1.5;min-height:14px}
+.modebar button:focus-visible{outline-offset:1px}
+
 .brand{flex:1}.brand strong{font-size:12px;letter-spacing:.14em}.brand small{display:block;margin-top:4px;color:var(--mute);font:10px 'DM Mono',monospace}
 .top button{border:1px solid var(--line);border-radius:8px;background:none;width:30px;height:30px}
 .toggle{margin:10px 14px 0;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:#000;text-align:left;font-size:11px}
@@ -113,6 +118,12 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
+ <nav class="modebar" id="voicemodes" aria-label="Assistant mode">
+  <button type="button" class="on" data-mode="agent" aria-pressed="true">◈ Agent</button>
+  <button type="button" data-mode="dictate" aria-pressed="false">≋ Dictate</button>
+  <button type="button" data-mode="edit" aria-pressed="false">✳ Edit</button>
+ </nav>
+ <p class="modehint" id="modehint" aria-live="polite">Speak a request and Bosley will respond in chat.</p>
  <button class="toggle" id="wstoggle" aria-expanded="false">▤ <b>Jarvis Workspace</b><span id="wsmeta">SIGN IN</span></button>
  <section class="workspace" id="ws" hidden></section>
  <button class="toggle" id="facetoggle" aria-expanded="false">◉ <b>Appearance</b><span>FACE SETTINGS</span></button>
@@ -164,6 +175,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const db=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
+let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
 function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").slice(0,12):[]}catch{automationRuns=[]}}
@@ -360,7 +372,7 @@ function clearImageAttachment(){pendingImageData=null;$("#camera-input").value="
 $("#camera").onclick=()=>$("#camera-input").click();
 $("#removeimage").onclick=clearImageAttachment;
 $("#camera-input").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){note("Please choose an image file.");clearImageAttachment();return}if(file.size>15*1024*1024){note("That image is too large. Choose an image under 15 MB.");clearImageAttachment();return}try{const source=await createImageBitmap(file);const scale=Math.min(1,1280/Math.max(source.width,source.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));const ctx=canvas.getContext("2d");if(!ctx)throw Error("Image processing is unavailable.");ctx.drawImage(source,0,0,canvas.width,canvas.height);source.close?.();pendingImageData=canvas.toDataURL("image/jpeg",0.82);$("#imagepreview").src=pendingImageData;$("#imageattachment").hidden=false}catch(error){clearImageAttachment();note("I couldn't prepare that image: "+String(error?.message||"unsupported image").slice(0,160))}});
-$("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim(),img=pendingImageData;if(!t&&!img)return;i.value="";clearImageAttachment();send(t,img)};
+$("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim(),img=pendingImageData;if(!t&&!img)return;i.value="";clearImageAttachment();const prompt=voiceMode==="edit"&&t?"Please edit the text below according to my request. Preserve its meaning unless I explicitly ask otherwise. If my requested change is unclear, ask a clarifying question.\n\n"+t:t;send(prompt,img)};
 $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpeak();addMsg("bosley","New conversation. What's up?")};
 
 /* ---------- voice ---------- */
@@ -381,6 +393,25 @@ function speak(t){
 function stopSpeak(){if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}
 function setSpeech(v){speechOn=v;if(!v)stopSpeak();$("#voice").textContent="VOICE "+(v?"ON":"OFF");try{localStorage.setItem("bosley_prefs",JSON.stringify({speechOn:v}))}catch{}}
 $("#voice").onclick=()=>setSpeech(!speechOn);$("#stop").onclick=stopSpeak;setSpeech(speechOn);
+function setVoiceMode(next){
+ if(!["agent","dictate","edit"].includes(next))return;
+ voiceMode=next;
+ const labels={
+  agent:{hint:"Speak a request and Bosley will respond in chat.",placeholder:"Ask Bosley to do something…",mic:"Start voice request"},
+  dictate:{hint:"Speak to fill the message box. Review or edit the words before sending.",placeholder:"Dictate text here…",mic:"Start dictation"},
+  edit:{hint:"Include the text you want changed and describe the edit; review before sending.",placeholder:"Paste text and describe your edits…",mic:"Dictate an edit request"}
+ };
+ document.querySelectorAll("#voicemodes [data-mode]").forEach(button=>{
+  const active=button.dataset.mode===voiceMode;
+  button.classList.toggle("on",active);
+  button.setAttribute("aria-pressed",String(active));
+ });
+ $("#modehint").textContent=labels[voiceMode].hint;
+ $("#in").placeholder=labels[voiceMode].placeholder;
+ $("#mic").setAttribute("aria-label",labels[voiceMode].mic);
+}
+document.querySelectorAll("#voicemodes [data-mode]").forEach(button=>button.addEventListener("click",()=>setVoiceMode(button.dataset.mode)));
+setVoiceMode("agent");
 function startMic(){
  const C=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!C){note("Speech recognition isn't supported in this browser. You can type instead.");return}
@@ -388,7 +419,7 @@ function startMic(){
  r.onstart=()=>{S.listening=true;$("#mic").textContent="■";$("#mic").setAttribute("aria-label","Stop voice input");look(0,0);eyes()};
  r.onresult=e=>{let t="";for(const x of e.results){t+=x[0].transcript;if(x.isFinal)fin=t}$("#in").value=t};
  r.onerror=e=>{note(e.error==="not-allowed"?"Microphone permission denied. Nothing was recorded.":"Microphone error ("+e.error+"). You can type instead.");flash()};
- r.onend=()=>{S.listening=false;rec=null;$("#mic").textContent="🎙";$("#mic").setAttribute("aria-label","Start voice input");eyes();if(fin){$("#in").value="";send(fin)}};
+ r.onend=()=>{S.listening=false;rec=null;$("#mic").textContent="🎙";eyes();if(fin){if(voiceMode==="agent"){$("#in").value="";send(fin)}else{$("#in").value=fin;$("#in").focus();note(voiceMode==="dictate"?"Dictation ready. Review the text before sending.":"Edit request ready. Include the text to change, then review before sending.")}setVoiceMode(voiceMode)}};
  try{r.start();rec=r}catch{note("Couldn't start the microphone. Check browser permissions.");flash()}
 }
 $("#mic").onclick=()=>rec?rec.stop():startMic();

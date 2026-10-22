@@ -224,6 +224,7 @@ window.addEventListener("error", event => {
   }
 });
 
+document.addEventListener("DOMContentLoaded",()=>{
 /* Side-view dock: workspace, appearance, automation and activity open beside chat. */
 (()=>{
  const dock=document.getElementById("side-dock"),tabs=document.getElementById("dock-tabs"),body=document.getElementById("dock-body");
@@ -243,6 +244,7 @@ window.addEventListener("error", event => {
  document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dock.hidden){dock.hidden=true;active="";tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))}});
 })();
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>

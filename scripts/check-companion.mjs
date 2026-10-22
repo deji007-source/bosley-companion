@@ -24,6 +24,13 @@ const contracts = [
   ["Voice profile control", 'voiceprofile'],
   ["Automation history", 'automationHistoryKey'],
   ["Web launcher shortcut", 'youtube'],
+  ["Voice mode selector", 'id="voicemodes"'],
+  ["Agent voice mode", 'data-mode="agent"'],
+  ["Dictation voice mode", 'data-mode="dictate"'],
+  ["Edit voice mode", 'data-mode="edit"'],
+  ["Mode-aware speech handling", 'function setVoiceMode(next)'],
+  ["Local Supabase desktop asset", './assets/supabase.js'],
+
 ];
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);

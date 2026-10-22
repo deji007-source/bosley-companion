@@ -136,11 +136,11 @@ jobs:
           let bubble = null;
           let panel = null;
           let usingHostedFallback = false;
-          let widgetAppearance = { size: 'compact', edge: 'soft', border: 'thin' };
+          let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
           const WIDGET_SIZES = {
-            compact: { width: 88, height: 40 },
-            default: { width: 96, height: 42 },
-            wide: { width: 108, height: 46 }
+            compact: { width: 152, height: 36 },
+            default: { width: 176, height: 40 },
+            wide: { width: 200, height: 44 }
           };
 
           function escapeHtml(value) {
@@ -706,30 +706,29 @@ jobs:
               }
 
               button {
-                width: 96px;
-                height: 42px;
+                width: 176px;
+                height: 40px;
                 padding: 3px 12px;
                 border: 1px solid #fff;
-                border-radius: 24px;
+                border-radius: 999px 999px 24px 24px;
                 background: #000;
                 color: #fff;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 10px;
+                gap: 8px;
                 -webkit-app-region: no-drag;
                 transition: border-color 120ms ease, background 120ms ease;
               }
 
               button {
-                border-radius: var(--widget-radius, 24px);
+                border-radius: 0 0 22px 22px;
                 border-width: var(--widget-border-width, 1px);
-                clip-path: none;
-                box-shadow: 0 0 0 2px #ffffff20, inset 0 0 0 1px #ffffff18;
+                clip-path: polygon(0 0,100% 0,100% 54%,97% 68%,91% 82%,80% 93%,64% 100%,36% 100%,20% 93%,9% 82%,3% 68%,0 54%);
               }
 
-              .wordmark { display: none; }
+              .wordmark { font: 700 10px/1 system-ui, Segoe UI, Arial, sans-serif; letter-spacing: .24em; white-space: nowrap; }
 
               button:hover {
                 border-color: #fff;
@@ -740,7 +739,7 @@ jobs:
                 outline-offset: 2px;
               }
 
-              svg { width: 30px; height: 24px; display: block; flex: 0 0 auto; }
+              svg { width: 46px; height: 28px; display: block; flex: 0 0 auto; }
             </style>
           </head>
 
@@ -749,30 +748,42 @@ jobs:
               aria-label="Open Bosley Companion"
               title="Open Bosley Companion"
             >
-              <svg viewBox="0 0 44 28" role="img" aria-label="Two rounded rectangular white eyes">
-                <rect x="4" y="3" width="10" height="22" rx="5" fill="#fff"/>
-                <rect x="30" y="3" width="10" height="22" rx="5" fill="#fff"/>
+              <svg
+                viewBox="0 0 108 64"
+                role="img"
+                aria-label="Bosley incognito fedora with two white vertical eyes"
+              >
+                <path d="M31 28 L42 7 Q44 4 48 7 L54 11 L61 7 Q65 4 67 8 L78 28 Z"
+                  fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M36 21 Q54 23 73 21 L78 28 L31 28 Z"
+                  fill="#171717" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+                <path d="M8 34 Q19 27 40 27 L68 27 Q89 27 100 34 Q79 40 54 40 Q29 40 8 34 Z"
+                  fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M39 30 Q54 32 69 30" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+                <rect x="35" y="29" width="13" height="30" rx="6.5" fill="#fff"/>
+                <rect x="60" y="29" width="13" height="30" rx="6.5" fill="#fff"/>
               </svg>
+              <span class="wordmark">BOSLEY</span>
             </button>
 
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 88, height: 40 },
-                default: { width: 96, height: 42 },
-                wide: { width: 108, height: 46 }
+                compact: { width: 152, height: 36 },
+                default: { width: 176, height: 40 },
+                wide: { width: 200, height: 44 }
               };
               function applyAppearance(value) {
                 if (!value) return;
                 const size = sizes[value.size] || sizes.default;
                 document.documentElement.style.setProperty('--widget-radius',
-                  ({ soft: '24px', balanced: '18px', sharp: '3px' })[value.edge] || '24px');
+                  ({ soft: '24px', balanced: '12px', sharp: '3px' })[value.edge] || '3px');
                 document.documentElement.style.setProperty('--widget-border-width',
                   ({ thin: '1px', medium: '2px', bold: '3px' })[value.border] || '1px');
                 button.style.width = size.width + 'px';
                 button.style.height = size.height + 'px';
-                document.querySelector('svg').style.width = Math.max(26, Math.min(34, Math.round(size.width * 0.34))) + 'px';
-                document.querySelector('svg').style.height = Math.max(20, Math.min(26, size.height - 12)) + 'px';
+                document.querySelector('svg').style.width = Math.max(38, Math.min(52, Math.round(size.width * 0.27))) + 'px';
+                document.querySelector('svg').style.height = Math.max(24, Math.min(30, size.height - 10)) + 'px';
               }
               if (window.bosleyDesktop.onWidgetAppearance) {
                 window.bosleyDesktop.onWidgetAppearance(applyAppearance);

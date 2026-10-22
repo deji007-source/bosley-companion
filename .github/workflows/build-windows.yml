@@ -836,7 +836,19 @@ jobs:
         run: |
           cd desktop
           npm install
-          npm run dist
+          # Retry transient upstream HTTP 5xx failures from electron-builder's
+          # Windows NSIS resource/signing download. Keep the build failure hard
+          # if all attempts fail; never upload a partial installer.
+          attempt=1
+          until npm run dist; do
+            if [ "$attempt" -ge 3 ]; then
+              echo "Windows installer packaging failed after $attempt attempts."
+              exit 1
+            fi
+            echo "Installer packaging failed (attempt $attempt); retrying in 15 seconds..."
+            sleep 15
+            attempt=$((attempt + 1))
+          done
 
       - name: Verify Windows installer and unpacked executable
         shell: bash

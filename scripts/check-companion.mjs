@@ -44,7 +44,7 @@ const contracts = [
   ["Side-view dock controller", "Side-view dock: workspace, appearance, automation and activity open beside chat."],
   ["Side dock DOM-ready initialization", 'document.addEventListener("DOMContentLoaded",()=>{'],
   ["Widget side dock click support", "html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}"],
-  ["Curved incognito widget silhouette", "clip-path:polygon(0 0,100% 0"],
+  ["Compact Dynamic Island launcher", "html.widget-mode .launch{border:2px solid #fff!important;border-radius:999px!important;clip-path:none!important"],
   ["Edit mode prompt", 'Please edit the text below according to my request'],
   ["Visible startup diagnostics", 'id="startup-error"'],
   ["Async startup diagnostics", 'unhandledrejection'],

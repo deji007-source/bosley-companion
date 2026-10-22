@@ -60,7 +60,7 @@ jobs:
           cat > desktop/package.json <<'PACKAGE_EOF'
           {
             "name": "bosley-companion-desktop",
-            "version": "1.0.4",
+            "version": "1.0.5",
             "description": "Bosley floating desktop companion",
             "main": "main.cjs",
             "scripts": {

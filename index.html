@@ -653,19 +653,40 @@ setVoiceMode("agent");
 let androidMicPermissionGranted=false,androidMicPermissionPending=false;
 async function startMic(){
  const overlayPlugin=window.Capacitor?.Plugins?.BosleyOverlay;
- if(overlayPlugin&&typeof overlayPlugin.requestMicrophonePermission==="function"&&!androidMicPermissionGranted){
+ // Android's WebView SpeechRecognition can report "not-allowed" even when
+ // Android app permission is granted. Use Android's native speech UI on Android.
+ if(overlayPlugin&&typeof overlayPlugin.startNativeSpeechRecognition==="function"){
   if(androidMicPermissionPending)return;
   androidMicPermissionPending=true;
-  try{const permission=await overlayPlugin.requestMicrophonePermission();androidMicPermissionGranted=!!permission?.granted;if(!androidMicPermissionGranted){note("Microphone permission is required. Allow it in Android settings, then try again.");return}}
-  catch(error){note("Microphone permission denied. Open Android Settings → Apps → Bosley Companion → Permissions → Microphone, allow access, then try again.");console.warn("Android microphone permission failed",error);return}
-  finally{androidMicPermissionPending=false}
+  stopSpeak();
+  $("#mic").textContent="…";
+  $("#mic").setAttribute("aria-label","Starting Android voice input");
+  try{
+   const permission=await overlayPlugin.requestMicrophonePermission();
+   if(!permission?.granted){note("Android has not granted microphone access. Open Settings → Apps → Bosley Companion → Permissions → Microphone, allow it, then retry.");return}
+   const result=await overlayPlugin.startNativeSpeechRecognition();
+   const spoken=String(result?.text||"").trim();
+   if(!spoken){note("No speech captured. Tap the microphone and speak, or type a message.");return}
+   if(handleVoiceModeCommand(spoken))return;
+   if(voiceMode==="agent"){ $("#in").value=""; await send(spoken); }
+   else { $("#in").value=spoken; $("#in").focus(); note(voiceMode==="dictate"?"Dictation ready. Review the text before sending.":"Voice text ready. Review it before sending."); }
+  }catch(error){
+   console.warn("Native Android voice input failed",error);
+   note("Android voice input couldn't start. Check microphone permission and that a speech recognition service is enabled; you can still type.");
+  }finally{
+   androidMicPermissionPending=false;
+   $("#mic").textContent="🎙";
+   $("#mic").setAttribute("aria-label",labels[voiceMode].mic);
+   S.listening=false;eyes();
+  }
+  return;
  }
  const C=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!C){note("Speech recognition isn't supported in this Android WebView. You can type instead.");return}
+ if(!C){note("Speech recognition isn't supported in this browser. You can type instead.");return}
  stopSpeak();const r=new C();r.lang=navigator.language||"en-US";r.interimResults=true;r.continuous=false;let fin="";
  r.onstart=()=>{S.listening=true;$("#mic").textContent="■";$("#mic").setAttribute("aria-label","Stop voice input");look(0,0);eyes()};
  r.onresult=e=>{let t="";for(const x of e.results){t+=x[0].transcript;if(x.isFinal)fin=t}$("#in").value=t};
- r.onerror=e=>{note(e.error==="not-allowed"?"Microphone permission denied. Nothing was recorded.":"Microphone error ("+e.error+"). You can type instead.");flash()};
+ r.onerror=e=>{note(e.error==="not-allowed"?"Microphone permission denied. Allow microphone access in your browser or Android app settings.":"Microphone error ("+e.error+"). You can type instead.");flash()};
  r.onend=()=>{S.listening=false;rec=null;$("#mic").textContent="🎙";eyes();if(fin){if(handleVoiceModeCommand(fin)){return}if(voiceMode==="agent"){$("#in").value="";send(fin)}else{$("#in").value=fin;$("#in").focus();note(voiceMode==="dictate"?"Dictation ready. Review the text before sending.":"Edit request ready. Include the text to change, then review before sending.")}setVoiceMode(voiceMode)}};
  try{r.start();rec=r}catch{note("Couldn't start the microphone. Check browser permissions.");flash()}
 }

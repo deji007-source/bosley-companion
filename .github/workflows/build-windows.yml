@@ -107,7 +107,7 @@ jobs:
           sed -i 's#https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js#./assets/supabase.js#g' desktop/index.html
 
           cat > desktop/main.cjs <<'MAIN_EOF'
-          const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
+          const { app, BrowserWindow, ipcMain, screen, shell, dialog, desktopCapturer } = require('electron');
           const path = require('path');
           const { fileURLToPath } = require('url');
           const fs = require('fs');
@@ -425,7 +425,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen']
             };
           });
 
@@ -446,6 +446,38 @@ jobs:
                   width: display.workAreaSize.width,
                   height: display.workAreaSize.height
                 }
+              };
+            }
+            if (request.action === 'capture_screen') {
+              if (process.platform !== 'win32') {
+                throw new Error('Screen capture is currently supported by the Windows desktop build only.');
+              }
+              const choice = await dialog.showMessageBox(panel, {
+                type: 'question',
+                buttons: ['Cancel', 'Capture screen'],
+                defaultId: 0,
+                cancelId: 0,
+                title: 'Bosley Companion — Screen access',
+                message: 'Allow Bosley to capture your primary screen?',
+                detail: 'The screenshot will be attached to this chat for your review. It will not be sent until you press Send.'
+              });
+              if (choice.response !== 1) return { ok: false, cancelled: true };
+              const primaryId = String(screen.getPrimaryDisplay().id);
+              const sources = await desktopCapturer.getSources({
+                types: ['screen'],
+                thumbnailSize: { width: 1280, height: 720 },
+                fetchWindowIcons: false
+              });
+              const source = sources.find(item => String(item.display_id) === primaryId) || sources[0];
+              if (!source || source.thumbnail.isEmpty()) {
+                throw new Error('Windows did not provide a screen image. Check display permissions and try again.');
+              }
+              const thumbnail = source.thumbnail.resize({ width: 1280, height: 720 }).toJPEG(72);
+              return {
+                ok: true,
+                dataUrl: 'data:image/jpeg;base64,' + thumbnail.toString('base64'),
+                width: source.thumbnail.getSize().width,
+                height: source.thumbnail.getSize().height
               };
             }
             if (request.action === 'set_widget_appearance') {
@@ -732,6 +764,7 @@ jobs:
           grep -Fq "open_external_url" desktop/main.cjs
           grep -Fq "set_widget_appearance" desktop/main.cjs
           grep -Fq "launch_app" desktop/main.cjs
+          grep -Fq "capture_screen" desktop/main.cjs
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs
           grep -Fq "nodeIntegration: false" desktop/main.cjs

@@ -60,7 +60,7 @@ jobs:
           cat > desktop/package.json <<'PACKAGE_EOF'
           {
             "name": "bosley-companion-desktop",
-            "version": "1.0.6",
+            "version": "1.0.7",
             "description": "Bosley floating desktop companion",
             "main": "main.cjs",
             "scripts": {
@@ -114,6 +114,9 @@ jobs:
           const { fileURLToPath } = require('url');
           const fs = require('fs');
           const { spawn } = require('child_process');
+
+          // Avoid black Electron surfaces on Windows systems with unstable GPU drivers.
+          app.disableHardwareAcceleration();
 
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;
@@ -298,6 +301,10 @@ jobs:
 
             panel.setAlwaysOnTop(true);
 
+            panel.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+              console.error('Bosley renderer console:', { level, message, line, sourceId });
+            });
+
             panel.webContents.on(
               'did-fail-load',
               (_event, code, description, failedUrl, isMainFrame) => {
@@ -329,10 +336,10 @@ jobs:
               if (loadedUrl.startsWith('file:') && !usingHostedFallback) {
                 setTimeout(() => {
                   if (!panel || panel.isDestroyed() || usingHostedFallback) return;
-                  panel.webContents.executeJavaScript("(() => { const b=document.body; const r=b&&b.getBoundingClientRect(); return {textLength:(b?.innerText||'').trim().length, childCount:b?.children?.length||0, width:r?.width||0, height:r?.height||0}; })()")
+                  panel.webContents.executeJavaScript("(() => { const b=document.body; const r=b&&b.getBoundingClientRect(); const launch=document.querySelector('#launch'); const root=document.querySelector('#root'); return {childCount:b?.children?.length||0, width:r?.width||0, height:r?.height||0, rootPresent:!!root, launcherFaceReady:!!launch?.querySelector('.hat')}; })()")
                     .then(state => {
                       if (!panel || panel.isDestroyed() || usingHostedFallback) return;
-                      if (!state || state.childCount === 0 || state.width === 0 || state.height === 0 || state.textLength < 10) {
+                      if (!state || state.childCount === 0 || state.width === 0 || state.height === 0 || !state.rootPresent || !state.launcherFaceReady) {
                         loadHostedFallback('The local app opened but did not render its interface.');
                       }
                     })

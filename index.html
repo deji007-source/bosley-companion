@@ -193,6 +193,12 @@ html.widget-mode .launch{border:2px solid #fff!important;border-top:0!important;
  <section class="workspace" id="facepanel" hidden>
   <h3>Bosley appearance</h3>
   <p class="mute">Choose a face preset. Changes are saved on this device and can be updated anytime.</p>
+  <div class="widget-native-controls" style="border:1px solid #303030;border-radius:12px;padding:12px;margin:12px 0">
+   <h3 style="margin:0 0 6px">Android floating widget</h3>
+   <p class="mute">Keep Bosley's slim, double-outlined rounded bar visible above other apps. Android will ask you to grant display-over-other-apps permission.</p>
+   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="primary" id="android-overlay-enable">Enable floating widget</button><button type="button" id="android-overlay-hide">Hide floating widget</button></div>
+   <p class="fb" id="android-overlay-feedback" role="status" aria-live="polite"></p>
+  </div>
   <form class="form" id="faceform">
    <label class="mute" for="facepreset">Face preset</label>
    <select id="facepreset"><option value="incognito">Incognito (signature)</option><option value="calm">Calm</option><option value="alert">Alert</option></select>
@@ -421,6 +427,18 @@ async function syncNativeWidgetAppearance(v){
  }catch(error){console.warn("Native widget appearance sync failed:",error?.message||error)}
 }
 applyFaceSettings(readFaceSettings());
+
+async function setupAndroidOverlayControls(){
+ const enable=$("#android-overlay-enable"),hide=$("#android-overlay-hide"),feedback=$("#android-overlay-feedback");
+ if(!enable||!hide||!feedback)return;
+ const plugin=window.Capacitor?.Plugins?.BosleyOverlay;
+ const native=!!(window.Capacitor?.isNativePlatform?.()||window.Capacitor?.getPlatform?.()==="android");
+ if(!native||!plugin){enable.disabled=true;hide.disabled=true;feedback.textContent="Floating overlay is available in the Android APK build; it is not supported in the website.";return}
+ enable.disabled=false;hide.disabled=false;
+ try{const st=await plugin.status();feedback.textContent=st.granted?"Android overlay permission is granted.":"Tap Enable floating widget and allow Bosley to display over other apps."}catch{feedback.textContent="Android overlay controls are ready. Enable the widget to continue."}
+ enable.onclick=async()=>{enable.disabled=true;feedback.textContent="Opening Android overlay permission…";try{let p=await plugin.requestPermission();if(!p.granted){feedback.textContent="Permission not granted. Allow Bosley in Android Settings, then tap Enable again.";return}await plugin.show();feedback.textContent="Floating widget enabled. The rounded bar stays above other apps; tap it to reopen Bosley."}catch(e){feedback.textContent=String(e?.message||"Could not enable floating widget.")}finally{enable.disabled=false}};
+ hide.onclick=async()=>{hide.disabled=true;try{await plugin.hide();feedback.textContent="Floating widget hidden. You can enable it again here."}catch(e){feedback.textContent=String(e?.message||"Could not hide floating widget.")}finally{hide.disabled=false}};
+}
 function initFaceSettings(){
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;

@@ -58,6 +58,11 @@ jobs:
           npx cap sync android
           python3 scripts/install-android-overlay.py
 
+      - name: Generate Bosley launcher icon
+        run: |
+          python3 -m pip install --user Pillow
+          python3 scripts/generate-app-icons.py
+
       - name: Build debug APK
         run: |
           cd android

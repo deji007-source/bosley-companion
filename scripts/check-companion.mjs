@@ -36,6 +36,7 @@ const contracts = [
   ["Activity task tracking", 'id="activityform"'],
   ["Activity event history", 'id="activityevents"'],
   ["Detachable side-view dock", 'id="side-dock"'],
+  ["Visible side-view launcher", 'id="dock-open"'],
   ["Workspace side-view tabs", 'id="dock-tabs"'],
   ["Side-view dock close control", 'id="dock-close"'],
   ["Side-view dock controller", "Side-view dock: workspace, appearance, automation and activity open beside chat."],

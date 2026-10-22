@@ -26,7 +26,7 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 
 /* ---- collapsed launcher: hat brim, eyes peeking out ---- */
 .stage{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:2147483000}
-.launch{position:relative;display:block;width:120px;height:72px;padding:0;border:1px solid #d8d8d8;border-radius:2px;background:#000;overflow:hidden;transition:border-color .2s}
+.launch{position:relative;display:block;width:120px;height:72px;padding:0;border:1px solid #d8d8d8;border-radius:0 0 28px 28px;background:#000;overflow:hidden;clip-path:polygon(0 0,100% 0,100% 54%,97% 68%,91% 82%,80% 93%,64% 100%,36% 100%,20% 93%,9% 82%,3% 68%,0 54%);transition:border-color .2s}
 .launch:hover{border-color:#fff}
 body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .launch[data-state=listening],.launch[data-state=thinking]{border-color:#fff}

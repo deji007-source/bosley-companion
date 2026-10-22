@@ -112,7 +112,7 @@ html[data-face-preset=alert] .launch .eyes{gap:12px}
 html.widget-mode,html.widget-mode body{width:100%;height:100%;min-height:100%;overflow:hidden;background:transparent}
 html.widget-mode #root{position:relative;width:100%;height:100%;background:transparent;pointer-events:none}
 html.widget-mode .stage{display:none!important}
-html.widget-mode .launch{box-shadow:none;cursor:grab;touch-action:none}
+html.widget-mode .launch{border:2px solid #fff!important;border-radius:999px!important;clip-path:none!importantbox-shadow:none;cursor:grab;touch-action:none}
 html.widget-mode .launch:active{cursor:grabbing}
 html.widget-mode .panel{left:50%;right:auto;top:0;bottom:auto;transform:translateX(-50%);width:100%;height:100dvh;max-height:100dvh;min-height:0;border-radius:0;box-shadow:none;pointer-events:auto;animation:widget-in .18s ease-out}
 @keyframes widget-in{from{opacity:0;transform:translateY(7px) scale(.985)}}
@@ -480,7 +480,15 @@ async function handleNativeQuickAction(){
   toggle(true);
   if(action==="voice"){
    setVoiceMode("agent");
-   setTimeout(()=>{try{$("#mic").focus();note("Requesting microphone access…");startMic();}catch(error){console.warn("Could not start Bosley voice mode",error)}},180);
+   note("Starting Android voice input…");
+   if(typeof plugin.startNativeSpeechRecognition==="function"){
+    try{
+     const result=await plugin.startNativeSpeechRecognition();
+     const spoken=String(result?.text||"").trim();
+     if(spoken){$("#in").value=spoken;await send(spoken);}
+     else note("No speech captured. Hold the floating widget and try again, or type a message.");
+    }catch(error){console.warn("Native speech recognition failed",error);note("Android voice input couldn't start. Check that a speech recognition service is enabled, or type a message.");}
+   }else{note("Native voice input is unavailable in this build. You can type instead.");}
   }else setTimeout(()=>$("#in").focus(),180);
  }catch(error){console.warn("Bosley quick action could not be read",error)}
 }

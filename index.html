@@ -35,7 +35,7 @@ body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .launch .eyes{position:absolute;left:0;right:0;top:33px}
 
 /* ---- panel ---- */
-.panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(410px,calc(100vw - 24px));height:min(510px,calc(100dvh - 8px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-radius:20px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
+.panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(440px,calc(100vw - 16px));height:min(510px,calc(100dvh - 8px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-top:0;border-radius:0 0 24px 24px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
 @keyframes in{from{opacity:0;transform:translate(-50%,-6px) scale(.97)}}
 .panel.maximized{width:min(640px,calc(100vw - 24px));height:100dvh;min-height:0;max-height:100dvh}
 @media(max-width:520px){.panel.maximized{height:calc(100dvh - 96px);max-height:calc(100dvh - 96px)}}
@@ -122,7 +122,7 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
- <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
+ <header class="top"><div class="brand"><strong>BOSLEY <span style="font-weight:500;letter-spacing:.04em;color:#aaa">CHAT COPILOT</span></strong><small id="status">● READY</small></div><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
  <nav class="modebar" id="voicemodes" aria-label="Assistant mode">
   <button type="button" class="on" data-mode="agent" aria-pressed="true">◈ Agent</button>
   <button type="button" data-mode="dictate" aria-pressed="false">≋ Dictate</button>
@@ -654,7 +654,11 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handle
 
 /* ---------- keyboard ---------- */
 addEventListener("keydown",e=>{
- if((e.ctrlKey||e.altKey)&&e.shiftKey&&e.key.toLowerCase()==="b"){e.preventDefault();toggle()}
+ const k=e.key.toLowerCase();
+ if((e.ctrlKey||e.altKey)&&e.shiftKey&&k==="b"){e.preventDefault();toggle();return}
+ if((e.ctrlKey||e.altKey)&&e.shiftKey&&k==="1"){e.preventDefault();setVoiceMode("agent");note("Agent mode selected (Ctrl/Alt+Shift+1).");return}
+ if((e.ctrlKey||e.altKey)&&e.shiftKey&&k==="2"){e.preventDefault();setVoiceMode("dictate");note("Dictate mode selected (Ctrl/Alt+Shift+2).");return}
+ if((e.ctrlKey||e.altKey)&&e.shiftKey&&k==="3"){e.preventDefault();setVoiceMode("edit");note("Edit mode selected (Ctrl/Alt+Shift+3).");return}
  if(e.key==="Escape"){if(rec)rec.stop();else if(S.speaking)stopSpeak();else if(!$("#panel").hidden)toggle(false)}
 });
 eyes();

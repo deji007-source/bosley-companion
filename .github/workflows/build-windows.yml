@@ -811,7 +811,7 @@ jobs:
           grep -Fq 'id="activitytoggle"' desktop/index.html
           grep -Fq 'function activityEvent' desktop/index.html
           grep -Fq 'function setVoiceMode(next)' desktop/index.html
-          grep -Fq 'BOSLEY</span>' desktop/bubble.html
+          grep -Fq 'aria-label="Two rounded rectangular white eyes"' desktop/bubble.html
           grep -Fq 'loadHostedFallback' desktop/main.cjs
           grep -Fq 'The local app opened but did not render its interface.' desktop/main.cjs
           grep -Fq './assets/supabase.js' desktop/index.html

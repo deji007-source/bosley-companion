@@ -483,11 +483,17 @@ async function handleNativeQuickAction(){
    note("Starting Android voice input…");
    if(typeof plugin.startNativeSpeechRecognition==="function"){
     try{
+     // Long-press voice starts from the native overlay, so explicitly request
+     // microphone permission here too; the regular mic button already does this.
+     if(typeof plugin.requestMicrophonePermission==="function"){
+      const permission=await plugin.requestMicrophonePermission();
+      if(!permission?.granted){note("Microphone permission is needed for Bosley voice. Allow it in Android app permissions, then try again.");return;}
+     }
      const result=await plugin.startNativeSpeechRecognition();
      const spoken=String(result?.text||"").trim();
      if(spoken){$("#in").value=spoken;await send(spoken);}
      else note("No speech captured. Hold the floating widget and try again, or type a message.");
-    }catch(error){console.warn("Native speech recognition failed",error);note("Android voice input couldn't start. Check that a speech recognition service is enabled, or type a message.");}
+    }catch(error){console.warn("Native speech recognition failed",error);note("Android voice input couldn't start. Check microphone permission and that a speech recognition service is enabled, or type a message.");}
    }else{note("Native voice input is unavailable in this build. You can type instead.");}
   }else setTimeout(()=>$("#in").focus(),180);
  }catch(error){console.warn("Bosley quick action could not be read",error)}

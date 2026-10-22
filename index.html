@@ -417,12 +417,16 @@ function applyFaceSettings(v){
  syncNativeWidgetAppearance(v);
 }
 async function syncNativeWidgetAppearance(v){
+ const plugin=window.Capacitor?.Plugins?.BosleyOverlay;
+ if(plugin?.setAppearance){
+  try{const result=await plugin.setAppearance({payload:v});if(result?.ok!==true)console.warn("Native widget appearance was not confirmed",result)}
+  catch(error){console.warn("Native widget appearance sync failed:",error?.message||error)}
+  return;
+ }
  const b=bridge();
  if(!b||typeof b.request!=="function")return;
  try{
-  const result=await b.request({action:"set_widget_appearance",payload:{
-   size:v.widgetSize||"default",edge:v.widgetEdge||"soft",border:v.widgetBorder||"thin"
-  }});
+  const result=await b.request({action:"set_widget_appearance",payload:{size:v.widgetSize||"default",edge:v.widgetEdge||"soft",border:v.widgetBorder||"medium"}});
   if(result?.ok!==true)console.warn("Native widget appearance was not confirmed",result);
  }catch(error){console.warn("Native widget appearance sync failed:",error?.message||error)}
 }

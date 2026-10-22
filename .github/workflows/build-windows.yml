@@ -60,7 +60,7 @@ jobs:
           cat > desktop/package.json <<'PACKAGE_EOF'
           {
             "name": "bosley-companion-desktop",
-            "version": "1.0.8",
+            "version": "1.0.9",
             "description": "Bosley floating desktop companion",
             "main": "main.cjs",
             "scripts": {
@@ -114,6 +114,20 @@ jobs:
           const { fileURLToPath } = require('url');
           const fs = require('fs');
           const { spawn } = require('child_process');
+
+          // Persist startup diagnostics so a black/blank panel can be investigated without guessing.
+          const startupLog = path.join(app.getPath('userData'), 'bosley-startup.log');
+          function logStartup(...parts) {
+            const line = new Date().toISOString() + ' ' + parts.map(part => {
+              if (part instanceof Error) return part.stack || part.message;
+              if (typeof part === 'string') return part;
+              try { return JSON.stringify(part); } catch { return String(part); }
+            }).join(' ') + '\\n';
+            try { fs.appendFileSync(startupLog, line, 'utf8'); } catch {}
+            console.error(line.trimEnd());
+          }
+          process.on('uncaughtException', error => logStartup('MAIN UNCAUGHT EXCEPTION', error));
+          process.on('unhandledRejection', reason => logStartup('MAIN UNHANDLED REJECTION', reason));
 
           // Avoid black Electron surfaces on Windows systems with unstable GPU drivers.
           app.disableHardwareAcceleration();
@@ -245,7 +259,7 @@ jobs:
             if (!panel || panel.isDestroyed()) return;
             if (usingHostedFallback) { showLoadError(reason || 'The bundled and hosted interfaces could not be loaded.'); return; }
             usingHostedFallback = true;
-            console.error('Bosley local UI fallback:', reason);
+            logStartup('LOCAL UI FALLBACK', reason);
             panel.loadURL(SITE).catch(error => showLoadError((reason ? reason + '\n\n' : '') + 'The hosted fallback also failed: ' + error.message));
           }
 
@@ -273,7 +287,7 @@ jobs:
             bubble.setAlwaysOnTop(true, 'screen-saver');
             bubble.loadFile(path.join(__dirname, 'bubble.html')).then(() => {
               bubble.webContents.send('bosley:widget-appearance', widgetAppearance);
-            }).catch(error => console.error('Bubble load failed:', error.message));
+            }).catch(error => logStartup('BUBBLE LOAD FAILED', error.message));
             bubble.on('closed', () => {
               bubble = null;
             });
@@ -288,7 +302,7 @@ jobs:
               resizable: true,
               show: false,
               backgroundColor: '#000000',
-              title: 'Bosley Chat Copilot',
+              title: 'Bosley Companion',
               autoHideMenuBar: true,
               alwaysOnTop: true,
               webPreferences: {
@@ -302,7 +316,7 @@ jobs:
             panel.setAlwaysOnTop(true);
 
             panel.webContents.on('console-message', (_event, level, message, line, sourceId) => {
-              console.error('Bosley renderer console:', { level, message, line, sourceId });
+              logStartup('RENDERER CONSOLE', { level, message, line, sourceId });
             });
 
             panel.webContents.on(
@@ -331,7 +345,7 @@ jobs:
             panel.webContents.on('did-finish-load', () => {
               if (!panel || panel.isDestroyed()) return;
               const loadedUrl = panel.webContents.getURL();
-              console.log('Bosley page loaded:', loadedUrl);
+              logStartup('PAGE LOADED', loadedUrl);
               // A file can load successfully while its UI bootstrap silently fails.
               if (loadedUrl.startsWith('file:') && !usingHostedFallback) {
                 setTimeout(() => {

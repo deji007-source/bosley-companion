@@ -168,6 +168,14 @@ html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!
 html.widget-mode #dock-launcher button,html.widget-mode #side-dock button,html.widget-mode #side-dock input,html.widget-mode #side-dock textarea,html.widget-mode #side-dock select{pointer-events:auto!important}
 /* Incognito bezel silhouette: soft curved body with inward shoulders at the screen edge. */
 html.widget-mode .launch{border:2px solid #fff!important;border-top:0!important;border-radius:0 0 26px 26px!important;clip-path:none!important;box-shadow:0 0 0 2px #ffffff24,inset 0 0 0 1px #ffffff18;overflow:hidden;background:#020202;}html.widget-mode .launch::after{content:"";position:absolute;inset:0;border:1px solid #fff;border-top:0;border-radius:0 0 23px 23px;pointer-events:none;}html.widget-mode .launch .eyes{top:30px;}
+
+/* Startup account gate: never expose the companion workspace before authentication. */
+#auth-gate{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:20px;background:#000f;backdrop-filter:blur(12px)}
+#auth-gate[hidden]{display:none!important}#auth-gate .gate-card{width:min(390px,100%);padding:28px;border:1px solid #333;border-radius:20px;background:#080808;box-shadow:0 24px 90px #000}
+#auth-gate .gate-mark{width:46px;height:46px;margin-bottom:20px;border:1px solid #fff;border-radius:0 0 16px 16px;display:flex;align-items:center;justify-content:center;gap:5px}
+#auth-gate .gate-eye{width:7px;height:18px;border-radius:9px;background:#fff}#auth-gate h1{margin:0 0 8px;font-size:22px;letter-spacing:-.04em}#auth-gate p{margin:0;color:#999;font-size:12px;line-height:1.65}
+#auth-gate form{display:grid;gap:9px;margin-top:22px}#auth-gate input{width:100%;height:44px;padding:0 12px;border:1px solid #333;border-radius:10px;background:#101010;color:#fff;font-size:13px}#auth-gate .gate-submit{height:43px;margin-top:4px;border:0;border-radius:10px;background:#f4f4f4;color:#050505;font-size:12px;font-weight:800}#auth-gate .gate-submit:disabled{opacity:.6;cursor:wait}
+#auth-gate .gate-switch{margin-top:12px;padding:8px 0;border:0;background:none;color:#ddd;text-decoration:underline;font-size:11px}#auth-gate .gate-feedback{min-height:18px;margin-top:12px;color:#ddd;font-size:11px;line-height:1.5;overflow-wrap:anywhere}body.auth-required{overflow:hidden}body.auth-required #root{visibility:hidden}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
@@ -224,6 +232,8 @@ html.widget-mode .launch{border:2px solid #fff!important;border-top:0!important;
 <aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
+
+<section id="auth-gate" hidden role="dialog" aria-modal="true" aria-labelledby="gate-title"><div class="gate-card"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h1 id="gate-title">Welcome to Bosley</h1><p id="gate-copy">Sign in to continue. Your conversations and workspace sync to your Bosley account.</p><form id="gate-auth"><input id="gate-email" type="email" required autocomplete="email" placeholder="Email address" aria-label="Email address"><input id="gate-password" type="password" required autocomplete="current-password" placeholder="Password" aria-label="Password"><button class="gate-submit" id="gate-submit" type="submit">Sign in securely</button></form><button class="gate-switch" id="gate-switch" type="button">New here? Create an account</button><div class="gate-feedback" id="gate-feedback" role="status" aria-live="polite"></div></div></section>
 <div id="startup-error" hidden role="alert"><strong>Bosley encountered a startup error</strong><span id="startup-error-message">The interface could not finish initializing.</span><code>Try reloading the app. If this persists, share this error text with support.</code></div>
 <script>
 window.addEventListener("unhandledrejection", event => {
@@ -298,6 +308,31 @@ const CHAT_URL=SUPABASE_URL+"/functions/v1/companion-chat";
 const $=s=>document.querySelector(s),H=document.documentElement;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const db=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+const gate=$("#auth-gate"),gateForm=$("#gate-auth"),gateEmail=$("#gate-email"),gatePassword=$("#gate-password"),gateSubmit=$("#gate-submit"),gateSwitch=$("#gate-switch"),gateFeedback=$("#gate-feedback");
+let gateMode="in",authResolved=false;
+function renderAuthGate(){
+ const signedIn=!!user;
+ document.body.classList.toggle("auth-required",!signedIn);
+ if(gate)gate.hidden=signedIn;
+ const shortcut=$("#signin-open");if(shortcut)shortcut.hidden=signedIn;
+ if(gateSubmit)gateSubmit.textContent=gateMode==="up"?"Create account":"Sign in securely";
+ if(gatePassword){gatePassword.autocomplete=gateMode==="up"?"new-password":"current-password";gatePassword.minLength=gateMode==="up"?6:0;gatePassword.placeholder=gateMode==="up"?"Password (at least 6 characters)":"Password";}
+ if(gateSwitch)gateSwitch.textContent=gateMode==="up"?"Already have an account? Sign in":"New here? Create an account";
+ const title=$("#gate-title"),copy=$("#gate-copy");if(title)title.textContent=gateMode==="up"?"Create your Bosley account":"Welcome to Bosley";if(copy)copy.textContent=gateMode==="up"?"Create an account to sync your conversations and workspace across your Bosley apps.":"Sign in to continue. Your conversations and workspace sync to your Bosley account.";
+}
+if(gateSwitch)gateSwitch.addEventListener("click",()=>{gateMode=gateMode==="in"?"up":"in";if(gateFeedback)gateFeedback.textContent="";renderAuthGate();gatePassword?.focus()});
+if(gateForm)gateForm.addEventListener("submit",async e=>{
+ e.preventDefault();if(!db){if(gateFeedback)gateFeedback.textContent="Account service unavailable. Check your connection and try again.";return}
+ gateSubmit.disabled=true;if(gateFeedback)gateFeedback.textContent=gateMode==="up"?"Creating your account…":"Signing in securely…";
+ try{const credentials={email:gateEmail.value.trim(),password:gatePassword.value};const result=gateMode==="up"?await db.auth.signUp(credentials):await db.auth.signInWithPassword(credentials);if(result.error)throw result.error;
+ if(gateMode==="up"&&!result.data.session){if(gateFeedback)gateFeedback.textContent="Account created. Check your email to confirm, then sign in here.";return}
+ if(result.data.session){user=result.data.user||result.data.session.user;renderAuthGate();if(gateFeedback)gateFeedback.textContent="Signed in.";restoreLatestConversation();if(typeof load==="function")load()}
+ else if(gateFeedback)gateFeedback.textContent="No active session returned. Check email confirmation and try again.";
+ }catch(err){const m=String(err?.message||"Sign-in failed.");if(gateFeedback)gateFeedback.textContent=/invalid login credentials/i.test(m)?"Email or password is incorrect.":/email not confirmed/i.test(m)?"Confirm your email using the link we sent, then sign in.":m}
+ finally{gateSubmit.disabled=false}
+});
+if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not initialize. Check your connection and reopen Bosley.";renderAuthGate()}
+
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
 let voiceMode="agent";
@@ -606,8 +641,8 @@ async function load(){
 }
 $("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
 if(db){
- db.auth.getSession().then(({data})=>{user=data.session?.user||null;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";if(user)restoreLatestConversation()});
- db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
+ db.auth.getSession().then(({data})=>{user=data.session?.user||null;authResolved=true;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();if(user)restoreLatestConversation()}).catch(()=>{authResolved=true;renderAuthGate();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session. Check your connection and retry."});
+ db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;renderAuthGate();if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
 }
 
 /* ---------- permissioned automation layer ----------

@@ -31,10 +31,26 @@ jobs:
           node-version: "22"
 
       - name: Install web dependencies and verify production build
+        shell: bash
         run: |
           npm install
           npm run test:companion
           npm run build
+
+      - name: Check inline website JavaScript syntax
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
+            .filter(([, attrs, body]) => !/\\bsrc\\s*=/.test(attrs) && body.trim());
+          if (!scripts.length) throw new Error('No inline application script found.');
+          scripts.forEach(([, , body], index) => fs.writeFileSync(`.bosley-inline-check-${index}.cjs`, body));
+          console.log(`Extracted ${scripts.length} inline script(s) for syntax checks.`);
+          NODE
+          for file in .bosley-inline-check-*.cjs; do node --check "$file"; done
+          rm -f .bosley-inline-check-*.cjs
 
       - name: Generate Bosley desktop app
         shell: bash

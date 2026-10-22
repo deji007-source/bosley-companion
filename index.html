@@ -469,6 +469,23 @@ function toggle(open){
  notifyWidgetSize(open);
  if(open){setTimeout(()=>$("#in").focus(),80)}
 }
+
+async function handleNativeQuickAction(){
+ try{
+  const plugin=window.Capacitor?.Plugins?.BosleyOverlay;
+  if(!plugin||typeof plugin.consumeLaunchAction!=="function")return;
+  const result=await plugin.consumeLaunchAction();
+  const action=String(result?.action||"");
+  if(action!=="panel"&&action!=="voice")return;
+  toggle(true);
+  if(action==="voice"){
+   setVoiceMode("agent");
+   setTimeout(()=>{try{$("#mic").focus();note("Voice mode ready. Press and hold the microphone, then release to submit.");}catch{}},180);
+  }else setTimeout(()=>$("#in").focus(),180);
+ }catch(error){console.warn("Bosley quick action could not be read",error)}
+}
+document.addEventListener("DOMContentLoaded",()=>setTimeout(handleNativeQuickAction,350),{once:true});
+window.addEventListener("pageshow",()=>setTimeout(handleNativeQuickAction,250));
 let dragState=null,dragged=false;
 $("#launch").addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="touch")return;dragState={x:e.screenX,y:e.screenY,cx:e.clientX,cy:e.clientY};dragged=false;try{$("#launch").setPointerCapture(e.pointerId)}catch{}},{passive:true});
 $("#launch").addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.screenX-dragState.x,dy=e.screenY-dragState.y;if(Math.abs(dx)+Math.abs(dy)<5)return;dragged=true;
@@ -635,7 +652,15 @@ function startMic(){
  r.onend=()=>{S.listening=false;rec=null;$("#mic").textContent="🎙";eyes();if(fin){if(handleVoiceModeCommand(fin)){return}if(voiceMode==="agent"){$("#in").value="";send(fin)}else{$("#in").value=fin;$("#in").focus();note(voiceMode==="dictate"?"Dictation ready. Review the text before sending.":"Edit request ready. Include the text to change, then review before sending.")}setVoiceMode(voiceMode)}};
  try{r.start();rec=r}catch{note("Couldn't start the microphone. Check browser permissions.");flash()}
 }
-$("#mic").onclick=()=>rec?rec.stop():startMic();
+const androidOverlayMode=!!(window.Capacitor?.Plugins?.BosleyOverlay);
+if(androidOverlayMode){
+ $("#mic").onclick=e=>{if(!rec)startMic();};
+ $("#mic").addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="touch")return;e.preventDefault();if(!rec)startMic();});
+ const releaseMic=()=>{if(rec)rec.stop()};
+ $("#mic").addEventListener("pointerup",releaseMic);
+ $("#mic").addEventListener("pointercancel",releaseMic);
+ $("#mic").addEventListener("lostpointercapture",releaseMic);
+}else $("#mic").onclick=()=>rec?rec.stop():startMic();
 
 /* ---------- Jarvis workspace (existing tables, RLS-protected) ---------- */
 const ws=$("#ws");

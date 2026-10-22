@@ -30,6 +30,7 @@ const contracts = [
   ["Edit voice mode", 'data-mode="edit"'],
   ["Mode-aware speech handling", 'function setVoiceMode(next)'],
   ["Edit mode prompt", 'Please edit the text below according to my request'],
+  ["Visible startup diagnostics", 'id="startup-error"'],
 ];
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);

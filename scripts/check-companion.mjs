@@ -29,6 +29,8 @@ const contracts = [
   ["Dictation voice mode", 'data-mode="dictate"'],
   ["Edit voice mode", 'data-mode="edit"'],
   ["Mode-aware speech handling", 'function setVoiceMode(next)'],
+  ["Spoken mode command router", "function handleVoiceModeCommand(raw)"],
+  ["Voice command microphone restart", "Listening again in a moment."],
   ["Edit mode prompt", 'Please edit the text below according to my request'],
   ["Visible startup diagnostics", 'id="startup-error"'],
   ["On-demand screen capture control", 'id="screen"'],

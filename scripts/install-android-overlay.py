@@ -67,6 +67,7 @@ public class BosleyOverlayService extends Service {
   void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   @Override public void onDestroy(){removeBar();super.onDestroy();}
+  @Override public void onDestroy(){try{if(bosleyTts!=null){bosleyTts.stop();bosleyTts.shutdown();bosleyTts=null;}}catch(Exception ignored){}super.handleOnDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
 }''')
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;
@@ -79,6 +80,39 @@ import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
 @CapacitorPlugin(name="BosleyOverlay", permissions={@Permission(alias="microphone", strings={android.Manifest.permission.RECORD_AUDIO})})
 public class BosleyOverlayPlugin extends Plugin {
+  private android.speech.tts.TextToSpeech bosleyTts;
+  private boolean bosleyTtsReady=false;
+  @PluginMethod public void speakText(PluginCall call){
+    String text=call.getString("text","");
+    String profile=call.getString("profile","jarvis");
+    if(text==null||text.trim().isEmpty()){call.resolve();return;}
+    if(text.length()>5000)text=text.substring(0,5000);
+    final String utterance=text;
+    try{
+      if(bosleyTts==null){
+        bosleyTts=new android.speech.tts.TextToSpeech(getContext(),status->{
+          bosleyTtsReady=status==android.speech.tts.TextToSpeech.SUCCESS;
+          if(bosleyTtsReady){
+            int lang=bosleyTts.setLanguage(java.util.Locale.UK);
+            if(lang==android.speech.tts.TextToSpeech.LANG_MISSING_DATA||lang==android.speech.tts.TextToSpeech.LANG_NOT_SUPPORTED)bosleyTts.setLanguage(java.util.Locale.getDefault());
+            bosleyTts.setSpeechRate("jarvis".equals(profile)?0.9f:1.0f);
+            bosleyTts.setPitch("jarvis".equals(profile)?0.78f:1.0f);
+            bosleyTts.speak(utterance,android.speech.tts.TextToSpeech.QUEUE_FLUSH,null,"bosley-"+System.currentTimeMillis());
+          }
+        });
+        JSObject r=new JSObject();r.put("queued",true);call.resolve(r);return;
+      }
+      if(!bosleyTtsReady){JSObject r=new JSObject();r.put("queued",false);r.put("reason","Android speech engine is still starting");call.resolve(r);return;}
+      bosleyTts.setSpeechRate("jarvis".equals(profile)?0.9f:1.0f);
+      bosleyTts.setPitch("jarvis".equals(profile)?0.78f:1.0f);
+      bosleyTts.speak(utterance,android.speech.tts.TextToSpeech.QUEUE_FLUSH,null,"bosley-"+System.currentTimeMillis());
+      JSObject r=new JSObject();r.put("queued",true);call.resolve(r);
+    }catch(Exception e){call.reject("Android text-to-speech failed. Check that a text-to-speech engine is installed.",e);}
+  }
+  @PluginMethod public void stopSpeaking(PluginCall call){
+    try{if(bosleyTts!=null)bosleyTts.stop();}catch(Exception ignored){}
+    call.resolve();
+  }
   @PluginMethod public void startNativeSpeechRecognition(PluginCall call){
     Intent speech=new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
     speech.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);

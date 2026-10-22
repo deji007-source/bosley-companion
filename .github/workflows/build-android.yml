@@ -8,6 +8,7 @@ on:
       - 'package.json'
       - 'vite.config.ts'
       - 'capacitor.config.ts'
+      - 'scripts/**'
       - '.github/workflows/build-android.yml'
 
 permissions:
@@ -40,6 +41,13 @@ jobs:
         run: |
           npm install
           npm run build
+
+      - name: Use the shared production Bosley interface for Android
+        run: |
+          test -s index.html
+          cp index.html dist/index.html
+          grep -q 'id="side-dock"' dist/index.html
+          grep -q 'id="launch"' dist/index.html
 
       - name: Install Capacitor Android tooling
         run: npm install --no-save @capacitor/core@^7 @capacitor/cli@^7 @capacitor/android@^7

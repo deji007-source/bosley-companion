@@ -86,6 +86,10 @@ jobs:
             cp -R dist/assets/. desktop/assets/
           fi
 
+          # Bundle the already-installed Supabase client for file:// startup.
+          cp node_modules/@supabase/supabase-js/dist/umd/supabase.js desktop/assets/supabase.js
+          sed -i 's#https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js#./assets/supabase.js#g' desktop/index.html
+
           cat > desktop/main.cjs <<'MAIN_EOF'
           const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
           const path = require('path');
@@ -703,6 +707,8 @@ jobs:
           test -d desktop/assets
           grep -q '<script' desktop/index.html
           grep -q '</html>' desktop/index.html
+          grep -Fq './assets/supabase.js' desktop/index.html
+          test -s desktop/assets/supabase.js
           grep -Fq "panel.loadFile(path.join(__dirname, 'index.html'))" desktop/main.cjs
           grep -Fq "bosley:capabilities" desktop/main.cjs
           grep -Fq "bosley:request" desktop/main.cjs

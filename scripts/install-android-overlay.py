@@ -50,10 +50,16 @@ public class BosleyOverlayService extends Service {
     frame.addView(inner,new LinearLayout.LayoutParams(-1,-2));bar=frame;
     lp=new WindowManager.LayoutParams(dp(widgetWidth),dp(widgetHeight),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     lp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;lp.y=dp(7);
-    frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;
-      public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();return true;case MotionEvent.ACTION_MOVE:lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}return true;case MotionEvent.ACTION_UP:if(Math.abs(e.getRawX()-sx)<12&&Math.abs(e.getRawY()-sy)<12){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP);startActivity(a);}return true;}return true;}});
+    frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;openCompanion("voice");};
+      public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
+        case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
+        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
+        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)openCompanion("panel");return true;
+        case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
+      }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
   }
+  void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
   void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   @Override public void onDestroy(){removeBar();super.onDestroy();}
@@ -95,6 +101,11 @@ public class BosleyOverlayPlugin extends Plugin {
     i.putExtra("widgetWidth",w);i.putExtra("widgetHeight",h);i.putExtra("cornerDp",c);i.putExtra("borderDp",b);i.putExtra("eyeWidth",ew);i.putExtra("eyeHeight",eh);i.putExtra("eyeGapDp",gap);i.putExtra("eyeShape",eyeShape);return i;
   }
   @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);getContext().startService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}
+  @PluginMethod public void consumeLaunchAction(PluginCall call){
+    String action=getActivity().getIntent().getStringExtra("bosley_quick_action");
+    getActivity().getIntent().removeExtra("bosley_quick_action");
+    JSObject r=new JSObject();r.put("action",action==null?"":action);call.resolve(r);
+  }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}
 }''')
 activity = src / "MainActivity.java"

@@ -45,6 +45,8 @@ const contracts = [
   ["Side dock DOM-ready initialization", 'document.addEventListener("DOMContentLoaded",()=>{'],
   ["Widget side dock click support", "html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}"],
   ["Compact Dynamic Island launcher", "html.widget-mode .launch{border:2px solid #fff!important;border-radius:999px!important;clip-path:none!important"],
+  ["Native Android speech recognition", "startNativeSpeechRecognition"],
+  ["Tap panel and hold voice routing", "consumeLaunchAction"],
   ["Edit mode prompt", 'Please edit the text below according to my request'],
   ["Visible startup diagnostics", 'id="startup-error"'],
   ["Async startup diagnostics", 'unhandledrejection'],

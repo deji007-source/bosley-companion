@@ -31,6 +31,8 @@ const contracts = [
   ["Mode-aware speech handling", 'function setVoiceMode(next)'],
   ["Edit mode prompt", 'Please edit the text below according to my request'],
   ["Visible startup diagnostics", 'id="startup-error"'],
+  ["On-demand screen capture control", 'id="screen"'],
+  ["Consent-based screen capture action", 'capture_screen'],
 ];
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);

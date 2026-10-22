@@ -615,7 +615,14 @@ $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpea
 
 /* ---------- voice ---------- */
 function speak(t){
- if(!speechOn||!("speechSynthesis"in window))return;
+ if(!speechOn)return;
+ const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;
+ // Android WebView speechSynthesis is inconsistent across device images.
+ // Prefer Android's native TextToSpeech engine in the installed app.
+ if(nativeVoice&&typeof nativeVoice.speakText==="function"){
+  try{nativeVoice.speakText({text:String(t||""),profile:voiceProfile}).catch(error=>console.warn("Native Bosley speech failed:",error?.message||error));return}catch(error){console.warn("Native Bosley speech unavailable; trying browser speech:",error)}
+ }
+ if(!("speechSynthesis"in window))return;
  speechSynthesis.cancel();
  const u=new SpeechSynthesisUtterance(String(t||""));
  const selected=chooseBosleyVoice();
@@ -628,7 +635,7 @@ function speak(t){
  u.onend=end;u.onerror=end;
  speechSynthesis.speak(u);
 }
-function stopSpeak(){if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}
+function stopSpeak(){const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;if(nativeVoice?.stopSpeaking){try{nativeVoice.stopSpeaking().catch(()=>{})}catch{}}if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}
 function setSpeech(v){speechOn=v;if(!v)stopSpeak();$("#voice").textContent="VOICE "+(v?"ON":"OFF");try{localStorage.setItem("bosley_prefs",JSON.stringify({speechOn:v}))}catch{}}
 $("#voice").onclick=()=>setSpeech(!speechOn);$("#stop").onclick=stopSpeak;setSpeech(speechOn);
 function setVoiceMode(next){

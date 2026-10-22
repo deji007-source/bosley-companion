@@ -140,7 +140,7 @@ html.widget-mode #side-dock{left:auto;right:8px;top:8px;width:min(310px,calc(100
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
- <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
+ <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="dock-open" aria-label="Open side views" title="Open Workspace, Automation, Appearance and Activity">▤</button><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
  <nav class="modebar" id="voicemodes" aria-label="Assistant mode">
   <button type="button" class="on" data-mode="agent" aria-pressed="true">◈ Agent</button>
   <button type="button" data-mode="dictate" aria-pressed="false">≋ Dictate</button>
@@ -228,6 +228,7 @@ window.addEventListener("error", event => {
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if(!b||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;b.hidden=true;b.setAttribute("aria-expanded","false");tab.addEventListener("click",()=>show(v.panel));}
  function show(id){const v=views.find(x=>x.panel===id);if(!v)return;const p=document.getElementById(id);if(!p)return;const wasActive=active===id&&!dock.hidden;if(wasActive){dock.hidden=true;active="";}else{dock.hidden=false;active=id;for(const x of views){const panel=document.getElementById(x.panel),tab=tabs.querySelector('[data-view="'+x.panel+'"]'),button=document.getElementById(x.button);if(panel)panel.hidden=x.panel!==id;if(tab)tab.classList.toggle("on",x.panel===id);if(button)button.setAttribute("aria-expanded",String(x.panel===id));}try{v.init&&v.init()}catch(e){console.warn("Bosley side view failed to initialize",e)}}}
  for(const v of views){const b=document.getElementById(v.button);if(b)b.addEventListener("click",e=>{e.preventDefault();e.stopImmediatePropagation();show(v.panel)},true)}
+ document.getElementById("dock-open")?.addEventListener("click",()=>show(active||"ws"));
  document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dock.hidden){dock.hidden=true;active="";tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))}});
 })();

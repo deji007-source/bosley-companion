@@ -676,7 +676,7 @@ async function startMic(){
   }finally{
    androidMicPermissionPending=false;
    $("#mic").textContent="🎙";
-   $("#mic").setAttribute("aria-label",labels[voiceMode].mic);
+   setVoiceMode(voiceMode);
    S.listening=false;eyes();
   }
   return;

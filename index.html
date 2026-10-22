@@ -1,10 +1,15 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><title>Bosley Companion</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
 :root{font-family:Manrope,system-ui,sans-serif;color:#f5f5f5;background:#000;--mute:#8a8a8a;--line:#262626;--px:0;--py:0;--es:1}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#000}
 button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
 :focus-visible{outline:2px solid #fff;outline-offset:2px}
+#startup-error{position:fixed;z-index:2147483647;inset:12px 12px auto;padding:14px 16px;border:1px solid #765e36;border-radius:12px;background:#15120c;color:#f8edda;font:12px/1.6 system-ui,sans-serif;box-shadow:0 12px 40px #000a}
+#startup-error strong{display:block;margin-bottom:4px;font-size:13px}
+#startup-error code{display:block;margin-top:6px;color:#d7c8ad;overflow-wrap:anywhere;white-space:pre-wrap}
+
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 #root{position:relative;z-index:2147483000}
 
@@ -163,6 +168,20 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 </section>
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
+<div id="startup-error" hidden role="alert"><strong>Bosley encountered a startup error</strong><span id="startup-error-message">The interface could not finish initializing.</span><code>Try reloading the app. If this persists, share this error text with support.</code></div>
+<script>
+window.addEventListener("error", event => {
+  const message = String(event.message || "Unknown JavaScript error");
+  const source = String(event.filename || "");
+  if (source && !/index\.html|file:\/\//i.test(source) && message !== "Script error.") return;
+  const panel = document.getElementById("startup-error");
+  const detail = document.getElementById("startup-error-message");
+  if (panel && detail) {
+    detail.textContent = message;
+    panel.hidden = false;
+  }
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 // Public anon key only (safe in the browser, protected by RLS). Never place a service-role key here.

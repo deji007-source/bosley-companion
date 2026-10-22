@@ -100,7 +100,7 @@ html[data-face-preset=alert] .launch .eyes{gap:12px}
 .msg.you{text-align:right}.msg.you p{display:inline-block;text-align:left;padding:9px 12px;border:1px solid #303030;border-radius:12px 4px 12px 12px;background:#080808}
 .msg.sys p{color:var(--mute);font-style:italic}.msg p.err{padding:8px 10px;border:1px dashed #666;border-radius:10px;color:#eee}
 .composer{display:flex;gap:8px;margin:0 14px;padding:7px;border:1px solid #333;border-radius:13px}
-.composer input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px}.image-attachment{display:flex;align-items:center;gap:10px;margin:0 14px 8px;padding:8px;border:1px solid #333;border-radius:12px;background:#080808}.image-attachment img{width:48px;height:48px;object-fit:cover;border-radius:7px;background:#111}.image-attachment div{flex:1;min-width:0}.image-attachment strong,.image-attachment small{display:block;font-size:10px}.image-attachment small{margin-top:4px;color:var(--mute)}.image-attachment button{border:1px solid #333;border-radius:7px;background:#111;padding:5px 10px;font-size:18px}.composer #camera,.composer #mic{border:1px solid #333;border-radius:9px;background:#050505;color:#fff;padding:7px;min-width:34px}.msg .chat-image{display:block;max-width:min(220px,100%);max-height:180px;object-fit:contain;margin:7px 0 0 auto;border:1px solid #333;border-radius:9px}
+.composer input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12px}.image-attachment{display:flex;align-items:center;gap:10px;margin:0 14px 8px;padding:8px;border:1px solid #333;border-radius:12px;background:#080808}.image-attachment img{width:48px;height:48px;object-fit:cover;border-radius:7px;background:#111}.image-attachment div{flex:1;min-width:0}.image-attachment strong,.image-attachment small{display:block;font-size:10px}.image-attachment small{margin-top:4px;color:var(--mute)}.image-attachment button{border:1px solid #333;border-radius:7px;background:#111;padding:5px 10px;font-size:18px}.composer #camera,.composer #screen,.composer #mic{border:1px solid #333;border-radius:9px;background:#050505;color:#fff;padding:7px;min-width:34px}.composer #screen{border-color:#4a4a4a;background:#111}.msg .chat-image{display:block;max-width:min(220px,100%);max-height:180px;object-fit:contain;margin:7px 0 0 auto;border:1px solid #333;border-radius:9px}
 .composer button{border:0;border-radius:8px;padding:8px;background:#f5f5f5;color:#000}
 .bottom{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;color:#666;font:9px 'DM Mono',monospace}
 .bottom button{border:0;background:none;color:#aaa;font:9px 'DM Mono',monospace;padding:4px}
@@ -163,7 +163,7 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
  <button class="toggle" id="autotoggle" aria-expanded="false">⚙ <b>Automation</b><span id="autometa">BROWSER MODE</span></button>
  <section class="automation" id="automation" hidden></section>
  <section class="chat" id="chat" role="log" aria-live="off"></section>
- <div class="image-attachment" id="imageattachment" hidden><img id="imagepreview" alt="Image ready to send to Bosley"><div><strong>Image attached</strong><small>Sent only when you press send</small></div><button type="button" id="removeimage" aria-label="Remove attached image">×</button></div><input id="camera-input" type="file" accept="image/*" capture="environment" hidden><form class="composer" id="form"><button type="button" id="camera" aria-label="Capture or attach an image" title="Camera / attach image">▧</button><button type="button" id="mic" aria-label="Start voice input">🎙</button><input id="in" placeholder="Message Bosley…" autocomplete="off" maxlength="2000" aria-label="Message"><button id="send" aria-label="Send">➤</button></form>
+ <div class="image-attachment" id="imageattachment" hidden><img id="imagepreview" alt="Image ready to send to Bosley"><div><strong>Image attached</strong><small>Sent only when you press send</small></div><button type="button" id="removeimage" aria-label="Remove attached image">×</button></div><input id="camera-input" type="file" accept="image/*" capture="environment" hidden><form class="composer" id="form"><button type="button" id="camera" aria-label="Capture or attach an image" title="Camera / attach image">▧</button><button type="button" id="screen" aria-label="Capture primary screen" title="Capture screen (Windows desktop only)" hidden>▣</button><button type="button" id="mic" aria-label="Start voice input">🎙</button><input id="in" placeholder="Message Bosley…" autocomplete="off" maxlength="2000" aria-label="Message"><button id="send" aria-label="Send">➤</button></form>
  <footer class="bottom"><span>CTRL/ALT+SHIFT+B</span><span><button id="stop" hidden>■ STOP</button><button id="voice">VOICE ON</button><button id="new">NEW CHAT</button></span></footer>
 </section>
 <div class="sr" id="live" aria-live="polite"></div>
@@ -389,6 +389,24 @@ async function send(text,imageData=null){
 let pendingImageData=null;
 function clearImageAttachment(){pendingImageData=null;$("#camera-input").value="";$("#imageattachment").hidden=true;$("#imagepreview").removeAttribute("src")}
 $("#camera").onclick=()=>$("#camera-input").click();
+const screenButton=$("#screen");
+if(screenButton&&window.BosleyDesktop&&typeof window.BosleyDesktop.request==="function")screenButton.hidden=false;
+if(screenButton)screenButton.onclick=async()=>{
+ if(screenButton.disabled)return;
+ const desktop=window.BosleyDesktop;
+ if(!desktop||typeof desktop.request!=="function"){note("Screen capture is only available in the installed Windows desktop app.");return}
+ screenButton.disabled=true;
+ try{
+  const result=await desktop.request({action:"capture_screen",payload:{}});
+  if(result?.cancelled)return;
+  if(result?.ok!==true||typeof result.dataUrl!=="string"||!result.dataUrl.startsWith("data:image/"))throw Error("The desktop bridge did not return a valid screenshot.");
+  pendingImageData=result.dataUrl;
+  $("#imagepreview").src=pendingImageData;
+  $("#imageattachment").hidden=false;
+  note("Screen captured and attached. Review it; nothing is sent until you press Send.");
+ }catch(error){note("Screen capture failed: "+String(error?.message||error).slice(0,180))}
+ finally{screenButton.disabled=false}
+};
 $("#removeimage").onclick=clearImageAttachment;
 $("#camera-input").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){note("Please choose an image file.");clearImageAttachment();return}if(file.size>15*1024*1024){note("That image is too large. Choose an image under 15 MB.");clearImageAttachment();return}try{const source=await createImageBitmap(file);const scale=Math.min(1,1280/Math.max(source.width,source.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));const ctx=canvas.getContext("2d");if(!ctx)throw Error("Image processing is unavailable.");ctx.drawImage(source,0,0,canvas.width,canvas.height);source.close?.();pendingImageData=canvas.toDataURL("image/jpeg",0.82);$("#imagepreview").src=pendingImageData;$("#imageattachment").hidden=false}catch(error){clearImageAttachment();note("I couldn't prepare that image: "+String(error?.message||"unsupported image").slice(0,160))}});
 $("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim(),img=pendingImageData;if(!t&&!img)return;i.value="";clearImageAttachment();const prompt=voiceMode==="edit"&&t?"Please edit the text below according to my request. Preserve its meaning unless I explicitly ask otherwise. If my requested change is unclear, ask a clarifying question.\n\n"+t:t;send(prompt,img)};

@@ -76,9 +76,9 @@ html[data-face-size=large] .launch .eye{width:14px;height:24px;border-radius:7px
 html[data-hat-style=soft] .hat path{stroke:#aaa}
 html[data-hat-style=hidden] .hat{display:none}
 html[data-eye-shape=soft-square] .launch .eye{border-radius:6px}
-html[data-eye-gap=close] .launch .eyes{gap:9px}
-html[data-eye-gap=normal] .launch .eyes{gap:15px}
-html[data-eye-gap=wide] .launch .eyes{gap:21px}
+html[data-eye-gap=close] .launch .eyes{gap:7px}
+html[data-eye-gap=normal] .launch .eyes{gap:10px}
+html[data-eye-gap=wide] .launch .eyes{gap:14px}
 html[data-widget-edge=soft] .launch{border-radius:24px}
 html[data-widget-edge=balanced] .launch{border-radius:18px}
 html[data-widget-edge=sharp] .launch{border-radius:2px}
@@ -167,7 +167,7 @@ html.widget-mode #dock-launcher{right:6px;top:40%}
 html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}
 html.widget-mode #dock-launcher button,html.widget-mode #side-dock button,html.widget-mode #side-dock input,html.widget-mode #side-dock textarea,html.widget-mode #side-dock select{pointer-events:auto!important}
 /* Incognito bezel silhouette: soft curved body with inward shoulders at the screen edge. */
-html.widget-mode .launch{width:88px!important;height:40px!important;min-width:88px;border:1.5px solid #fff!important;border-radius:24px!important;clip-path:none!important;box-shadow:0 0 0 2px #ffffff20,inset 0 0 0 1px #ffffff18;overflow:hidden;background:#020202;}html.widget-mode .launch::after{content:"";position:absolute;inset:3px;border:1px solid #ffffff70;border-radius:20px;pointer-events:none;}html.widget-mode .launch .eyes{top:50%;transform:translateY(-50%);gap:10px;}html.widget-mode .launch .eye{width:10px;height:18px;border-radius:6px;}
+html.widget-mode .launch{border:2px solid #fff!important;border-radius:999px!important;clip-path:none!important;box-shadow:0 0 0 2px #ffffff20,inset 0 0 0 1px #ffffff18;overflow:hidden;background:#020202;}html.widget-mode .launch::after{content:"";position:absolute;inset:3px;border:1px solid #ffffff70;border-radius:999px;pointer-events:none;}html.widget-mode .launch .eyes{top:50%;transform:translateY(-50%);}
 
 /* Startup account gate: never expose the companion workspace before authentication. */
 #auth-gate{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:20px;background:#000f;backdrop-filter:blur(12px)}

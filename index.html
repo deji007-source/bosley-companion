@@ -440,6 +440,7 @@ async function setupAndroidOverlayControls(){
  hide.onclick=async()=>{hide.disabled=true;try{await plugin.hide();feedback.textContent="Floating widget hidden. You can enable it again here."}catch(e){feedback.textContent=String(e?.message||"Could not hide floating widget.")}finally{hide.disabled=false}};
 }
 function initFaceSettings(){
+ setupAndroidOverlayControls();
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;

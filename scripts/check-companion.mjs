@@ -42,7 +42,7 @@ const contracts = [
   ["Workspace side-view tabs", 'id="dock-tabs"'],
   ["Side-view dock close control", 'id="dock-close"'],
   ["Side-view dock controller", "Side-view dock: workspace, appearance, automation and activity open beside chat."],
-  ["Side dock DOM-ready initialization", 'document.addEventListener("DOMContentLoaded",()=>{\n/* Side-view dock'],
+  ["Side dock DOM-ready initialization", 'document.addEventListener("DOMContentLoaded",()=>{'],
   ["Widget side dock click support", "html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}"],
   ["Curved incognito widget silhouette", "clip-path:polygon(0 0,100% 0"],
   ["Edit mode prompt", 'Please edit the text below according to my request'],

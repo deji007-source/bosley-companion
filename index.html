@@ -166,8 +166,7 @@ html.widget-mode #dock-launcher{right:6px;top:40%}
 /* In transparent desktop-widget mode, explicitly re-enable interaction on the side dock. */
 html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}
 html.widget-mode #dock-launcher button,html.widget-mode #side-dock button,html.widget-mode #side-dock input,html.widget-mode #side-dock textarea,html.widget-mode #side-dock select{pointer-events:auto!important}
-/* Incognito bezel silhouette: soft curved body with inward shoulders at the screen edge. */
-html.widget-mode .launch{border:2px solid #fff!important;border-radius:999px!important;clip-path:none!important;box-shadow:0 0 0 2px #ffffff20,inset 0 0 0 1px #ffffff18;overflow:hidden;background:#020202;}html.widget-mode .launch::after{content:"";position:absolute;inset:3px;border:1px solid #ffffff70;border-radius:999px;pointer-events:none;}html.widget-mode .launch .eyes{top:50%;transform:translateY(-50%);}
+
 
 /* Startup account gate: never expose the companion workspace before authentication. */
 #auth-gate{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:20px;background:#000f;backdrop-filter:blur(12px)}
@@ -409,7 +408,7 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 
 /* ---------- customizable face ---------- */
 const FACE_KEY="bosley_face_settings_v1";
-const FACE_DEFAULTS={preset:"incognito",size:"compact",hat:"white",eyeShape:"soft-square",eyeGap:"normal",widgetEdge:"soft",widgetBorder:"thin",widgetSize:"compact"};
+const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default"};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function applyFaceSettings(v){
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;

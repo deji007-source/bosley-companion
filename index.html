@@ -654,8 +654,9 @@ function startMic(){
 }
 const androidOverlayMode=!!(window.Capacitor?.Plugins?.BosleyOverlay);
 if(androidOverlayMode){
- $("#mic").onclick=e=>{if(!rec)startMic();};
- $("#mic").addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="touch")return;e.preventDefault();if(!rec)startMic();});
+ let releaseToTalkClickSuppressed=false;
+ $("#mic").onclick=e=>{if(releaseToTalkClickSuppressed){releaseToTalkClickSuppressed=false;e.preventDefault();return}if(!rec)startMic();};
+ $("#mic").addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="touch")return;e.preventDefault();releaseToTalkClickSuppressed=true;if(!rec)startMic();});
  const releaseMic=()=>{if(rec)rec.stop()};
  $("#mic").addEventListener("pointerup",releaseMic);
  $("#mic").addEventListener("pointercancel",releaseMic);

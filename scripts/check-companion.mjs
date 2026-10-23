@@ -57,6 +57,10 @@ const contracts = [
   ["Voice recorder stop handler has no out-of-scope labels reference", 'recorder.onstop=async()=>{\n    stream.getTracks().forEach(t=>t.stop());window.bosleyRecording=null;S.listening=false;$("#mic").textContent="🎙";$("#mic").setAttribute("aria-label","Start voice request");eyes();'],
   ["Visible startup diagnostics", 'id="startup-error"'],
   ["Async startup diagnostics", 'unhandledrejection'],
+  ["Second Brain workspace capture and PARA categories", "Capture a thought, voice transcript, decision or link…"],
+  ["Second Brain category tagging", 'tags:["para:"+($("#note-category")?.value||"Projects")]'],
+  ["Second Brain search", "Search your memory…"],
+  ["Second Brain PARA filtering", "wsNoteArea"],
   ["On-demand screen capture control", 'id="screen"'],
   ["Consent-based screen capture action", 'capture_screen'],
 ];

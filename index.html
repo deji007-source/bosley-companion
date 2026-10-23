@@ -676,7 +676,8 @@ function createPlannerTaskFromCommand(raw){
 async function send(text,imageData=null){
  if(S.busy||(!text&&!imageData))return;
  if(user){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
- if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}\n if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return}
+ if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}
+ if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return}
  addMsg("you",imageData?(text||"What is in this image?"):text);activityEvent("Message sent to Bosley: "+(text||"Image attached").slice(0,140),"message");
  if(imageData){const last=chat.lastElementChild;const img=document.createElement("img");img.className="chat-image";img.alt="Image sent to Bosley";img.src=imageData;last?.appendChild(img)}
  const sess=db?(await db.auth.getSession()).data.session:null;

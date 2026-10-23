@@ -53,6 +53,8 @@ const contracts = [
   ["Android system-level guide service", "void showGuide()"],
   ["Android guide native bridge method", "public void showGuide(PluginCall call)"],
   ["Guide refuses website-only overlay", "The website cannot draw over other apps."],
+  ["Android requests system overlay permission", "const granted=await native.requestPermission()"],
+  ["Guide permission is not silently bypassed", "Allow Bosley to open a system-level visual guide over other apps"],
   ["Activity event history", 'id="activityevents"'],
   ["Detachable side-view dock", 'id="side-dock"'],
   ["Visible side-view launcher", 'id="dock-launcher"'],

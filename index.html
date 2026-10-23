@@ -426,7 +426,7 @@ async function syncPlannerTasks(){
   const {data:sessionData,error:sessionError}=await db.auth.getSession();
   if(sessionError||!sessionData?.session?.user?.id)throw new Error("Sign in to sync planner tasks");
   const uid=sessionData.session.user.id;
-  const {data:remote,error}=await db.from("bosley_planner_tasks").select("task_id,title,kind,priority,project,due,status,created_at,updated_at").eq("user_id",uid).order("updated_at",{ascending:false}).limit(60);
+  const {data:remote,error}=await db.from("bosley_planner_tasks").select("task_id,title,kind,priority,project,due,status,created_at,updated_at").eq("user_id",uid).order("updated_at",{ascending:false});
   if(error)throw error;
   const localMap=new Map(activityTasks.map(t=>[t.id,t]));
   const remoteMap=new Map((remote||[]).map(t=>[t.task_id,t]));

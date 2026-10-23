@@ -47,7 +47,7 @@ const contracts = [
   ["Side-view dock controller", "Side-view dock: workspace, appearance, automation and activity open beside chat."],
   ["Side dock DOM-ready initialization", 'document.addEventListener("DOMContentLoaded",()=>{'],
   ["Widget side dock click support", "html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}"],
-  ["Compact Dynamic Island launcher", "html.widget-mode .launch{border:2px solid #fff!important;border-radius:999px!important;clip-path:none!important"],
+  ["Compact Dynamic Island launcher", "html.widget-mode .launch{border:1px solid #f7f7f7!important;border-radius:22px!important;clip-path:none!important"],
   ["Native Android speech recognition", "startNativeSpeechRecognition"],
   ["Android microphone uses native speech recognition", "Android voice input couldn't start"],
   ["Android mic button native speech routing", "overlayPlugin.startNativeSpeechRecognition"],

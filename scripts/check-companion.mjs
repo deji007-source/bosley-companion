@@ -117,8 +117,8 @@ assert.ok(windowsWorkflow.includes("-webkit-app-region:drag"), "Windows guide ca
 assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must expose a draggable target marker");
 assert.ok(androidInstaller.includes("circleTarget()"), "Android guide target must be visibly distinct and draggable");
 assert.ok(androidInstaller.includes("BosleyTargetAccessibilityService"), "Android guide must include on-device control discovery");
-assert.ok(androidInstaller.includes("canRetrieveWindowContent=\\"true\\""), "Android target finder must declare its required accessibility capability");
-assert.ok(androidInstaller.includes("canPerformGestures=\\"false\\""), "Android target finder must not be able to perform gestures");
+assert.ok(androidInstaller.includes('canRetrieveWindowContent="true"'), "Android target finder must declare its required accessibility capability");
+assert.ok(androidInstaller.includes('canPerformGestures="false"'), "Android target finder must not be able to perform gestures");
 assert.ok(androidInstaller.includes("Find target"), "Android guide must expose explicit target discovery");
 
 assert.ok(androidInstaller.includes("BOSLEY GUIDE  ·  drag to move"), "Android guide card should advertise its drag handle");

@@ -18,6 +18,29 @@ if "SYSTEM_ALERT_WINDOW" not in text:
 if "BosleyOverlayService" not in text:
     text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" />\n    </application>')
 manifest.write_text(text)
+if "BosleyTargetAccessibilityService" not in text:
+    text = manifest.read_text()
+    text = text.replace("</application>", '        <service android:name=".BosleyTargetAccessibilityService" android:label="Bosley visual target finder" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/bosley_target_accessibility" /></service>\\n    </application>')
+    manifest.write_text(text)
+res = root / "app/src/main/res/xml"
+res.mkdir(parents=True, exist_ok=True)
+(res / "bosley_target_accessibility.xml").write_text('''<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/bosley_target_accessibility_description"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewFocused"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="150"
+    android:canRetrieveWindowContent="true"
+    android:canPerformGestures="false"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds" />
+''')
+values = root / "app/src/main/res/values"
+values.mkdir(parents=True, exist_ok=True)
+strings = values / "strings.xml"
+st = strings.read_text() if strings.exists() else '<?xml version="1.0" encoding="utf-8"?>\\n<resources>\\n</resources>'
+if "bosley_target_accessibility_description" not in st:
+    st = st.replace("</resources>", '    <string name="bosley_target_accessibility_description">Finds visible controls relevant to your active guide and moves the pointer. It does not click or type.</string>\\n</resources>')
+    strings.write_text(st)
 
 src = root / "app/src/main/java/com/bosley/companion"
 src.mkdir(parents=True, exist_ok=True)
@@ -33,13 +56,14 @@ import android.widget.*;
 import android.graphics.PixelFormat;
 
 public class BosleyOverlayService extends Service {
-  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE";
+  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE";
   int widgetWidth=110,widgetHeight=38,cornerDp=22,borderDp=1,eyeWidth=10,eyeHeight=20,eyeGapDp=12; String eyeShape="soft-square";
   WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; float guideTargetX=.55f,guideTargetY=.55f;
   @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);}
   @Override public int onStartCommand(Intent i,int flags,int id){
     if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
+    if(i!=null && ACTION_TARGET.equals(i.getAction())){if(i.getBooleanExtra("found",false)){guideTargetX=i.getFloatExtra("x",guideTargetX);guideTargetY=i.getFloatExtra("y",guideTargetY);if(guideTarget!=null&&guideTargetLp!=null){android.util.DisplayMetrics dm=getResources().getDisplayMetrics();guideTargetLp.x=(int)(guideTargetX*dm.widthPixels)-dp(21);guideTargetLp.y=(int)(guideTargetY*dm.heightPixels)-dp(21);try{wm.updateViewLayout(guideTarget,guideTargetLp);if(guideLine!=null)guideLine.invalidate();}catch(Exception ignored){}}if(guideCard!=null)guideCard.setContentDescription("Target found; pointer snapped.");}else if(guideCard!=null)guideCard.setContentDescription("No confident target found; try a more specific task.");return START_STICKY;}
     if(i!=null && ACTION_GUIDE.equals(i.getAction())){guideInstruction=i.getStringExtra("instruction")!=null?i.getStringExtra("instruction"):"Follow the tether to the next step.";if(!Settings.canDrawOverlays(this)){Intent p=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(p);return START_NOT_STICKY;}showGuide();return START_STICKY;}
     if(i!=null){widgetWidth=i.getIntExtra("widgetWidth",widgetWidth);widgetHeight=i.getIntExtra("widgetHeight",widgetHeight);cornerDp=i.getIntExtra("cornerDp",cornerDp);borderDp=i.getIntExtra("borderDp",borderDp);eyeWidth=i.getIntExtra("eyeWidth",eyeWidth);eyeHeight=i.getIntExtra("eyeHeight",eyeHeight);eyeGapDp=i.getIntExtra("eyeGapDp",eyeGapDp);eyeShape=i.getStringExtra("eyeShape")!=null?i.getStringExtra("eyeShape"):eyeShape;}
     if(ACTION_STYLE.equals(i==null?null:i.getAction())){removeBar();}
@@ -82,8 +106,9 @@ public class BosleyOverlayService extends Service {
     LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(10),dp(8),dp(10),dp(8));card.setElevation(dp(12));
     GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(8,8,8));bg.setCornerRadius(dp(12));bg.setStroke(dp(1),Color.LTGRAY);card.setBackground(bg);
     TextView title=new TextView(this);title.setText("BOSLEY GUIDE  ·  drag to move");title.setTextColor(Color.WHITE);title.setTextSize(11);title.setTypeface(null,android.graphics.Typeface.BOLD);title.setPadding(0,0,0,dp(2));card.addView(title);
-    TextView body=new TextView(this);body.setText(guideInstruction+"\nDrag the white target dot onto the control you need. Bosley has not clicked or changed anything.");body.setTextColor(Color.LTGRAY);body.setTextSize(11);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(4);card.addView(body,bp);
-    Button stop=new Button(this);stop.setText("Stop");stop.setTextColor(Color.WHITE);stop.setOnClickListener(v->removeGuide());LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-2,dp(36));sp.topMargin=dp(3);card.addView(stop,sp);
+    TextView body=new TextView(this);body.setText(guideInstruction+"\\nUse Find target to locate a matching visible control. Bosley does not click or type.");body.setTextColor(Color.LTGRAY);body.setTextSize(11);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(4);card.addView(body,bp);
+    Button find=new Button(this);find.setText("Find target");find.setTextColor(Color.WHITE);find.setOnClickListener(v->{String enabled=android.provider.Settings.Secure.getString(getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);if(enabled==null||!enabled.contains(getPackageName()+"/"+BosleyTargetAccessibilityService.class.getName())){Intent settings=new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(settings);body.setText("Enable Bosley visual target finder in Accessibility settings, then return and tap Find target.");return;}Intent request=new Intent(BosleyTargetAccessibilityService.FIND);request.setPackage(getPackageName());request.putExtra("task",guideInstruction);sendBroadcast(request);body.setText("Searching visible controls…");});LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,dp(36));fp.topMargin=dp(3);card.addView(find,fp);
+    Button stop=new Button(this);stop.setText("Stop");stop.setTextColor(Color.WHITE);stop.setOnClickListener(v->removeGuide());LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(36));sp.topMargin=dp(2);card.addView(stop,sp);
     guideCard=card;guideCardLp=new WindowManager.LayoutParams(dp(250),WindowManager.LayoutParams.WRAP_CONTENT,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);guideCardLp.gravity=Gravity.TOP|Gravity.START;guideCardLp.x=dp(12);guideCardLp.y=dp(64);
     title.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;public boolean onTouch(View v,MotionEvent e){switch(e.getAction()){case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=guideCardLp.x;oy=guideCardLp.y;return true;case MotionEvent.ACTION_MOVE:guideCardLp.x=Math.max(0,ox+(int)(e.getRawX()-sx));guideCardLp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(guideCard,guideCardLp);}catch(Exception ignored){}return true;default:return true;}}});
     try{wm.addView(guideCard,guideCardLp);}catch(Exception e){guideCard=null;removeGuide();}
@@ -95,6 +120,61 @@ public class BosleyOverlayService extends Service {
   @Override public void onDestroy(){removeBar();super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
 }''')
+(src / "BosleyTargetAccessibilityService.java").write_text(r'''package com.bosley.companion;
+import android.accessibilityservice.AccessibilityService;
+import android.content.*;
+import android.graphics.Rect;
+import android.os.Build;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
+import java.util.*;
+import java.util.regex.*;
+
+public class BosleyTargetAccessibilityService extends AccessibilityService {
+  static final String FIND="com.bosley.companion.FIND_GUIDE_TARGET";
+  BroadcastReceiver receiver;
+  @Override protected void onServiceConnected(){
+    super.onServiceConnected();
+    receiver=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){if(FIND.equals(i.getAction()))findTarget(i.getStringExtra("task"));}};
+    if(Build.VERSION.SDK_INT>=33)registerReceiver(receiver,new IntentFilter(FIND),Context.RECEIVER_NOT_EXPORTED);
+    else registerReceiver(receiver,new IntentFilter(FIND));
+  }
+  @Override public void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent event){}
+  @Override public void onInterrupt(){}
+  void findTarget(String task){
+    Set<String> words=new HashSet<>();
+    Matcher m=Pattern.compile("[a-zA-Z0-9]{3,}").matcher((task==null?"":task).toLowerCase(Locale.ROOT));
+    Set<String> stop=new HashSet<>(Arrays.asList("the","and","for","with","from","this","that","into","your","open","find","click","tap","guide","task","screen","app","please","then","have","where","relevant","complete","action","before","leaving","goal"));
+    while(m.find()){String word=m.group();if(!stop.contains(word))words.add(word);}
+    int bestScore=0;Rect bestBounds=null;
+    try{
+      for(AccessibilityWindowInfo window:getWindows()){
+        AccessibilityNodeInfo root=window.getRoot();if(root==null)continue;
+        try{
+          if(getPackageName().equals(String.valueOf(root.getPackageName())))continue;
+          ArrayDeque<AccessibilityNodeInfo> stack=new ArrayDeque<>();stack.push(root);
+          while(!stack.isEmpty()){
+            AccessibilityNodeInfo node=stack.pop();if(node==null)continue;
+            CharSequence a=node.getText(),b=node.getContentDescription(),c=node.getViewIdResourceName();
+            String label=((a==null?"":a.toString())+" "+(b==null?"":b.toString())+" "+(c==null?"":c.toString().replace('_',' '))).toLowerCase(Locale.ROOT);
+            int score=0;for(String word:words)if(label.contains(word))score+=word.length()>=6?3:2;
+            if(score>bestScore&&(node.isClickable()||node.isFocusable()||node.isEditable()||node.isCheckable())){
+              Rect bounds=new Rect();node.getBoundsInScreen(bounds);if(bounds.width()>0&&bounds.height()>0){bestScore=score;bestBounds=bounds;}
+            }
+            for(int n=node.getChildCount()-1;n>=0;n--){AccessibilityNodeInfo child=node.getChild(n);if(child!=null)stack.push(child);}
+            node.recycle();
+          }
+        }finally{root.recycle();}
+      }
+    }catch(Exception ignored){}
+    Intent result=new Intent(BosleyOverlayService.ACTION_TARGET);result.setPackage(getPackageName());
+    if(bestBounds==null||bestScore<2){result.putExtra("found",false);}
+    else {android.util.DisplayMetrics dm=getResources().getDisplayMetrics();result.putExtra("found",true);result.putExtra("x",Math.max(0,Math.min(1f,((bestBounds.left+bestBounds.right)/2f)/dm.widthPixels)));result.putExtra("y",Math.max(0,Math.min(1f,((bestBounds.top+bestBounds.bottom)/2f)/dm.heightPixels)));}
+    startService(result);
+  }
+  @Override public void onDestroy(){if(receiver!=null){try{unregisterReceiver(receiver);}catch(Exception ignored){}}super.onDestroy();}
+}''')
+
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;
 import android.content.Intent;
 import android.net.Uri;

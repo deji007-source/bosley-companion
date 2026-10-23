@@ -174,9 +174,10 @@ jobs:
               bubble.setAlwaysOnTop(true, 'screen-saver');
             }
 
-            if (panel && !panel.isDestroyed() && panel.isVisible()) {
-              const width = Math.min(460, area.width - 16);
-              const height = Math.max(320, Math.min(720, area.height));
+            if (panel && !panel.isDestroyed()) {
+              // Keep the expanded companion compact and attached to the top-center bezel.
+              const width = Math.min(420, Math.max(320, area.width - 16));
+              const height = Math.min(480, Math.max(300, Math.round(area.height * 0.52)));
               const x = bounds.x + Math.round((bounds.width - width) / 2);
               const y = bounds.y;
 
@@ -298,10 +299,10 @@ jobs:
 
           function createPanel() {
             panel = new BrowserWindow({
-              width: 440,
-              height: 560,
-              minWidth: 360,
-              minHeight: 320,
+              width: 420,
+              height: 460,
+              minWidth: 320,
+              minHeight: 300,
               resizable: true,
               show: false,
               backgroundColor: '#000000',

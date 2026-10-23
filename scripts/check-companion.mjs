@@ -40,7 +40,7 @@ const contracts = [
   ["Activity task tracking", 'id="activityform"'],
   ["Daily planner categories", 'id="activitykind"'],
   ["Daily planner deadline", 'id="activitydue"'],
-  ["Consent prompt for visual task guide", "Allow Bosley to guide you to this task?"],
+  ["Consent prompt for visual task guide", "Allow Bosley to open a system-level visual guide over other apps for this task?"],
   ["Animated visual tether", "bosley-guide-flow"],
   ["Guide mode stop control", 'id="bosley-guide-stop"'],
   ["Guide mode is limited to Bosley UI", "inside Bosley Companion only"],

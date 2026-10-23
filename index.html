@@ -632,6 +632,22 @@ async function send(text,imageData=null){
 }
 let pendingImageData=null;
 function clearImageAttachment(){pendingImageData=null;$("#camera-input").value="";$("#imageattachment").hidden=true;$("#imagepreview").removeAttribute("src")}
+async function normalizeCapturedImage(dataUrl){
+ if(typeof dataUrl!=="string"||!dataUrl.startsWith("data:image/"))throw Error("The device did not return a valid image.");
+ const response=await fetch(dataUrl);
+ if(!response.ok)throw Error("The captured image could not be read.");
+ const bitmap=await createImageBitmap(await response.blob());
+ try{
+  const scale=Math.min(1,1280/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+  canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  const ctx=canvas.getContext("2d");
+  if(!ctx)throw Error("Image processing is unavailable.");
+  ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+  return canvas.toDataURL("image/jpeg",0.82);
+ }finally{bitmap.close?.()}
+}
 $("#camera").onclick=()=>$("#camera-input").click();
 const screenButton=$("#screen");
 const androidCapture=()=>!!(window.Capacitor?.isNativePlatform?.()&&window.Capacitor?.Plugins?.BosleyOverlay?.requestScreenCapture);
@@ -659,7 +675,7 @@ if(screenButton)screenButton.onclick=async()=>{
    if(result?.cancelled)return;
   }
   if(result?.ok!==true||typeof result.dataUrl!=="string"||!result.dataUrl.startsWith("data:image/"))throw Error("The device did not return a valid screenshot.");
-  pendingImageData=result.dataUrl;
+  pendingImageData=await normalizeCapturedImage(result.dataUrl);
   $("#imagepreview").src=pendingImageData;
   $("#imageattachment").hidden=false;
   note("Screen captured and attached. Review it; nothing is sent until you press Send.");

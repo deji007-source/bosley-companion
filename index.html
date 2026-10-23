@@ -710,7 +710,7 @@ async function startMic(){
    recorder.onstart=()=>{S.listening=true;$("#mic").textContent="■";$("#mic").setAttribute("aria-label","Stop voice recording");note("Listening… tap the microphone again to transcribe.");look(0,0);eyes()};
    recorder.onerror=()=>note("The microphone recording failed. Check Windows microphone privacy settings and try again.");
    recorder.onstop=async()=>{
-    stream.getTracks().forEach(t=>t.stop());window.bosleyRecording=null;S.listening=false;$("#mic").textContent="🎙";$("#mic").setAttribute("aria-label",labels[voiceMode].mic);eyes();
+    stream.getTracks().forEach(t=>t.stop());window.bosleyRecording=null;S.listening=false;$("#mic").textContent="🎙";$("#mic").setAttribute("aria-label","Start voice request");eyes();
     const duration=(Date.now()-started)/1000,blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
     if(duration<1||!blob.size){note("That recording was too short. Hold or tap the microphone and speak for at least a second.");return}
     const active=db?(await db.auth.getSession()).data.session:null;

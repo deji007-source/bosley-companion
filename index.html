@@ -938,12 +938,10 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handle
   const routePhone=async()=>{
    const sess=db?(await db.auth.getSession()).data.session:null;
    if(!sess||!user)throw Error("Sign in under Jarvis Workspace first.");
-   const message="BOSLEY_COMMAND: "+instruction;
-   if(message.length>160)throw Error("This command exceeds MacroDroid's 160-character notification limit.");
-   const response=await fetch(SUPABASE_URL+"/functions/v1/macrodroid-bridge-",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+sess.access_token},body:JSON.stringify({action:"notify",message})});
+   const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+sess.access_token},body:JSON.stringify({type:"phone",instruction})});
    let result={};try{result=await response.json()}catch{}
-   if(!response.ok||result.ok!==true)throw Error(result.error||("Phone bridge failed (HTTP "+response.status+")."));
-   return "MacroDroid webhook accepted the command. Execution depends on your notification-trigger macro matching BOSLEY_COMMAND and forwarding the instruction to its action.";
+   if(!response.ok||result.ok!==true||result.telegramNotified!==true)throw Error(result.error||result.telegramDetail||("Telegram-to-MacroDroid delivery failed (HTTP "+response.status+")."));
+   return "Command notification delivered through the linked Telegram trigger bot for MacroDroid. The phone macro must match the Bosley command notification and execute the requested action.";
   };
   const tasks=[];
   if(shouldPhone)tasks.push(routePhone().then(message=>({target:"phone",message})).catch(error=>({target:"phone",error:String(error?.message||error)})));

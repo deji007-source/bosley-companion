@@ -467,7 +467,14 @@ async function startBosleyGuide(task){
  if(!task||task.status==="done")return;
  const permitted=window.confirm("Allow Bosley to open a system-level visual guide over other apps for this task? The guide will not click, type, or read other apps. You can stop it at any time.");
  if(!permitted){activityEvent("Guide permission declined: "+task.title,"permission");return}
- const instruction=[task.title,task.project?"Project: "+task.project:"",task.due?"Due: "+task.due:""].filter(Boolean).join(" · ");
+ const title=String(task.title||"").trim();
+ const normalized=title.toLowerCase();
+ const steps=/(whatsapp|send .*message|text .*message|message .*to)/i.test(normalized)
+  ? ["GOAL: "+title,"1. Open WhatsApp and choose the intended chat.","2. Check the recipient before typing.","3. Tap the message field and enter your message.","4. Review the message. Tap Send only when you are ready.","Use Stop guide to close this overlay."]
+  : /(planner|homework|assignment|study|notes|school|science|math)/i.test(normalized)
+  ? ["GOAL: "+title,"1. Open the app or document where you will do this task.","2. Find the relevant subject, task, or notes.","3. Complete one small part, then check your work.","4. Save your progress before leaving.","Use Stop guide to close this overlay."]
+  : ["GOAL: "+title,"1. Open the app or screen where this task belongs.","2. Locate the control or information relevant to the task.","3. Complete the action yourself and verify the result.","4. Save or confirm your work before leaving.","Use Stop guide to close this overlay."];
+ const instruction=steps.join("\\n");
  try{
   const desktop=bridge(),native=window.Capacitor?.Plugins?.BosleyOverlay;
   let result;

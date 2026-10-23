@@ -9,6 +9,8 @@ const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g
   .map(([, , source]) => source);
 
 assert.ok(inlineScripts.length > 0, "Expected the companion's inline application script");
+assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
+assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 for (const [index, source] of inlineScripts.entries()) {
   assert.doesNotThrow(
     () => new vm.Script(source, { filename: "index.html:inline-script-" + (index + 1) }),

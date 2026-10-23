@@ -932,18 +932,26 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handle
  const genericAutomation=/^(?:(?:hey\s+)?(?:bosley[, ]+)?(?:please\s+)?)(?:open|launch|start|close|quit|switch to|go to|turn on|turn off|enable|disable|toggle|connect|disconnect|lock|unlock|wake up|sleep|mute|unmute|volume up|volume down|take a screenshot|capture the screen|move .+ to desktop \d+|focus .+|minimize .+|maximize .+|click .+|tap .+|type .+|search .+|look up .+|play .+|pause(?: music)?|resume(?: music)?|stop(?: music)?|skip(?: song| track)?|next song|previous song|call .+|phone .+|dial .+|send (?:a )?(?:text|message) .+|text .+|message .+)(?:[.!?]*)$/i.test(automationText);
  if(genericAutomation){
   const instruction=automationText.replace(/^[, ]+|[, ]+$/g,"");
+  const phoneOnly=/^(?:call|phone|dial|send (?:a )?(?:text|message)|text|message)\b/i.test(instruction);
+  const shouldPhone=explicitPhone||(explicitBoth&&phoneOnly)||(!targetMatch&&!phoneOnly);
+  const shouldLaptop=explicitLaptop||(explicitBoth&&!phoneOnly)||(!targetMatch&&!phoneOnly);
   const routePhone=async()=>{
    const sess=db?(await db.auth.getSession()).data.session:null;
    if(!sess||!user)throw Error("Sign in under Jarvis Workspace first.");
-   const response=await fetch(SUPABASE_URL+"/functions/v1/macrodroid-bridge-",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+sess.access_token},body:JSON.stringify({action:"notify",message:"BOSLEY_COMMAND: "+instruction})});
+   const message="BOSLEY_COMMAND: "+instruction;
+   if(message.length>160)throw Error("This command exceeds MacroDroid's 160-character notification limit.");
+   const response=await fetch(SUPABASE_URL+"/functions/v1/macrodroid-bridge-",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+sess.access_token},body:JSON.stringify({action:"notify",message})});
    let result={};try{result=await response.json()}catch{}
    if(!response.ok||result.ok!==true)throw Error(result.error||("Phone bridge failed (HTTP "+response.status+")."));
-   return "Phone automation bridge accepted the command. Actual execution depends on the configured MacroDroid macro.";
+   return "MacroDroid webhook accepted the command. Execution depends on your notification-trigger macro matching BOSLEY_COMMAND and forwarding the instruction to its action.";
   };
   const tasks=[];
-  if(explicitPhone||explicitBoth)tasks.push(routePhone().then(message=>({target:"phone",message})).catch(error=>({target:"phone",error:String(error?.message||error)})));
-  if(explicitLaptop||explicitBoth)tasks.push((async()=>{await queueAutomationInstruction(instruction+" on laptop","Laptop automation request submitted: "+instruction+". Execution is not confirmed until the laptop listener reports it.");return {target:"laptop",message:"Laptop request queued; listener delivery/execution must be confirmed."}})().then(result=>result).catch(error=>({target:"laptop",error:String(error?.message||error)})));
-  addMsg("bosley",explicitPhone?"Routing this to your phone automation…":explicitLaptop?"Routing this to the laptop listener…":"Routing this to both phone and laptop automations…");
+  if(shouldPhone)tasks.push(routePhone().then(message=>({target:"phone",message})).catch(error=>({target:"phone",error:String(error?.message||error)})));
+  if(shouldLaptop)tasks.push((async()=>{
+   await queueAutomationInstruction(instruction);
+   return {target:"laptop",message:"Laptop command submitted to the automation queue. Execution still depends on the connected listener."};
+  })().then(result=>result).catch(error=>({target:"laptop",error:String(error?.message||error)})));
+  addMsg("bosley",shouldPhone&&shouldLaptop?"Routing this to phone and laptop automations…":shouldPhone?"Routing this to your phone's MacroDroid trigger…":"Routing this to the laptop listener…");
   Promise.all(tasks).then(results=>{for(const result of results){if(result.error){addMsg("bosley",result.target+" automation failed: "+result.error);autoLog("error",result.target+" automation failed: "+result.error)}else{addMsg("bosley",result.target+": "+result.message);autoLog("queued",result.target+" route: "+instruction)}}});
   return true;
  }

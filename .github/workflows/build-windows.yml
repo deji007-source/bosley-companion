@@ -402,6 +402,24 @@ jobs:
             return { ok: true, state: 'overlay-opened' };
           }
 
+          function openRestoredUrl(url) {
+            if (process.platform === 'win32') {
+              const candidates = [
+                path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+                path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+                path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'Application', 'chrome.exe')
+              ];
+              const chrome = candidates.find(candidate => candidate && fs.existsSync(candidate));
+              if (chrome) {
+                const child = spawn(chrome, ['--new-window', '--window-size=1100,760', '--window-position=70,60', url], { detached: true, stdio: 'ignore', windowsHide: false });
+                child.on('error', error => logStartup('CHROME URL OPEN FAILED', error.message));
+                child.unref();
+                return Promise.resolve({ ok: true, opened: true, browser: 'chrome', windowMode: 'restored' });
+              }
+            }
+            return shell.openExternal(url).then(() => ({ ok: true, opened: true, browser: 'default', windowMode: 'system-default' }));
+          }
+
           function createPanel() {
             panel = new BrowserWindow({
               width: 420,
@@ -492,7 +510,7 @@ jobs:
                 detail: target.href
               }).then(choice => {
                 if (choice.response === 1) {
-                  return shell.openExternal(target.href);
+                  return openRestoredUrl(target.href);
                 }
               }).catch(error => {
                 console.error('External link request failed:', error.message);
@@ -733,7 +751,8 @@ jobs:
               if (choice.response !== 1) return { ok: false, cancelled: true };
               const executable = target.candidates.find(candidate => candidate && fs.existsSync(candidate));
               if (!executable) throw new Error(target.label + ' was not found in its standard Windows installation folders.');
-              const child = spawn(executable, [], { detached: true, stdio: 'ignore', windowsHide: true });
+              const launchArgs = appId === 'chrome' ? ['--new-window', '--window-size=1100,760', '--window-position=70,60'] : [];
+              const child = spawn(executable, launchArgs, { detached: true, stdio: 'ignore', windowsHide: false });
               child.on('error', () => {});
               child.unref();
               return { ok: true, launched: appId, label: target.label };
@@ -872,7 +891,10 @@ jobs:
                 box-shadow: 0 8px 24px rgba(0,0,0,.38), 0 1px 10px rgba(255,255,255,.2);
               }
 
-              .wordmark { font: 700 10px/1 system-ui, Segoe UI, Arial, sans-serif; letter-spacing: .24em; white-space: nowrap; }
+              .wordmark { display: none; }
+              button { width: 104px; height: 28px; padding: 2px 8px; border-left: 1px solid rgba(255,255,255,.72); border-right: 1px solid rgba(255,255,255,.72); border-bottom: 1px solid rgba(255,255,255,.72); border-radius: 0 0 18px 18px; gap: 0; background: rgba(7,7,7,.96); box-shadow: 0 5px 18px rgba(0,0,0,.34), 0 0 12px rgba(255,255,255,.06); }
+              button::before { border-radius: 0 0 19px 19px; }
+              svg { width: 38px; height: 23px; }
 
               button:hover {
                 border-color: #fff;
@@ -913,9 +935,9 @@ jobs:
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 152, height: 36 },
-                default: { width: 176, height: 40 },
-                wide: { width: 200, height: 44 }
+                compact: { width: 96, height: 26 },
+                default: { width: 104, height: 28 },
+                wide: { width: 128, height: 32 }
               };
               function applyAppearance(value) {
                 if (!value) return;
@@ -955,7 +977,9 @@ jobs:
           grep -Fq 'id="activitytoggle"' desktop/index.html
           grep -Fq 'function activityEvent' desktop/index.html
           grep -Fq 'function setVoiceMode(next)' desktop/index.html
-          grep -Fq 'BOSLEY</span>' desktop/bubble.html
+          grep -Fq 'aria-label="Open Bosley Companion"' desktop/bubble.html
+          grep -Fq 'openRestoredUrl' desktop/main.cjs
+          grep -Fq 'window-size=1100,760' desktop/main.cjs
           grep -Fq 'loadHostedFallback' desktop/main.cjs
           grep -Fq 'The local app opened but did not render its interface.' desktop/main.cjs
           grep -Fq './assets/supabase.js' desktop/index.html
@@ -1022,3 +1046,28 @@ jobs:
           path: desktop/dist/*.exe
           if-no-files-found: error
           retention-days: 14
+
+      - name: Package optional Bosley Agent Pack
+        shell: bash
+        run: |
+          test -s agent-pack/README.md
+          test -s agent-pack/skills.json
+          python - <<'PY'
+          import json
+          with open('agent-pack/skills.json', encoding='utf-8') as handle:
+              pack = json.load(handle)
+          assert pack.get('version') == 1 and len(pack.get('skills', [])) >= 5
+          with open('agent-pack/bosley-app.json', encoding='utf-8') as handle:
+              app = json.load(handle)
+          assert 'url' in app
+          PY
+          cd agent-pack
+          zip -r ../Bosley-Optional-Agent-Pack.zip .
+
+      - name: Upload optional agent pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bosley-Optional-Agent-Pack
+          path: Bosley-Optional-Agent-Pack.zip
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "pack": "bosley-optional-agent-pack",
+  "skills": [
+    {
+      "id": "app-navigation",
+      "title": "App and website navigation",
+      "triggers": [
+        "open Chrome",
+        "open a website",
+        "open Bosley"
+      ],
+      "capabilities": [
+        "open_external_url",
+        "launch_app"
+      ],
+      "confirmation": "confirm native launch or external URL before opening",
+      "safety": "only allowlisted apps and HTTPS URLs"
+    },
+    {
+      "id": "project-maintenance",
+      "title": "Bosley project maintenance",
+      "triggers": [
+        "check build",
+        "fix bug",
+        "update app"
+      ],
+      "capabilities": [
+        "inspect_repository",
+        "edit_files",
+        "run_tests"
+      ],
+      "confirmation": "confirm production-impacting changes",
+      "safety": "preserve working behavior and summarize changed files/tests"
+    },
+    {
+      "id": "schoolwork",
+      "title": "Schoolwork tutor",
+      "triggers": [
+        "explain this problem",
+        "help me study",
+        "review my solution"
+      ],
+      "capabilities": [
+        "explain",
+        "derive",
+        "check"
+      ],
+      "confirmation": "no external action required",
+      "safety": "teach the method and distinguish hints from final answers"
+    },
+    {
+      "id": "engineering",
+      "title": "Engineering assistant",
+      "triggers": [
+        "calculate",
+        "design review",
+        "debug hardware"
+      ],
+      "capabilities": [
+        "calculate",
+        "document assumptions",
+        "verification checklist"
+      ],
+      "confirmation": "confirm before controlling connected equipment",
+      "safety": "show units, assumptions, uncertainty, and independent checks"
+    },
+    {
+      "id": "trading-monitor",
+      "title": "Trading monitor",
+      "triggers": [
+        "watch my trading program",
+        "summarize market dashboard",
+        "alert me to a threshold"
+      ],
+      "capabilities": [
+        "read_dashboard",
+        "compare_thresholds",
+        "notify_user"
+      ],
+      "confirmation": "confirm alert setup; separate confirmation required for any trade action",
+      "safety": "read-only by default; never execute orders from a natural-language guess"
+    },
+    {
+      "id": "personal-workspace",
+      "title": "Personal companion workspace",
+      "triggers": [
+        "remember this",
+        "plan my day",
+        "organize my projects"
+      ],
+      "capabilities": [
+        "tasks",
+        "notes",
+        "project summaries"
+      ],
+      "confirmation": "confirm before deleting or sharing saved information",
+      "safety": "use authenticated user-scoped storage and respect data access controls"
+    }
+  ]
+}

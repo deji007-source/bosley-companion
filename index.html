@@ -1060,7 +1060,7 @@ eyes();
 </script></body></html>/* ---------- Authenticated laptop command listener ----------
    Realtime broadcasts are user-scoped. Only a fixed, allowlisted set of actions
    can execute here; arbitrary shell commands and arbitrary paths are never accepted. */
-let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="offline";
+let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="offline",laptopHeartbeatTimer=null;
 function setLaptopListenerState(state,detail){
  laptopListenerState=state;
  const status=$("#laptop-listener-status");
@@ -1102,7 +1102,21 @@ async function handleLaptopBroadcast(payload){
   autoLog("error","Laptop listener action failed: "+String(error?.message||error).slice(0,180));
  }
 }
+async function sendLaptopHeartbeat(activeUser){
+ if(!activeUser||laptopListenerOwner!==activeUser.id||!db)return false;
+ try{
+  const {data,error}=await db.auth.getSession();
+  const token=data?.session?.access_token;
+  if(error||!token)throw new Error("sign-in session unavailable");
+  const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+token},body:JSON.stringify({type:"listener_heartbeat"}),signal:AbortSignal.timeout(8000)});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||result.ok!==true)throw new Error(result.error||"heartbeat rejected");
+  setLaptopListenerState("online","heartbeat confirmed · "+new Date().toLocaleTimeString());
+  return true;
+ }catch(error){setLaptopListenerState("error","heartbeat failed · "+String(error?.message||error).slice(0,80));return false}
+}
 function startLaptopCommandListener(activeUser){
+ if(laptopHeartbeatTimer){clearInterval(laptopHeartbeatTimer);laptopHeartbeatTimer=null}
  if(laptopListenerChannel){try{db?.removeChannel(laptopListenerChannel)}catch{};laptopListenerChannel=null}
  laptopListenerOwner=activeUser?.id||null;
  if(!activeUser||!db){setLaptopListenerState("offline","sign in to connect");return}
@@ -1113,7 +1127,7 @@ function startLaptopCommandListener(activeUser){
   .on("broadcast",{event:"automation"},({payload})=>{handleLaptopBroadcast(payload)})
   .subscribe(status=>{
    if(laptopListenerOwner!==activeUser.id)return;
-   if(status==="SUBSCRIBED")setLaptopListenerState("online","secure channel connected");
+   if(status==="SUBSCRIBED"){setLaptopListenerState("connecting","channel connected; checking heartbeat");sendLaptopHeartbeat(activeUser);laptopHeartbeatTimer=setInterval(()=>sendLaptopHeartbeat(activeUser),30000)}
    else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setLaptopListenerState("error",status);
    else if(status==="CLOSED")setLaptopListenerState("offline","channel closed");
   });

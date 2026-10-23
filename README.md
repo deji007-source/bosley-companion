@@ -3,7 +3,8 @@
 Bosley Companion is a browser-first AI companion with a Vite frontend, Supabase-backed services, and an optional Windows Electron wrapper.
 
 **Live app:** https://bosley-companion.vercel.app/  
-**Windows build:** GitHub Actions → **Build Bosley Windows App** workflow.
+**Windows build:** GitHub Actions → **Build Bosley Windows App** workflow.  
+**Android build:** GitHub Actions → **Build Bosley Android APK** workflow.
 
 ## Source-of-truth note
 
@@ -28,7 +29,7 @@ Some of these integrations have been implemented in code but still require end-t
 
 ## Important limitations
 
-- **Native desktop automation is not complete.** The Electron preload currently exposes only the panel toggle. It does not provide a verified native action bridge for the web app.
+- **Native desktop automation remains limited.** The Electron wrapper now has a restricted native bridge for specific actions, including opening/stopping the system visual guide and allowlisted app launches. This is not general-purpose remote control of arbitrary apps.
 - **The OS command queue needs a lifecycle correction before it can be trusted.** The current `os-agent-poll` endpoint marks commands as `done` when it returns them, before any desktop agent confirms execution. Do not use this status as proof that an OS action ran.
 - Browser-safe workflow actions are not the same as controlling Windows applications. Desktop actions must remain unavailable unless a secure, allowlisted native bridge is installed and confirms the result.
 - Message actions that lack a verified send integration should be treated as drafts, not as sent messages.
@@ -63,6 +64,24 @@ The production output is written to `dist/`.
 4. When it completes, open the run and download the `Bosley-Windows-Installer` artifact.
 
 The workflow builds an Electron installer that loads the hosted Bosley site. A successful build confirms packaging, not that every remote service or desktop automation feature works end to end.
+
+## System-level visual guide (Windows and Android)
+
+The current Windows installer and Android debug APK include a native visual-guide overlay. It is designed to appear above other applications after the user selects a task's **Guide** action and confirms the prompt. Android also requires the system **Display over other apps** permission. The hosted website alone cannot display an overlay over unrelated apps.
+
+**Current limitation:** the tether target is an approximate screen position. The overlay provides visual guidance only; it does not identify arbitrary controls, click, type, or read the contents of other apps. A successful CI build confirms the package compiles, not that the overlay has been verified on every device.
+
+### Install and smoke-test the current builds
+
+1. Open the [Windows build workflow](https://github.com/deji007-source/bosley-companion/actions/runs/40003886128) or [Android build workflow](https://github.com/deji007-source/bosley-companion/actions/runs/40003886096) while signed in to GitHub.
+2. In **Artifacts**, download `Bosley-Windows-Installer` or `Bosley-Android-Debug-APK`. Extract the downloaded ZIP to get the installer/APK.
+3. Install and launch Bosley Companion, then sign in if prompted.
+4. Open the Activity/Daily Planner, create an active test task, and select **Guide**. Accept the in-app confirmation.
+5. On Android, if prompted, enable **Allow display over other apps** for Bosley Companion, return to the app, and try **Guide** again.
+6. Switch to another app and check whether the guide card and tether remain visible above it. Use **Stop guide** to close the overlay.
+7. Report the platform, Android version or Windows version, and any exact error text if the overlay does not appear. Do not include passwords or tokens.
+
+These workflow artifacts are temporary and are scheduled to expire on 6 November 2026. New builds may produce newer artifacts; prefer the latest successful run when testing.
 
 ## Backend notes
 

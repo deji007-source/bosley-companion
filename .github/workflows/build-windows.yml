@@ -297,6 +297,37 @@ jobs:
             });
           }
 
+          let guideLineWindow = null;
+          let guideCardWindow = null;
+          function stopVisualGuide() {
+            for (const win of [guideLineWindow, guideCardWindow]) {
+              if (win && !win.isDestroyed()) win.close();
+            }
+            guideLineWindow = null;
+            guideCardWindow = null;
+          }
+          function openVisualGuide(payload = {}) {
+            stopVisualGuide();
+            const display = screen.getPrimaryDisplay();
+            const bounds = display.bounds;
+            const instruction = String(payload.instruction || 'Follow the tether to the next step.').slice(0, 220);
+            const targetX = Math.max(20, Math.min(bounds.width - 20, Number(payload.x) || Math.round(bounds.width * 0.55)));
+            const targetY = Math.max(60, Math.min(bounds.height - 40, Number(payload.y) || Math.round(bounds.height * 0.55)));
+            guideLineWindow = new BrowserWindow({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, frame: false, transparent: true, backgroundColor: '#00000000', resizable: false, movable: false, focusable: false, skipTaskbar: true, hasShadow: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+            guideLineWindow.setAlwaysOnTop(true, 'screen-saver');
+            guideLineWindow.setIgnoreMouseEvents(true, { forward: true });
+            const svg = '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}svg{width:100%;height:100%}path{fill:none;stroke:#fff;stroke-width:3;stroke-dasharray:8 10;filter:drop-shadow(0 0 5px #fff);animation:flow 1s linear infinite}circle{fill:#fff;filter:drop-shadow(0 0 8px #fff)}@keyframes flow{to{stroke-dashoffset:-36}}</style></head><body><svg viewBox="0 0 '+bounds.width+' '+bounds.height+'" preserveAspectRatio="none"><path d="M '+Math.round(bounds.width/2)+' '+Math.max(50,bounds.height-70)+' C '+Math.round(bounds.width/2)+' '+Math.round(bounds.height*.72)+', '+targetX+' '+Math.round(targetY+100)+', '+targetX+' '+targetY+'"/><circle cx="'+targetX+'" cy="'+targetY+'" r="8"/></svg></body></html>';
+            guideLineWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(svg));
+            const safe = escapeHtml(instruction);
+            const card = '<!doctype html><html><head><meta charset="utf-8"><style>*{box-sizing:border-box}html,body{margin:0;background:transparent;color:#fff;font:12px Segoe UI,Arial}section{background:#080808f2;border:1px solid #888;border-radius:14px;padding:12px;box-shadow:0 4px 22px #0008}strong{font-size:13px}p{line-height:1.4;margin:7px 0}button{background:#1a1a1a;color:#fff;border:1px solid #777;border-radius:8px;padding:7px 10px;cursor:pointer}</style></head><body><section><strong>Bosley visual guide</strong><p>'+safe+'</p><p>Overlay is visible over other apps. Bosley has not clicked or changed anything.</p><button onclick="window.close()">Stop guide</button></section></body></html>';
+            guideCardWindow = new BrowserWindow({ x: bounds.x + 18, y: bounds.y + 64, width: 300, height: 160, frame: false, transparent: true, resizable: false, movable: true, alwaysOnTop: true, skipTaskbar: true, hasShadow: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+            guideCardWindow.setAlwaysOnTop(true, 'screen-saver');
+            guideCardWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(card));
+            guideCardWindow.on('closed', () => { if (guideCardWindow) { guideCardWindow = null; if (guideLineWindow && !guideLineWindow.isDestroyed()) guideLineWindow.close(); guideLineWindow = null; } });
+            guideLineWindow.on('closed', () => { guideLineWindow = null; });
+            return { ok: true, state: 'overlay-opened' };
+          }
+
           function createPanel() {
             panel = new BrowserWindow({
               width: 420,
@@ -475,7 +506,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide']
             };
           });
 
@@ -485,6 +516,16 @@ jobs:
             }
             if (!request || typeof request.action !== 'string') {
               throw new Error('Invalid desktop request');
+            }
+            if (request.action === 'open_visual_guide') {
+              const payload = request.payload || {};
+              const instruction = String(payload.instruction || '').trim();
+              if (!instruction) throw new Error('A guide instruction is required.');
+              return openVisualGuide({ instruction, x: payload.x, y: payload.y });
+            }
+            if (request.action === 'stop_visual_guide') {
+              stopVisualGuide();
+              return { ok: true, state: 'stopped' };
             }
             if (request.action === 'wake_companion') {
               if (panel && !panel.isDestroyed()) {

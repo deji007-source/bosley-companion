@@ -1108,7 +1108,7 @@ addEventListener("keydown",e=>{
 });
 eyes();
 })();
-</script></body></html>/* ---------- Authenticated laptop command listener ----------
+/* ---------- Authenticated laptop command listener ----------
    Realtime broadcasts are user-scoped. Only a fixed, allowlisted set of actions
    can execute here; arbitrary shell commands and arbitrary paths are never accepted. */
 let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="offline",laptopHeartbeatTimer=null;
@@ -1183,4 +1183,4 @@ function startLaptopCommandListener(activeUser){
    else if(status==="CLOSED")setLaptopListenerState("offline","channel closed");
   });
 }
-
+</script></body></html>

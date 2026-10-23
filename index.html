@@ -853,7 +853,7 @@ async function load(){
 $("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
 if(db){
  db.auth.getSession().then(({data})=>{user=data.session?.user||null;authResolved=true;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();if(user)restoreLatestConversation()}).catch(()=>{authResolved=true;renderAuthGate();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session. Check your connection and retry."});
- db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;renderAuthGate();if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
+ db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;renderAuthGate();startLaptopCommandListener(user);if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
 }
 
 /* ---------- permissioned automation layer ----------
@@ -963,7 +963,7 @@ async function runAction(step,approved=false){
 }
 async function runWorkflow(wf){if(automationBusy)throw Error("An automation workflow is already running.");automationBusy=true;const btn=$("#autorun");if(btn)btn.disabled=true;autoLog("running","Starting workflow: "+wf.name);let completed=0;
  try{for(const step of wf.steps){autoLog("running","Step "+(completed+1)+"/"+wf.steps.length+": "+(autoActions.find(a=>a.value===step.type)?.label||step.type));const result=await runAction(step,false);completed++;autoLog("success",result)}autoLog("success","Workflow finished: "+wf.name+" ("+completed+" steps completed)")}catch(e){autoLog("error","Workflow stopped after "+completed+" completed step(s): "+(e.message||e));throw e}finally{automationBusy=false;if(btn)btn.disabled=false}}
-function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge(),workflows=getWorkflows();refreshAutomationStatus();if(user&&workflowSyncUser!==user.id&&!workflowSyncPromise){syncWorkflows().then(()=>{if(!el.hidden)drawAutomation()}).catch(e=>autoLog("error","Cloud workflow sync failed: "+e.message))}el.innerHTML=`<h3>Bosley Automation</h3><p class="mute">Browser-safe actions run here. The Windows desktop companion can also launch approved apps (Chrome, Edge, Notepad, Calculator, and File Explorer) after you confirm each request. Native app launching is unavailable in website-only mode.</p><div class="item workflow-help"><strong>Try a saved automation in chat</strong><p class="mute">Type “Run [saved name]” or “Please run my [saved name] automation”. Saved workflows are checked before general chat.</p></div><p class="status">Runtime: ${b?"Desktop bridge detected":"Browser-only"} · Saved workflows: ${workflows.length}</p><div class="actions"><button type="button" id="macrodroid-test">Test MacroDroid notification</button><button type="button" id="macrodroid-calculator">Request phone Calculator</button></div><p class="status" id="macrodroid-feedback">MacroDroid: not tested from this website yet.</p><p class="status" id="macrodroid-action-feedback" aria-live="polite">Approved phone actions require MacroDroid setup before use.</p><form id="macrodroid-notify-form" class="form"><label class="mute" for="macrodroid-message">Custom phone notification (max 160 characters)</label><input id="macrodroid-message" maxlength="160" required placeholder="e.g. Hello from Bosley"><button class="primary" type="submit" id="macrodroid-send">Send notification to my phone</button><p class="status" id="macrodroid-notify-feedback" aria-live="polite">Custom notification not sent yet.</p></form><form id="autoform" class="form"><input id="wf-name" required maxlength="80" placeholder="Workflow name (e.g. Morning research)"><label class="mute" for="wf-action">First step</label><select id="wf-action">${autoActions.map(a=>`<option value="${a.value}">${a.label}</option>`).join("")}</select><input id="wf-input" maxlength="4000" placeholder="URL, search query, message body, or file text" required><input id="wf-extra" maxlength="300" placeholder="Optional: recipient email/handle or filename"><label class="mute" for="wf-file">Optional: choose a local text file to read into the action (browser permission required)</label><input id="wf-file" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json"><input id="wf-bridge" maxlength="64" placeholder="Desktop action ID: get_desktop_info or open_external_url"><div class="actions"><button class="primary" type="submit">Save / add step</button><button type="button" id="autorun-one">Run this step</button></div></form><div class="fb" id="autofb"></div><h3>Saved workflows</h3><div class="items">${workflows.map((w,i)=>`<article class="item"><main><strong>${esc(w.name)}</strong><p>${w.steps.length} step(s) · ${esc(w.steps.map(s=>autoActions.find(a=>a.value===s.type)?.label||s.type).join(" → "))}</p><div class="actions"><button data-run="${i}">Run</button><button data-delete-wf="${i}">Delete</button></div></main></article>`).join("")||'<p class="mute">Save a workflow above; submit again with the same name to add more steps.</p>'}</div><div class="actions" style="justify-content:space-between;align-items:center"><h3>Execution history</h3><button type="button" id="clear-auto-log">Clear history</button></div><div id="auto-log" class="items"></div><p class="mute warn">Safety: opening websites and downloading files are browser actions. A download does not grant Bosley permission to browse your disk. Sending messages is never simulated as success.</p>`;
+function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge(),workflows=getWorkflows();refreshAutomationStatus();if(user&&workflowSyncUser!==user.id&&!workflowSyncPromise){syncWorkflows().then(()=>{if(!el.hidden)drawAutomation()}).catch(e=>autoLog("error","Cloud workflow sync failed: "+e.message))}el.innerHTML=`<h3>Bosley Automation</h3><p class="mute">Browser-safe actions run here. The Windows desktop companion can also launch approved apps (Chrome, Edge, Notepad, Calculator, and File Explorer) after you confirm each request. Native app launching is unavailable in website-only mode.</p><div class="item workflow-help"><strong>Try a saved automation in chat</strong><p class="mute">Type “Run [saved name]” or “Please run my [saved name] automation”. Saved workflows are checked before general chat.</p></div><p class="status">Runtime: ${b?"Desktop bridge detected":"Browser-only"} · Saved workflows: ${workflows.length}</p><p class="status" id="laptop-listener-status" aria-live="polite">Laptop listener: checking connection…</p><div class="actions"><button type="button" id="macrodroid-test">Test MacroDroid notification</button><button type="button" id="macrodroid-calculator">Request phone Calculator</button></div><p class="status" id="macrodroid-feedback">MacroDroid: not tested from this website yet.</p><p class="status" id="macrodroid-action-feedback" aria-live="polite">Approved phone actions require MacroDroid setup before use.</p><form id="macrodroid-notify-form" class="form"><label class="mute" for="macrodroid-message">Custom phone notification (max 160 characters)</label><input id="macrodroid-message" maxlength="160" required placeholder="e.g. Hello from Bosley"><button class="primary" type="submit" id="macrodroid-send">Send notification to my phone</button><p class="status" id="macrodroid-notify-feedback" aria-live="polite">Custom notification not sent yet.</p></form><form id="autoform" class="form"><input id="wf-name" required maxlength="80" placeholder="Workflow name (e.g. Morning research)"><label class="mute" for="wf-action">First step</label><select id="wf-action">${autoActions.map(a=>`<option value="${a.value}">${a.label}</option>`).join("")}</select><input id="wf-input" maxlength="4000" placeholder="URL, search query, message body, or file text" required><input id="wf-extra" maxlength="300" placeholder="Optional: recipient email/handle or filename"><label class="mute" for="wf-file">Optional: choose a local text file to read into the action (browser permission required)</label><input id="wf-file" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json"><input id="wf-bridge" maxlength="64" placeholder="Desktop action ID: get_desktop_info or open_external_url"><div class="actions"><button class="primary" type="submit">Save / add step</button><button type="button" id="autorun-one">Run this step</button></div></form><div class="fb" id="autofb"></div><h3>Saved workflows</h3><div class="items">${workflows.map((w,i)=>`<article class="item"><main><strong>${esc(w.name)}</strong><p>${w.steps.length} step(s) · ${esc(w.steps.map(s=>autoActions.find(a=>a.value===s.type)?.label||s.type).join(" → "))}</p><div class="actions"><button data-run="${i}">Run</button><button data-delete-wf="${i}">Delete</button></div></main></article>`).join("")||'<p class="mute">Save a workflow above; submit again with the same name to add more steps.</p>'}</div><div class="actions" style="justify-content:space-between;align-items:center"><h3>Execution history</h3><button type="button" id="clear-auto-log">Clear history</button></div><div id="auto-log" class="items"></div><p class="mute warn">Safety: opening websites and downloading files are browser actions. A download does not grant Bosley permission to browse your disk. Sending messages is never simulated as success.</p>`;
  loadAutomationHistory();renderAutomationHistory();$("#clear-auto-log").onclick=()=>{automationRuns=[];try{localStorage.removeItem(automationHistoryKey())}catch{}renderAutomationHistory()};
  const mdTest=$("#macrodroid-test"),mdFeedback=$("#macrodroid-feedback");
  if(mdTest)mdTest.onclick=async()=>{if(mdTest.disabled)return;mdTest.disabled=true;if(mdFeedback)mdFeedback.textContent="Checking signed-in session and sending a test…";try{const sess=db?(await db.auth.getSession()).data.session:null;if(!sess||!user)throw Error("Sign in under Jarvis Workspace first, then retry.");const response=await fetch(SUPABASE_URL+"/functions/v1/macrodroid-bridge-",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+sess.access_token},body:JSON.stringify({action:"test"})});let result={};try{result=await response.json()}catch{}if(!response.ok||result.ok!==true)throw Error(result.error||("Bridge request failed (HTTP "+response.status+")."));if(mdFeedback)mdFeedback.textContent="Success: MacroDroid test trigger was sent. Check your phone notification.";autoLog("success","MacroDroid bridge test accepted by the server; verify the phone notification.");}catch(error){const message=String(error?.message||error);if(mdFeedback)mdFeedback.textContent="Not connected yet: "+message;autoLog("error","MacroDroid test failed: "+message)}finally{mdTest.disabled=false}};
@@ -1053,4 +1053,65 @@ addEventListener("keydown",e=>{
 });
 eyes();
 })();
-</script></body></html>
+</script></body></html>/* ---------- Authenticated laptop command listener ----------
+   Realtime broadcasts are user-scoped. Only a fixed, allowlisted set of actions
+   can execute here; arbitrary shell commands and arbitrary paths are never accepted. */
+let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="offline";
+function setLaptopListenerState(state,detail){
+ laptopListenerState=state;
+ const status=$("#laptop-listener-status");
+ if(status){status.textContent="Laptop listener: "+state.toUpperCase()+(detail?" · "+detail:"");status.dataset.state=state}
+}
+async function handleLaptopBroadcast(payload){
+ const instruction=String(payload?.instruction||"").trim();
+ if(!instruction)return;
+ const b=bridge();
+ if(!b||typeof b.request!=="function"){setLaptopListenerState("error","Desktop bridge unavailable");return}
+ const normalized=instruction.toLowerCase().replace(/[.!?]+$/,"").trim();
+ try{
+  if(/^(?:hey\s+)?(?:bosley[, ]+)?(?:wake up|wake bosley|show bosley|open bosley|bring bosley up)$/i.test(normalized)){
+   const result=await b.request({action:"wake_companion",payload:{}});
+   if(result?.ok!==true)throw Error(result?.error||"Wake action was not confirmed");
+   setLaptopListenerState("online","wake request executed");
+   autoLog("success","Phone-to-laptop command executed: wake Bosley");
+   return;
+  }
+  const launch=normalized.match(/^(?:please\s+)?(?:open|launch|start)\s+(chrome|google chrome|edge|microsoft edge|notepad|calculator|file explorer|windows explorer)$/i);
+  if(launch){
+   const aliases={"google chrome":"chrome","microsoft edge":"edge","file explorer":"explorer","windows explorer":"explorer"};
+   const app=aliases[launch[1]]||launch[1];
+   const result=await b.request({action:"launch_app",payload:{app}});
+   if(result?.ok!==true)throw Error(result?.error||"App launch was not confirmed");
+   setLaptopListenerState("online","app launch confirmed");
+   autoLog("success","Phone-to-laptop command executed: launch "+app);
+   return;
+  }
+  if(/\bsearch\b/.test(normalized)&&/\bchrome\b/.test(normalized)){
+   setLaptopListenerState("online","Chrome search needs the companion browser connector");
+   autoLog("warning","Laptop received a Chrome search request, but no active-tab connector is installed. No extra Chrome window was opened.");
+   return;
+  }
+  setLaptopListenerState("online","command received; unsupported action was not executed");
+  autoLog("warning","Laptop listener received an unsupported remote command and safely did not execute it: "+instruction.slice(0,180));
+ }catch(error){
+  setLaptopListenerState("error",String(error?.message||error).slice(0,120));
+  autoLog("error","Laptop listener action failed: "+String(error?.message||error).slice(0,180));
+ }
+}
+function startLaptopCommandListener(activeUser){
+ if(laptopListenerChannel){try{db?.removeChannel(laptopListenerChannel)}catch{};laptopListenerChannel=null}
+ laptopListenerOwner=activeUser?.id||null;
+ if(!activeUser||!db){setLaptopListenerState("offline","sign in to connect");return}
+ const b=bridge();
+ if(!b){setLaptopListenerState("unavailable","use the installed Windows companion");return}
+ setLaptopListenerState("connecting","connecting to secure command channel");
+ laptopListenerChannel=db.channel("bosley-laptop-"+activeUser.id)
+  .on("broadcast",{event:"automation"},({payload})=>{handleLaptopBroadcast(payload)})
+  .subscribe(status=>{
+   if(laptopListenerOwner!==activeUser.id)return;
+   if(status==="SUBSCRIBED")setLaptopListenerState("online","secure channel connected");
+   else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setLaptopListenerState("error",status);
+   else if(status==="CLOSED")setLaptopListenerState("offline","channel closed");
+  });
+}
+

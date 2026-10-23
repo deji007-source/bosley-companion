@@ -33,12 +33,14 @@ import android.widget.*;
 import android.graphics.PixelFormat;
 
 public class BosleyOverlayService extends Service {
-  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY";
+  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE";
   int widgetWidth=110,widgetHeight=38,cornerDp=22,borderDp=1,eyeWidth=10,eyeHeight=20,eyeGapDp=12; String eyeShape="soft-square";
-  WindowManager wm; View bar; WindowManager.LayoutParams lp;
+  WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard; WindowManager.LayoutParams guideLineLp,guideCardLp; String guideInstruction="Follow the tether to the next step.";
   @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);}
   @Override public int onStartCommand(Intent i,int flags,int id){
     if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
+    if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
+    if(i!=null && ACTION_GUIDE.equals(i.getAction())){guideInstruction=i.getStringExtra("instruction")!=null?i.getStringExtra("instruction"):"Follow the tether to the next step.";if(!Settings.canDrawOverlays(this)){Intent p=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(p);return START_NOT_STICKY;}showGuide();return START_STICKY;}
     if(i!=null){widgetWidth=i.getIntExtra("widgetWidth",widgetWidth);widgetHeight=i.getIntExtra("widgetHeight",widgetHeight);cornerDp=i.getIntExtra("cornerDp",cornerDp);borderDp=i.getIntExtra("borderDp",borderDp);eyeWidth=i.getIntExtra("eyeWidth",eyeWidth);eyeHeight=i.getIntExtra("eyeHeight",eyeHeight);eyeGapDp=i.getIntExtra("eyeGapDp",eyeGapDp);eyeShape=i.getStringExtra("eyeShape")!=null?i.getStringExtra("eyeShape"):eyeShape;}
     if(ACTION_STYLE.equals(i==null?null:i.getAction())){removeBar();}
     if(!Settings.canDrawOverlays(this)){Intent p=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(p);return START_NOT_STICKY;}
@@ -64,6 +66,23 @@ public class BosleyOverlayService extends Service {
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
   }
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
+  void showGuide(){
+    removeGuide();
+    final android.util.DisplayMetrics metrics=getResources().getDisplayMetrics();
+    final int width=metrics.widthPixels,height=metrics.heightPixels;
+    guideLine=new View(this){final Paint paint=new Paint(3);@Override protected void onDraw(Canvas canvas){super.onDraw(canvas);float sx=width*.5f,sy=height- dp(42),tx=width*.55f,ty=height*.55f;paint.setColor(Color.WHITE);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(2));paint.setPathEffect(new DashPathEffect(new float[]{dp(7),dp(8)},(System.currentTimeMillis()/45f)%30));Path p=new Path();p.moveTo(sx,sy);p.cubicTo(sx,sy-dp(120),tx-dp(80),ty+dp(80),tx,ty);canvas.drawPath(p,paint);paint.setStyle(Paint.Style.FILL);paint.setPathEffect(null);canvas.drawCircle(tx,ty,dp(6),paint);postInvalidateDelayed(40);}};
+    guideLineLp=new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT,WindowManager.LayoutParams.MATCH_PARENT,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT);
+    guideLineLp.gravity=Gravity.TOP|Gravity.START;
+    try{wm.addView(guideLine,guideLineLp);}catch(Exception e){guideLine=null;return;}
+    LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(14),dp(12),dp(14),dp(12));card.setElevation(dp(12));card.setBackgroundColor(Color.rgb(8,8,8));
+    GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(8,8,8));bg.setCornerRadius(dp(14));bg.setStroke(dp(1),Color.LTGRAY);card.setBackground(bg);
+    TextView title=new TextView(this);title.setText("BOSLEY VISUAL GUIDE");title.setTextColor(Color.WHITE);title.setTextSize(12);title.setTypeface(null,android.graphics.Typeface.BOLD);card.addView(title);
+    TextView body=new TextView(this);body.setText(guideInstruction+"\\n\\nThis overlay is above other apps. Bosley has not clicked or changed anything.");body.setTextColor(Color.LTGRAY);body.setTextSize(12);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(7);card.addView(body,bp);
+    Button stop=new Button(this);stop.setText("Stop guide");stop.setTextColor(Color.WHITE);stop.setOnClickListener(v->removeGuide());LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-2,dp(42));sp.topMargin=dp(6);card.addView(stop,sp);
+    guideCard=card;guideCardLp=new WindowManager.LayoutParams(dp(300),WindowManager.LayoutParams.WRAP_CONTENT,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);guideCardLp.gravity=Gravity.TOP|Gravity.START;guideCardLp.x=dp(12);guideCardLp.y=dp(64);
+    try{wm.addView(guideCard,guideCardLp);}catch(Exception e){guideCard=null;removeGuide();}
+  }
+  void removeGuide(){if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
   void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   @Override public void onDestroy(){removeBar();super.onDestroy();}
@@ -217,6 +236,13 @@ public class BosleyOverlayPlugin extends Plugin {
     getContext().startService(i);
     JSObject r=new JSObject();r.put("visible",true);call.resolve(r);
   }
+  @PluginMethod public void showGuide(PluginCall call){
+    if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(getContext())){call.reject("Enable Android display-over-other-apps permission first.");return;}
+    JSObject p=call.getObject("payload",new JSObject());String instruction=p.getString("instruction","Follow the tether to the next step.");
+    Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_GUIDE);i.putExtra("instruction",instruction);getContext().startService(i);
+    JSObject r=new JSObject();r.put("ok",true);r.put("state","native-overlay-requested");call.resolve(r);
+  }
+  @PluginMethod public void stopGuide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE_GUIDE);getContext().startService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);}
   @PluginMethod public void setAppearance(PluginCall call){
     Intent i=styledIntent(call,BosleyOverlayService.ACTION_STYLE);getContext().startService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);
   }

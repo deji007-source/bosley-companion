@@ -475,7 +475,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion']
             };
           });
 
@@ -485,6 +485,16 @@ jobs:
             }
             if (!request || typeof request.action !== 'string') {
               throw new Error('Invalid desktop request');
+            }
+            if (request.action === 'wake_companion') {
+              if (panel && !panel.isDestroyed()) {
+                if (panel.isMinimized()) panel.restore();
+                panel.show();
+                panel.focus();
+                if (bubble && !bubble.isDestroyed()) bubble.showInactive();
+                return { ok: true, state: 'awake' };
+              }
+              throw new Error('Bosley desktop panel is not available.');
             }
             if (request.action === 'get_desktop_info') {
               const display = screen.getPrimaryDisplay();
@@ -843,6 +853,7 @@ jobs:
           grep -Fq "set_widget_appearance" desktop/main.cjs
           grep -Fq "launch_app" desktop/main.cjs
           grep -Fq "capture_screen" desktop/main.cjs
+          grep -Fq "wake_companion" desktop/main.cjs
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs
           grep -Fq "nodeIntegration: false" desktop/main.cjs

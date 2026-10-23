@@ -88,3 +88,10 @@ These workflow artifacts are temporary and are scheduled to expire on 6 November
 The Supabase project used by this app is the Jarvis project with ref `ywwfqisbmlkjcfoqehph`. Keep changes scoped to that project; do not modify other projects with similar names.
 
 Edge Functions and database policies should be reviewed and tested before enabling additional automation. Keep user data scoped to the authenticated user, keep service-role credentials server-side, and require explicit user confirmation for sensitive actions.
+
+
+## Android distribution and Play Protect
+
+The default GitHub Actions artifact is a **debug APK for development testing only**. A successful build does not mean Google Play Protect has reviewed or trusted it. Do not disable Play Protect to install an unfamiliar APK.
+
+For a signed release, configure these GitHub Actions repository secrets using a release keystore that you control: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`. Keep a secure offline backup of the keystore and passwords; the signing identity must remain stable for future updates. The workflow then produces a signed APK for controlled testing and an Android App Bundle (`.aab`) suitable for uploading to Play Console. Play Console internal testing or a reviewed store release is the preferred distribution path. Signing alone does not guarantee Play Protect approval.

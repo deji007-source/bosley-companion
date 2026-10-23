@@ -124,3 +124,9 @@ assert.ok(androidInstaller.includes("public void speakText(PluginCall call)"), "
 assert.ok(androidInstaller.includes("public void stopSpeaking(PluginCall call)"), "Missing native Android speech cancellation bridge");
 assert.ok(androidInstaller.includes("TextToSpeech.QUEUE_FLUSH"), "Native Android speech should replace queued speech");
 console.log("Bosley regression checks passed: " + inlineScripts.length + " inline script(s), " + contracts.length + " UI contracts, and Android TTS bridge contracts.");
+
+assert.ok(windowsWorkflow.includes("findVisualGuideTarget"), "Windows guide must provide screen-aware target detection");
+assert.ok(windowsWorkflow.includes("bosley:guide-find-target"), "Windows overlay Find target button must use a guarded IPC handler");
+assert.ok(windowsWorkflow.includes("Capture and find target"), "Target detection must explicitly ask permission before capturing the screen");
+assert.ok(windowsWorkflow.includes("found:false"), "Target detection must support a no-confident-match result rather than guessing");
+assert.ok(html.includes("accessToken,taskTitle:title"), "Guide should pass the signed-in session token only to the native desktop bridge for on-demand visual analysis");

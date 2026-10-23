@@ -308,8 +308,56 @@ jobs:
             guideLineWindow = null;
             guideCardWindow = null;
           }
+          let guideAccessToken = '';
+          let guideInstructionForTarget = '';
+          async function findVisualGuideTarget() {
+            if (!guideAccessToken) throw new Error('Sign in to Bosley before using automatic target detection.');
+            const choice = await dialog.showMessageBox(panel && !panel.isDestroyed() ? panel : undefined, {
+              type: 'question', buttons: ['Cancel', 'Capture and find target'], defaultId: 0, cancelId: 0,
+              title: 'Bosley Guide — screen access',
+              message: 'Capture the current screen to locate the relevant control?',
+              detail: 'The screenshot is sent to Bosley AI for visual analysis. Do not continue if the screen contains private information you do not want processed.'
+            });
+            if (choice.response !== 1) return { ok: false, cancelled: true };
+            const display = screen.getPrimaryDisplay();
+            const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1280, height: 720 }, fetchWindowIcons: false });
+            const source = sources.find(item => String(item.display_id) === String(display.id)) || sources[0];
+            if (!source || source.thumbnail.isEmpty()) throw new Error('Windows did not provide a screenshot.');
+            const image = 'data:image/jpeg;base64,' + source.thumbnail.resize({ width: 1280, height: 720 }).toJPEG(76).toString('base64');
+            const prompt = 'You are locating a UI control in a screenshot for a visual guide. Task goal: ' + guideInstructionForTarget +
+              '\\nReturn ONLY one JSON object: {"found":true,"x":0.0,"y":0.0,"confidence":0.0,"target":"short label"} or {"found":false,"reason":"short reason"}. x and y are normalized screenshot coordinates from 0 to 1, measured at the CENTER of the exact visible control most relevant to the task. Prefer the actual button, input, tab, or control, not a generic screen location. If the target app/control is not visible or ambiguous, return found:false. Never guess.';
+            const response = await fetch('https://ywwfqisbmlkjcfoqehph.supabase.co/functions/v1/companion-chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + guideAccessToken, 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXAiLCJyZWYiOiJ5d3dmcWlzbWJsa2pjZm9laHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODA2MDksImV4cCI6MjA5NTE1NjYwOX0.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU' },
+              body: JSON.stringify({ messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: image } }] }] })
+            });
+            if (!response.ok) throw new Error('Bosley AI could not analyze the screen (HTTP ' + response.status + ').');
+            const raw = await response.text();
+            const chunks = [];
+            for (const line of raw.split(/\\r?\\n/)) {
+              if (!line.startsWith('data:')) continue;
+              const data = line.slice(5).trim();
+              if (!data || data === '[DONE]') continue;
+              try { const packet = JSON.parse(data); const delta = packet.choices?.[0]?.delta?.content; if (typeof delta === 'string') chunks.push(delta); } catch {}
+            }
+            let answer = chunks.join('').trim().replace(/^\`\`\`(?:json)?\\s*/i, '').replace(/\\s*\`\`\`$/, '');
+            const first = answer.indexOf('{'), last = answer.lastIndexOf('}');
+            if (first < 0 || last <= first) throw new Error('Bosley returned no usable target coordinates. Try again with the target app visible.');
+            const result = JSON.parse(answer.slice(first, last + 1));
+            if (result.found !== true || !Number.isFinite(Number(result.x)) || !Number.isFinite(Number(result.y))) {
+              return { ok: false, found: false, reason: String(result.reason || 'The target could not be identified confidently.') };
+            }
+            const bounds = display.bounds;
+            const x = Math.round(Math.max(0, Math.min(1, Number(result.x))) * bounds.width);
+            const y = Math.round(Math.max(0, Math.min(1, Number(result.y))) * bounds.height);
+            if (!guideTargetWindow || guideTargetWindow.isDestroyed()) throw new Error('The visual guide was closed before target detection finished.');
+            guideTargetWindow.setPosition(Math.round(bounds.x + x - 18), Math.round(bounds.y + y - 18));
+            return { ok: true, found: true, x, y, target: String(result.target || 'target').slice(0, 80), confidence: Number(result.confidence) || 0 };
+          }
           function openVisualGuide(payload = {}) {
             stopVisualGuide();
+            guideAccessToken = String(payload.accessToken || '');
+            guideInstructionForTarget = String(payload.taskTitle || payload.instruction || '').slice(0, 500);
             const display = screen.getPrimaryDisplay();
             const bounds = display.bounds;
             const instruction = String(payload.instruction || 'Follow the tether to the next step.').slice(0, 220);
@@ -321,8 +369,8 @@ jobs:
             const svg = '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}svg{width:100%;height:100%}path{fill:none;stroke-linecap:round;stroke-linejoin:round;animation:flow 1s linear infinite}#guideOutline{stroke:#000;stroke-width:7;stroke-dasharray:8 10;opacity:.98}#guidePath{stroke:#fff;stroke-width:3;stroke-dasharray:8 10;filter:drop-shadow(0 0 3px #fff)}#guideDot{fill:#fff;stroke:#000;stroke-width:3;filter:drop-shadow(0 0 2px #fff)}circle{fill:#fff;filter:drop-shadow(0 0 8px #fff)}@keyframes flow{to{stroke-dashoffset:-36}}</style></head><body><svg viewBox="0 0 '+bounds.width+' '+bounds.height+'" preserveAspectRatio="none"><path id="guideOutline" d=""/><path id="guidePath" d=""/><circle id="guideDot" cx="'+targetX+'" cy="'+targetY+'" r="8"/></svg><script>function setTarget(x,y){const w='+bounds.width+',h='+bounds.height+',sx=Math.round(w/2),sy=Math.max(50,h-70);document.getElementById("guideDot").setAttribute("cx",x);document.getElementById("guideDot").setAttribute("cy",y);const d="M "+sx+" "+sy+" C "+sx+" "+Math.round(h*.72)+", "+x+" "+Math.round(y+100)+", "+x+" "+y;document.getElementById("guideOutline").setAttribute("d",d);document.getElementById("guidePath").setAttribute("d",d)}setTarget('+targetX+','+targetY+')</script></body></html>';
             guideLineWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(svg));
             const safe = escapeHtml(instruction);
-            const card = '<!doctype html><html><head><meta charset="utf-8"><style>*{box-sizing:border-box}html,body{margin:0;background:transparent;color:#fff;font:11px Segoe UI,Arial}section{background:#080808f2;border:1px solid #888;border-radius:12px;padding:9px;box-shadow:0 4px 22px #0008;-webkit-app-region:drag}strong{font-size:12px}p{line-height:1.3;margin:5px 0}button{background:#1a1a1a;color:#fff;border:1px solid #777;border-radius:7px;padding:5px 8px;cursor:pointer;-webkit-app-region:no-drag}</style></head><body><section><strong>☰ Bosley guide · drag this card to move</strong><p>'+safe+'</p><p>Drag the target dot onto the control you need. This guide does not click or change anything.</p><button onclick="window.close()">Stop guide</button></section></body></html>';
-            guideCardWindow = new BrowserWindow({ x: bounds.x + 18, y: bounds.y + 64, width: 250, height: 142, frame: false, transparent: true, resizable: false, movable: true, alwaysOnTop: true, skipTaskbar: true, hasShadow: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+            const card = '<!doctype html><html><head><meta charset="utf-8"><style>*{box-sizing:border-box}html,body{margin:0;background:transparent;color:#fff;font:11px Segoe UI,Arial}section{background:#080808f2;border:1px solid #888;border-radius:12px;padding:9px;box-shadow:0 4px 22px #0008;-webkit-app-region:drag}strong{font-size:12px}p{line-height:1.3;margin:5px 0}button{background:#1a1a1a;color:#fff;border:1px solid #777;border-radius:7px;padding:5px 8px;cursor:pointer;-webkit-app-region:no-drag}#findStatus{color:#ddd;font-size:10px}</style></head><body><section><strong>☰ Bosley guide · drag this card to move</strong><p>'+safe+'</p><p id="findStatus">Switch to the target app, then select Find target.</p><button id="find">Find target</button> <button onclick="window.close()">Stop</button></section><script>const {ipcRenderer}=require("electron");const b=document.getElementById("find"),s=document.getElementById("findStatus");b.onclick=async()=>{b.disabled=true;s.textContent="Capturing and analyzing current screen…";try{const r=await ipcRenderer.invoke("bosley:guide-find-target");if(r.cancelled){s.textContent="Screen capture cancelled.";return}if(!r.ok){s.textContent=r.reason||"No confident target found. Keep the target app visible and retry.";return}s.textContent="Target found: "+r.target+" ("+Math.round(r.confidence*100)+"% confidence).";}catch(e){s.textContent=e.message||"Target detection failed."}finally{b.disabled=false}}</script></body></html>';
+            guideCardWindow = new BrowserWindow({ x: bounds.x + 18, y: bounds.y + 64, width: 270, height: 166, frame: false, transparent: true, resizable: false, movable: true, alwaysOnTop: true, skipTaskbar: true, hasShadow: false, webPreferences: { contextIsolation: false, nodeIntegration: true, sandbox: false } });
             guideCardWindow.setAlwaysOnTop(true, 'screen-saver');
             guideCardWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(card));
             guideTargetWindow = new BrowserWindow({ x: bounds.x + targetX - 18, y: bounds.y + targetY - 18, width: 36, height: 36, frame: false, transparent: true, backgroundColor: '#00000000', resizable: false, movable: true, alwaysOnTop: true, skipTaskbar: true, hasShadow: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
@@ -525,6 +573,11 @@ jobs:
             };
           });
 
+          ipcMain.handle('bosley:guide-find-target', async event => {
+            if (!guideCardWindow || guideCardWindow.isDestroyed() || event.sender !== guideCardWindow.webContents) throw new Error('Untrusted guide window.');
+            return findVisualGuideTarget();
+          });
+
           ipcMain.handle('bosley:request', async (event, request) => {
             if (!isTrustedPanelSender(event)) {
               throw new Error('Untrusted Bosley panel origin');
@@ -536,7 +589,7 @@ jobs:
               const payload = request.payload || {};
               const instruction = String(payload.instruction || '').trim();
               if (!instruction) throw new Error('A guide instruction is required.');
-              return openVisualGuide({ instruction, x: payload.x, y: payload.y });
+              return openVisualGuide({ instruction, x: payload.x, y: payload.y, accessToken: payload.accessToken, taskTitle: payload.taskTitle });
             }
             if (request.action === 'stop_visual_guide') {
               stopVisualGuide();

@@ -420,8 +420,11 @@ function readActivity(){try{const raw=JSON.parse(localStorage.getItem(ACTIVITY_K
 function saveActivity(){try{localStorage.setItem(ACTIVITY_KEY,JSON.stringify({tasks:activityTasks.slice(0,60),events:activityEvents.slice(0,40)}))}catch{}}
 let plannerSyncBusy=false,plannerSyncTimer=null;
 async function syncPlannerTasks(){
- if(plannerSyncBusy||!user||!db)return;
+ const meta=$("#activitysyncstatus");
+ if(plannerSyncBusy)return;
+ if(!user||!db){if(meta)meta.textContent="SAVED ON THIS DEVICE · Sign in to sync across devices";return}
  plannerSyncBusy=true;
+ if(meta)meta.textContent="SYNCING · Checking your signed-in account";
  try{
   const {data:sessionData,error:sessionError}=await db.auth.getSession();
   if(sessionError||!sessionData?.session?.user?.id)throw new Error("Sign in to sync planner tasks");
@@ -443,7 +446,7 @@ async function syncPlannerTasks(){
   if(payload.length){const {error:upsertError}=await db.from("bosley_planner_tasks").upsert(payload,{onConflict:"user_id,task_id"});if(upsertError)throw upsertError}
   saveActivity();renderActivity();
   const meta=$("#activitysyncstatus");if(meta)meta.textContent="SYNCED · "+new Date().toLocaleTimeString();
- }catch(error){const meta=$("#activitysyncstatus");if(meta)meta.textContent="SYNC ISSUE · "+String(error?.message||"retry later").slice(0,80);console.warn("Planner sync failed",error)}
+ }catch(error){const detail=String(error?.message||"retry later").replace(/\\s+/g," ").slice(0,110);if(meta)meta.textContent="LOCAL SAVE OK · CLOUD SYNC ISSUE: "+detail;console.warn("Planner sync failed",error)}
  finally{plannerSyncBusy=false}
 }
 async function deleteSyncedPlannerTask(taskId,task){if(!user||!db)return;try{const {data:sessionData,error:sessionError}=await db.auth.getSession();if(sessionError||!sessionData?.session?.user?.id)throw new Error("Sign in to sync task deletion");const uid=sessionData.session.user.id;const now=new Date().toISOString();const row={user_id:uid,task_id:taskId,title:String(task?.title||"Deleted task").slice(0,120),kind:["Daily","School","Personal project","Work","Routine"].includes(task?.kind)?task.kind:"Daily",priority:["Normal","High","Low"].includes(task?.priority)?task.priority:"Normal",project:String(task?.project||"").slice(0,80),due:task?.due||null,status:"deleted",created_at:task?.createdAt||now,updated_at:now};const {error}=await db.from("bosley_planner_tasks").upsert(row,{onConflict:"user_id,task_id"});if(error)throw error}catch(error){const meta=$("#activitysyncstatus");if(meta)meta.textContent="DELETE SYNC ISSUE";console.warn("Planner delete sync failed",error)}}

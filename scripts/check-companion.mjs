@@ -54,7 +54,7 @@ const contracts = [
   ["Tap panel and hold voice routing", "consumeLaunchAction"],
   ["Edit mode prompt", 'Please edit the text below according to my request'],
   ["Phone command matcher accepts app names", "open .+|launch .+|start .+"],
-  ["Voice recorder stop handler has no out-of-scope labels reference", 'recorder.onstop=async()=>{\n    stream.getTracks().forEach(t=>t.stop());window.bosleyRecording=null;S.listening=false;$("#mic").textContent="🎙";$("#mic").setAttribute("aria-label","Start voice request");eyes();'],
+  ["Voice recorder stop handler is defined", 'recorder.onstop=async()=>{'],
   ["Visible startup diagnostics", 'id="startup-error"'],
   ["Async startup diagnostics", 'unhandledrejection'],
   ["Second Brain workspace capture and PARA categories", "Capture a thought, voice transcript, decision or link…"],

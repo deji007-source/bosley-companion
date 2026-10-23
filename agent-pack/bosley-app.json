@@ -1,0 +1,6 @@
+{
+  "displayName": "Bosley app",
+  "url": "REPLACE_WITH_THE_REAL_LOVABLE_BOSLEY_APP_URL",
+  "configured": false,
+  "instructions": "Set url to the exact deployed Lovable Bosley app URL. Do not substitute the Bosley Companion URL."
+}

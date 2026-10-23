@@ -104,6 +104,13 @@ for (const [label, token] of contracts) {
 }
 assert.ok(windowsWorkflow.includes("function openVisualGuide(payload = {})"), "Missing Windows system-level guide overlay");
 assert.ok(windowsWorkflow.includes("setIgnoreMouseEvents(true, { forward: true })"), "Windows tether layer should not block clicks in other apps");
+assert.ok(windowsWorkflow.includes("guideTargetWindow"), "Windows guide must expose a draggable target marker");
+assert.ok(windowsWorkflow.includes("setTarget('+targetX+','+targetY+')"), "Windows tether endpoint must track target marker movement");
+assert.ok(windowsWorkflow.includes("width: 250, height: 142"), "Windows guide card should use a compact footprint");
+assert.ok(windowsWorkflow.includes("-webkit-app-region:drag"), "Windows guide card must be draggable by its header");
+assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must expose a draggable target marker");
+assert.ok(androidInstaller.includes("circleTarget()"), "Android guide target must be visibly distinct and draggable");
+assert.ok(androidInstaller.includes("BOSLEY GUIDE  ·  drag to move"), "Android guide card should advertise its drag handle");
 assert.ok(androidInstaller.includes("void showGuide()"), "Missing Android system-level guide service");
 assert.ok(androidInstaller.includes("public void showGuide(PluginCall call)"), "Missing Android guide bridge method");
 assert.ok(androidInstaller.includes("TYPE_APPLICATION_OVERLAY"), "Android guide must use the system overlay window type");

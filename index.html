@@ -478,8 +478,10 @@ async function startBosleyGuide(task){
  try{
   const desktop=bridge(),native=window.Capacitor?.Plugins?.BosleyOverlay;
   let result;
-  if(desktop)result=await desktop.request({action:"open_visual_guide",payload:{instruction}});
-  else if(native?.showGuide){const permission=await native.status();if(!permission?.granted){const granted=await native.requestPermission();if(!granted?.granted)throw new Error("Android display-over-other-apps permission was not granted.");}result=await native.showGuide({payload:{instruction}});}
+  const sessionResult=db?await db.auth.getSession():null;
+  const accessToken=sessionResult?.data?.session?.access_token||"";
+  if(desktop)result=await desktop.request({action:"open_visual_guide",payload:{instruction,taskTitle:title,accessToken}});
+  else if(native?.showGuide){const permission=await native.status();if(!permission?.granted){const granted=await native.requestPermission();if(!granted?.granted)throw new Error("Android display-over-other-apps permission was not granted.");}result=await native.showGuide({payload:{instruction,taskTitle:title}});}
   else throw new Error("A native Windows or Android build with overlay permission is required. The website cannot draw over other apps.");
   if(result?.ok!==true)throw new Error(result?.error||"Native overlay did not confirm it opened");
   bosleyGuideActive=true;activityEvent("System visual guide opened: "+task.title,"guide");

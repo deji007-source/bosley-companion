@@ -67,6 +67,12 @@ const contracts = [
   ["Captured screenshot size limit", "1280/Math.max(bitmap.width,bitmap.height)"],
   ["Captured screenshot JPEG compression", 'canvas.toDataURL("image/jpeg",0.82)'],
   ["Captured screenshot resource cleanup", "finally{bitmap.close?.()}"],
+  ["Authenticated laptop listener", "function startLaptopCommandListener(activeUser)"],
+  ["User-scoped laptop realtime channel", 'db.channel("bosley-laptop-"+activeUser.id)'],
+  ["Phone-to-laptop wake action", 'action:"wake_companion"'],
+  ["Laptop listener reports status", 'id="laptop-listener-status"'],
+  ["Unsupported remote commands fail closed", "unsupported remote command and safely did not execute it"],
+  ["Chrome search does not open duplicate browser", "No extra Chrome window was opened."],
 ];
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);

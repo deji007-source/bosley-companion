@@ -17,6 +17,7 @@ for (const [index, source] of inlineScripts.entries()) {
 }
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
+const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 
 const contracts = [
   ["Desktop bridge action", 'launch_app'],
@@ -48,10 +49,8 @@ const contracts = [
   ["Planner sync conflict key", 'onConflict:"user_id,task_id"'],
   ["Laptop listener heartbeat sender", "async function sendLaptopHeartbeat(activeUser)"],
   ["Laptop heartbeat uses authenticated edge function", '/functions/v1/remote-action'],
-  ["Windows native external overlay action", "function openVisualGuide(payload = {})"],
-  ["Windows guide click-through tether layer", "setIgnoreMouseEvents(true, { forward: true })"],
-  ["Android system-level guide service", "void showGuide()"],
-  ["Android guide native bridge method", "public void showGuide(PluginCall call)"],
+  ["Windows native external overlay action", "open_visual_guide"],
+  ["Android system-level guide action", "native?.showGuide"],
   ["Guide refuses website-only overlay", "The website cannot draw over other apps."],
   ["Android requests system overlay permission", "const granted=await native.requestPermission()"],
   ["Guide permission is not silently bypassed", "Allow Bosley to open a system-level visual guide over other apps"],
@@ -95,6 +94,11 @@ const contracts = [
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);
 }
+assert.ok(windowsWorkflow.includes("function openVisualGuide(payload = {})"), "Missing Windows system-level guide overlay");
+assert.ok(windowsWorkflow.includes("setIgnoreMouseEvents(true, { forward: true })"), "Windows tether layer should not block clicks in other apps");
+assert.ok(androidInstaller.includes("void showGuide()"), "Missing Android system-level guide service");
+assert.ok(androidInstaller.includes("public void showGuide(PluginCall call)"), "Missing Android guide bridge method");
+assert.ok(androidInstaller.includes("TYPE_APPLICATION_OVERLAY"), "Android guide must use the system overlay window type");
 assert.ok(androidInstaller.includes("public void speakText(PluginCall call)"), "Missing native Android text-to-speech bridge");
 assert.ok(androidInstaller.includes("public void stopSpeaking(PluginCall call)"), "Missing native Android speech cancellation bridge");
 assert.ok(androidInstaller.includes("TextToSpeech.QUEUE_FLUSH"), "Native Android speech should replace queued speech");

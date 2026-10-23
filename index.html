@@ -652,10 +652,31 @@ async function restoreLatestConversation(){
  }catch(e){console.warn("Bosley chat restore failed:",e);note("I couldn't restore saved chat history. You can still chat; check your connection or workspace permissions if this keeps happening.")}
 }
 addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace and I'll answer through the Jarvis AI backend. Until a real request succeeds I won't claim it's connected.");
+function createPlannerTaskFromCommand(raw){
+ const source=String(raw||"").trim();
+ const match=source.match(/^(?:bosley[, ]+)?(?:please\\s+)?(?:plan|add(?:\\s+this)?(?:\\s+task)?\\s+to\\s+(?:my\\s+)?planner|put\\s+(?:this\\s+)?in\\s+(?:my\\s+)?planner|create\\s+(?:a\\s+)?planner\\s+task|make\\s+(?:a\\s+)?plan(?:\\s+for)?|help\\s+me\\s+plan)(?:\\s*[:,-]?\\s+)(.+)$/i);
+ if(!match)return false;
+ let title=match[1].trim().replace(/[.!?]+$/,"").slice(0,120);
+ if(!title){note("Tell me what you want to plan, for example: “Plan finish my biology notes by Friday.”");return true;}
+ const lower=title.toLowerCase();
+ let kind=/homework|school|study|exam|assignment|class|science|math|biology|notes|essay|revision|revision/i.test(lower)?"School":/project|build|website|app|code|launch/i.test(lower)?"Personal project":/work|meeting|client|report/i.test(lower)?"Work":"Daily";
+ let priority=/\\b(urgent|asap|high priority|important)\\b/i.test(lower)?"High":/\\b(low priority|whenever|not urgent)\\b/i.test(lower)?"Low":"Normal";
+ let due="";
+ const today=new Date();const date=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+ if(/\\btoday\\b/i.test(lower))due=date.toISOString().slice(0,10);
+ else if(/\\btomorrow\\b/i.test(lower)){date.setDate(date.getDate()+1);due=date.toISOString().slice(0,10);}
+ const projectMatch=title.match(/\\b(?:for|under|subject)\\s+([A-Z][\\w-]*(?:\\s+[A-Z][\\w-]*){0,2})/);
+ const task={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,status:"active",kind,priority,project:projectMatch?projectMatch[1].slice(0,80):"",due,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+ activityTasks.unshift(task);activityTasks=activityTasks.slice(0,60);saveActivity();renderActivity();activityEvent("Task drafted from voice/text: "+title,"task");syncPlannerTasks();
+ const plannerButton=document.querySelector('#dock-launcher [data-open-view="activity"]');
+ if(plannerButton)plannerButton.click();else{const toggle=$("#activitytoggle");if(toggle){toggle.hidden=false;toggle.click();}}
+ addMsg("bosley","Added to your planner as a draft: "+title+"\\nCategory: "+kind+" · Priority: "+priority+(due?" · Due: "+due:"")+"\\nOpen Activity to review it, then tap Guide when you’re ready. I haven’t started the guide yet.");
+ return true;
+}
 async function send(text,imageData=null){
  if(S.busy||(!text&&!imageData))return;
  if(user){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
- if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return}
+ if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}\n if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return}
  addMsg("you",imageData?(text||"What is in this image?"):text);activityEvent("Message sent to Bosley: "+(text||"Image attached").slice(0,140),"message");
  if(imageData){const last=chat.lastElementChild;const img=document.createElement("img");img.className="chat-image";img.alt="Image sent to Bosley";img.src=imageData;last?.appendChild(img)}
  const sess=db?(await db.auth.getSession()).data.session:null;

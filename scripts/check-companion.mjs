@@ -110,6 +110,8 @@ assert.ok(windowsWorkflow.includes("function openVisualGuide(payload = {})"), "M
 assert.ok(windowsWorkflow.includes("setIgnoreMouseEvents(true, { forward: true })"), "Windows tether layer should not block clicks in other apps");
 assert.ok(windowsWorkflow.includes("guideTargetWindow"), "Windows guide must expose a draggable target marker");
 assert.ok(windowsWorkflow.includes("setTarget('+targetX+','+targetY+')"), "Windows tether endpoint must track target marker movement");
+assert.ok(windowsWorkflow.includes("#guideOutline{stroke:#000;stroke-width:7"), "Windows tether must have a black outline for white screens");
+assert.ok(androidInstaller.includes("paint.setColor(Color.BLACK);paint.setStrokeWidth(dp(6))"), "Android tether must have a black outline for white screens");
 assert.ok(windowsWorkflow.includes("width: 250, height: 142"), "Windows guide card should use a compact footprint");
 assert.ok(windowsWorkflow.includes("-webkit-app-region:drag"), "Windows guide card must be draggable by its header");
 assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must expose a draggable target marker");

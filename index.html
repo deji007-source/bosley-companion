@@ -1106,8 +1106,6 @@ addEventListener("keydown",e=>{
  if((e.ctrlKey||e.altKey)&&e.shiftKey&&k==="3"){e.preventDefault();setVoiceMode("edit");note("Edit mode selected (Ctrl/Alt+Shift+3).");return}
  if(e.key==="Escape"){if(rec)rec.stop();else if(S.speaking)stopSpeak();else if(!$("#panel").hidden)toggle(false)}
 });
-eyes();
-})();
 /* ---------- Authenticated laptop command listener ----------
    Realtime broadcasts are user-scoped. Only a fixed, allowlisted set of actions
    can execute here; arbitrary shell commands and arbitrary paths are never accepted. */
@@ -1183,4 +1181,7 @@ function startLaptopCommandListener(activeUser){
    else if(status==="CLOSED")setLaptopListenerState("offline","channel closed");
   });
 }
+
+eyes();
+})();
 </script></body></html>

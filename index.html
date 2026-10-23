@@ -694,14 +694,50 @@ async function startMic(){
   }
   return;
  }
+ // Windows Electron and some Chromium builds ship without a working Web Speech
+ // recognition service. Prefer authenticated server transcription when audio capture is available.
+ if(navigator.mediaDevices?.getUserMedia&&window.MediaRecorder){
+  if(window.bosleyRecording){window.bosleyRecording.stop();return}
+  stopSpeak();let stream;
+  try{
+   const sess=db?(await db.auth.getSession()).data.session:null;
+   if(!sess||!user){note("Sign in first to use Bosley voice input.");return}
+   stream=await navigator.mediaDevices.getUserMedia({audio:true});
+   const mime=["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(t=>MediaRecorder.isTypeSupported(t));
+   const recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined),chunks=[],started=Date.now();
+   window.bosleyRecording=recorder;
+   recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
+   recorder.onstart=()=>{S.listening=true;$("#mic").textContent="■";$("#mic").setAttribute("aria-label","Stop voice recording");note("Listening… tap the microphone again to transcribe.");look(0,0);eyes()};
+   recorder.onerror=()=>note("The microphone recording failed. Check Windows microphone privacy settings and try again.");
+   recorder.onstop=async()=>{
+    stream.getTracks().forEach(t=>t.stop());window.bosleyRecording=null;S.listening=false;$("#mic").textContent="🎙";$("#mic").setAttribute("aria-label",labels[voiceMode].mic);eyes();
+    const duration=(Date.now()-started)/1000,blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
+    if(duration<1||!blob.size){note("That recording was too short. Hold or tap the microphone and speak for at least a second.");return}
+    const active=db?(await db.auth.getSession()).data.session:null;
+    if(!active){note("Your session expired. Sign in again before transcribing.");return}
+    const form=new FormData();form.append("audio",blob,"voice.webm");form.append("duration",String(duration));
+    try{
+     note("Transcribing your voice…");
+     const response=await fetch(SUPABASE_URL+"/functions/v1/remote-transcribe",{method:"POST",headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:"Bearer "+active.access_token},body:form});
+     const result=await response.json().catch(()=>({}));
+     if(!response.ok||!result.transcript)throw Error(result.error||("Transcription failed (HTTP "+response.status+")."));
+     const spoken=String(result.transcript).trim();
+     if(handleVoiceModeCommand(spoken))return;
+     if(voiceMode==="agent"){await send(spoken)}else{$("#in").value=spoken;$("#in").focus();note(voiceMode==="dictate"?"Dictation ready. Review the text before sending.":"Edit request ready. Review the text before sending.")}
+    }catch(error){note("Voice transcription failed: "+String(error?.message||error)+" You can still type your request.");}
+    finally{setVoiceMode(voiceMode)}
+   };
+   recorder.start();return;
+  }catch(error){if(stream)stream.getTracks().forEach(t=>t.stop());window.bosleyRecording=null;note("Windows could not access the microphone. Check Settings → Privacy & security → Microphone, allow desktop apps, and retry. Details: "+String(error?.message||error));return}
+ }
  const C=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!C){note("Speech recognition isn't supported in this browser. You can type instead.");return}
+ if(!C){note("This browser has no speech recognition or audio-recording support. You can type instead.");return}
  stopSpeak();const r=new C();r.lang=navigator.language||"en-US";r.interimResults=true;r.continuous=false;let fin="";
  r.onstart=()=>{S.listening=true;$("#mic").textContent="■";$("#mic").setAttribute("aria-label","Stop voice input");look(0,0);eyes()};
  r.onresult=e=>{let t="";for(const x of e.results){t+=x[0].transcript;if(x.isFinal)fin=t}$("#in").value=t};
- r.onerror=e=>{note(e.error==="not-allowed"?"Microphone permission denied. Allow microphone access in your browser or Android app settings.":"Microphone error ("+e.error+"). You can type instead.");flash()};
+ r.onerror=e=>{note(e.error==="not-allowed"?"Microphone permission denied. Allow microphone access in Windows Settings → Privacy & security → Microphone and enable desktop apps.":"Microphone error ("+e.error+"). You can type instead.");flash()};
  r.onend=()=>{S.listening=false;rec=null;$("#mic").textContent="🎙";eyes();if(fin){if(handleVoiceModeCommand(fin)){return}if(voiceMode==="agent"){$("#in").value="";send(fin)}else{$("#in").value=fin;$("#in").focus();note(voiceMode==="dictate"?"Dictation ready. Review the text before sending.":"Edit request ready. Include the text to change, then review before sending.")}setVoiceMode(voiceMode)}};
- try{r.start();rec=r}catch{note("Couldn't start the microphone. Check browser permissions.");flash()}
+ try{r.start();rec=r}catch(error){note("Couldn't start the microphone: "+String(error?.message||"check Windows microphone permissions"));flash()}
 }
 const androidOverlayMode=!!(window.Capacitor?.Plugins?.BosleyOverlay);
 if(androidOverlayMode){

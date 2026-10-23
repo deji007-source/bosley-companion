@@ -178,7 +178,7 @@ if not activity.exists():
 a=activity.read_text()
 if "BosleyOverlayPlugin" not in a:
     a=a.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.getcapacitor.Plugin;\nimport java.util.ArrayList;\nimport java.util.List;")
-    a=re.sub(r'public class MainActivity extends BridgeActivity \\{\\s*\\}', 'public class MainActivity extends BridgeActivity {\\n  @Override protected void onNewIntent(android.content.Intent intent) {\\n    super.onNewIntent(intent);\\n    setIntent(intent);\\n  }\\n  @Override public void onCreate(android.os.Bundle savedInstanceState) {\\n    registerPlugin(BosleyOverlayPlugin.class);\\n    super.onCreate(savedInstanceState);\\n  }\\n}', a)
+    a=re.sub(r'public class MainActivity extends BridgeActivity \{\s*\}', 'public class MainActivity extends BridgeActivity {\n  @Override protected void onNewIntent(android.content.Intent intent) {\n    super.onNewIntent(intent);\n    setIntent(intent);\n  }\n  @Override public void onCreate(android.os.Bundle savedInstanceState) {\n    registerPlugin(BosleyOverlayPlugin.class);\n    super.onCreate(savedInstanceState);\n  }\n}', a)
     if "setIntent(intent)" not in a or "onNewIntent" not in a:
         raise SystemExit("Could not safely add intent handoff handling to MainActivity")
     if "registerPlugin(BosleyOverlayPlugin.class)" not in a:

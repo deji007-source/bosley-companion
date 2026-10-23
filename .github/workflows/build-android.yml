@@ -63,19 +63,91 @@ jobs:
           python3 -m pip install --user Pillow
           python3 scripts/generate-app-icons.py
 
-      - name: Build debug APK
+      - name: Configure release signing when repository secrets are provided
+        id: signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/bosley-release.keystore"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/bosley-release.keystore" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("android/app/build.gradle")
+          if not p.exists():
+              raise SystemExit("Expected Android Gradle Groovy build file not found; release signing was not configured.")
+          s = p.read_text()
+          if "signingConfigs {" not in s:
+              s = re.sub(r"\\bandroid\\s*\\{", """android {
+              signingConfigs {
+                  release {
+                      storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
+                      storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                      keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                      keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+                  }
+              }
+          """, s, count=1)
+          match = re.search(r"buildTypes\\s*\\{", s)
+          if not match:
+              raise SystemExit("Could not find Android buildTypes block.")
+          release = re.search(r"release\\s*\\{", s[match.end():])
+          if not release:
+              raise SystemExit("Could not find Android release build type.")
+          pos = match.end() + release.end()
+          s = s[:pos] + "\\n            signingConfig signingConfigs.release" + s[pos:]
+          p.write_text(s)
+          PY
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Release signing secrets are not configured. Only a debug APK will be produced; it is for development testing, not a Play Store release."
+          fi
+
+      - name: Build Android package
+        shell: bash
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          if [ "${{ steps.signing.outputs.configured }}" = "true" ]; then
+            ./gradlew assembleRelease bundleRelease
+          else
+            ./gradlew assembleDebug
+          fi
 
-      - name: Verify APK
-        run: test -s android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Verify Android package
+        run: |
+          if [ "${{ steps.signing.outputs.configured }}" = "true" ]; then
+            test -s android/app/build/outputs/apk/release/app-release.apk
+            test -s android/app/build/outputs/bundle/release/app-release.aab
+          else
+            test -s android/app/build/outputs/apk/debug/app-debug.apk
+          fi
 
-      - name: Upload debug APK
+      - name: Upload signed release APK and Play bundle
+        if: steps.signing.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: Bosley-Android-Debug-APK
+          name: Bosley-Android-Signed-Release
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload development debug APK
+        if: steps.signing.outputs.configured != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bosley-Android-Debug-APK-Development-Only
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14

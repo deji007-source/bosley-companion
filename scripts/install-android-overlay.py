@@ -72,15 +72,34 @@ public class BosleyOverlayService extends Service {
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;
 import android.content.Intent;
 import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.PixelFormat;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
+import android.media.Image;
+import android.media.ImageReader;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
+import android.util.Base64;
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
 import androidx.activity.result.ActivityResult;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
 @CapacitorPlugin(name="BosleyOverlay", permissions={@Permission(alias="microphone", strings={android.Manifest.permission.RECORD_AUDIO})})
 public class BosleyOverlayPlugin extends Plugin {
   private android.speech.tts.TextToSpeech bosleyTts;
   private boolean bosleyTtsReady=false;
+  private MediaProjection activeProjection;
+  private VirtualDisplay captureDisplay;
+  private ImageReader captureReader;
+  private final Handler captureHandler=new Handler(Looper.getMainLooper());
   @PluginMethod public void speakText(PluginCall call){
     String text=call.getString("text","");
     String profile=call.getString("profile","jarvis");
@@ -128,6 +147,49 @@ public class BosleyOverlayPlugin extends Plugin {
     }else response.put("text","");
     call.resolve(response);
   }
+  @PluginMethod public void requestScreenCapture(PluginCall call){
+    if(Build.VERSION.SDK_INT<21){call.reject("Screen capture requires Android 5.0 or newer.");return;}
+    MediaProjectionManager manager=(MediaProjectionManager)getContext().getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE);
+    if(manager==null){call.reject("Android screen-capture service is unavailable.");return;}
+    try{startActivityForResult(call,manager.createScreenCaptureIntent(),"screenCapturePermissionResult");}
+    catch(Exception e){call.reject("Could not open Android's screen-capture permission prompt.",e);}
+  }
+  @ActivityCallback private void screenCapturePermissionResult(PluginCall call,ActivityResult result){
+    if(result.getResultCode()!=android.app.Activity.RESULT_OK||result.getData()==null){call.resolve(new JSObject().put("cancelled",true));return;}
+    try{
+      MediaProjectionManager manager=(MediaProjectionManager)getContext().getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE);
+      activeProjection=manager.getMediaProjection(result.getResultCode(),result.getData());
+      if(activeProjection==null)throw new IllegalStateException("Android did not grant a screen-capture session.");
+      WindowManager wm=(WindowManager)getContext().getSystemService(android.content.Context.WINDOW_SERVICE);
+      DisplayMetrics metrics=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(metrics);
+      int width=Math.max(1,metrics.widthPixels),height=Math.max(1,metrics.heightPixels),density=metrics.densityDpi;
+      captureReader=ImageReader.newInstance(width,height,PixelFormat.RGBA_8888,2);
+      captureDisplay=activeProjection.createVirtualDisplay("BosleyScreenCapture",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,captureReader.getSurface(),null,captureHandler);
+      captureHandler.postDelayed(()->{
+        try{
+          Image image=captureReader.acquireLatestImage();
+          if(image==null)throw new IllegalStateException("Android did not provide a screenshot frame. Please try again.");
+          Bitmap bitmap=null;
+          try{
+            Image.Plane plane=image.getPlanes()[0];ByteBuffer buffer=plane.getBuffer();
+            int pixelStride=plane.getPixelStride(),rowStride=plane.getRowStride(),rowPadding=rowStride-pixelStride*width;
+            Bitmap padded=Bitmap.createBitmap(width+Math.max(0,rowPadding/pixelStride),height,Bitmap.Config.ARGB_8888);
+            padded.copyPixelsFromBuffer(buffer);bitmap=Bitmap.createBitmap(padded,0,0,width,height);padded.recycle();
+          }finally{image.close();}
+          int max=1280; if(Math.max(width,height)>max){float scale=(float)max/Math.max(width,height);Bitmap scaled=Bitmap.createScaledBitmap(bitmap,Math.max(1,Math.round(width*scale)),Math.max(1,Math.round(height*scale)),true);bitmap.recycle();bitmap=scaled;}
+          ByteArrayOutputStream out=new ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);bitmap.recycle();
+          JSObject response=new JSObject();response.put("ok",true);response.put("dataUrl","data:image/jpeg;base64,"+Base64.encodeToString(out.toByteArray(),Base64.NO_WRAP));call.resolve(response);
+        }catch(Exception e){call.reject("Screen capture failed: "+String.valueOf(e.getMessage()),e);}
+        finally{cleanupScreenCapture();}
+      },650);
+    }catch(Exception e){cleanupScreenCapture();call.reject("Could not capture the Android screen: "+String.valueOf(e.getMessage()),e);}
+  }
+  private void cleanupScreenCapture(){
+    if(captureDisplay!=null){try{captureDisplay.release();}catch(Exception ignored){}captureDisplay=null;}
+    if(captureReader!=null){try{captureReader.close();}catch(Exception ignored){}captureReader=null;}
+    if(activeProjection!=null){try{activeProjection.stop();}catch(Exception ignored){}activeProjection=null;}
+  }
+  @Override protected void handleOnDestroy(){cleanupScreenCapture();try{if(bosleyTts!=null)bosleyTts.shutdown();}catch(Exception ignored){}super.handleOnDestroy();}
   @PluginMethod public void requestMicrophonePermission(PluginCall call){
     if(getPermissionState("microphone")!=PermissionState.GRANTED){
       requestPermissionForAlias("microphone",call,"microphonePermissionCallback");return;

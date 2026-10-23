@@ -86,7 +86,7 @@ jobs:
               raise SystemExit("Expected Android Gradle Groovy build file not found; release signing was not configured.")
           s = p.read_text()
           if "signingConfigs {" not in s:
-              s = re.sub(r"\\bandroid\\s*\\{", """android {
+          s = re.sub(r"\bandroid\s*\{", """android {
               signingConfigs {
                   release {
                       storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
@@ -96,14 +96,14 @@ jobs:
                   }
               }
           """, s, count=1)
-          match = re.search(r"buildTypes\\s*\\{", s)
+          match = re.search(r"buildTypes\s*\{", s)
           if not match:
               raise SystemExit("Could not find Android buildTypes block.")
-          release = re.search(r"release\\s*\\{", s[match.end():])
+          release = re.search(r"release\s*\{", s[match.end():])
           if not release:
               raise SystemExit("Could not find Android release build type.")
           pos = match.end() + release.end()
-          s = s[:pos] + "\\n            signingConfig signingConfigs.release" + s[pos:]
+          s = s[:pos] + "\n            signingConfig signingConfigs.release" + s[pos:]
           p.write_text(s)
           PY
             echo "configured=true" >> "$GITHUB_OUTPUT"

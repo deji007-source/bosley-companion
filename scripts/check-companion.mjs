@@ -63,6 +63,10 @@ const contracts = [
   ["Second Brain PARA filtering", "wsNoteArea"],
   ["On-demand screen capture control", 'id="screen"'],
   ["Consent-based screen capture action", 'capture_screen'],
+  ["Captured screenshot normalization", "async function normalizeCapturedImage(dataUrl)"],
+  ["Captured screenshot size limit", "1280/Math.max(bitmap.width,bitmap.height)"],
+  ["Captured screenshot JPEG compression", 'canvas.toDataURL("image/jpeg",0.82)'],
+  ["Captured screenshot resource cleanup", "finally{bitmap.close?.()}"],
 ];
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);

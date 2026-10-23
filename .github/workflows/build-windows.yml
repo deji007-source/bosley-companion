@@ -328,7 +328,7 @@ jobs:
               '\\nReturn ONLY one JSON object: {"found":true,"x":0.0,"y":0.0,"confidence":0.0,"target":"short label"} or {"found":false,"reason":"short reason"}. x and y are normalized screenshot coordinates from 0 to 1, measured at the CENTER of the exact visible control most relevant to the task. Prefer the actual button, input, tab, or control, not a generic screen location. If the target app/control is not visible or ambiguous, return found:false. Never guess.';
             const response = await fetch('https://ywwfqisbmlkjcfoqehph.supabase.co/functions/v1/companion-chat', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + guideAccessToken, 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXAiLCJyZWYiOiJ5d3dmcWlzbWJsa2pjZm9laHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODA2MDksImV4cCI6MjA5NTE1NjYwOX0.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU' },
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + guideAccessToken, 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3d2ZxaXNibWxramNmb3FlaHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODA2MDksImV4cCI6MjA5NTE1NjYwOX0.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU' },
               body: JSON.stringify({ messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: image } }] }] })
             });
             if (!response.ok) throw new Error('Bosley AI could not analyze the screen (HTTP ' + response.status + ').');

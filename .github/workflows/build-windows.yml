@@ -707,12 +707,18 @@ jobs:
               }
 
               button {
+                position: relative;
+                isolation: isolate;
                 width: 176px;
                 height: 40px;
                 padding: 3px 12px;
-                border: 1px solid #fff;
-                border-radius: 999px 999px 24px 24px;
-                background: #000;
+                border: 0;
+                border-left: var(--widget-border-width, 1px) solid rgba(255,255,255,.88);
+                border-right: var(--widget-border-width, 1px) solid rgba(255,255,255,.88);
+                border-bottom: var(--widget-border-width, 1px) solid rgba(255,255,255,.88);
+                border-top: 0;
+                border-radius: 0 0 28px 28px;
+                background: #030303;
                 color: #fff;
                 cursor: pointer;
                 display: flex;
@@ -720,13 +726,24 @@ jobs:
                 justify-content: center;
                 gap: 8px;
                 -webkit-app-region: no-drag;
-                transition: border-color 120ms ease, background 120ms ease;
+                box-shadow: 0 8px 20px rgba(0,0,0,.3), 0 1px 8px rgba(255,255,255,.12);
+                transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
               }
 
-              button {
-                border-radius: 0 0 22px 22px;
-                border-width: var(--widget-border-width, 1px);
-                clip-path: polygon(0 0,100% 0,100% 54%,97% 68%,91% 82%,80% 93%,64% 100%,36% 100%,20% 93%,9% 82%,3% 68%,0 54%);
+              /* Top edge merges into the display bezel; lower edge flows into a smooth island. */
+              button::before {
+                content: "";
+                position: absolute;
+                z-index: -1;
+                inset: 0 -1px -1px;
+                border-radius: 0 0 29px 29px;
+                background: #030303;
+                box-shadow: inset 0 -1px 0 rgba(255,255,255,.08);
+              }
+
+              button:hover {
+                border-color: rgba(255,255,255,1);
+                box-shadow: 0 8px 24px rgba(0,0,0,.38), 0 1px 10px rgba(255,255,255,.2);
               }
 
               .wordmark { font: 700 10px/1 system-ui, Segoe UI, Arial, sans-serif; letter-spacing: .24em; white-space: nowrap; }

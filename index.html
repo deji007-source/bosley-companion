@@ -612,25 +612,36 @@ let pendingImageData=null;
 function clearImageAttachment(){pendingImageData=null;$("#camera-input").value="";$("#imageattachment").hidden=true;$("#imagepreview").removeAttribute("src")}
 $("#camera").onclick=()=>$("#camera-input").click();
 const screenButton=$("#screen");
-if(screenButton&&window.BosleyDesktop&&typeof window.BosleyDesktop.getCapabilities==="function"){
- window.BosleyDesktop.getCapabilities().then(capabilities=>{
-  screenButton.hidden=!Array.isArray(capabilities?.actions)||!capabilities.actions.includes("capture_screen");
- }).catch(()=>{screenButton.hidden=true});
+const androidCapture=()=>!!(window.Capacitor?.isNativePlatform?.()&&window.Capacitor?.Plugins?.BosleyOverlay?.requestScreenCapture);
+if(screenButton){
+ const desktop=window.BosleyDesktop;
+ if(desktop&&typeof desktop.getCapabilities==="function"){
+  desktop.getCapabilities().then(capabilities=>{screenButton.hidden=!Array.isArray(capabilities?.actions)||!capabilities.actions.includes("capture_screen")}).catch(()=>{screenButton.hidden=true});
+ }else if(androidCapture()){
+  screenButton.hidden=false;screenButton.title="Capture Android screen";screenButton.setAttribute("aria-label","Capture Android screen");
+ }else screenButton.hidden=true;
 }
 if(screenButton)screenButton.onclick=async()=>{
  if(screenButton.disabled)return;
- const desktop=window.BosleyDesktop;
- if(!desktop||typeof desktop.request!=="function"){note("Screen capture is only available in the installed Windows desktop app.");return}
  screenButton.disabled=true;
  try{
-  const result=await desktop.request({action:"capture_screen",payload:{}});
-  if(result?.cancelled)return;
-  if(result?.ok!==true||typeof result.dataUrl!=="string"||!result.dataUrl.startsWith("data:image/"))throw Error("The desktop bridge did not return a valid screenshot.");
+  let result;
+  if(androidCapture()){
+   note("Android will ask you to approve screen capture. Choose Start now to continue.");
+   result=await window.Capacitor.Plugins.BosleyOverlay.requestScreenCapture();
+   if(result?.cancelled){note("Screen capture cancelled.");return}
+  }else{
+   const desktop=window.BosleyDesktop;
+   if(!desktop||typeof desktop.request!=="function")throw Error("Screen capture is available in the installed Android and Windows apps, not in a regular browser tab.");
+   result=await desktop.request({action:"capture_screen",payload:{}});
+   if(result?.cancelled)return;
+  }
+  if(result?.ok!==true||typeof result.dataUrl!=="string"||!result.dataUrl.startsWith("data:image/"))throw Error("The device did not return a valid screenshot.");
   pendingImageData=result.dataUrl;
   $("#imagepreview").src=pendingImageData;
   $("#imageattachment").hidden=false;
   note("Screen captured and attached. Review it; nothing is sent until you press Send.");
- }catch(error){note("Screen capture failed: "+String(error?.message||error).slice(0,180))}
+ }catch(error){note("Screen capture failed: "+String(error?.message||error).slice(0,220))}
  finally{screenButton.disabled=false}
 };
 $("#removeimage").onclick=clearImageAttachment;

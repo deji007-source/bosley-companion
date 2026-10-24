@@ -1061,8 +1061,16 @@ jobs:
               app = json.load(handle)
           assert 'url' in app
           PY
-          cd agent-pack
-          zip -r ../Bosley-Optional-Agent-Pack.zip .
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZIP_DEFLATED, ZipFile
+          root = Path('agent-pack')
+          with ZipFile('Bosley-Optional-Agent-Pack.zip', 'w', ZIP_DEFLATED) as archive:
+              for file in sorted(root.rglob('*')):
+                  if file.is_file():
+                      archive.write(file, file.relative_to(root))
+          print('Created Bosley-Optional-Agent-Pack.zip')
+          PY
 
       - name: Upload optional agent pack
         uses: actions/upload-artifact@v4

@@ -18,29 +18,8 @@ if "SYSTEM_ALERT_WINDOW" not in text:
 if "BosleyOverlayService" not in text:
     text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" />\n    </application>')
 manifest.write_text(text)
-if "BosleyTargetAccessibilityService" not in text:
-    text = manifest.read_text()
-    text = text.replace("</application>", '        <service android:name=".BosleyTargetAccessibilityService" android:label="Bosley visual target finder" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/bosley_target_accessibility" /></service>\\n    </application>')
-    manifest.write_text(text)
-res = root / "app/src/main/res/xml"
-res.mkdir(parents=True, exist_ok=True)
-(res / "bosley_target_accessibility.xml").write_text('''<?xml version="1.0" encoding="utf-8"?>
-<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/bosley_target_accessibility_description"
-    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewFocused"
-    android:accessibilityFeedbackType="feedbackGeneric"
-    android:notificationTimeout="150"
-    android:canRetrieveWindowContent="true"
-    android:canPerformGestures="false"
-    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds" />
-''')
-values = root / "app/src/main/res/values"
-values.mkdir(parents=True, exist_ok=True)
-strings = values / "strings.xml"
-st = strings.read_text() if strings.exists() else '<?xml version="1.0" encoding="utf-8"?>\\n<resources>\\n</resources>'
-if "bosley_target_accessibility_description" not in st:
-    st = st.replace("</resources>", '    <string name="bosley_target_accessibility_description">Finds visible controls relevant to your active guide and moves the pointer. It does not click or type.</string>\\n</resources>')
-    strings.write_text(st)
+# The Android guide is intentionally stationary. Do not register an accessibility
+# service to inspect other apps or automatically reposition the guide target.
 
 src = root / "app/src/main/java/com/bosley/companion"
 src.mkdir(parents=True, exist_ok=True)
@@ -63,7 +42,7 @@ public class BosleyOverlayService extends Service {
   @Override public int onStartCommand(Intent i,int flags,int id){
     if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
-    if(i!=null && ACTION_TARGET.equals(i.getAction())){if(i.getBooleanExtra("found",false)){guideTargetX=i.getFloatExtra("x",guideTargetX);guideTargetY=i.getFloatExtra("y",guideTargetY);if(guideTarget!=null&&guideTargetLp!=null){android.util.DisplayMetrics dm=getResources().getDisplayMetrics();guideTargetLp.x=(int)(guideTargetX*dm.widthPixels)-dp(21);guideTargetLp.y=(int)(guideTargetY*dm.heightPixels)-dp(21);try{wm.updateViewLayout(guideTarget,guideTargetLp);if(guideLine!=null)guideLine.invalidate();}catch(Exception ignored){}}if(guideCard!=null)guideCard.setContentDescription("Target found; pointer snapped.");}else if(guideCard!=null)guideCard.setContentDescription("No confident target found; try a more specific task.");return START_STICKY;}
+    // ACTION_TARGET is intentionally ignored: guide tether and target stay fixed.
     if(i!=null && ACTION_GUIDE.equals(i.getAction())){guideInstruction=i.getStringExtra("instruction")!=null?i.getStringExtra("instruction"):"Follow the tether to the next step.";if(!Settings.canDrawOverlays(this)){Intent p=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(p);return START_NOT_STICKY;}showGuide();return START_STICKY;}
     if(i!=null){widgetWidth=i.getIntExtra("widgetWidth",widgetWidth);widgetHeight=i.getIntExtra("widgetHeight",widgetHeight);cornerDp=i.getIntExtra("cornerDp",cornerDp);borderDp=i.getIntExtra("borderDp",borderDp);eyeWidth=i.getIntExtra("eyeWidth",eyeWidth);eyeHeight=i.getIntExtra("eyeHeight",eyeHeight);eyeGapDp=i.getIntExtra("eyeGapDp",eyeGapDp);eyeShape=i.getStringExtra("eyeShape")!=null?i.getStringExtra("eyeShape"):eyeShape;}
     if(ACTION_STYLE.equals(i==null?null:i.getAction())){removeBar();}
@@ -101,16 +80,16 @@ public class BosleyOverlayService extends Service {
     TextView target=new TextView(this);target.setText("•");target.setTextColor(Color.BLACK);target.setTextSize(30);target.setGravity(Gravity.CENTER);target.setBackground(circleTarget());target.setElevation(dp(10));guideTarget=target;
     guideTargetLp=new WindowManager.LayoutParams(dp(42),dp(42),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     guideTargetLp.gravity=Gravity.TOP|Gravity.START;guideTargetLp.x=(int)(width*guideTargetX)-dp(21);guideTargetLp.y=(int)(height*guideTargetY)-dp(21);
-    target.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;public boolean onTouch(View v,MotionEvent e){switch(e.getAction()){case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=guideTargetLp.x;oy=guideTargetLp.y;return true;case MotionEvent.ACTION_MOVE:guideTargetLp.x=Math.max(0,Math.min(width-dp(42),ox+(int)(e.getRawX()-sx)));guideTargetLp.y=Math.max(0,Math.min(height-dp(42),oy+(int)(e.getRawY()-sy)));guideTargetX=(guideTargetLp.x+dp(21))/(float)width;guideTargetY=(guideTargetLp.y+dp(21))/(float)height;try{wm.updateViewLayout(guideTarget,guideTargetLp);guideLine.invalidate();}catch(Exception ignored){}return true;default:return true;}}});
+    // Target is fixed in place; no drag gesture is registered.
     try{wm.addView(guideTarget,guideTargetLp);}catch(Exception e){guideTarget=null;}
     LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(10),dp(8),dp(10),dp(8));card.setElevation(dp(12));
     GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(8,8,8));bg.setCornerRadius(dp(12));bg.setStroke(dp(1),Color.LTGRAY);card.setBackground(bg);
-    TextView title=new TextView(this);title.setText("BOSLEY GUIDE  ·  drag to move");title.setTextColor(Color.WHITE);title.setTextSize(11);title.setTypeface(null,android.graphics.Typeface.BOLD);title.setPadding(0,0,0,dp(2));card.addView(title);
+    TextView title=new TextView(this);title.setText("BOSLEY GUIDE");title.setTextColor(Color.WHITE);title.setTextSize(11);title.setTypeface(null,android.graphics.Typeface.BOLD);title.setPadding(0,0,0,dp(2));card.addView(title);
     TextView body=new TextView(this);body.setText(guideInstruction+"\\nUse Find target to locate a matching visible control. Bosley does not click or type.");body.setTextColor(Color.LTGRAY);body.setTextSize(11);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(4);card.addView(body,bp);
     Button find=new Button(this);find.setText("Find target");find.setTextColor(Color.WHITE);find.setOnClickListener(v->{String enabled=android.provider.Settings.Secure.getString(getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);if(enabled==null||!enabled.contains(getPackageName()+"/"+BosleyTargetAccessibilityService.class.getName())){Intent settings=new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(settings);body.setText("Enable Bosley visual target finder in Accessibility settings, then return and tap Find target.");return;}Intent request=new Intent(BosleyTargetAccessibilityService.FIND);request.setPackage(getPackageName());request.putExtra("task",guideInstruction);sendBroadcast(request);body.setText("Searching visible controls…");});LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,dp(36));fp.topMargin=dp(3);card.addView(find,fp);
     Button stop=new Button(this);stop.setText("Stop");stop.setTextColor(Color.WHITE);stop.setOnClickListener(v->removeGuide());LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(36));sp.topMargin=dp(2);card.addView(stop,sp);
     guideCard=card;guideCardLp=new WindowManager.LayoutParams(dp(250),WindowManager.LayoutParams.WRAP_CONTENT,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);guideCardLp.gravity=Gravity.TOP|Gravity.START;guideCardLp.x=dp(12);guideCardLp.y=dp(64);
-    title.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;public boolean onTouch(View v,MotionEvent e){switch(e.getAction()){case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=guideCardLp.x;oy=guideCardLp.y;return true;case MotionEvent.ACTION_MOVE:guideCardLp.x=Math.max(0,ox+(int)(e.getRawX()-sx));guideCardLp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(guideCard,guideCardLp);}catch(Exception ignored){}return true;default:return true;}}});
+    // Guide card remains in its default position; no drag listener.
     try{wm.addView(guideCard,guideCardLp);}catch(Exception e){guideCard=null;removeGuide();}
   }
   GradientDrawable circleTarget(){GradientDrawable d=new GradientDrawable();d.setShape(GradientDrawable.OVAL);d.setColor(Color.WHITE);d.setStroke(dp(3),Color.BLACK);return d;}

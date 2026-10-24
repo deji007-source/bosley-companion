@@ -114,14 +114,15 @@ assert.ok(windowsWorkflow.includes("#guideOutline{stroke:#000;stroke-width:7"), 
 assert.ok(androidInstaller.includes("paint.setColor(Color.BLACK);paint.setStrokeWidth(dp(6))"), "Android tether must have a black outline for white screens");
 assert.ok(windowsWorkflow.includes("width: 270, height: 166"), "Windows guide card should use a compact footprint");
 assert.ok(windowsWorkflow.includes("-webkit-app-region:drag"), "Windows guide card must be draggable by its header");
-assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must expose a draggable target marker");
-assert.ok(androidInstaller.includes("circleTarget()"), "Android guide target must be visibly distinct and draggable");
-assert.ok(androidInstaller.includes("BosleyTargetAccessibilityService"), "Android guide must include on-device control discovery");
-assert.ok(androidInstaller.includes('canRetrieveWindowContent="true"'), "Android target finder must declare its required accessibility capability");
-assert.ok(androidInstaller.includes('canPerformGestures="false"'), "Android target finder must not be able to perform gestures");
-assert.ok(androidInstaller.includes("Find target"), "Android guide must expose explicit target discovery");
+assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must retain its stationary target marker");
+assert.ok(androidInstaller.includes("circleTarget()"), "Android guide target must remain visibly distinct");
+assert.ok(!androidInstaller.includes("BosleyTargetAccessibilityService"), "Android guide must not register accessibility auto-targeting");
+assert.ok(!androidInstaller.includes('canRetrieveWindowContent="true"'), "Android guide must not request accessibility window-content access");
+assert.ok(!androidInstaller.includes('canPerformGestures="true"'), "Android guide must not enable gesture execution");
+assert.ok(androidInstaller.includes("Find target"), "Android guide must retain explicit user-triggered target discovery");
 
-assert.ok(androidInstaller.includes("BOSLEY GUIDE  ·  drag to move"), "Android guide card should advertise its drag handle");
+assert.ok(androidInstaller.includes("BOSLEY GUIDE"), "Android guide card should retain its title");
+assert.ok(!androidInstaller.includes("drag to move"), "Android guide card must not imply that the tether moves automatically or can be dragged");
 assert.ok(androidInstaller.includes("void showGuide()"), "Missing Android system-level guide service");
 assert.ok(androidInstaller.includes("public void showGuide(PluginCall call)"), "Missing Android guide bridge method");
 assert.ok(androidInstaller.includes("TYPE_APPLICATION_OVERLAY"), "Android guide must use the system overlay window type");

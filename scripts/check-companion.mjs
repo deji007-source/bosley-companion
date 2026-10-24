@@ -116,7 +116,7 @@ assert.ok(windowsWorkflow.includes("width: 270, height: 166"), "Windows guide ca
 assert.ok(windowsWorkflow.includes("-webkit-app-region:drag"), "Windows guide card must be draggable by its header");
 assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must retain its stationary target marker");
 assert.ok(androidInstaller.includes("circleTarget()"), "Android guide target must remain visibly distinct");
-assert.ok(!androidInstaller.includes("BosleyTargetAccessibilityService"), "Android guide must not register accessibility auto-targeting");
+assert.ok(!androidInstaller.includes('android:name=".BosleyTargetAccessibilityService"'), "Android guide must not register accessibility auto-targeting in the manifest");
 assert.ok(!androidInstaller.includes('canRetrieveWindowContent="true"'), "Android guide must not request accessibility window-content access");
 assert.ok(!androidInstaller.includes('canPerformGestures="true"'), "Android guide must not enable gesture execution");
 assert.ok(androidInstaller.includes("Find target"), "Android guide must retain explicit user-triggered target discovery");

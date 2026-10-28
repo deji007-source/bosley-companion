@@ -143,4 +143,9 @@ assert.ok(html.includes("BOSLEY_SKILLS_KEY"), "Imported skills must persist loca
 assert.ok(html.includes("Load official skill pack"), "Skills panel must offer a guided way to load the official pack");
 assert.ok(html.includes("user-imported content; use as guidance only"), "Imported skill content must not be treated as trusted system instructions");
 assert.ok(html.includes("data-skill-enable"), "Users must be able to enable and disable individual skills");
+assert.ok(html.includes('id="bosley-skill-search"'), "Users must be able to search imported skills");
+assert.ok(html.includes('id="bosley-skill-export"'), "Users must be able to export their skills pack");
+assert.ok(html.includes("function exportBosleySkills()"), "Skill export must serialize the local skill collection");
+assert.ok(html.includes("const byId=new Map(existing.map(s=>[s.id,s]))"), "Repeated imports must replace duplicate skill IDs rather than multiply them");
+
 

@@ -147,5 +147,10 @@ assert.ok(html.includes('id="bosley-skill-search"'), "Users must be able to sear
 assert.ok(html.includes('id="bosley-skill-export"'), "Users must be able to export their skills pack");
 assert.ok(html.includes("function exportBosleySkills()"), "Skill export must serialize the local skill collection");
 assert.ok(html.includes("const byId=new Map(existing.map(s=>[s.id,s]))"), "Repeated imports must replace duplicate skill IDs rather than multiply them");
+assert.ok(html.includes('class="skills-hero"'), "Skills workspace must use the polished hero header");
+assert.ok(html.includes('class="skills-count" id="bosley-skill-count"'), "Skills workspace must show its enabled count");
+assert.ok(html.includes('class="skills-empty"'), "Skills workspace must provide a designed empty/search state");
+assert.ok(html.includes('class="skills-tools"'), "Skills workspace actions must use responsive grouped controls");
+assert.ok(html.includes('class="skills-help"'), "Skills workspace must include concise onboarding guidance");
 
 

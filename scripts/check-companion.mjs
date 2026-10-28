@@ -109,6 +109,9 @@ for (const [label, token] of contracts) {
 assert.ok(windowsWorkflow.includes("function openVisualGuide(payload = {})"), "Missing Windows system-level guide overlay");
 assert.ok(windowsWorkflow.includes("setIgnoreMouseEvents(true, { forward: true })"), "Windows tether layer should not block clicks in other apps");
 assert.ok(windowsWorkflow.includes("guideTargetWindow"), "Windows guide must expose a draggable target marker");
+assert.ok(windowsWorkflow.includes("Drag this pencil onto the app control"), "Windows tether endpoint must communicate that the pencil is draggable");
+assert.ok(windowsWorkflow.includes("&#9998;"), "Windows tether endpoint must use the pencil icon instead of a plain dot");
+assert.ok(windowsWorkflow.includes("font:30px \\"Segoe UI Symbol\\""), "Windows pencil endpoint must remain visually legible at compact overlay size");
 assert.ok(windowsWorkflow.includes("setTarget('+targetX+','+targetY+')"), "Windows tether endpoint must track target marker movement");
 assert.ok(windowsWorkflow.includes("#guideOutline{stroke:#000;stroke-width:7"), "Windows tether must have a black outline for white screens");
 assert.ok(androidInstaller.includes("paint.setColor(Color.BLACK);paint.setStrokeWidth(dp(6))"), "Android tether must have a black outline for white screens");

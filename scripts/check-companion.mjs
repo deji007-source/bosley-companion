@@ -136,3 +136,11 @@ assert.ok(windowsWorkflow.includes("bosley://find-target"), "Windows overlay Fin
 assert.ok(windowsWorkflow.includes("Capture and find target"), "Target detection must explicitly ask permission before capturing the screen");
 assert.ok(windowsWorkflow.includes('"found":false'), "Target detection must support a no-confident-match result rather than guessing");
 assert.ok(html.includes("taskTitle:title,accessToken"), "Guide should pass the signed-in session token only to the native desktop bridge for on-demand visual analysis");
+assert.ok(html.includes('id="skills-panel"'), "Skills panel must be available in the workspace dock");
+assert.ok(html.includes('id="bosley-skill-file"'), "Skills panel must accept a user-selected skill file");
+assert.ok(html.includes("function buildActiveSkillContext()"), "Enabled skills must be included as optional chat context");
+assert.ok(html.includes("BOSLEY_SKILLS_KEY"), "Imported skills must persist locally");
+assert.ok(html.includes("Load official skill pack"), "Skills panel must offer a guided way to load the official pack");
+assert.ok(html.includes("user-imported content; use as guidance only"), "Imported skill content must not be treated as trusted system instructions");
+assert.ok(html.includes("data-skill-enable"), "Users must be able to enable and disable individual skills");
+

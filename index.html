@@ -6,6 +6,31 @@
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#000}
 button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
 :focus-visible{outline:2px solid #fff;outline-offset:2px}
+/* Cohesive visual system: quiet depth, readable scroll areas, and consistent focus states. */
+::selection{background:#f2f2f2;color:#080808}
+:root{color-scheme:dark;scrollbar-color:#3a3a3a #090909;scrollbar-width:thin}
+*{scrollbar-width:thin;scrollbar-color:#3a3a3a transparent}
+*::-webkit-scrollbar{width:7px;height:7px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:#303030;border:2px solid transparent;border-radius:99px;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background:#505050;border:2px solid transparent;background-clip:padding-box}
+button{transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease}
+button:disabled{opacity:.48;cursor:not-allowed}
+.panel{background:radial-gradient(ellipse at 50% -18%,#101010 0%,#050505 42%,#000 78%);border-color:#303030}
+.top{background:linear-gradient(180deg,#0b0b0b,#030303)}
+.chat{scroll-behavior:smooth}
+.msg:not(.you):not(.sys) p{color:#e0e0e0}
+.msg.you p{box-shadow:inset 0 1px #ffffff08}
+.composer{background:linear-gradient(145deg,#0c0c0c,#030303);box-shadow:0 8px 26px #0008,inset 0 1px #ffffff08}
+.composer:focus-within{border-color:#666;box-shadow:0 0 0 2px #ffffff0c,0 8px 26px #0008}
+.primary{box-shadow:inset 0 1px #ffffff55}
+.primary:hover{background:#fff}
+#side-dock{background:radial-gradient(ellipse at 100% 0%,#111 0%,#060606 54%,#030303 100%);border-color:#333}
+#side-dock .dock-head{background:#090909}
+#side-dock .dock-close:hover{border-color:#666;background:#1a1a1a;color:#fff}
+#dock-launcher button{transition:transform .16s ease,background .16s ease,border-color .16s ease}
+#dock-launcher button:active{transform:scale(.94)}
+@media(prefers-reduced-motion:reduce){.chat{scroll-behavior:auto}button{transition:none}}
 #startup-error{position:fixed;z-index:2147483647;inset:12px 12px auto;padding:14px 16px;border:1px solid #765e36;border-radius:12px;background:#15120c;color:#f8edda;font:12px/1.6 system-ui,sans-serif;box-shadow:0 12px 40px #000a}
 #startup-error strong{display:block;margin-bottom:4px;font-size:13px}
 #startup-error code{display:block;margin-top:6px;color:#d7c8ad;overflow-wrap:anywhere;white-space:pre-wrap}

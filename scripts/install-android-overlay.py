@@ -33,6 +33,7 @@ import android.provider.Settings;
 import android.view.*;
 import android.widget.*;
 import android.graphics.PixelFormat;
+import android.util.DisplayMetrics;
 
 public class BosleyOverlayService extends Service {
   static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE";

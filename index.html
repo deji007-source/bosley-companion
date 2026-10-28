@@ -715,12 +715,12 @@ async function renderBosleySkills(){
  const filtered=readBosleySkills().filter(s=>(s.title+" "+s.content+" "+(s.source||"")).toLowerCase().includes(query.toLowerCase()));
  if(!filtered.length)list.innerHTML='<p class="mute">'+(skills.length?'No skills match this search.':'No skills imported yet. Use “Load official skill pack” or choose a local file.')+'</p>';
  else list.innerHTML=filtered.map(s=>'<div class="item"><main><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-skill-enable="'+escapeSkillText(s.id)+'" '+(s.enabled?'checked':'')+'><span><strong>'+escapeSkillText(s.title)+'</strong><small style="display:block;color:#888;margin-top:4px">'+escapeSkillText(s.source||"Imported")+'</small></span></label><p class="mute">'+escapeSkillText(s.content.slice(0,320))+(s.content.length>320?"…":"")+'</p></main><button type="button" data-skill-delete="'+escapeSkillText(s.id)+'" aria-label="Delete '+escapeSkillText(s.title)+'">Delete</button></div>').join("");
+ list.querySelectorAll("[data-skill-enable]").forEach(el=>el.addEventListener("change",()=>{const all=readBosleySkills().map(s=>s.id===el.dataset.skillEnable?{...s,enabled:el.checked}:s);saveBosleySkills(all);const status=panel.querySelector("#bosley-skill-status");if(status)status.textContent=all.filter(s=>s.enabled).length+" skill(s) enabled for chat.";drawSkillList(panel.querySelector("#bosley-skill-search").value)}));
+ list.querySelectorAll("[data-skill-delete]").forEach(el=>el.addEventListener("click",()=>{saveBosleySkills(readBosleySkills().filter(s=>s.id!==el.dataset.skillDelete));drawSkillList(panel.querySelector("#bosley-skill-search").value)}));
  };
  drawSkillList();
  panel.querySelector("#bosley-skill-search").addEventListener("input",e=>drawSkillList(e.target.value));
  panel.querySelector("#bosley-skill-export").onclick=()=>{if(!readBosleySkills().length){panel.querySelector("#bosley-skill-status").textContent="There are no skills to export yet.";return}exportBosleySkills();panel.querySelector("#bosley-skill-status").textContent="Export prepared. Check your browser's download list."};
- list.querySelectorAll("[data-skill-enable]").forEach(el=>el.addEventListener("change",()=>{const all=readBosleySkills().map(s=>s.id===el.dataset.skillEnable?{...s,enabled:el.checked}:s);saveBosleySkills(all);const status=panel.querySelector("#bosley-skill-status");if(status)status.textContent=all.filter(s=>s.enabled).length+" skill(s) enabled for chat."; }));
- list.querySelectorAll("[data-skill-delete]").forEach(el=>el.addEventListener("click",()=>{saveBosleySkills(readBosleySkills().filter(s=>s.id!==el.dataset.skillDelete));renderBosleySkills()}));
  panel.querySelector("#bosley-skill-import").onclick=async()=>{
   const file=panel.querySelector("#bosley-skill-file").files?.[0],status=panel.querySelector("#bosley-skill-status");
   if(!file){status.textContent="Choose a skill file first.";return}

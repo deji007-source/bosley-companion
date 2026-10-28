@@ -937,9 +937,9 @@ jobs:
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 96, height: 26 },
-                default: { width: 104, height: 28 },
-                wide: { width: 128, height: 32 }
+                compact: { width: 220, height: 32 },
+                default: { width: 260, height: 36 },
+                wide: { width: 300, height: 40 }
               };
               function applyAppearance(value) {
                 if (!value) return;

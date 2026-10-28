@@ -138,10 +138,11 @@ jobs:
           let panel = null;
           let usingHostedFallback = false;
           let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
+          // Slim bezel-connected Dynamic Island sizes; keep the island centered on the physical display edge.
           const WIDGET_SIZES = {
-            compact: { width: 164, height: 32 },
-            default: { width: 184, height: 34 },
-            wide: { width: 204, height: 36 }
+            compact: { width: 220, height: 32 },
+            default: { width: 260, height: 36 },
+            wide: { width: 300, height: 40 }
           };
 
           function escapeHtml(value) {
@@ -690,10 +691,10 @@ jobs:
               };
               const dimensions = WIDGET_SIZES[widgetAppearance.size];
               if (bubble && !bubble.isDestroyed()) {
-                const area = screen.getPrimaryDisplay().workArea;
+                const bounds = screen.getPrimaryDisplay().bounds;
                 bubble.setBounds({
-                  x: area.x + Math.round((area.width - dimensions.width) / 2),
-                  y: area.y + 12,
+                  x: bounds.x + Math.round((bounds.width - dimensions.width) / 2),
+                  y: bounds.y,
                   width: dimensions.width,
                   height: dimensions.height
                 });
@@ -892,8 +893,9 @@ jobs:
               }
 
               .wordmark { display: none; }
-              button { width: 184px; height: 34px; padding: 2px 8px; border-left: 1px solid rgba(255,255,255,.72); border-right: 1px solid rgba(255,255,255,.72); border-bottom: 1px solid rgba(255,255,255,.72); border-radius: 0 0 22px 22px; gap: 0; background: rgba(7,7,7,.98); box-shadow: 0 5px 18px rgba(0,0,0,.34), 0 0 12px rgba(255,255,255,.06); }
-              button::before { border-radius: 0 0 19px 19px; }
+              /* Island touches the physical top edge: no top border or floating gap. */
+              button { width: 260px; height: 36px; padding: 2px 8px; border-left: 1px solid rgba(255,255,255,.72); border-right: 1px solid rgba(255,255,255,.72); border-bottom: 1px solid rgba(255,255,255,.72); border-top: 0; border-radius: 0 0 24px 24px; gap: 0; background: rgba(5,5,5,.99); box-shadow: 0 5px 18px rgba(0,0,0,.34), 0 0 12px rgba(255,255,255,.06); }
+              button::before { border-radius: 0 0 24px 24px; }
               svg { display: none !important; }
 
               button:hover {

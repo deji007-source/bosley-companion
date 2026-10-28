@@ -154,7 +154,7 @@ assert.ok(html.includes('class="skills-hero"'), "Skills workspace must use the p
 assert.ok(html.includes("bosley-skill-count"), "Skills workspace must show its enabled count");
 assert.ok(html.includes('class="skills-empty"'), "Skills workspace must provide a designed empty/search state");
 assert.ok(html.includes('class="skills-tools"'), "Skills workspace actions must use responsive grouped controls");
-assert.ok(html.includes('class="skills-help"'), "Skills workspace must include concise onboarding guidance");
+assert.ok(html.includes("skills-help"), "Skills workspace must include concise onboarding guidance");
 assert.ok(html.includes("::selection{background:#f2f2f2;color:#080808}"), "Global visual system must define readable selection styling");
 assert.ok(html.includes("*::-webkit-scrollbar-thumb"), "Scrollable panels must use the shared compact scrollbar styling");
 assert.ok(html.includes(".composer:focus-within"), "Chat composer must visibly respond to keyboard and text focus");

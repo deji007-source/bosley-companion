@@ -112,7 +112,7 @@ assert.ok(windowsWorkflow.includes("guideTargetWindow"), "Windows guide must exp
 assert.ok(windowsWorkflow.includes("setTarget('+targetX+','+targetY+')"), "Windows tether endpoint must track target marker movement");
 assert.ok(windowsWorkflow.includes("#guideOutline{stroke:#000;stroke-width:7"), "Windows tether must have a black outline for white screens");
 assert.ok(androidInstaller.includes("paint.setColor(Color.BLACK);paint.setStrokeWidth(dp(6))"), "Android tether must have a black outline for white screens");
-assert.ok(windowsWorkflow.includes("width: 270, height: 166"), "Windows guide card should use a compact footprint");
+assert.ok(windowsWorkflow.includes("width: 300, height: 220"), "Windows guide card should fit its target context panel");
 assert.ok(windowsWorkflow.includes("-webkit-app-region:drag"), "Windows guide card must be draggable by its header");
 assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must retain its stationary target marker");
 assert.ok(androidInstaller.includes("circleTarget()"), "Android guide target must remain visibly distinct");

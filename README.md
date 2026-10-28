@@ -65,11 +65,21 @@ The production output is written to `dist/`.
 
 The workflow builds an Electron installer that loads the hosted Bosley site. A successful build confirms packaging, not that every remote service or desktop automation feature works end to end.
 
+### Import and use Bosley skills on Windows
+
+1. Download and install the latest **Bosley-Windows-Installer** artifact.
+2. Open Bosley and select **Skills** in the workspace side dock.
+3. Choose **Load official skill pack** to import the repository's default skills, or choose **Import skill file** to load a local `.json`, `.md`, `.markdown`, or `.txt` file (maximum 100 KB).
+4. Enable the specific skills you want Bosley to consider. Ask for the task normally in chat; relevant enabled skill text is attached as optional context.
+5. Disable or delete skills when no longer needed. Imported skills are stored locally in that browser/device; they are not automatically synced to another device.
+
+The skills are guidance, not new tools or permissions. Imported text is treated as untrusted reference material, not system instructions; it cannot enable arbitrary shell commands, skip confirmations, or guarantee that a capability exists. Review files before importing them. If the official-pack button cannot reach GitHub, download `agent-pack/skills.json` from the repository and import it manually. The Windows workflow also publishes a separate `Bosley-Optional-Agent-Pack` artifact.
+
 ## System-level visual guide (Windows and Android)
 
 The current Windows installer and Android debug APK include a native visual-guide overlay. It is designed to appear above other applications after the user selects a task's **Guide** action and confirms the prompt. Android also requires the system **Display over other apps** permission. The hosted website alone cannot display an overlay over unrelated apps.
 
-**Current limitations:** Windows can request an explicit screen capture and visually locate a likely control; Android's optional target finder searches visible accessibility labels only after the user enables Bosley's accessibility service. Both are best-effort matching, not guaranteed identification. The overlay provides visual guidance only; it does not click, type, or read the contents of other apps. A successful CI build confirms the package compiles, not that the overlay has been verified on every device.
+**Current limitations:** Windows can request an explicit screen capture and visually locate a likely control; Android keeps a stationary guide target marker and does not inspect other apps' accessibility content. Both are best-effort matching, not guaranteed identification. The overlay provides visual guidance only; it does not click, type, or read the contents of other apps. A successful CI build confirms the package compiles, not that the overlay has been verified on every device.
 
 ### Install and smoke-test the current builds
 

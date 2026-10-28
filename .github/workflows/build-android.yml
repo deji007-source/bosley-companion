@@ -57,6 +57,9 @@ jobs:
           npx cap add android
           npx cap sync android
           python3 scripts/install-android-overlay.py
+          grep -Fq 'updateGuideTarget(i)' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'result.putExtra("label",bestLabel' android/app/src/main/java/com/bosley/companion/BosleyTargetAccessibilityService.java
+          echo "Android tether target updates and match labels verified."
 
       - name: Generate Bosley launcher icon
         run: |

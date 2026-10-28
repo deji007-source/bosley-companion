@@ -124,7 +124,40 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 @media(max-width:520px){html.widget-mode .panel{left:0;transform:none;width:100vw;height:100dvh;max-height:100dvh}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 
-#skills-panel .item{align-items:flex-start}#skills-panel input[type=checkbox]{width:auto;flex:0 0 auto;margin-top:4px}#skills-panel .form input[type=file]{font-size:10px;max-width:100%}#skills-panel .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}#skills-panel button{padding:7px 9px;border:1px solid #333;border-radius:7px;background:#080808;color:#ddd;font-size:10px}#skills-panel button.primary{background:#f5f5f5;color:#000;border:0}#skills-panel .status{font-size:10px;color:#aaa;overflow-wrap:anywhere}\n\n/* Responsive side views: retain full panel content on phone, tablet, desktop and widget layouts. */
+/* Skills workspace: compact command centre with clearer hierarchy and touch targets. */
+#skills-panel{color:#f5f5f5}
+#skills-panel .skills-hero{display:flex;align-items:flex-start;gap:12px;padding:14px;margin:0 0 12px;border:1px solid #292929;border-radius:14px;background:radial-gradient(ellipse at 100% 0%,#1d1d1d 0%,#0b0b0b 58%,#050505 100%);box-shadow:inset 0 1px #ffffff0b}
+#skills-panel .skills-mark{display:grid;place-items:center;flex:0 0 38px;height:38px;border:1px solid #444;border-radius:12px;background:linear-gradient(145deg,#242424,#090909);font-size:18px}
+#skills-panel .skills-hero-copy{flex:1;min-width:0}
+#skills-panel .skills-kicker{display:block;margin-bottom:5px;color:#999;font:9px 'DM Mono',monospace;letter-spacing:.14em}
+#skills-panel .skills-hero h3{margin:0 0 6px;font-size:16px;letter-spacing:-.035em}
+#skills-panel .skills-hero p{margin:0;color:#aaa;font-size:10px;line-height:1.65}
+#skills-panel .skills-count{flex:0 0 auto;padding:5px 7px;border:1px solid #343434;border-radius:7px;background:#101010;color:#ddd;font:9px 'DM Mono',monospace}
+#skills-panel .form{gap:9px;margin-top:0}
+#skills-panel .skills-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#skills-panel .skills-tools button{min-height:36px;line-height:1.35}
+#skills-panel .skills-tools #bosley-skill-pack{grid-column:1/-1}
+#skills-panel .form input[type=file]{font-size:10px;max-width:100%;padding:8px;border:1px solid #2d2d2d;border-radius:9px;background:#080808}
+#skills-panel .form input[type=search]{padding:10px 12px;border:1px solid #303030;border-radius:10px;background:#090909;font-size:11px}
+#skills-panel .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+#skills-panel button{padding:8px 10px;border:1px solid #333;border-radius:8px;background:linear-gradient(180deg,#111,#080808);color:#ddd;font-size:10px;transition:border-color .15s,background .15s,transform .15s}
+#skills-panel button:hover{border-color:#666;background:#181818}
+#skills-panel button:active{transform:scale(.98)}
+#skills-panel button.primary{background:#f5f5f5;color:#000;border:0;font-weight:800}
+#skills-panel .status{margin:0;padding:8px 10px;border:1px solid #252525;border-radius:8px;background:#090909;font:9px/1.5 'DM Mono',monospace;color:#aaa;overflow-wrap:anywhere}
+#skills-panel .items{gap:8px;margin-top:12px}
+#skills-panel .item{align-items:flex-start;padding:11px;border-color:#282828;border-radius:11px;background:linear-gradient(135deg,#0d0d0d,#060606)}
+#skills-panel .item strong{font-size:11px;line-height:1.45}
+#skills-panel .item p{margin-top:8px;line-height:1.65}
+#skills-panel .item small{font:9px 'DM Mono',monospace;letter-spacing:.02em}
+#skills-panel .item button{flex:0 0 auto;padding:7px 9px}
+#skills-panel input[type=checkbox]{width:15px;height:15px;accent-color:#f5f5f5;flex:0 0 auto;margin-top:2px}
+#skills-panel .skills-empty{padding:18px 12px;text-align:center;border:1px dashed #333;border-radius:12px;background:#080808}
+#skills-panel .skills-empty strong{display:block;margin-bottom:5px}
+#skills-panel .skills-empty p{margin:0;color:#888;font-size:10px;line-height:1.6}
+#skills-panel .skills-help{margin-top:12px;background:#080808}
+#skills-panel .link{color:#cfcfcf}
+@media(max-width:420px){#skills-panel .skills-hero{padding:11px}#skills-panel .skills-mark{flex-basis:34px;height:34px}#skills-panel .skills-tools button{font-size:9px;padding:8px 6px}}\n\n/* Responsive side views: retain full panel content on phone, tablet, desktop and widget layouts. */
 @media(max-width:760px){
  #side-dock{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-width:none;height:min(68dvh,640px);min-width:0;max-height:calc(100dvh - 16px);border-radius:16px;z-index:2147482995}
  #side-dock .dock-head{min-height:48px;padding:10px 12px}
@@ -705,15 +738,15 @@ function buildActiveSkillContext(){
 async function renderBosleySkills(){
  const panel=document.getElementById("skills-panel");if(!panel)return;
  const skills=readBosleySkills();
- panel.innerHTML='<h3>Bosley Skills</h3><p class="mute">Import a skills.json, .md, or .txt file. Enable only the skills you want Bosley to consider in chat. Imported content is stored locally in this browser/device and sent with relevant chat requests when enabled; it does not grant new tools or permissions.</p>'+
- '<div class="form"><input id="bosley-skill-file" type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" aria-label="Choose a skill file"><div class="row"><button type="button" class="primary" id="bosley-skill-import">Import skill file</button><button type="button" id="bosley-skill-pack">Load official skill pack</button><button type="button" id="bosley-skill-export">Export skills</button></div><input id="bosley-skill-search" type="search" placeholder="Search skills…" aria-label="Search imported skills"><p class="status" id="bosley-skill-status" aria-live="polite">'+skills.length+' skill entries stored on this device.</p></div>'+
+ panel.innerHTML='<header class="skills-hero"><div class="skills-mark" aria-hidden="true">✳</div><div class="skills-hero-copy"><span class="skills-kicker">PERSONAL TOOLKIT</span><h3>Bosley Skills</h3><p>Choose the reusable guidance Bosley can draw on while chatting. Skills stay on this device and never grant extra permissions.</p></div><span class="skills-count" id="bosley-skill-count">LOCAL</span></header>'+
+ '<div class="form"><input id="bosley-skill-file" type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" aria-label="Choose a skill file"><div class="skills-tools"><button type="button" class="primary" id="bosley-skill-import">Import skill file</button><button type="button" id="bosley-skill-export">Export skills</button><button type="button" id="bosley-skill-pack">Load official skill pack</button></div><input id="bosley-skill-search" type="search" placeholder="⌕  Search skills…" aria-label="Search imported skills"><p class="status" id="bosley-skill-status" aria-live="polite">'+skills.length+' skill entries stored on this device.</p></div>'+
  '<div class="items" id="bosley-skill-list"></div>'+
- '<div class="item"><main><strong>How to use skills</strong><p class="mute">1. Import the pack or your own file. 2. Enable the relevant skill below. 3. Ask Bosley normally in chat, e.g. “Help me plan my day” or “Review this project change.” 4. Disable or delete skills you no longer need. Skill text is guidance only; it cannot unlock app control or bypass confirmation.</p></main></div>'+
+ '<div class="item skills-help"><main><strong>Quick start</strong><p class="mute">Import a pack, enable only the guidance you need, then ask Bosley normally. Search to find a skill, switch it off when it is not relevant, or export a backup. Imported text is guidance only and cannot unlock app control or bypass confirmation.</p></main></div>'+
  '<div class="actions"><a class="link" href="https://github.com/deji007-source/bosley-companion/tree/main/agent-pack" target="_blank" rel="noopener noreferrer">Browse source pack</a><button type="button" id="bosley-skill-clear">Clear imported skills</button></div>';
  const list=panel.querySelector("#bosley-skill-list");
  const drawSkillList=(query="")=>{
- const filtered=readBosleySkills().filter(s=>(s.title+" "+s.content+" "+(s.source||"")).toLowerCase().includes(query.toLowerCase()));
- if(!filtered.length)list.innerHTML='<p class="mute">'+(skills.length?'No skills match this search.':'No skills imported yet. Use “Load official skill pack” or choose a local file.')+'</p>';
+ const allSkills=readBosleySkills();const filtered=allSkills.filter(s=>(s.title+" "+s.content+" "+(s.source||"")).toLowerCase().includes(query.toLowerCase()));const count=panel.querySelector("#bosley-skill-count");if(count)count.textContent=allSkills.filter(s=>s.enabled).length+" ON";
+ if(!filtered.length)list.innerHTML='<div class="skills-empty"><strong>'+(query?'No matching skills':'Your toolkit is ready to grow')+'</strong><p>'+(query?'Try a different keyword or clear the search.':'Load the official pack or import a local skills file to get started.')+'</p></div>';
  else list.innerHTML=filtered.map(s=>'<div class="item"><main><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-skill-enable="'+escapeSkillText(s.id)+'" '+(s.enabled?'checked':'')+'><span><strong>'+escapeSkillText(s.title)+'</strong><small style="display:block;color:#888;margin-top:4px">'+escapeSkillText(s.source||"Imported")+'</small></span></label><p class="mute">'+escapeSkillText(s.content.slice(0,320))+(s.content.length>320?"…":"")+'</p></main><button type="button" data-skill-delete="'+escapeSkillText(s.id)+'" aria-label="Delete '+escapeSkillText(s.title)+'">Delete</button></div>').join("");
  list.querySelectorAll("[data-skill-enable]").forEach(el=>el.addEventListener("change",()=>{const all=readBosleySkills().map(s=>s.id===el.dataset.skillEnable?{...s,enabled:el.checked}:s);saveBosleySkills(all);const status=panel.querySelector("#bosley-skill-status");if(status)status.textContent=all.filter(s=>s.enabled).length+" skill(s) enabled for chat.";drawSkillList(panel.querySelector("#bosley-skill-search").value)}));
  list.querySelectorAll("[data-skill-delete]").forEach(el=>el.addEventListener("click",()=>{saveBosleySkills(readBosleySkills().filter(s=>s.id!==el.dataset.skillDelete));drawSkillList(panel.querySelector("#bosley-skill-search").value)}));

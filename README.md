@@ -71,7 +71,7 @@ The workflow builds an Electron installer that loads the hosted Bosley site. A s
 2. Open Bosley and select **Skills** in the workspace side dock.
 3. Choose **Load official skill pack** to import the repository's default skills, or choose **Import skill file** to load a local `.json`, `.md`, `.markdown`, or `.txt` file (maximum 100 KB).
 4. Enable the specific skills you want Bosley to consider. Ask for the task normally in chat; relevant enabled skill text is attached as optional context.
-5. Disable or delete skills when no longer needed. Imported skills are stored locally in that browser/device; they are not automatically synced to another device.
+5. Use **Search skills** to find an imported skill, **Export skills** to back up the local collection as JSON, or disable/delete entries you no longer need. Re-importing a skill with the same ID updates it rather than duplicating it. Imported skills are stored locally in that browser/device; they are not automatically synced to another device.
 
 The skills are guidance, not new tools or permissions. Imported text is treated as untrusted reference material, not system instructions; it cannot enable arbitrary shell commands, skip confirmations, or guarantee that a capability exists. Review files before importing them. If the official-pack button cannot reach GitHub, download `agent-pack/skills.json` from the repository and import it manually. The Windows workflow also publishes a separate `Bosley-Optional-Agent-Pack` artifact.
 

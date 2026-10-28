@@ -69,7 +69,7 @@ The workflow builds an Electron installer that loads the hosted Bosley site. A s
 
 The current Windows installer and Android debug APK include a native visual-guide overlay. It is designed to appear above other applications after the user selects a task's **Guide** action and confirms the prompt. Android also requires the system **Display over other apps** permission. The hosted website alone cannot display an overlay over unrelated apps.
 
-**Current limitation:** the tether target is an approximate screen position. The overlay provides visual guidance only; it does not identify arbitrary controls, click, type, or read the contents of other apps. A successful CI build confirms the package compiles, not that the overlay has been verified on every device.
+**Current limitations:** Windows can request an explicit screen capture and visually locate a likely control; Android's optional target finder searches visible accessibility labels only after the user enables Bosley's accessibility service. Both are best-effort matching, not guaranteed identification. The overlay provides visual guidance only; it does not click, type, or read the contents of other apps. A successful CI build confirms the package compiles, not that the overlay has been verified on every device.
 
 ### Install and smoke-test the current builds
 

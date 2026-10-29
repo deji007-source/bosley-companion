@@ -335,7 +335,7 @@ jobs:
             if (!response.ok) throw new Error('Bosley AI could not analyze the screen (HTTP ' + response.status + ').');
             const raw = await response.text();
             const chunks = [];
-            for (const line of raw.split(/\\r?\\n/)) {
+            for (const line of raw.split(/\r?\n/)) {
               if (!line.startsWith('data:')) continue;
               const data = line.slice(5).trim();
               if (!data || data === '[DONE]') continue;
@@ -863,7 +863,7 @@ jobs:
                 border-right: var(--widget-border-width, 1px) solid rgba(255,255,255,.88);
                 border-bottom: var(--widget-border-width, 1px) solid rgba(255,255,255,.88);
                 border-top: 0;
-                border-radius: 0 0 28px 28px;
+                border-radius: 0 0 999px 999px;
                 background: #030303;
                 color: #fff;
                 cursor: pointer;
@@ -882,7 +882,7 @@ jobs:
                 position: absolute;
                 z-index: -1;
                 inset: 0 -1px -1px;
-                border-radius: 0 0 29px 29px;
+                border-radius: 0 0 999px 999px;
                 background: #030303;
                 box-shadow: inset 0 -1px 0 rgba(255,255,255,.08);
               }
@@ -894,8 +894,8 @@ jobs:
 
               .wordmark { display: none; }
               /* Island touches the physical top edge: no top border or floating gap. */
-              button { width: 260px; height: 36px; padding: 2px 8px; border-left: 1px solid rgba(255,255,255,.72); border-right: 1px solid rgba(255,255,255,.72); border-bottom: 1px solid rgba(255,255,255,.72); border-top: 0; border-radius: 0 0 24px 24px; gap: 0; background: rgba(5,5,5,.99); box-shadow: 0 5px 18px rgba(0,0,0,.34), 0 0 12px rgba(255,255,255,.06); }
-              button::before { border-radius: 0 0 24px 24px; }
+              button { width: 260px; height: 18px; padding: 0 8px; border-left: 1px solid rgba(255,255,255,.72); border-right: 1px solid rgba(255,255,255,.72); border-bottom: 1px solid rgba(255,255,255,.72); border-top: 0; border-radius: 0 0 999px 999px; gap: 0; background: rgba(5,5,5,.99); box-shadow: 0 5px 18px rgba(0,0,0,.34), 0 0 12px rgba(255,255,255,.06); }
+              button::before { border-radius: 0 0 999px 999px; }
               svg { display: none !important; }
 
               button:hover {
@@ -937,9 +937,9 @@ jobs:
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 220, height: 32 },
-                default: { width: 260, height: 36 },
-                wide: { width: 300, height: 40 }
+                compact: { width: 220, height: 16 },
+                default: { width: 260, height: 18 },
+                wide: { width: 300, height: 20 }
               };
               function applyAppearance(value) {
                 if (!value) return;

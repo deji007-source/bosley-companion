@@ -112,6 +112,10 @@ assert.ok(windowsWorkflow.includes("guideTargetWindow"), "Windows guide must exp
 assert.ok(windowsWorkflow.includes("Drag this pencil onto the app control"), "Windows tether endpoint must communicate that the pencil is draggable");
 assert.ok(windowsWorkflow.includes("&#9998;"), "Windows tether endpoint must use the pencil icon instead of a plain dot");
 assert.ok(windowsWorkflow.includes("Segoe UI Symbol"), "Windows pencil endpoint must remain visually legible at compact overlay size");
+assert.ok(windowsWorkflow.includes("cursor:grab"), "Windows tether must advertise that its pencil endpoint is draggable");
+assert.ok(windowsWorkflow.includes("cursor:grabbing"), "Windows tether must show a grabbing cursor while dragged");
+assert.ok(windowsWorkflow.includes("pointer-events:none"), "Pencil glyph must not interfere with native overlay dragging");
+assert.ok(windowsWorkflow.includes("body:hover div"), "Pencil endpoint must provide a subtle hover affordance");
 assert.ok(windowsWorkflow.includes("setTarget('+targetX+','+targetY+')"), "Windows tether endpoint must track target marker movement");
 assert.ok(windowsWorkflow.includes("#guideOutline{stroke:#000;stroke-width:7"), "Windows tether must have a black outline for white screens");
 assert.ok(androidInstaller.includes("paint.setColor(Color.BLACK);paint.setStrokeWidth(dp(6))"), "Android tether must have a black outline for white screens");

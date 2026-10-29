@@ -107,6 +107,10 @@ for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);
 }
 assert.ok(windowsWorkflow.includes("function openVisualGuide(payload = {})"), "Missing Windows system-level guide overlay");
+assert.ok(windowsWorkflow.includes("border-radius: 0 0 999px 999px;"), "Windows floating widget must have deeply rounded lower edges");
+assert.ok(windowsWorkflow.includes("button { width: 260px; height: 18px;"), "Rendered widget height must match its slim native window bounds");
+assert.ok(windowsWorkflow.includes("compact: { width: 220, height: 16 },\n                default: { width: 260, height: 18 },\n                wide: { width: 300, height: 20 }"), "All rendered widget sizes must match the slim native window bounds");
+assert.ok(windowsWorkflow.includes("raw.split(/\\r?\\n/)"), "Find-target must split SSE responses on actual newline characters");
 assert.ok(windowsWorkflow.includes("setIgnoreMouseEvents(true, { forward: true })"), "Windows tether layer should not block clicks in other apps");
 assert.ok(windowsWorkflow.includes("guideTargetWindow"), "Windows guide must expose a draggable target marker");
 assert.ok(windowsWorkflow.includes("Drag this pencil onto the app control"), "Windows tether endpoint must communicate that the pencil is draggable");

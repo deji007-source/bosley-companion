@@ -341,7 +341,18 @@ jobs:
               if (!data || data === '[DONE]') continue;
               try { const packet = JSON.parse(data); const delta = packet.choices?.[0]?.delta?.content; if (typeof delta === 'string') chunks.push(delta); } catch {}
             }
-            let answer = chunks.join('').trim().replace(/^\`\`\`(?:json)?\\s*/i, '').replace(/\\s*\`\`\`$/, '');
+            let answer = chunks.join('').trim();
+            // Some gateway configurations return a single JSON response instead of SSE.
+            // Accept both response shapes so Find target doesn't fail on an otherwise valid answer.
+            if (!answer) {
+              try {
+                const packet = JSON.parse(raw);
+                const message = packet.choices?.[0]?.message?.content ?? packet.message?.content ?? packet.content;
+                if (typeof message === 'string') answer = message.trim();
+                else if (Array.isArray(message)) answer = message.map(part => typeof part === 'string' ? part : (part.text || '')).join('').trim();
+              } catch {}
+            }
+            answer = answer.replace(/^\`\`\`(?:json)?\\s*/i, '').replace(/\\s*\`\`\`$/, '');
             const first = answer.indexOf('{'), last = answer.lastIndexOf('}');
             if (first < 0 || last <= first) throw new Error('Bosley returned no usable target coordinates. Try again with the target app visible.');
             const result = JSON.parse(answer.slice(first, last + 1));

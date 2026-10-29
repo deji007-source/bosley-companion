@@ -115,6 +115,15 @@ assert.ok(windowsWorkflow.includes("Segoe UI Symbol"), "Windows pencil endpoint 
 assert.ok(windowsWorkflow.includes("cursor:grab"), "Windows tether must advertise that its pencil endpoint is draggable");
 assert.ok(windowsWorkflow.includes("cursor:grabbing"), "Windows tether must show a grabbing cursor while dragged");
 assert.ok(windowsWorkflow.includes("pointer-events:none"), "Pencil glyph must not interfere with native overlay dragging");
+assert.ok(windowsWorkflow.includes("compact: { width: 220, height: 16 }"), "Compact Windows floating widget must be half-height while preserving width");
+assert.ok(windowsWorkflow.includes("default: { width: 260, height: 18 }"), "Default Windows floating widget must be half-height while preserving width");
+assert.ok(windowsWorkflow.includes("wide: { width: 300, height: 20 }"), "Wide Windows floating widget must be half-height while preserving width");
+assert.ok(windowsWorkflow.includes("width: 44, height: 44"), "Find-target pencil overlay must have a larger 44px hit/visual area");
+assert.ok(windowsWorkflow.includes('font:38px "Segoe UI Symbol",sans-serif;font-weight:900'), "Find-target pencil must be larger and bolder");
+assert.ok(windowsWorkflow.includes("guideTargetWindow.setPosition(Math.round(bounds.x + x - 22), Math.round(bounds.y + y - 22))"), "AI-detected target must center the enlarged pencil endpoint on the control");
+assert.ok(windowsWorkflow.includes('location.href="bosley://find-target"'), "Guide card must invoke the real find-target flow");
+assert.ok(windowsWorkflow.includes("guideInstructionForTarget"), "Find-target analysis must use the active guide instruction");
+
 assert.ok(windowsWorkflow.includes("body:hover div"), "Pencil endpoint must provide a subtle hover affordance");
 assert.ok(windowsWorkflow.includes("setTarget('+targetX+','+targetY+')"), "Windows tether endpoint must track target marker movement");
 assert.ok(windowsWorkflow.includes("#guideOutline{stroke:#000;stroke-width:7"), "Windows tether must have a black outline for white screens");

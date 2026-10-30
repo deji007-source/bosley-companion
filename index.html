@@ -918,7 +918,8 @@ async function reviewAndSendOfflineDraft(id){
 }
 document.addEventListener("click",event=>{
  const send=event.target?.closest?.("[data-offline-send]"),remove=event.target?.closest?.("[data-offline-delete]");
- if(send)reviewAndSendOfflineDraft(send.dataset.offlineSend);\n if(event.target?.closest?.("#offline-import-local"))importLocalOfflineCommandDrafts();
+ if(send)reviewAndSendOfflineDraft(send.dataset.offlineSend);
+ if(event.target?.closest?.("#offline-import-local"))importLocalOfflineCommandDrafts();
  if(remove){saveOfflineCommandQueue(readOfflineCommandQueue().filter(x=>x.id!==remove.dataset.offlineDelete));renderOfflineCommandQueue()}
 });
 function buildActiveSkillContext(){

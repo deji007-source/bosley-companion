@@ -164,6 +164,10 @@ assert.ok(androidInstaller.includes("TYPE_APPLICATION_OVERLAY"), "Android guide 
 assert.ok(androidInstaller.includes("public void speakText(PluginCall call)"), "Missing native Android text-to-speech bridge");
 assert.ok(androidInstaller.includes("public void stopSpeaking(PluginCall call)"), "Missing native Android speech cancellation bridge");
 assert.ok(androidInstaller.includes("TextToSpeech.QUEUE_FLUSH"), "Native Android speech should replace queued speech");
+assert.ok(html.includes("const stopWords=new Set(["), "Knowledge graph must filter generic stop words before creating links");
+assert.ok(html.includes('x.length>=6'), "Knowledge graph must require a meaningful long keyword or multiple shared terms");
+assert.ok(html.includes("edges:edges.slice(0,160)"), "Knowledge graph relationship generation must remain bounded");
+assert.ok(html.includes("edges.sort((a,b)=>b.score-a.score"), "Knowledge graph must prioritize stronger keyword relationships");
 console.log("Bosley regression checks passed: " + inlineScripts.length + " inline script(s), " + contracts.length + " UI contracts, and Android TTS bridge contracts.");
 
 assert.ok(windowsWorkflow.includes("findVisualGuideTarget"), "Windows guide must provide screen-aware target detection");

@@ -891,7 +891,32 @@ if(screenButton)screenButton.onclick=async()=>{
  finally{screenButton.disabled=false}
 };
 $("#removeimage").onclick=clearImageAttachment;
-$("#camera-input").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){note("Please choose an image file.");clearImageAttachment();return}if(file.size>15*1024*1024){note("That image is too large. Choose an image under 15 MB.");clearImageAttachment();return}try{const source=await createImageBitmap(file);const scale=Math.min(1,1280/Math.max(source.width,source.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));const ctx=canvas.getContext("2d");if(!ctx)throw Error("Image processing is unavailable.");ctx.drawImage(source,0,0,canvas.width,canvas.height);source.close?.();pendingImageData=canvas.toDataURL("image/jpeg",0.82);$("#imagepreview").src=pendingImageData;$("#imageattachment").hidden=false}catch(error){clearImageAttachment();note("I couldn't prepare that image: "+String(error?.message||"unsupported image").slice(0,160))}});
+$("#camera-input").addEventListener("change",async e=>{
+ const file=e.target.files?.[0];
+ if(!file)return;
+ if(!file.type.startsWith("image/")){note("Please choose an image file.");clearImageAttachment();return}
+ if(file.size>15*1024*1024){note("That image is too large. Choose an image under 15 MB.");clearImageAttachment();return}
+ let source=null;
+ try{
+  source=await createImageBitmap(file);
+  if(!source.width||!source.height||source.width*source.height>40000000)throw Error("That image has too many pixels to process safely. Choose a smaller image.");
+  const scale=Math.min(1,1280/Math.max(source.width,source.height));
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(source.width*scale));
+  canvas.height=Math.max(1,Math.round(source.height*scale));
+  const ctx=canvas.getContext("2d");
+  if(!ctx)throw Error("Image processing is unavailable.");
+  ctx.drawImage(source,0,0,canvas.width,canvas.height);
+  const prepared=canvas.toDataURL("image/jpeg",0.82);
+  if(!prepared||prepared==="data:,")throw Error("The image could not be encoded.");
+  pendingImageData=prepared;
+  $("#imagepreview").src=pendingImageData;
+  $("#imageattachment").hidden=false;
+ }catch(error){
+  clearImageAttachment();
+  note("I couldn't prepare that image: "+String(error?.message||"unsupported image").slice(0,160));
+ }finally{source?.close?.()}
+});
 $("#form").onsubmit=e=>{e.preventDefault();const i=$("#in"),t=i.value.trim(),img=pendingImageData;if(!t&&!img)return;i.value="";clearImageAttachment();const prompt=voiceMode==="edit"&&t?"Please edit the text below according to my request. Preserve its meaning unless I explicitly ask otherwise. If my requested change is unclear, ask a clarifying question.\n\n"+t:t;send(prompt,img)};
 $("#new").onclick=()=>{history=[];conversationId=null;chat.innerHTML="";stopSpeak();addMsg("bosley","New conversation. What's up?")};
 

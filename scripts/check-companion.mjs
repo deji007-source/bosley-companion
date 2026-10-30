@@ -104,6 +104,11 @@ const contracts = [
   ["Widget preference sync preserves existing layout data", "bosley_companion_settings:chosen"],
   ["Widget preference sync uses authenticated account", "sessionData?.session?.user?.id!==uid"],
   ["Widget preference conflict resolution uses timestamps", "remoteTime>local.updatedAt"],
+  ["Cloud-restored appearance values are validated", "function normalizeFaceSettings(value={})"],
+  ["Cloud-restored appearance refreshes visible controls", "function syncFaceSettingsControls(v)"],
+  ["Remote preference restore refreshes form and voice selector", "syncFaceSettingsControls(chosen.appearance)"],
+  ["Synced widget dimensions reject unsupported values", '["compact","default","wide"].includes(v.widgetSize)'],
+
   ["Appearance changes schedule cloud sync", "scheduleCompanionSettingsSync()"],
   ["Voice profile changes schedule cloud sync", 'localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};scheduleCompanionSettingsSync()'],
   ["Account sign-in restores companion preferences", "syncPlannerTasks();syncCompanionSettings()"],

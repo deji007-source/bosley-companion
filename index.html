@@ -690,6 +690,8 @@ async function syncCompanionSettings(){
    chosen={...local,updatedAt:Math.max(Date.now(),local.updatedAt+1)};
    persistCompanionSettings(chosen);
   }
+  const {data:writeSession,error:writeSessionError}=await db.auth.getSession();
+  if(writeSessionError||writeSession?.session?.user?.id!==uid||user?.id!==uid)throw Error("Account changed during settings sync. Sign in again and retry.");
   const layout={...(row?.layout&&typeof row.layout==="object"?row.layout:{}),bosley_companion_settings:chosen};
   const {error:saveError}=await db.from("user_widget_layouts").upsert({user_id:uid,layout,pinned:Array.isArray(row?.pinned)?row.pinned:[],floating:Array.isArray(row?.floating)?row.floating:[],updated_at:new Date().toISOString()},{onConflict:"user_id"});
   if(saveError)throw saveError;

@@ -503,7 +503,7 @@ function renderBosleyKnowledgeGraph(){
  const visible=graph.nodes.filter(n=>!query||(n.title+" "+n.detail+" "+n.terms).toLowerCase().includes(query)).slice(0,80);
  status.textContent=graph.nodes.length+" local items · "+graph.edges.length+" shared-keyword links · LOCAL ONLY";
  target.innerHTML=visible.map(n=>{
-  const links=graph.edges.filter(e=>e.a===n.id||e.b===n.id).slice(0,4);
+  const links=graph.edges.filter(e=>e.a===n.key||e.b===n.key).slice(0,4);
   const linked=links.map(e=>{const key=e.a===n.key?e.b:e.a;const other=graph.nodes.find(x=>x.key===key);return other?esc(other.title)+" ("+esc(e.reason)+")":""}).filter(Boolean);
   return '<article class="item"><main><strong>'+esc(n.title)+'</strong><p>'+esc(n.type.toUpperCase())+' · '+esc(n.detail)+'</p><small>'+(linked.length?"Related: "+linked.join(" · "):"No related items yet")+'</small></main></article>'
  }).join("")||'<p class="mute">No matching local items. Save a task, memory or workflow to build the graph.</p>';

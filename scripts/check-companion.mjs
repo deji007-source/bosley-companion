@@ -103,6 +103,7 @@ const contracts = [
   ["Account-scoped widget preference storage", 'from("user_widget_layouts")'],
   ["Widget preference sync preserves existing layout data", "bosley_companion_settings:chosen"],
   ["Widget preference sync uses authenticated account", "sessionData?.session?.user?.id!==uid"],
+  ["Widget preference sync rechecks account before writing", "writeSession?.session?.user?.id!==uid||user?.id!==uid"],
   ["Widget preference conflict resolution uses timestamps", "remoteTime>local.updatedAt"],
   ["Cloud-restored appearance values are validated", "function normalizeFaceSettings(value={})"],
   ["Cloud-restored appearance refreshes visible controls", "function syncFaceSettingsControls(v)"],

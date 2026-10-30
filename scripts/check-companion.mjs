@@ -200,6 +200,13 @@ assert.ok(html.includes('data-offline-send="'), "Offline drafts must expose an e
 assert.ok(html.includes("if(!navigator.onLine)"), "Offline drafts must not be sent while the browser is offline");
 assert.ok(html.includes('confirm("Send this automation request to your connected device?'), "Sending an offline draft must require confirmation");
 assert.ok(html.includes("They are never executed automatically when you reconnect."), "Offline reconnect must never auto-execute queued commands");
+assert.ok(html.includes('id="knowledge-search"'), "Activity workspace must expose local knowledge graph search");
+assert.ok(html.includes('id="knowledge-items"'), "Activity workspace must expose local knowledge graph results");
+assert.ok(html.includes("function buildBosleyKnowledgeGraph()"), "Knowledge graph must derive relationships from local workspace data");
+assert.ok(html.includes("function renderBosleyKnowledgeGraph()"), "Knowledge graph must render searchable local relationships");
+assert.ok(html.includes("BOSLEY_KNOWLEDGE_GRAPH_VERSION"), "Knowledge graph must be versioned");
+assert.ok(html.includes('LOCAL ONLY'), "Knowledge graph must disclose that its index remains local");
+assert.ok(html.includes('if(typeof renderBosleyKnowledgeGraph==="function")renderBosleyKnowledgeGraph()'), "Planner and memory changes must refresh the local knowledge graph");
 assert.ok(html.includes("BOSLEY_CONTEXT_ENGINE_KEY"), "Context Engine preference must persist locally");
 assert.ok(html.includes("Active planner tasks:"), "Context Engine must include active planner tasks when enabled");
 assert.ok(html.includes("Recent Bosley activity:"), "Context Engine must include bounded recent activity when enabled");

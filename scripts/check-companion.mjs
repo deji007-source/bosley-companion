@@ -176,6 +176,14 @@ assert.ok(html.includes('id="bosley-skill-file"'), "Skills panel must accept a u
 assert.ok(html.includes("function buildActiveSkillContext()"), "Enabled skills must be included as optional chat context");
 assert.ok(html.includes('id="context-engine-enabled"'), "Context Engine must be explicitly opt-in");
 assert.ok(html.includes("function buildContextEngineContext()"), "Context Engine must build task-aware chat context");
+assert.ok(html.includes('id="handoff-save"'), "Planner must expose an explicit handoff save action");
+assert.ok(html.includes('id="handoff-restore"'), "Planner must expose an explicit handoff restore action");
+assert.ok(html.includes("function saveHandoffSnapshot()"), "Handoff must capture a bounded task snapshot");
+assert.ok(html.includes("function restoreHandoffSnapshot()"), "Handoff must restore a saved task snapshot");
+assert.ok(html.includes("bosley_handoff:snapshot"), "Handoff snapshot must sync through the authenticated user layout");
+assert.ok(html.includes("buildHandoffContext()"), "Restored handoff must be available to the opt-in Context Engine");
+assert.ok(html.includes("BOSLEY_HANDOFF_KEY"), "Handoff must retain a local fallback");
+
 assert.ok(html.includes("BOSLEY_CONTEXT_ENGINE_KEY"), "Context Engine preference must persist locally");
 assert.ok(html.includes("Active planner tasks:"), "Context Engine must include active planner tasks when enabled");
 assert.ok(html.includes("Recent Bosley activity:"), "Context Engine must include bounded recent activity when enabled");

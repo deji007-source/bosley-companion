@@ -477,14 +477,14 @@ if("speechSynthesis"in window)speechSynthesis.onvoiceschanged=()=>chooseBosleyVo
 const S={listening:false,speaking:false,busy:false,offline:!navigator.onLine,errUntil:0,backend:null};
 const ACTIVITY_KEY="bosley_activity_v1",MEMORY_KEY="bosley_local_memory_v1";let activityTasks=[],activityEvents=[],localMemories=[];
 function readActivity(){try{const raw=JSON.parse(localStorage.getItem(ACTIVITY_KEY)||"{}");activityTasks=Array.isArray(raw.tasks)?raw.tasks.filter(x=>x&&typeof x.id==="string"&&typeof x.title==="string").slice(0,60):[];activityEvents=Array.isArray(raw.events)?raw.events.filter(x=>x&&typeof x.id==="string"&&typeof x.message==="string").slice(0,40):[]}catch{activityTasks=[];activityEvents=[]}try{const memories=JSON.parse(localStorage.getItem(MEMORY_KEY)||"[]");localMemories=Array.isArray(memories)?memories.filter(x=>x&&typeof x.id==="string"&&typeof x.title==="string"&&typeof x.body==="string").slice(0,100):[]}catch{localMemories=[]}}
-function saveActivity(){try{localStorage.setItem(ACTIVITY_KEY,JSON.stringify({tasks:activityTasks.slice(0,60),events:activityEvents.slice(0,40)}))}catch{}}
-function saveLocalMemories(){try{localStorage.setItem(MEMORY_KEY,JSON.stringify(localMemories.slice(0,100)));return true}catch{return false}}
+function saveActivity(){try{localStorage.setItem(ACTIVITY_KEY,JSON.stringify({tasks:activityTasks.slice(0,60),events:activityEvents.slice(0,40)}))}catch{}if(typeof renderBosleyKnowledgeGraph==="function")renderBosleyKnowledgeGraph()}
+function saveLocalMemories(){try{localStorage.setItem(MEMORY_KEY,JSON.stringify(localMemories.slice(0,100)));if(typeof renderBosleyKnowledgeGraph==="function")renderBosleyKnowledgeGraph();return true}catch{return false}}
 function renderLocalMemories(){const el=$("#memoryitems");if(!el)return;const q=String($("#memorysearch")?.value||"").trim().toLowerCase();const rows=localMemories.filter(m=>!q||(m.title+" "+m.body).toLowerCase().includes(q));el.innerHTML=rows.map(m=>'<article class="item"><main><strong>'+esc(m.title)+'</strong><p>'+esc(m.body)+'</p><small>'+esc(new Date(m.createdAt).toLocaleString())+' · LOCAL ONLY</small></main><button type="button" data-memory-delete="'+esc(m.id)+'" aria-label="Delete saved memory">Delete</button></article>').join("")||'<p class="mute">No matching saved memories.</p>'}
 
 const BOSLEY_KNOWLEDGE_GRAPH_VERSION=1;
 function buildBosleyKnowledgeGraph(){
  const nodes=[];
- const add=(type,id,title,detail,terms)=>nodes.push({type,id,title:String(title||"").slice(0,120),detail:String(detail||"").slice(0,180),terms:String(terms||"").toLowerCase()});
+ const add=(type,id,title,detail,terms)=>nodes.push({type,id,key:type+":"+id,title:String(title||"").slice(0,120),detail:String(detail||"").slice(0,180),terms:String(terms||"").toLowerCase()});
  (Array.isArray(activityTasks)?activityTasks:[]).forEach(t=>add("task",t.id,t.title,(t.kind||"Task")+" · "+(t.status||"active")+(t.project?" · "+t.project:""),[t.title,t.kind,t.project,t.priority].join(" ")));
  (Array.isArray(localMemories)?localMemories:[]).forEach(m=>add("memory",m.id,m.title,m.body,[m.title,m.body].join(" ")));
  let workflows=[];try{workflows=getWorkflows()}catch{}
@@ -493,7 +493,7 @@ function buildBosleyKnowledgeGraph(){
  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
   const a=nodes[i],b=nodes[j],at=new Set(a.terms.split(/[^a-z0-9]+/).filter(x=>x.length>2)),bt=new Set(b.terms.split(/[^a-z0-9]+/).filter(x=>x.length>2));
   const shared=[...at].filter(x=>bt.has(x)).slice(0,4);
-  if(shared.length)edges.push({a:a.id,b:b.id,reason:shared.join(", ")});
+  if(shared.length)edges.push({a:a.key,b:b.key,reason:shared.join(", ")});
  }
  return {version:BOSLEY_KNOWLEDGE_GRAPH_VERSION,generatedAt:new Date().toISOString(),nodes,edges};
 }
@@ -504,7 +504,7 @@ function renderBosleyKnowledgeGraph(){
  status.textContent=graph.nodes.length+" local items · "+graph.edges.length+" shared-keyword links · LOCAL ONLY";
  target.innerHTML=visible.map(n=>{
   const links=graph.edges.filter(e=>e.a===n.id||e.b===n.id).slice(0,4);
-  const linked=links.map(e=>{const id=e.a===n.id?e.b:e.a;const other=graph.nodes.find(x=>x.id===id);return other?esc(other.title)+" ("+esc(e.reason)+")":""}).filter(Boolean);
+  const linked=links.map(e=>{const key=e.a===n.key?e.b:e.a;const other=graph.nodes.find(x=>x.key===key);return other?esc(other.title)+" ("+esc(e.reason)+")":""}).filter(Boolean);
   return '<article class="item"><main><strong>'+esc(n.title)+'</strong><p>'+esc(n.type.toUpperCase())+' · '+esc(n.detail)+'</p><small>'+(linked.length?"Related: "+linked.join(" · "):"No related items yet")+'</small></main></article>'
  }).join("")||'<p class="mute">No matching local items. Save a task, memory or workflow to build the graph.</p>';
 }
@@ -1258,7 +1258,7 @@ const autoActions=[
 ];
 function workflowStorageKey(){return user?.id?AUTO_KEY+":"+user.id:AUTO_KEY}
 function getWorkflows(){try{const a=JSON.parse(localStorage.getItem(workflowStorageKey())||"[]");return Array.isArray(a)?a:[]}catch{return []}}
-function saveWorkflows(a){try{localStorage.setItem(workflowStorageKey(),JSON.stringify(a));return true}catch(e){autoLog("error","Could not save workflows: "+e.message);return false}}
+function saveWorkflows(a){try{localStorage.setItem(workflowStorageKey(),JSON.stringify(a));if(typeof renderBosleyKnowledgeGraph==="function")renderBosleyKnowledgeGraph();return true}catch(e){autoLog("error","Could not save workflows: "+e.message);return false}}
 let workflowSyncUser=null,workflowSyncPromise=null;
 async function syncWorkflows(){
  if(!db||!user)return [];
@@ -1522,6 +1522,9 @@ function startLaptopCommandListener(activeUser){
   });
 }
 
+renderBosleyKnowledgeGraph();
+renderOfflineCommandQueue();
+initializeContextEngine();
 eyes();
 })();
 </script></body></html>

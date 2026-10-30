@@ -489,13 +489,20 @@ function buildBosleyKnowledgeGraph(){
  (Array.isArray(localMemories)?localMemories:[]).forEach(m=>add("memory",m.id,m.title,m.body,[m.title,m.body].join(" ")));
  let workflows=[];try{workflows=getWorkflows()}catch{}
  workflows.forEach((w,i)=>add("workflow",String(w.id||w.name||i),w.name,(Array.isArray(w.steps)?w.steps.length:0)+" saved steps",(w.name||"")+" "+(w.steps||[]).map(s=>s.instruction||s.action||s.value||"").join(" ")));
+ const stopWords=new Set(["the","and","for","with","from","this","that","then","when","where","what","how","why","you","your","our","are","was","were","will","would","could","should","have","has","had","into","onto","about","after","before","over","under","use","using","used","make","made","get","set","new","all","any","not","but","can","its","their","them","they","his","her","she","him","who","one","two","three","task","tasks","memory","memories","workflow","workflows","bosley","saved","local","device"]);
+ const tokenize=value=>new Set(String(value||"").toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>2&&!stopWords.has(x)));
+ const termSets=nodes.map(n=>tokenize(n.terms));
  const edges=[];
  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
-  const a=nodes[i],b=nodes[j],at=new Set(a.terms.split(/[^a-z0-9]+/).filter(x=>x.length>2)),bt=new Set(b.terms.split(/[^a-z0-9]+/).filter(x=>x.length>2));
-  const shared=[...at].filter(x=>bt.has(x)).slice(0,4);
-  if(shared.length)edges.push({a:a.key,b:b.key,reason:shared.join(", ")});
+  const shared=[...termSets[i]].filter(x=>termSets[j].has(x)).sort((x,y)=>y.length-x.length);
+  const strong=shared.filter(x=>x.length>=6);
+  if(shared.length>=2||strong.length>=1){
+   const score=shared.length+strong.length;
+   edges.push({a:nodes[i].key,b:nodes[j].key,reason:shared.slice(0,4).join(", "),score});
+  }
  }
- return {version:BOSLEY_KNOWLEDGE_GRAPH_VERSION,generatedAt:new Date().toISOString(),nodes,edges};
+ edges.sort((a,b)=>b.score-a.score||a.a.localeCompare(b.a)||a.b.localeCompare(b.b));
+ return {version:BOSLEY_KNOWLEDGE_GRAPH_VERSION,generatedAt:new Date().toISOString(),nodes,edges:edges.slice(0,160)};
 }
 function renderBosleyKnowledgeGraph(){
  const target=$("#knowledge-items"),status=$("#knowledge-status");if(!target||!status)return;

@@ -618,9 +618,27 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 const FACE_KEY="bosley_face_settings_v1";
 const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default"};
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
-function applyFaceSettings(v){
+function normalizeFaceSettings(value={}){
+ const v={...FACE_DEFAULTS,...(value&&typeof value==="object"?value:{})};
+ return {
+  preset:["incognito","calm","alert"].includes(v.preset)?v.preset:FACE_DEFAULTS.preset,
+  size:["compact","default","large"].includes(v.size)?v.size:FACE_DEFAULTS.size,
+  hat:["white","soft","hidden"].includes(v.hat)?v.hat:FACE_DEFAULTS.hat,
+  eyeShape:["pill","soft-square"].includes(v.eyeShape)?v.eyeShape:FACE_DEFAULTS.eyeShape,
+  eyeGap:["close","normal","wide"].includes(v.eyeGap)?v.eyeGap:FACE_DEFAULTS.eyeGap,
+  widgetEdge:["soft","balanced","sharp"].includes(v.widgetEdge)?v.widgetEdge:FACE_DEFAULTS.widgetEdge,
+  widgetBorder:["thin","medium","bold"].includes(v.widgetBorder)?v.widgetBorder:FACE_DEFAULTS.widgetBorder,
+  widgetSize:["compact","default","wide"].includes(v.widgetSize)?v.widgetSize:FACE_DEFAULTS.widgetSize
+ };
+}
+function syncFaceSettingsControls(v){
+ const fields={facepreset:v.preset,facesize:v.size,hatstyle:v.hat,eyeshape:v.eyeShape,eyegap:v.eyeGap,widgetedge:v.widgetEdge,widgetborder:v.widgetBorder,widgetsize:v.widgetSize,voiceprofile:voiceProfile};
+ for(const [id,value] of Object.entries(fields)){const field=$("#"+id);if(field)field.value=value}
+}
+function applyFaceSettings(value){
+ const v=normalizeFaceSettings(value);
  H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
- H.dataset.eyeShape=v.eyeShape||"pill";H.dataset.eyeGap=v.eyeGap||"normal";H.dataset.widgetEdge=v.widgetEdge||"soft";H.dataset.widgetBorder=v.widgetBorder||"thin";H.dataset.widgetSize=v.widgetSize||"default";
+ H.dataset.eyeShape=v.eyeShape;H.dataset.eyeGap=v.eyeGap;H.dataset.widgetEdge=v.widgetEdge;H.dataset.widgetBorder=v.widgetBorder;H.dataset.widgetSize=v.widgetSize;
  syncNativeWidgetAppearance(v);
 }
 async function syncNativeWidgetAppearance(v){
@@ -666,7 +684,8 @@ async function syncCompanionSettings(){
   let chosen=local;
   if(validRemote&&remoteTime>local.updatedAt){
    chosen={appearance:{...FACE_DEFAULTS,...remote.appearance},voiceProfile:["jarvis","natural","system"].includes(remote.voiceProfile)?remote.voiceProfile:"jarvis",updatedAt:remoteTime};
-   persistCompanionSettings(chosen);voiceProfile=chosen.voiceProfile;applyFaceSettings(chosen.appearance);
+   chosen.appearance=normalizeFaceSettings(chosen.appearance);
+   persistCompanionSettings(chosen);voiceProfile=chosen.voiceProfile;applyFaceSettings(chosen.appearance);syncFaceSettingsControls(chosen.appearance);
   }else{
    chosen={...local,updatedAt:Math.max(Date.now(),local.updatedAt+1)};
    persistCompanionSettings(chosen);

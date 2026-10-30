@@ -207,6 +207,7 @@ assert.ok(html.includes('id="knowledge-search"'), "Activity workspace must expos
 assert.ok(html.includes('id="knowledge-items"'), "Activity workspace must expose local knowledge graph results");
 assert.ok(html.includes("function buildBosleyKnowledgeGraph()"), "Knowledge graph must derive relationships from local workspace data");
 assert.ok(html.includes("function renderBosleyKnowledgeGraph()"), "Knowledge graph must render searchable local relationships");
+assert.ok(html.includes("graph.edges.filter(e=>e.a===n.key||e.b===n.key)"), "Knowledge graph must resolve edges using collision-safe composite node keys");
 assert.ok(html.includes("BOSLEY_KNOWLEDGE_GRAPH_VERSION"), "Knowledge graph must be versioned");
 assert.ok(html.includes('LOCAL ONLY'), "Knowledge graph must disclose that its index remains local");
 assert.ok(html.includes('if(typeof renderBosleyKnowledgeGraph==="function")renderBosleyKnowledgeGraph()'), "Planner and memory changes must refresh the local knowledge graph");

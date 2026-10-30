@@ -201,6 +201,9 @@ assert.ok(html.includes('function importLocalOfflineCommandDrafts()'), "Local dr
 assert.ok(html.includes('if(!user?.id){addMsg("bosley","Sign in before importing local drafts.'), "Local drafts must not be imported into an anonymous or other account queue");
 assert.ok(html.includes('Nothing will be sent or executed.'), "Import confirmation must state that importing does not execute commands");
 assert.ok(html.includes('localStorage.removeItem(BOSLEY_OFFLINE_QUEUE_KEY+":local")'), "Local drafts must be cleared only after account-queue save succeeds");
+assert.ok(html.includes("const merged=[...current],remaining=[];let imported=0"), "Offline import must track capacity and retain unimported drafts");
+assert.ok(html.includes('if(merged.length>=30){remaining.push(draft);continue}'), "A full account queue must not cause local drafts to be dropped");
+assert.ok(html.includes('if(remaining.length)localStorage.setItem(BOSLEY_OFFLINE_QUEUE_KEY+":local",JSON.stringify(remaining))'), "Drafts that do not fit must remain in the local queue");
 assert.ok(html.includes('No command was sent.'), "Draft import must not imply that commands were sent");
 assert.ok(html.includes("renderOfflineCommandQueue();startLaptopCommandListener(user)"), "Initial auth restoration must refresh the account-scoped offline queue");
 assert.ok(html.includes("renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user)"), "Sign-in and sign-out transitions must refresh the account-scoped offline queue");

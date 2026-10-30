@@ -505,10 +505,11 @@ function renderBosleyKnowledgeGraph(){
  target.innerHTML=visible.map(n=>{
   const links=graph.edges.filter(e=>e.a===n.key||e.b===n.key).slice(0,4);
   const linked=links.map(e=>{const key=e.a===n.key?e.b:e.a;const other=graph.nodes.find(x=>x.key===key);return other?esc(other.title)+" ("+esc(e.reason)+")":""}).filter(Boolean);
-  return '<article class="item"><main><strong>'+esc(n.title)+'</strong><p>'+esc(n.type.toUpperCase())+' · '+esc(n.detail)+'</p><small>'+(linked.length?"Related: "+linked.join(" · "):"No related items yet")+'</small></main></article>'
+  return '<article class="item"><main><strong>'+esc(n.title)+'</strong><p>'+esc(n.type.toUpperCase())+' · '+esc(n.detail)+'</p><div class="actions">'+links.map(e=>{const key=e.a===n.key?e.b:e.a,other=graph.nodes.find(x=>x.key===key);return other?'<button type="button" data-knowledge-query="'+esc(other.title)+'">'+esc(other.title)+' · '+esc(e.reason)+'</button>':""}).filter(Boolean).join("")+'</div><small>'+(linked.length?links.length+" related item(s)":"No related items yet")+'</small></main></article>'
  }).join("")||'<p class="mute">No matching local items. Save a task, memory or workflow to build the graph.</p>';
 }
 document.addEventListener("input",event=>{if(event.target?.id==="knowledge-search")renderBosleyKnowledgeGraph()});
+document.addEventListener("click",event=>{const link=event.target?.closest?.("[data-knowledge-query]");if(!link)return;const search=$("#knowledge-search");if(search){search.value=link.dataset.knowledgeQuery||"";renderBosleyKnowledgeGraph();search.focus()}});
 
 let plannerSyncBusy=false,plannerSyncTimer=null;
 async function syncPlannerTasks(){

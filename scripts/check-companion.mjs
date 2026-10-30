@@ -191,6 +191,15 @@ assert.ok(html.includes("no background activity is captured"), "Workflow recorde
 assert.ok(html.includes("wf.steps.push(...workflowRecordedSteps)"), "Workflow recorder must save captured steps into reusable workflows");
 
 
+assert.ok(html.includes('id="offline-queue-panel"'), "Activity workspace must expose the offline command draft queue");
+assert.ok(html.includes("BOSLEY_OFFLINE_QUEUE_KEY"), "Offline command drafts must have a dedicated local storage key");
+assert.ok(html.includes("function readOfflineCommandQueue()"), "Offline command queue must safely parse stored drafts");
+assert.ok(html.includes("function queueOfflineCommandDraft(instruction)"), "Failed offline automation requests must be saved as drafts");
+assert.ok(html.includes("function reviewAndSendOfflineDraft(id)"), "Offline drafts must require an explicit review-and-send action");
+assert.ok(html.includes('data-offline-send="'), "Offline drafts must expose an explicit send control");
+assert.ok(html.includes("if(!navigator.onLine)"), "Offline drafts must not be sent while the browser is offline");
+assert.ok(html.includes('confirm("Send this automation request to your connected device?'), "Sending an offline draft must require confirmation");
+assert.ok(html.includes("They are never executed automatically when you reconnect."), "Offline reconnect must never auto-execute queued commands");
 assert.ok(html.includes("BOSLEY_CONTEXT_ENGINE_KEY"), "Context Engine preference must persist locally");
 assert.ok(html.includes("Active planner tasks:"), "Context Engine must include active planner tasks when enabled");
 assert.ok(html.includes("Recent Bosley activity:"), "Context Engine must include bounded recent activity when enabled");

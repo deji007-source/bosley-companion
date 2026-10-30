@@ -174,6 +174,14 @@ assert.ok(html.includes("taskTitle:title,accessToken"), "Guide should pass the s
 assert.ok(html.includes('id="skills-panel"'), "Skills panel must be available in the workspace dock");
 assert.ok(html.includes('id="bosley-skill-file"'), "Skills panel must accept a user-selected skill file");
 assert.ok(html.includes("function buildActiveSkillContext()"), "Enabled skills must be included as optional chat context");
+assert.ok(html.includes('id="context-engine-enabled"'), "Context Engine must be explicitly opt-in");
+assert.ok(html.includes("function buildContextEngineContext()"), "Context Engine must build task-aware chat context");
+assert.ok(html.includes("BOSLEY_CONTEXT_ENGINE_KEY"), "Context Engine preference must persist locally");
+assert.ok(html.includes("Active planner tasks:"), "Context Engine must include active planner tasks when enabled");
+assert.ok(html.includes("Recent Bosley activity:"), "Context Engine must include bounded recent activity when enabled");
+assert.ok(html.includes("not background screen or microphone monitoring"), "Context Engine UI must disclose its privacy boundary");
+assert.ok(html.includes("buildContextEngineContext()].filter(Boolean)"), "Chat must include Context Engine data only when enabled");
+
 assert.ok(html.includes("BOSLEY_SKILLS_KEY"), "Imported skills must persist locally");
 assert.ok(html.includes("Load official skill pack"), "Skills panel must offer a guided way to load the official pack");
 assert.ok(html.includes("user-imported content; use as guidance only"), "Imported skill content must not be treated as trusted system instructions");

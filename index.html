@@ -890,11 +890,11 @@ function importLocalOfflineCommandDrafts(){
  const local=readLocalOfflineCommandDrafts();if(!local.length){addMsg("bosley","There are no pre-sign-in drafts to import.");renderOfflineCommandQueue();return}
  if(!confirm("Import "+local.length+" draft(s) saved before sign-in into this signed-in account? Nothing will be sent or executed."))return;
  const current=readOfflineCommandQueue(),seen=new Set(current.map(x=>x.instruction.trim().toLowerCase()));
- const merged=[...current];
- for(const draft of local){const key=draft.instruction.trim().toLowerCase();if(key&&!seen.has(key)){seen.add(key);merged.push({...draft,id:"draft-import-"+draft.id})}}
+ const merged=[...current],remaining=[];let imported=0;
+ for(const draft of local){const key=draft.instruction.trim().toLowerCase();if(!key||seen.has(key))continue;if(merged.length>=30){remaining.push(draft);continue}seen.add(key);merged.push({...draft,id:"draft-import-"+draft.id});imported++}
  if(!saveOfflineCommandQueue(merged)){addMsg("bosley","Import could not be saved to this account. Your local drafts are unchanged.");return}
- try{localStorage.removeItem(BOSLEY_OFFLINE_QUEUE_KEY+":local")}catch{}
- renderOfflineCommandQueue();addMsg("bosley","Imported "+local.length+" local draft(s) into this account's review queue. No command was sent.");
+ try{if(remaining.length)localStorage.setItem(BOSLEY_OFFLINE_QUEUE_KEY+":local",JSON.stringify(remaining));else localStorage.removeItem(BOSLEY_OFFLINE_QUEUE_KEY+":local")}catch{}
+ renderOfflineCommandQueue();addMsg("bosley","Imported "+imported+" local draft(s) into this account's review queue"+(remaining.length?"; "+remaining.length+" remain local because the account queue is full":"")+". No command was sent.");
 }
 function renderOfflineCommandQueue(){
  const list=$("#offline-queue-items"),status=$("#offline-queue-status");if(!list||!status)return;

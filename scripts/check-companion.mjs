@@ -183,6 +183,13 @@ assert.ok(html.includes("function restoreHandoffSnapshot()"), "Handoff must rest
 assert.ok(html.includes("bosley_handoff:snapshot"), "Handoff snapshot must sync through the authenticated user layout");
 assert.ok(html.includes("buildHandoffContext()"), "Restored handoff must be available to the opt-in Context Engine");
 assert.ok(html.includes("BOSLEY_HANDOFF_KEY"), "Handoff must retain a local fallback");
+assert.ok(html.includes('id="workflow-record-start"'), "Automation workspace must expose an explicit workflow recorder start control");
+assert.ok(html.includes('id="workflow-record-finish"'), "Automation workspace must expose a workflow recorder save control");
+assert.ok(html.includes("let workflowRecording=false,workflowRecordedSteps=[];"), "Workflow recorder must maintain an explicit in-session step buffer");
+assert.ok(html.includes("workflowRecordedSteps.push(step)"), "Workflow recorder must capture only steps explicitly added through the form");
+assert.ok(html.includes("no background activity is captured"), "Workflow recorder must disclose that it does not monitor other apps");
+assert.ok(html.includes("wf.steps.push(...workflowRecordedSteps)"), "Workflow recorder must save captured steps into reusable workflows");
+
 
 assert.ok(html.includes("BOSLEY_CONTEXT_ENGINE_KEY"), "Context Engine preference must persist locally");
 assert.ok(html.includes("Active planner tasks:"), "Context Engine must include active planner tasks when enabled");

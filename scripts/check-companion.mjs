@@ -218,6 +218,9 @@ assert.ok(html.includes('id="knowledge-items"'), "Activity workspace must expose
 assert.ok(html.includes("function buildBosleyKnowledgeGraph()"), "Knowledge graph must derive relationships from local workspace data");
 assert.ok(html.includes("function renderBosleyKnowledgeGraph()"), "Knowledge graph must render searchable local relationships");
 assert.ok(html.includes("graph.edges.filter(e=>e.a===n.key||e.b===n.key)"), "Knowledge graph must resolve edges using collision-safe composite node keys");
+assert.ok(html.includes('data-knowledge-query="'), "Knowledge graph relationships must expose navigable linked-item controls");
+assert.ok(html.includes('event.target?.closest?.("[data-knowledge-query]")'), "Selecting a graph relationship must focus the related item through local search");
+assert.ok(html.includes('search.value=link.dataset.knowledgeQuery||""'), "Knowledge graph navigation must filter to the selected related item");
 assert.ok(html.includes("BOSLEY_KNOWLEDGE_GRAPH_VERSION"), "Knowledge graph must be versioned");
 assert.ok(html.includes('LOCAL ONLY'), "Knowledge graph must disclose that its index remains local");
 assert.ok(html.includes('if(typeof renderBosleyKnowledgeGraph==="function")renderBosleyKnowledgeGraph()'), "Planner and memory changes must refresh the local knowledge graph");

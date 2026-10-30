@@ -182,6 +182,7 @@ assert.ok(html.includes("function saveHandoffSnapshot()"), "Handoff must capture
 assert.ok(html.includes("function restoreHandoffSnapshot()"), "Handoff must restore a saved task snapshot");
 assert.ok(html.includes("bosley_handoff:snapshot"), "Handoff snapshot must sync through the authenticated user layout");
 assert.ok(html.includes("buildHandoffContext()"), "Restored handoff must be available to the opt-in Context Engine");
+assert.ok(html.includes("!tasks.length&&!events.length&&!handoff"), "Handoff-only snapshots must be included even when no current tasks or activity exist");
 assert.ok(html.includes("BOSLEY_HANDOFF_KEY"), "Handoff must retain a local fallback");
 assert.ok(html.includes('id="workflow-record-start"'), "Automation workspace must expose an explicit workflow recorder start control");
 assert.ok(html.includes('id="workflow-record-finish"'), "Automation workspace must expose a workflow recorder save control");
@@ -194,6 +195,8 @@ assert.ok(html.includes("wf.steps.push(...workflowRecordedSteps)"), "Workflow re
 assert.ok(html.includes('id="offline-queue-panel"'), "Activity workspace must expose the offline command draft queue");
 assert.ok(html.includes("BOSLEY_OFFLINE_QUEUE_KEY"), "Offline command drafts must have a dedicated local storage key");
 assert.ok(html.includes("function readOfflineCommandQueue()"), "Offline command queue must safely parse stored drafts");
+assert.ok(html.includes("renderOfflineCommandQueue();startLaptopCommandListener(user)"), "Initial auth restoration must refresh the account-scoped offline queue");
+assert.ok(html.includes("renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user)"), "Sign-in and sign-out transitions must refresh the account-scoped offline queue");
 assert.ok(html.includes("function queueOfflineCommandDraft(instruction)"), "Failed offline automation requests must be saved as drafts");
 assert.ok(html.includes("function reviewAndSendOfflineDraft(id)"), "Offline drafts must require an explicit review-and-send action");
 assert.ok(html.includes('data-offline-send="'), "Offline drafts must expose an explicit send control");

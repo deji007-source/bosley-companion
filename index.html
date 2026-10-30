@@ -601,6 +601,58 @@ async function syncNativeWidgetAppearance(v){
 }
 applyFaceSettings(readFaceSettings());
 
+const COMPANION_SETTINGS_KEY="bosley_companion_cloud_settings_v1";
+let companionSettingsSyncBusy=false,companionSettingsSyncQueued=false;
+function readCompanionSettings(){
+ let voice="jarvis",stamp=0;
+ try{voice=localStorage.getItem("bosley_voice_profile")||"jarvis"}catch{}
+ try{stamp=Number(JSON.parse(localStorage.getItem(COMPANION_SETTINGS_KEY)||"{}").updatedAt)||0}catch{}
+ return {appearance:readFaceSettings(),voiceProfile:["jarvis","natural","system"].includes(voice)?voice:"jarvis",updatedAt:stamp};
+}
+function persistCompanionSettings(settings){
+ try{localStorage.setItem(FACE_KEY,JSON.stringify(settings.appearance));localStorage.setItem("bosley_voice_profile",settings.voiceProfile);localStorage.setItem(COMPANION_SETTINGS_KEY,JSON.stringify({updatedAt:settings.updatedAt}));return true}catch{return false}
+}
+async function syncCompanionSettings(){
+ if(!db||!user)return false;
+ if(companionSettingsSyncBusy){companionSettingsSyncQueued=true;return false}
+ companionSettingsSyncBusy=true;
+ const uid=user.id,status=$("#facefeedback");
+ try{
+  const {data:sessionData,error:sessionError}=await db.auth.getSession();
+  if(sessionError||sessionData?.session?.user?.id!==uid)throw Error("Sign in again to sync preferences.");
+  const {data:row,error}=await db.from("user_widget_layouts").select("layout,pinned,floating").eq("user_id",uid).maybeSingle();
+  if(error)throw error;
+  const local=readCompanionSettings(),remote=row?.layout?.bosley_companion_settings;
+  const remoteTime=Number(remote?.updatedAt)||0;
+  const validRemote=remote&&typeof remote==="object"&&remote.appearance&&typeof remote.appearance==="object";
+  let chosen=local;
+  if(validRemote&&remoteTime>local.updatedAt){
+   chosen={appearance:{...FACE_DEFAULTS,...remote.appearance},voiceProfile:["jarvis","natural","system"].includes(remote.voiceProfile)?remote.voiceProfile:"jarvis",updatedAt:remoteTime};
+   persistCompanionSettings(chosen);voiceProfile=chosen.voiceProfile;applyFaceSettings(chosen.appearance);
+  }else{
+   chosen={...local,updatedAt:Math.max(Date.now(),local.updatedAt+1)};
+   persistCompanionSettings(chosen);
+  }
+  const layout={...(row?.layout&&typeof row.layout==="object"?row.layout:{}),bosley_companion_settings:chosen};
+  const {error:saveError}=await db.from("user_widget_layouts").upsert({user_id:uid,layout,pinned:Array.isArray(row?.pinned)?row.pinned:[],floating:Array.isArray(row?.floating)?row.floating:[],updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  if(saveError)throw saveError;
+  if(status)status.textContent="SYNCED · Appearance and voice preferences saved to your account.";
+  return true;
+ }catch(error){
+  console.warn("Companion settings sync failed",error);
+  if(status)status.textContent="SAVED LOCALLY · Cloud sync unavailable: "+String(error?.message||"retry later").slice(0,100);
+  return false;
+ }finally{
+  companionSettingsSyncBusy=false;
+  if(companionSettingsSyncQueued){companionSettingsSyncQueued=false;setTimeout(()=>syncCompanionSettings(),300)}
+ }
+}
+function scheduleCompanionSettingsSync(){
+ if(!user||!db)return;
+ clearTimeout(window.__bosleySettingsSyncTimer);
+ window.__bosleySettingsSyncTimer=setTimeout(()=>syncCompanionSettings(),700);
+}
+
 async function setupAndroidOverlayControls(){
  const enable=$("#android-overlay-enable"),hide=$("#android-overlay-hide"),feedback=$("#android-overlay-feedback");
  if(!enable||!hide||!feedback)return;
@@ -618,10 +670,10 @@ function initFaceSettings(){
  const form=$("#faceform");if(!form)return;
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
  $("#voiceprofile").value=voiceProfile; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
- form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved on this device. You can also tell Bosley: “make the widget wider” or “use sharper corners”."}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved locally. Syncing your account preferences…";scheduleCompanionSettingsSync()}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
  $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
 $("#voiceprofile").value=voiceProfile;
-$("#voiceprofile").addEventListener("change",()=>{voiceProfile=$("#voiceprofile").value||"jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};if("speechSynthesis"in window)speechSynthesis.cancel();const labels={jarvis:"Jarvis-style voice selected. "+getVoiceStatus(),natural:"Natural assistant voice selected. "+getVoiceStatus(),system:"System default voice selected. "+getVoiceStatus()};$("#facefeedback").textContent=labels[voiceProfile]||getVoiceStatus();});
+$("#voiceprofile").addEventListener("change",()=>{voiceProfile=$("#voiceprofile").value||"jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};scheduleCompanionSettingsSync();if("speechSynthesis"in window)speechSynthesis.cancel();const labels={jarvis:"Jarvis-style voice selected. "+getVoiceStatus(),natural:"Natural assistant voice selected. "+getVoiceStatus(),system:"System default voice selected. "+getVoiceStatus()};$("#facefeedback").textContent=labels[voiceProfile]||getVoiceStatus();});
  $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#voiceprofile").value="jarvis";voiceProfile="jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};$("#facefeedback").textContent="Appearance and voice reset."};
 }
 $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
@@ -1087,7 +1139,7 @@ async function load(){
 $("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
 if(db){
  db.auth.getSession().then(({data})=>{user=data.session?.user||null;authResolved=true;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();if(user)restoreLatestConversation()}).catch(()=>{authResolved=true;renderAuthGate();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session. Check your connection and retry."});
- db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;renderAuthGate();startLaptopCommandListener(user);if(user){setTimeout(()=>syncPlannerTasks(),500)}if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
+ db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;renderAuthGate();startLaptopCommandListener(user);if(user){setTimeout(()=>{syncPlannerTasks();syncCompanionSettings()},500)}if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
 }
 
 /* ---------- permissioned automation layer ----------

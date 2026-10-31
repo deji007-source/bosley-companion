@@ -347,19 +347,22 @@ jobs:
             const character = '<!doctype html><html><head><meta charset="utf-8"><style>' +
               'html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}' +
               'body{-webkit-app-region:drag;cursor:grab;user-select:none}' +
-              '.mascot{position:absolute;inset:5px 8px 8px;filter:drop-shadow(0 9px 7px #0008);transform:perspective(500px) rotateY(-8deg);animation:float 3s ease-in-out infinite}' +
-              '.cloak{position:absolute;left:25px;top:57px;width:74px;height:78px;border-radius:48% 48% 28% 28%;background:radial-gradient(ellipse at 30% 18%,#666873 0,#292a33 27%,#101116 68%,#050609 100%);border:2px solid #92949e;box-shadow:inset 7px 2px 9px #ffffff24,inset -9px -7px 12px #000b,5px 8px 12px #0009;transform:rotateX(5deg)}' +
-              '.hood{position:absolute;left:21px;top:9px;width:82px;height:82px;border-radius:52% 52% 44% 44%;background:radial-gradient(ellipse at 28% 18%,#777b86 0,#333540 25%,#15161d 63%,#07080c 100%);border:2px solid #a5a7b0;box-shadow:inset 8px 5px 12px #ffffff26,inset -9px -8px 13px #000c,4px 7px 12px #000a;transform:rotateY(-7deg)}' +
-              '.hood:after{content:"";position:absolute;left:10px;top:8px;width:25px;height:48px;border-radius:50%;background:linear-gradient(110deg,#ffffff35,transparent);filter:blur(4px)}' +
-              '.face{position:absolute;left:34px;top:47px;width:55px;height:27px;border-radius:50% 50% 44% 44%;background:radial-gradient(ellipse at 45% 20%,#252630,#030407 72%);border:1px solid #858894;box-shadow:inset 0 4px 8px #000,0 2px 5px #0009;display:flex;justify-content:space-evenly;align-items:center}' +
-              '.eye{width:9px;height:14px;border-radius:50%;background:radial-gradient(ellipse at 35% 25%,#fff 0,#e8f4ff 38%,#9fb9d5 75%,#53677e 100%);box-shadow:0 0 8px #c8e4ff,0 0 15px #8abfff;transform:rotate(-4deg)}' +
-              '.lapel{position:absolute;top:76px;width:20px;height:40px;background:linear-gradient(120deg,#777985,#242630 55%,#090a0e);clip-path:polygon(0 0,100% 28%,65% 100%);filter:drop-shadow(1px 2px 2px #000)}.lapel.left{left:38px;transform:rotate(8deg)}.lapel.right{left:68px;transform:scaleX(-1) rotate(8deg)}' +
-              '.lens{position:absolute;right:3px;top:76px;width:25px;height:25px;border:4px solid #d9e0e8;border-radius:50%;background:radial-gradient(circle at 30% 25%,#ffffff55,#8aa0b522 45%,#080a10 75%);box-shadow:inset 0 0 5px #fff8,0 0 7px #dceaff,3px 4px 5px #000b}' +
-              '.lens:after{content:"";position:absolute;width:15px;height:5px;background:linear-gradient(#f5f7fb,#777f8c);right:-12px;bottom:-6px;border-radius:4px;transform:rotate(48deg);box-shadow:1px 2px 3px #000}' +
-              '.glint{position:absolute;left:34px;top:20px;width:31px;height:8px;border-radius:50%;background:#ffffff38;filter:blur(5px);transform:rotate(-22deg)}' +
-              '@keyframes float{0%,100%{transform:perspective(500px) rotateY(-8deg) translateY(0)}50%{transform:perspective(500px) rotateY(-8deg) translateY(-5px)}}' +
+              '.mascot{position:absolute;inset:2px 2px 3px;transform:perspective(650px) rotateY(-5deg);animation:float 4s ease-in-out infinite;}' +
+              '.coat{position:absolute;left:17px;top:75px;width:91px;height:67px;border-radius:24px 24px 18px 18px;background:linear-gradient(110deg,#555660 0%,#292a33 25%,#111218 68%,#08090d 100%);border:2px solid #777985;box-shadow:inset 5px 2px 7px #ffffff18,inset -7px -6px 9px #0009,0 5px 8px #0008}' +
+              '.hat-top{position:absolute;left:30px;top:5px;width:72px;height:48px;border-radius:48% 48% 12% 12%;background:linear-gradient(115deg,#686a75 0%,#30313a 35%,#111218 78%);border:2px solid #858792;box-shadow:inset 5px 4px 7px #ffffff20,inset -5px -5px 8px #0009}' +
+              '.hat-band{position:absolute;left:29px;top:39px;width:75px;height:10px;border-radius:50%;background:linear-gradient(#34353e,#15161c);border-bottom:1px solid #858792}' +
+              '.brim{position:absolute;left:8px;top:45px;width:116px;height:18px;border-radius:50%;background:linear-gradient(180deg,#565863 0%,#20212a 55%,#08090d 100%);border:2px solid #8a8c96;box-shadow:0 4px 5px #0009}' +
+              '.face{position:absolute;left:28px;top:56px;width:72px;height:34px;border-radius:48% 48% 42% 42%;background:linear-gradient(145deg,#08090d,#171821 65%,#030407);border:1px solid #777985;box-shadow:inset 0 4px 6px #0009;display:flex;justify-content:space-evenly;align-items:center}' +
+              '.eye{width:25px;height:25px;border-radius:50%;background:radial-gradient(ellipse at 35% 25%,#fff 0%,#f0f2f5 48%,#b7bbc5 100%);border:1px solid #d5d7de;box-shadow:inset -2px -2px 3px #777;transform:rotate(-4deg)}' +
+              '.lapel{position:absolute;top:79px;width:32px;height:50px;background:linear-gradient(115deg,#777985,#30313a 48%,#121319);border:1px solid #777985;clip-path:polygon(0 0,100% 18%,64% 100%)}.lapel.left{left:23px;transform:rotate(5deg)}.lapel.right{left:69px;transform:scaleX(-1) rotate(5deg)}' +
+              '.scarf{position:absolute;left:29px;top:84px;width:65px;height:20px;border-radius:8px 8px 14px 14px;background:linear-gradient(#292a33,#090a0f);border:1px solid #555761}' +
+              '.glove{position:absolute;top:109px;width:23px;height:25px;border-radius:45% 45% 40% 40%;background:linear-gradient(120deg,#555660,#17181f 65%,#08090c);border:1px solid #666873;box-shadow:inset 3px 2px 4px #ffffff18}.glove.left{left:8px}.glove.right{right:3px}' +
+              '.lens{position:absolute;right:0;top:83px;width:34px;height:34px;border:4px solid #bfc2ca;border-radius:50%;background:linear-gradient(135deg,#65708055,#11141c 70%);box-shadow:inset 0 0 4px #ffffff30,2px 3px 4px #000a}' +
+              '.lens:after{content:"";position:absolute;width:22px;height:6px;background:linear-gradient(#bfc2ca,#555963);right:-17px;bottom:-8px;border-radius:4px;transform:rotate(48deg);box-shadow:1px 2px 3px #000}' +
+              '.badge{position:absolute;left:73px;top:111px;color:#8b68d8;font:bold 17px Arial,sans-serif;text-shadow:none}' +
+              '@keyframes float{0%,100%{transform:perspective(650px) rotateY(-5deg) translateY(0)}50%{transform:perspective(650px) rotateY(-5deg) translateY(-2px)}}' +
               '@media(prefers-reduced-motion:reduce){.mascot{animation:none}}' +
-              '</style></head><body><div class="mascot"><div class="cloak"></div><div class="hood"></div><div class="face"><i class="eye"></i><i class="eye"></i></div><div class="lapel left"></div><div class="lapel right"></div><div class="lens"></div><div class="glint"></div></div></body></html>';
+              '</style></head><body><div class="mascot"><div class="coat"></div><div class="hat-top"></div><div class="hat-band"></div><div class="brim"></div><div class="face"><i class="eye"></i><i class="eye"></i></div><div class="scarf"></div><div class="lapel left"></div><div class="lapel right"></div><div class="glove left"></div><div class="glove right"></div><div class="lens"></div><div class="badge">B</div></div></body></html>';
             walkingCompanion.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(character));
             walkingCompanion.on('moved', () => {
               if (!walkingCompanion || walkingCompanion.isDestroyed()) return;
@@ -897,8 +900,7 @@ jobs:
           app.on('before-quit', () => {
             app.isQuitting = true;
             globalShortcut.unregisterAll();
-            if (companionTimer) clearInterval(companionTimer);
-          });
+            });
 
           app.on('window-all-closed', () => {
             if (process.platform !== 'darwin') {
@@ -1104,7 +1106,10 @@ jobs:
           grep -Fq "walking-companion.json" desktop/main.cjs
           grep -Fq "setWalkingCompanionEnabled" desktop/main.cjs
           grep -Fq "movable: true" desktop/main.cjs
-          grep -Fq "radial-gradient" desktop/main.cjs
+          grep -Fq ".hat-top" desktop/main.cjs
+          grep -Fq ".brim" desktop/main.cjs
+          grep -Fq ".glove" desktop/main.cjs
+          ! grep -Fq "box-shadow:0 0 8px" desktop/main.cjs
           grep -Fq "walkingCompanionPreference.x" desktop/main.cjs
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs

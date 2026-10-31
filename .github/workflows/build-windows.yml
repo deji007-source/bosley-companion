@@ -110,7 +110,7 @@ jobs:
           sed -i 's#https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js#./assets/supabase.js#g' desktop/index.html
 
           cat > desktop/main.cjs <<'MAIN_EOF'
-          const { app, BrowserWindow, ipcMain, screen, shell, dialog, desktopCapturer } = require('electron');
+          const { app, BrowserWindow, ipcMain, screen, shell, dialog, desktopCapturer, globalShortcut } = require('electron');
           const path = require('path');
           const { fileURLToPath } = require('url');
           const fs = require('fs');
@@ -298,6 +298,50 @@ jobs:
             });
           }
 
+          // A lightweight, click-through desktop character. Ctrl+Alt+B toggles visibility.
+          let walkingCompanion = null;
+          let companionTimer = null;
+          let companionDirection = 1;
+          function createWalkingCompanion() {
+            if (process.platform !== 'win32' || (walkingCompanion && !walkingCompanion.isDestroyed())) return;
+            const area = screen.getPrimaryDisplay().workArea;
+            walkingCompanion = new BrowserWindow({
+              x: area.x + 24, y: area.y + area.height - 116, width: 96, height: 112,
+              frame: false, transparent: true, resizable: false, movable: false,
+              alwaysOnTop: true, skipTaskbar: true, hasShadow: false, focusable: false,
+              backgroundColor: '#00000000',
+              webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+            });
+            walkingCompanion.setAlwaysOnTop(true, 'floating');
+            walkingCompanion.setIgnoreMouseEvents(true, { forward: true });
+            const character = '<!doctype html><html><head><meta charset="utf-8"><style>' +
+              'html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}' +
+              '.walker{position:absolute;inset:5px 8px 8px;animation:bob .55s ease-in-out infinite alternate;transform-origin:bottom center}' +
+              '.body{position:absolute;left:15px;top:28px;width:54px;height:68px;border-radius:48% 48% 30% 30%;background:linear-gradient(110deg,#34343b,#09090c 70%);border:2px solid #aaa;box-shadow:0 5px 12px #0008}' +
+              '.hood{position:absolute;left:14px;top:10px;width:58px;height:48px;border-radius:50% 50% 42% 42%;background:#17171c;border:2px solid #aaa}' +
+              '.face{position:absolute;left:23px;top:29px;width:40px;height:19px;border-radius:14px;background:#050505;border:1px solid #777;display:flex;justify-content:space-evenly;align-items:center}' +
+              '.eye{width:7px;height:11px;border-radius:8px;background:#fff;box-shadow:0 0 5px #fff}' +
+              '.leg{position:absolute;top:86px;width:14px;height:13px;border-radius:0 0 8px 8px;background:#111;border:1px solid #888;animation:step .28s ease-in-out infinite alternate}' +
+              '.leg.a{left:24px}.leg.b{left:47px;animation-delay:.28s}' +
+              '.lens{position:absolute;right:0;top:60px;width:18px;height:18px;border:3px solid #ddd;border-radius:50%;box-shadow:0 0 5px #fff}.lens:after{content:"";position:absolute;width:10px;height:3px;background:#ddd;right:-8px;bottom:-4px;transform:rotate(45deg)}' +
+              '@keyframes bob{to{transform:translateY(-3px)}}@keyframes step{to{transform:translateY(-4px) rotate(12deg)}}' +
+              '</style></head><body><div class="walker"><div class="hood"></div><div class="body"></div><div class="face"><i class="eye"></i><i class="eye"></i></div><div class="leg a"></div><div class="leg b"></div><div class="lens"></div></div></body></html>';
+            walkingCompanion.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(character));
+            walkingCompanion.on('closed', () => { walkingCompanion = null; });
+            let x = area.x + 24;
+            companionTimer = setInterval(() => {
+              if (!walkingCompanion || walkingCompanion.isDestroyed() || walkingCompanion.isMinimized()) return;
+              const current = screen.getPrimaryDisplay().workArea;
+              x += companionDirection * 2;
+              if (x >= current.x + current.width - 110) { x = current.x + current.width - 110; companionDirection = -1; }
+              if (x <= current.x + 8) { x = current.x + 8; companionDirection = 1; }
+              walkingCompanion.setPosition(Math.round(x), current.y + current.height - 116);
+            }, 45);
+          }
+          function toggleWalkingCompanion() {
+            if (!walkingCompanion || walkingCompanion.isDestroyed()) { createWalkingCompanion(); return; }
+            if (walkingCompanion.isVisible()) walkingCompanion.hide(); else walkingCompanion.showInactive();
+          }
           let guideLineWindow = null;
           let guideCardWindow = null;
           let guideTargetWindow = null;
@@ -797,6 +841,8 @@ jobs:
           app.whenReady().then(() => {
             createBubble();
             createPanel();
+            createWalkingCompanion();
+            globalShortcut.register('CommandOrControl+Alt+B', toggleWalkingCompanion);
             positionWindows();
 
             ipcMain.on('toggle-panel', togglePanel);
@@ -808,6 +854,8 @@ jobs:
 
           app.on('before-quit', () => {
             app.isQuitting = true;
+            globalShortcut.unregisterAll();
+            if (companionTimer) clearInterval(companionTimer);
           });
 
           app.on('window-all-closed', () => {

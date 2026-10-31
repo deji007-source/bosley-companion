@@ -209,8 +209,10 @@ jobs:
           process.on('uncaughtException', error => logStartup('MAIN UNCAUGHT EXCEPTION', error));
           process.on('unhandledRejection', reason => logStartup('MAIN UNHANDLED REJECTION', reason));
 
-          // Avoid black Electron surfaces on Windows systems with unstable GPU drivers.
-          app.disableHardwareAcceleration();
+          // The Windows mascot uses a transparent Three.js WebGL renderer.
+          // Disabling hardware acceleration here prevents Chromium from creating
+          // the WebGL context, leaving the separate mascot window completely blank.
+          // Keep Chromium GPU/WebGL enabled; the normal app windows remain transparent.
 
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;

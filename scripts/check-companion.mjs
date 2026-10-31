@@ -50,6 +50,12 @@ const contracts = [
   ["Workflow steps are validated before execution", "function validateWorkflowForExecution(wf)"],
   ["Workflow execution is limited to twenty steps", "wf.steps.length>20"],
   ["Unknown workflow actions fail closed", "uses an unsupported action. Nothing was run."],
+
+  ["Workflow preflight validates HTTPS desktop links before execution", 'must use HTTPS for a Windows external link'],
+  ["Workflow preflight validates supported Windows app targets", 'requests an unsupported Windows app'],
+  ["Workflow preflight rejects empty message bodies", 'has an empty message body'],
+  ["Workflow preflight bounds recipient metadata", 'invalid recipient field'],
+  ["Workflow preflight bounds file-name metadata", 'invalid file name'],
   ["Saved workflows require plan confirmation", "Review Bosley automation plan:"],
   ["Cancelled workflow does not execute steps", "Workflow cancelled before execution:"],
   ["Voice profile control", 'voiceprofile'],

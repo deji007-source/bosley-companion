@@ -314,5 +314,10 @@ assert.ok(html.includes('id="workflow-step-timeline"'), "Automation must expose 
 assert.ok(html.includes("activityEvent(\"Plan approved: \"+wf.name"), "Approved plans must appear in recent workspace activity");
 assert.ok(html.includes("activityEvent(\"Running step \""), "Running workflow steps must appear in the activity timeline");
 assert.ok(html.includes("activityEvent(\"Completed step \""), "Completed workflow steps must be recorded");
+assert.ok(html.includes("function setBosleyCompanionState(state)"), "Agent state changes must be centralized");
+assert.ok(html.includes("bosley-teleport-in"), "Bosley must animate into view with a teleport-style arrival");
+assert.ok(html.includes("bosley-lock-focus"), "Bosley must use a focused lock-in animation while thinking or working");
+assert.ok(html.includes("Agent plan created: "+'"+instruction+"'), "Conversational automation must create an activity plan before routing");
+assert.ok(html.includes("Agent route status: "+'"+result.target+"'), "Automation route outcomes must be visible in activity history");
 assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow step must begin in an explicit pending state");
 assert.ok(html.includes("item.dataset.stepState=state"), "Workflow steps must update to their live execution state");

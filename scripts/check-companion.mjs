@@ -327,3 +327,9 @@ assert.ok(html.includes("Agent plan created: "+'"+instruction+"'), "Conversation
 assert.ok(html.includes("Agent route status: "+'"+result.target+"'), "Automation route outcomes must be visible in activity history");
 assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow step must begin in an explicit pending state");
 assert.ok(html.includes("item.dataset.stepState=state"), "Workflow steps must update to their live execution state");
+
+assert.ok(html.includes("mascot-buzzcut"), "Bosley must have a neat close-cropped buzz cut instead of a hat");
+assert.ok(html.includes("M32 41Q31 17 60 17 89 17 88 41"), "Bosley face silhouette must use a rounder head shape");
+assert.ok(!html.includes("mascot-hat"), "The Windows mascot must not render a hat");
+assert.ok(!html.includes('class="hat"'), "The collapsed launcher must not render a hat");
+assert.ok(!html.includes('id="hatstyle"'), "Appearance settings must no longer expose a hat control");

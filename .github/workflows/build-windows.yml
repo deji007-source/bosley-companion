@@ -117,7 +117,7 @@ jobs:
           :root{color-scheme:dark;--ink:#f5f5f5;--coat:#0b0b0b}
           *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
           body{-webkit-app-region:drag;user-select:none}svg{width:100%;height:100%;display:block;overflow:visible}
-          #bosley{transform-origin:50% 50%;animation:float 3.8s ease-in-out infinite}
+          #bosley{transform-origin:50% 50%;animation:float 3.8s ease-in-out infinite}\n          #body-group{transform-origin:50% 50%;animation:breathe 2.9s ease-in-out infinite}\n          #arm-L{transform-origin:100% 8%;animation:idle-arm-left 5.2s ease-in-out infinite}\n          #arm-R{transform-origin:0% 8%;animation:idle-arm-right 5.2s ease-in-out infinite}\n          #hat-group{transform-origin:50% 100%;animation:hat-settle 7s ease-in-out infinite}
           .outline{stroke:var(--ink);stroke-width:10;stroke-linecap:round;stroke-linejoin:round}
           .coat{fill:var(--coat)}.white{fill:var(--ink)}
           #head-group,#hat-group,#body-group,#arm-L,#arm-R,#leg-L,#leg-R{transform-box:fill-box;transform-origin:center}
@@ -139,7 +139,7 @@ jobs:
           body[data-state="walk"] #leg-L{animation:step 380ms ease-in-out infinite alternate}
           body[data-state="walk"] #leg-R{animation:step 380ms ease-in-out infinite alternate-reverse}
           body[data-state="working"] #head-group{animation:work 1.2s ease-in-out infinite}
-          @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+          @keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-.6deg)}}\n          @keyframes breathe{0%,100%{transform:translate(0 75px) scale(1 .82)}50%{transform:translate(0 73px) scale(1 .835)}}\n          @keyframes idle-arm-left{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-3deg)}}\n          @keyframes idle-arm-right{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(3deg)}}\n          @keyframes hat-settle{0%,85%,100%{transform:translate(0 26px) scale(1 .88) rotate(0)}90%{transform:translate(0 26px) scale(1 .88) rotate(2deg)}}
           @keyframes speak{from{transform:scaleY(1)}to{transform:scaleY(.88)}}
           @keyframes step{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
           @keyframes work{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
@@ -148,16 +148,16 @@ jobs:
           <svg id="bosley" viewBox="0 0 512 768" role="img" aria-label="Bosley, a small monochrome noir companion">
             <defs><filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="10"/></filter></defs>
             <ellipse id="shadow" cx="256" cy="696" rx="104" ry="15" fill="#fff" filter="url(#soft-shadow)"/>
-            <g id="leg-L" class="outline"><path d="M213 602 Q204 633 207 672 Q210 692 231 692 Q251 692 251 672 L250 610Z" class="coat"/></g>
-            <g id="leg-R" class="outline"><path d="M262 610 L261 672 Q261 692 282 692 Q303 692 306 672 L299 602Z" class="coat"/></g>
-            <g id="body-group">
+            <g id="leg-L" class="outline" transform="translate(-15 0)"><path d="M213 602 Q204 633 207 672 Q210 692 231 692 Q251 692 251 672 L250 610Z" class="coat"/></g>
+            <g id="leg-R" class="outline" transform="translate(15 0)"><path d="M262 610 L261 672 Q261 692 282 692 Q303 692 306 672 L299 602Z" class="coat"/></g>
+            <g id="body-group" transform="translate(0 75) scale(1 .82)">
               <g id="arm-L" class="outline"><path d="M151 391 Q126 410 119 456 Q116 481 135 486 Q153 489 160 465 L181 423Z" class="coat"/></g>
               <g id="arm-R" class="outline"><path d="M361 391 Q386 410 393 456 Q396 481 377 486 Q359 489 352 465 L331 423Z" class="coat"/>
                 <path id="thumb" d="M378 461 Q395 446 390 430 Q387 421 379 428 L367 449Z" fill="#f5f5f5" stroke="#f5f5f5" stroke-width="8" opacity="0"/>
               </g>
               <path id="coat" d="M165 335 Q183 303 213 299 Q256 287 299 299 Q329 303 347 335 Q377 390 366 496 L349 608 Q256 648 163 608 L146 496 Q135 390 165 335Z" fill="#0b0b0b" class="outline"/>
             </g>
-            <g id="head-group">
+            <g id="head-group" transform="translate(0 26) scale(1 .88)">
               <path id="head" d="M174 183 Q176 103 256 101 Q336 103 338 183 L330 329 Q317 386 256 392 Q195 386 182 329Z" fill="#0b0b0b" class="outline"/>
               <path id="faceplate" d="M181 212 Q256 191 331 212 L326 303 Q256 330 186 303Z" fill="#000"/>
               <g class="eyes">
@@ -167,7 +167,7 @@ jobs:
               <path id="lid-L" d="M207 237 Q223 224 240 237 L238 265 Q222 253 209 265Z" fill="#000"/>
               <path id="lid-R" d="M272 237 Q288 224 305 237 L303 265 Q287 253 274 265Z" fill="#000"/>
             </g>
-            <g id="hat-group" class="outline">
+            <g id="hat-group" class="outline" transform="translate(0 26) scale(1 .88)">
               <path id="hat-crown" d="M181 157 L191 66 Q195 40 221 37 L288 37 Q316 42 321 67 L331 157 Q256 139 181 157Z" fill="#101010"/>
               <path id="hat-band" d="M187 123 Q256 111 325 123 L329 144 Q256 132 184 144Z" fill="#000"/>
               <path id="hat-brim" d="M104 164 Q256 129 408 164 Q416 179 394 190 Q256 164 118 190 Q96 179 104 164Z" fill="#080808"/>
@@ -497,7 +497,7 @@ jobs:
             if (process.platform !== 'win32' || (walkingCompanion && !walkingCompanion.isDestroyed())) return;
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            const width = 180, height = 230;
+            const width = 150, height = 195;
             const fallbackX = area.x + Math.round((area.width - width) / 2);
             const fallbackY = area.y + 8;
             const x = Math.max(area.x, Math.min(walkingCompanionPreference.x ?? fallbackX, area.x + area.width - width));

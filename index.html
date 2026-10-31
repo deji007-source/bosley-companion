@@ -1289,8 +1289,8 @@ async function load(){
 }
 $("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
 if(db){
- db.auth.getSession().then(({data})=>{user=data.session?.user||null;authResolved=true;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();renderOfflineCommandQueue();if(user){startLaptopCommandListener(user);restoreLatestConversation()}else startLaptopCommandListener(null)}).catch(()=>{authResolved=true;renderAuthGate();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session. Check your connection and retry."});
- db.auth.onAuthStateChange((_e,s)=>{user=s?.user||null;renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);if(user){setTimeout(()=>{syncPlannerTasks();syncCompanionSettings()},500)}if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden){drawWs();if(user)load()}else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN"});
+ db.auth.getSession().then(({data,error})=>{if(error)throw error;user=data.session?.user||null;authResolved=true;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();renderOfflineCommandQueue();drawWs();if(user){startLaptopCommandListener(user);restoreLatestConversation();load()}else startLaptopCommandListener(null);const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()}).catch(error=>{authResolved=true;renderAuthGate();drawWs();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session: "+String(error?.message||error)});
+ db.auth.onAuthStateChange((_e,s)=>{const previousUserId=user?.id||null;user=s?.user||null;if(previousUserId!==(user?.id||null)){workspaceLoadToken++;workflowSyncUser=null;workflowSyncPromise=null;notes=[];tasks=[]}renderAuthGate();renderOfflineCommandQueue();drawWs();startLaptopCommandListener(user);if(user){setTimeout(()=>{syncPlannerTasks();syncCompanionSettings()},500)}if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden&&user)load();else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()});
 }
 
 /* ---------- permissioned automation layer ----------
@@ -1310,9 +1310,10 @@ let workflowSyncUser=null,workflowSyncPromise=null;
 async function syncWorkflows(){
  if(!db||!user)return [];
  if(workflowSyncUser===user.id)return getWorkflows();
- if(workflowSyncPromise)return workflowSyncPromise;
  const uid=user.id;
- workflowSyncPromise=(async()=>{
+ if(workflowSyncPromise&&workflowSyncPromise.userId===uid)return workflowSyncPromise;
+ workflowSyncPromise=null;
+ const syncTask=(async()=>{
   const localKey=workflowStorageKey(),legacyKey=AUTO_KEY;
   let local=getWorkflows();
   if(localKey!==legacyKey){
@@ -1327,8 +1328,9 @@ async function syncWorkflows(){
   saveWorkflows(rows);workflowSyncUser=uid;
   for(const wf of pending){try{await persistWorkflow(wf)}catch(e){autoLog("error","A local workflow could not sync to cloud: "+e.message)}}
   return rows;
- })().finally(()=>{workflowSyncPromise=null});
- return workflowSyncPromise;
+ })();
+ workflowSyncPromise=syncTask;workflowSyncPromise.userId=uid;
+ try{return await syncTask}finally{if(workflowSyncPromise===syncTask)workflowSyncPromise=null}
 }
 async function persistWorkflow(wf){
  if(!db||!user)return false;

@@ -309,3 +309,10 @@ assert.ok(html.includes(".composer:focus-within"), "Chat composer must visibly r
 assert.ok(html.includes("prefers-reduced-motion:reduce"), "Motion polish must respect reduced-motion preferences");
 
 
+
+assert.ok(html.includes('id="workflow-step-timeline"'), "Automation must expose a live step-by-step agent timeline");
+assert.ok(html.includes("activityEvent(\"Plan approved: \"+wf.name"), "Approved plans must appear in recent workspace activity");
+assert.ok(html.includes("activityEvent(\"Running step \""), "Running workflow steps must appear in the activity timeline");
+assert.ok(html.includes("activityEvent(\"Completed step \""), "Completed workflow steps must be recorded");
+assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow step must begin in an explicit pending state");
+assert.ok(html.includes('data-step-state=state'), "Workflow steps must update to their live execution state");

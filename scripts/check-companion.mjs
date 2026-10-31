@@ -192,6 +192,11 @@ assert.ok(windowsWorkflow.includes('"found":false'), "Target detection must supp
 assert.ok(html.includes("taskTitle:title,accessToken"), "Guide should pass the signed-in session token only to the native desktop bridge for on-demand visual analysis");
 assert.ok(html.includes('id="skills-panel"'), "Skills panel must be available in the workspace dock");
 assert.ok(html.includes('id="bosley-skill-file"'), "Skills panel must accept a user-selected skill file");
+assert.ok(html.includes('id="bosley-skill-drop" role="button" tabindex="0"'), "Workspace skills dropzone must be keyboard accessible");
+assert.ok(html.includes("Accepted: .json, .md, .markdown, .txt"), "Workspace skills intake must list supported formats");
+assert.ok(html.includes('drop.addEventListener("drop"'), "Workspace skills intake must support drag and drop");
+assert.ok(html.includes("/\\\\.(json|md|markdown|txt)$/i.test(file.name)"), "Workspace skills intake must reject unsupported extensions");
+assert.ok(html.includes("file.size>100000"), "Workspace skills intake must enforce the 100 KB limit");
 assert.ok(html.includes("function buildActiveSkillContext()"), "Enabled skills must be included as optional chat context");
 assert.ok(html.includes('id="context-engine-enabled"'), "Context Engine must be explicitly opt-in");
 assert.ok(html.includes("function buildContextEngineContext()"), "Context Engine must build task-aware chat context");

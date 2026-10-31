@@ -30,7 +30,7 @@ const contracts = [
   ["Automation sync filters cloud rows to the active account", "x.user_id===uid&&x.name"],
   ["Automation sync coalesces requests only for the same user", "workflowSyncPromise.userId===uid"],
   ["Automation persistence uses the captured account ID", "persistWorkflow(wf,uid)"],
-  ["Automation saved cards render actual step details", "const stepDetail=s.input||s.action||s.name||\"\""],
+  ["Automation saved cards render actual step details", 's.input||s.action||s.name||"No step details provided"'],
   ["Automation saved cards enumerate ordered steps", 'class="workflow-step-list"'],
   ["Empty workflows cannot be run", "!w.steps?.length"],
   ["Desktop bridge action", 'launch_app'],

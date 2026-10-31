@@ -58,6 +58,15 @@ html.blink .eye{transform:scale(var(--es),.12);transition-duration:.07s}
 body.panel-open:not(.desktop-panel) .stage{display:none!important}
 .launch[data-state=listening],.launch[data-state=thinking]{border-color:#fff}
 .launch[data-state=error]{border-style:dashed;border-color:#8a8a8a}
+/* Bosley agent arrival + lock-in: a quick spatial snap, then a focused working pose */
+html.bosley-arrive .stage{animation:bosley-teleport-in .42s cubic-bezier(.16,1,.3,1)}
+html[data-agent-lock=on] .launch{border-color:#f4f4f4;box-shadow:0 0 0 1px #ffffff35,0 0 22px #ffffff18,0 8px 26px #000b,inset 0 1px 0 #ffffff40}
+html[data-agent-state=thinking] .launch #bosley-mascot{transform-origin:60px 58px;animation:bosley-lock-focus .9s ease-in-out infinite alternate}
+html[data-agent-state=working] .launch #bosley-mascot{transform-origin:60px 58px;animation:bosley-lock-focus .62s ease-in-out infinite alternate}
+html[data-agent-state=working] .launch .mascot-eye{filter:drop-shadow(0 0 5px #fff)}
+@keyframes bosley-teleport-in{0%{opacity:0;filter:blur(5px);transform:translate(-50%,-9px) scale(.82)}55%{opacity:1;filter:blur(0);transform:translate(-50%,2px) scale(1.035)}100%{transform:translate(-50%,0) scale(1)}}
+@keyframes bosley-lock-focus{from{transform:translateY(1px) scale(.985)}to{transform:translateY(-1px) scale(1.025)}}
+@media(prefers-reduced-motion:reduce){html.bosley-arrive .stage,html[data-agent-state=thinking] .launch #bosley-mascot,html[data-agent-state=working] .launch #bosley-mascot{animation:none!important}}
 .hat{position:absolute;inset:0;width:100%;height:100%}
 .launch .eyes{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
 
@@ -1144,7 +1153,7 @@ async function send(text,imageData=null){
  const visualContext=imageData?"\n\nIMAGE ANALYSIS GUIDANCE:\nTreat the attached image as visual evidence. Identify the main subject and relevant visible details. If asked to read text, quote only legible text and state uncertainty. Separate observations from inferences; do not invent hidden details, identities, locations, or context. For screenshots, explain relevant interface elements and suggest safe, reversible next steps. If ambiguous, ask one focused clarification.":"";
  const aiText=(skillContext?skillContext+"\n\nUSER REQUEST:\n":"")+(text||(imageData?"Please describe and help me understand this image.":""))+visualContext;
  const userContent=imageData?[{type:"text",text:aiText||"Please describe and help me understand this image."},{type:"image_url",image_url:{url:imageData}}]:aiText;
- history.push({role:"user",content:userContent});S.busy=true;setBosleyCompanionState("thinking");eyes();
+ history.push({role:"user",content:userContent});S.busy=true;setBosleyCompanionState("thinking");activityEvent("Bosley is interpreting the request and checking available skills and approved actions.","thinking");eyes();
  const p=addMsg("bosley","…");const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),30000);
  try{
   const r=await fetch(CHAT_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({messages:history.slice(-16)})});
@@ -1169,7 +1178,7 @@ async function send(text,imageData=null){
   }
   if(streamError&&!out)throw Error(streamError);
   if(!out)throw Error("The AI returned an empty reply. Check the provider key, model availability, and Edge Function logs.");
-  history.push({role:"assistant",content:out});S.backend=true;S.busy=false;setBosleyCompanionState("success");eyes();
+  history.push({role:"assistant",content:out});S.backend=true;S.busy=false;activityEvent("Bosley generated a response. No device action is reported unless its connected executor confirms it.","success");setBosleyCompanionState("success");eyes();
   try{await persistChatExchange(imageData?"[Image attached] "+(text||"Please describe this image."):text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
   speak(out);
  }catch(e){
@@ -1575,7 +1584,7 @@ function validateWorkflowForExecution(wf){
  }
  return wf.steps.map((step,index)=>(index+1)+". "+(autoActions.find(action=>action.value===step.type)?.label||step.type)+(step.type==="open_url"?" - "+normalizeUrl(step.input):step.input?" - "+step.input.slice(0,140):"")).join("\n");
 }
-function setBosleyCompanionState(state){const allowed=["idle","thinking","working","waiting","success","error","walk"];if(!allowed.includes(state))return;try{const desktop=window.BosleyDesktop;if(desktop&&typeof desktop.setCompanionState==="function")desktop.setCompanionState(state)}catch(error){console.warn("Bosley companion animation state unavailable:",error)}}
+function setBosleyCompanionState(state){const allowed=["idle","thinking","working","waiting","success","error","walk"];if(!allowed.includes(state))return;const previous=document.documentElement.dataset.agentState||"idle";document.documentElement.dataset.agentState=state;const launcher=document.getElementById("launch");if(launcher)launcher.dataset.state=state;if(state==="thinking"||state==="working"){document.documentElement.dataset.agentLock="on";if(previous!=="thinking"&&previous!=="working"){document.documentElement.classList.remove("bosley-arrive");void document.documentElement.offsetWidth;document.documentElement.classList.add("bosley-arrive")}}else if(state==="idle"||state==="success"||state==="error"){document.documentElement.dataset.agentLock="off";if(state==="idle")document.documentElement.classList.remove("bosley-arrive")}try{const desktop=window.BosleyDesktop;if(desktop&&typeof desktop.setCompanionState==="function")desktop.setCompanionState(state)}catch(error){console.warn("Bosley companion animation state unavailable:",error)}}
 async function runWorkflow(wf){
  if(automationBusy)throw Error("An automation workflow is already running.");
  const plan=validateWorkflowForExecution(wf);

@@ -359,7 +359,7 @@ jobs:
               '.glint{position:absolute;left:34px;top:20px;width:31px;height:8px;border-radius:50%;background:#ffffff38;filter:blur(5px);transform:rotate(-22deg)}' +
               '@keyframes float{0%,100%{transform:perspective(500px) rotateY(-8deg) translateY(0)}50%{transform:perspective(500px) rotateY(-8deg) translateY(-5px)}}' +
               '@media(prefers-reduced-motion:reduce){.mascot{animation:none}}' +
-              '</style></head><body><div class="mascot"><div class="hood"></div><div class="face"><i class="eye"></i><i class="eye"></i></div><div class="cloak"></div><div class="lapel left"></div><div class="lapel right"></div><div class="lens"></div><div class="glint"></div></div></body></html>';
+              '</style></head><body><div class="mascot"><div class="cloak"></div><div class="hood"></div><div class="face"><i class="eye"></i><i class="eye"></i></div><div class="lapel left"></div><div class="lapel right"></div><div class="lens"></div><div class="glint"></div></div></body></html>';
             walkingCompanion.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(character));
             walkingCompanion.on('moved', () => {
               if (!walkingCompanion || walkingCompanion.isDestroyed()) return;

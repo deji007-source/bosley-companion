@@ -149,6 +149,14 @@ html.widget-mode .workspace,html.widget-mode .automation{max-height:38%}
 @media(max-width:520px){html.widget-mode .panel{left:0;transform:none;width:100vw;height:100dvh;max-height:100dvh}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 
+/* Skills intake: explicit file contract with keyboard and drag/drop support. */
+#skills-panel .skills-dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:116px;padding:16px;border:1px dashed #555;border-radius:13px;background:linear-gradient(145deg,#111,#070707);text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+#skills-panel .skills-dropzone:hover,#skills-panel .skills-dropzone.drag-active{border-color:#ddd;background:#171717}
+#skills-panel .skills-dropzone:focus-visible{outline:2px solid #eee;outline-offset:3px}
+#skills-panel .skills-drop-icon{display:grid;place-items:center;width:28px;height:28px;border:1px solid #444;border-radius:9px;font-size:20px}
+#skills-panel .skills-dropzone strong{font-size:12px}
+#skills-panel .skills-dropzone span:not(.skills-drop-icon){font-size:10px;color:#aaa}
+#skills-panel .skills-dropzone small{font-size:9px;color:#888;line-height:1.5}
 /* Skills workspace: compact command centre with clearer hierarchy and touch targets. */
 #skills-panel{color:#f5f5f5}
 #skills-panel .skills-hero{display:flex;align-items:flex-start;gap:12px;padding:14px;margin:0 0 12px;border:1px solid #292929;border-radius:14px;background:radial-gradient(ellipse at 100% 0%,#1d1d1d 0%,#0b0b0b 58%,#050505 100%);box-shadow:inset 0 1px #ffffff0b}
@@ -962,10 +970,20 @@ async function renderBosleySkills(){
  const panel=document.getElementById("skills-panel");if(!panel)return;
  const skills=readBosleySkills();
  panel.innerHTML='<header class="skills-hero"><div class="skills-mark" aria-hidden="true">✳</div><div class="skills-hero-copy"><span class="skills-kicker">PERSONAL TOOLKIT</span><h3>Bosley Skills</h3><p>Choose the reusable guidance Bosley can draw on while chatting. Skills stay on this device and never grant extra permissions.</p></div><span class="skills-count" id="bosley-skill-count">LOCAL</span></header>'+
- '<div class="form"><input id="bosley-skill-file" type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" aria-label="Choose a skill file"><div class="skills-tools"><button type="button" class="primary" id="bosley-skill-import">Import skill file</button><button type="button" id="bosley-skill-export">Export skills</button><button type="button" id="bosley-skill-pack">Load official skill pack</button></div><input id="bosley-skill-search" type="search" placeholder="⌕  Search skills…" aria-label="Search imported skills"><p class="status" id="bosley-skill-status" aria-live="polite">'+skills.length+' skill entries stored on this device.</p></div>'+
+ '<div class="form"><div class="skills-dropzone" id="bosley-skill-drop" role="button" tabindex="0" aria-label="Choose or drop a skills file"><span class="skills-drop-icon" aria-hidden="true">＋</span><strong>Add skills to your workspace</strong><span>Drop a file here or select one from your device</span><small>Accepted: .json, .md, .markdown, .txt · Maximum 100 KB</small></div><input id="bosley-skill-file" type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" aria-label="Choose a skill file"><div class="skills-tools"><button type="button" class="primary" id="bosley-skill-import">Process & add skill</button><button type="button" id="bosley-skill-export">Export skills</button><button type="button" id="bosley-skill-pack">Load official skill pack</button></div><input id="bosley-skill-search" type="search" placeholder="⌕  Search skills…" aria-label="Search imported skills"><p class="status" id="bosley-skill-status" aria-live="polite">'+skills.length+' skill entries stored on this device.</p></div>'+
  '<div class="items" id="bosley-skill-list"></div>'+
  '<div class="item skills-help"><main><strong>Quick start</strong><p class="mute">Import a pack, enable only the guidance you need, then ask Bosley normally. Search to find a skill, switch it off when it is not relevant, or export a backup. Imported text is guidance only and cannot unlock app control or bypass confirmation.</p></main></div>'+
  '<div class="actions"><a class="link" href="https://github.com/deji007-source/bosley-companion/tree/main/agent-pack" target="_blank" rel="noopener noreferrer">Browse source pack</a><button type="button" id="bosley-skill-clear">Clear imported skills</button></div>';
+ const drop=panel.querySelector("#bosley-skill-drop"),fileInput=panel.querySelector("#bosley-skill-file"),statusEl=panel.querySelector("#bosley-skill-status");
+ const chooseSkillFile=()=>fileInput?.click();
+ if(drop&&fileInput){
+  drop.addEventListener("click",chooseSkillFile);
+  drop.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();chooseSkillFile()}});
+  ["dragenter","dragover"].forEach(name=>drop.addEventListener(name,e=>{e.preventDefault();drop.classList.add("drag-active")}));
+  ["dragleave","drop"].forEach(name=>drop.addEventListener(name,e=>{e.preventDefault();drop.classList.remove("drag-active")}));
+  drop.addEventListener("drop",e=>{const file=e.dataTransfer?.files?.[0];if(!file)return;try{const transfer=new DataTransfer();transfer.items.add(file);fileInput.files=transfer.files;statusEl.textContent="Selected "+file.name+". Choose Process & add skill to import it."}catch{statusEl.textContent="Could not attach the dropped file. Use the file picker instead."}});
+  fileInput.addEventListener("change",()=>{const file=fileInput.files?.[0];if(file&&statusEl)statusEl.textContent="Selected "+file.name+" · ready to process."});
+ }
  const list=panel.querySelector("#bosley-skill-list");
  const drawSkillList=(query="")=>{
  const allSkills=readBosleySkills();const filtered=allSkills.filter(s=>(s.title+" "+s.content+" "+(s.source||"")).toLowerCase().includes(query.toLowerCase()));const count=panel.querySelector("#bosley-skill-count");if(count)count.textContent=allSkills.filter(s=>s.enabled).length+" ON";
@@ -980,6 +998,7 @@ async function renderBosleySkills(){
  panel.querySelector("#bosley-skill-import").onclick=async()=>{
   const file=panel.querySelector("#bosley-skill-file").files?.[0],status=panel.querySelector("#bosley-skill-status");
   if(!file){status.textContent="Choose a skill file first.";return}
+  if(!/\\.(json|md|markdown|txt)$/i.test(file.name)){status.textContent="Unsupported file type. Use .json, .md, .markdown, or .txt.";return}
   if(file.size>100000){status.textContent="File is too large. Please keep skill files under 100 KB.";return}
   try{const raw=await file.text();let parsed=null;if(/\.json$/i.test(file.name)){parsed=JSON.parse(raw);if(!parsed||typeof parsed!=="object")throw Error("JSON must contain a skill object or a skills array.")}const imported=normalizeSkillImport(parsed,file.name,raw);const existing=readBosleySkills();const byId=new Map(existing.map(s=>[s.id,s]));for(const item of imported)byId.set(item.id,item);const merged=[...byId.values()].slice(-30);saveBosleySkills(merged);renderBosleySkills();const msg=document.getElementById("bosley-skill-status");if(msg)msg.textContent="Imported "+imported.length+" skill entry/entries from "+file.name+"."}catch(e){status.textContent="Could not import this file: "+String(e?.message||e).slice(0,180)}
  };

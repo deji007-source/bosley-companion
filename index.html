@@ -1733,8 +1733,8 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handle
    await queueAutomationInstruction(instruction);
    return {target:"laptop",message:"Laptop command submitted to the automation queue. Execution still depends on the connected listener."};
   })().then(result=>result).catch(error=>({target:"laptop",error:String(error?.message||error)})));
-  addMsg("bosley",shouldPhone&&shouldLaptop?"Routing this to phone and laptop automations…":shouldPhone?"Routing this to your phone's MacroDroid trigger…":"Routing this to the laptop listener…");
-  Promise.all(tasks).then(results=>{for(const result of results){if(result.error){addMsg("bosley",result.target+" automation failed: "+result.error);autoLog("error",result.target+" automation failed: "+result.error)}else{addMsg("bosley",result.target+": "+result.message);autoLog("queued",result.target+" route: "+instruction)}}});
+  addMsg("bosley",shouldPhone&&shouldLaptop?"Planning routes to phone and laptop…":shouldPhone?"Planning a route to your phone…":"Planning a route to the laptop…");setBosleyCompanionState("working");activityEvent("Agent plan created: "+instruction+" · "+(shouldPhone&&shouldLaptop?"phone + Windows":shouldPhone?"phone":"Windows"),"planned");
+  Promise.all(tasks).then(results=>{let failed=false;for(const result of results){if(result.error){failed=true;addMsg("bosley",result.target+" automation failed: "+result.error);autoLog("error",result.target+" automation failed: "+result.error);activityEvent("Agent route failed: "+result.target+" · "+result.error.slice(0,150),"error")}else{addMsg("bosley",result.target+": "+result.message);autoLog("queued",result.target+" route: "+instruction);activityEvent("Agent route status: "+result.target+" · "+result.message,"queued")}}setBosleyCompanionState(failed?"error":"success");});
   return true;
  }
  const q=t.toLowerCase();const face=readFaceSettings();let changed=false;

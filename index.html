@@ -1450,15 +1450,32 @@ async function runAction(step,approved=false){
  throw Error("Unsupported action type: "+step.type)
 }
 function validateWorkflowForExecution(wf){
- if(!wf||typeof wf.name!=="string"||!wf.name.trim())throw Error("This workflow has no valid name.");
+ if(!wf||typeof wf.name!=="string"||!wf.name.trim()||wf.name.length>120)throw Error("This workflow has no valid name (maximum 120 characters).");
  if(!Array.isArray(wf.steps)||wf.steps.length<1||wf.steps.length>20)throw Error("A workflow must contain between 1 and 20 steps.");
  const allowed=new Set(autoActions.map(action=>action.value));
+ const supportedApps=new Set(["chrome","google chrome","edge","microsoft edge","notepad","calculator","explorer","file explorer","windows explorer"]);
  for(const [index,step] of wf.steps.entries()){
-  if(!step||typeof step!=="object"||!allowed.has(step.type))throw Error("Step "+(index+1)+" uses an unsupported action. Nothing was run.");
-  if(typeof step.input!=="string"||step.input.length>4000)throw Error("Step "+(index+1)+" has invalid or oversized input. Nothing was run.");
+  const label="Step "+(index+1);
+  if(!step||typeof step!=="object"||!allowed.has(step.type))throw Error(label+" uses an unsupported action. Nothing was run.");
+  if(typeof step.input!=="string"||step.input.length>4000)throw Error(label+" has invalid or oversized input. Nothing was run.");
   if(step.type==="open_url")normalizeUrl(step.input);
-  if(step.type==="search_web"&&!step.input.trim())throw Error("Step "+(index+1)+" needs a search query.");
-  if(step.type==="desktop_action"&&(!["launch_app","open_external_url","get_desktop_info","set_widget_appearance"].includes(step.action)))throw Error("Step "+(index+1)+" requests a desktop action that is not allowlisted.");
+  if(step.type==="search_web"&&!step.input.trim())throw Error(label+" needs a search query.");
+  if(step.type==="draft_message"){
+   if(!step.input.trim())throw Error(label+" has an empty message body.");
+   if(step.recipient!=null&&(typeof step.recipient!=="string"||step.recipient.length>300))throw Error(label+" has an invalid recipient field.");
+  }
+  if(step.type==="create_text_file"&&step.name!=null&&(typeof step.name!=="string"||step.name.length>160))throw Error(label+" has an invalid file name.");
+  if(step.type==="desktop_action"){
+   if(!["launch_app","open_external_url","get_desktop_info","set_widget_appearance"].includes(step.action))throw Error(label+" requests a desktop action that is not allowlisted.");
+   if(step.action==="open_external_url"){
+    const url=normalizeUrl(step.input);
+    if(!url.startsWith("https://"))throw Error(label+" must use HTTPS for a Windows external link.");
+   }
+   if(step.action==="launch_app"){
+    const app=String(step.app||step.input||"").trim().toLowerCase();
+    if(!supportedApps.has(app))throw Error(label+" requests an unsupported Windows app.");
+   }
+  }
  }
  return wf.steps.map((step,index)=>(index+1)+". "+(autoActions.find(action=>action.value===step.type)?.label||step.type)+(step.type==="open_url"?" - "+normalizeUrl(step.input):step.input?" - "+step.input.slice(0,140):"")).join("\n");
 }

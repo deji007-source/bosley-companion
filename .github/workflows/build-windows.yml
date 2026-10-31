@@ -404,7 +404,7 @@ jobs:
             if (process.platform !== 'win32' || (walkingCompanion && !walkingCompanion.isDestroyed())) return;
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            const width = 132, height = 150;
+            const width = 112, height = 128;
             const fallbackX = area.x + area.width - width - 36;
             const fallbackY = area.y + Math.round((area.height - height) * 0.55);
             const x = Math.max(area.x, Math.min(walkingCompanionPreference.x ?? fallbackX, area.x + area.width - width));

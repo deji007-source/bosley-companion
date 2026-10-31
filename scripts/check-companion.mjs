@@ -315,4 +315,4 @@ assert.ok(html.includes("activityEvent(\"Plan approved: \"+wf.name"), "Approved 
 assert.ok(html.includes("activityEvent(\"Running step \""), "Running workflow steps must appear in the activity timeline");
 assert.ok(html.includes("activityEvent(\"Completed step \""), "Completed workflow steps must be recorded");
 assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow step must begin in an explicit pending state");
-assert.ok(html.includes('data-step-state=state'), "Workflow steps must update to their live execution state");
+assert.ok(html.includes("item.dataset.stepState=state"), "Workflow steps must update to their live execution state");

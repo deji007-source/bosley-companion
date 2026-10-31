@@ -1508,8 +1508,9 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handle
  if(genericAutomation){
   const instruction=automationText.replace(/^[, ]+|[, ]+$/g,"");
   const phoneOnly=/^(?:call|phone|dial|send (?:a )?(?:text|message)|text|message)\b/i.test(instruction);
-  const shouldPhone=explicitPhone||(explicitBoth&&phoneOnly)||(!targetMatch&&!phoneOnly);
-  const shouldLaptop=explicitLaptop||(explicitBoth&&!phoneOnly)||(!targetMatch&&!phoneOnly);
+  if(!targetMatch&&!phoneOnly){addMsg("bosley","I can route that automation to your phone or Windows PC. Which device should I use? Say “on my phone”, “on Windows”, or “on both” if you want both devices to act.");return true}
+  const shouldPhone=explicitPhone||(explicitBoth&&phoneOnly)||(explicitBoth&&!phoneOnly);
+  const shouldLaptop=explicitLaptop||(explicitBoth&&!phoneOnly);
   const routePhone=async()=>{
    const sess=db?(await db.auth.getSession()).data.session:null;
    if(!sess||!user)throw Error("Sign in under Jarvis Workspace first.");

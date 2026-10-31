@@ -27,7 +27,7 @@ const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],
   ["Automation Skill master switch is respected", "if(!settings.enabled)return {status:\"none\"}"],
   ["Disabled Skills cannot be selected for workflow routing", "readBosleySkills().filter(skill=>skill.enabled&&(settings.ids===null||settings.ids.includes(skill.id)))"],
-  ["Skills link workflows through explicit workflow metadata", "content.match(/^\\\\s*(?:workflow|automation)\\\\s*:"],
+  ["Skills link workflows through explicit workflow metadata", "workflowLine=content.match"],
   ["Skills triggers require exact normalized phrase matches", "triggers.includes(command)"],
   ["Ambiguous Skill triggers stop without executing", "skillResolution.status===\"ambiguous\""],
   ["Unlinked Skills explain the saved-workflow requirement", "skillResolution.status===\"unlinked\""],

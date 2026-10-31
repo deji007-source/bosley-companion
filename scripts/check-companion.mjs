@@ -24,6 +24,15 @@ const androidInstaller = readText(new URL("./install-android-overlay.py", import
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 
 const contracts = [
+  ["Automation cloud query is account scoped", '.eq("user_id",uid)'],
+  ["Automation sync captures the account-specific cache key", 'const localKey=AUTO_KEY+":"+uid'],
+  ["Automation sync rejects results after an account switch", "if(user?.id!==uid)return []"],
+  ["Automation sync filters cloud rows to the active account", "x.user_id===uid&&x.name"],
+  ["Automation sync coalesces requests only for the same user", "workflowSyncPromise.userId===uid"],
+  ["Automation persistence uses the captured account ID", "persistWorkflow(wf,uid)"],
+  ["Automation saved cards render actual step details", "const stepDetail=s.input||s.action||s.name||\"\""],
+  ["Automation saved cards enumerate ordered steps", "wf.steps.map((s,i)=>"],
+  ["Empty workflows cannot be run", "disabled=!(w.steps||[]).length"],
   ["Desktop bridge action", 'launch_app'],
   ["Remote action gateway", 'remote-action'],
   ["Queued status wording", 'QUEUED — DELIVERY UNCONFIRMED'],

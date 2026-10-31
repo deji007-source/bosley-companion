@@ -114,7 +114,7 @@ jobs:
           <!doctype html>
           <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
           <style>
-          :root{color-scheme:dark;--ink:#f5f5f5;--coat:#0b0b0b}
+          :root{color-scheme:dark;--ink:#0b0b0b;--coat:#f5f5f5}
           *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
           body{-webkit-app-region:drag;user-select:none}svg{width:100%;height:100%;display:block;overflow:visible}
           #bosley{transform-origin:50% 50%;animation:float 3.8s ease-in-out infinite}
@@ -161,40 +161,46 @@ jobs:
           </style></head><body data-state="idle">
           <svg id="bosley" viewBox="0 0 512 768" role="img" aria-label="Bosley, a small monochrome noir companion">
             <defs><filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="10"/></filter></defs>
-            <ellipse id="shadow" cx="256" cy="696" rx="104" ry="15" fill="#fff" filter="url(#soft-shadow)"/>
+            <ellipse id="shadow" cx="256" cy="696" rx="104" ry="15" fill="#0b0b0b" filter="url(#soft-shadow)"/>
             <g id="leg-L" class="outline" transform="translate(-15 0)"><path d="M213 602 Q204 633 207 672 Q210 692 231 692 Q251 692 251 672 L250 610Z" class="coat"/></g>
             <g id="leg-R" class="outline" transform="translate(15 0)"><path d="M262 610 L261 672 Q261 692 282 692 Q303 692 306 672 L299 602Z" class="coat"/></g>
             <g id="body-group" transform="translate(0 75) scale(1 .82)">
               <g id="arm-L" class="outline"><path d="M151 391 Q126 410 119 456 Q116 481 135 486 Q153 489 160 465 L181 423Z" class="coat"/></g>
               <g id="arm-R" class="outline"><path d="M361 391 Q386 410 393 456 Q396 481 377 486 Q359 489 352 465 L331 423Z" class="coat"/>
-                <path id="thumb" d="M378 461 Q395 446 390 430 Q387 421 379 428 L367 449Z" fill="#f5f5f5" stroke="#f5f5f5" stroke-width="8" opacity="0"/>
+                <path id="thumb" d="M378 461 Q395 446 390 430 Q387 421 379 428 L367 449Z" fill="#f5f5f5" stroke="#0b0b0b" stroke-width="8" opacity="0"/>
               </g>
-              <path id="coat" d="M165 335 Q174 291 215 279 Q256 265 297 279 Q338 291 347 335 Q377 390 366 496 L349 608 Q256 648 163 608 L146 496 Q135 390 165 335Z" fill="#0b0b0b" class="outline"/>
-              <path id="top-hem" d="M164 520 Q256 540 348 520" fill="none" stroke="#777" stroke-width="7" stroke-linecap="round"/>
-              <path id="trousers-L" d="M171 535 Q211 546 251 538 L248 640 Q222 650 188 638Z" fill="#171717" class="outline"/>
-              <path id="trousers-R" d="M261 538 Q301 546 341 535 L324 638 Q290 650 264 640Z" fill="#171717" class="outline"/>
-              <path id="trouser-seam" d="M256 545 L256 632" fill="none" stroke="#777" stroke-width="5" stroke-linecap="round"/>
+              <path id="coat" d="M165 335 Q174 291 215 279 Q256 265 297 279 Q338 291 347 335 Q377 390 366 496 L349 608 Q256 648 163 608 L146 496 Q135 390 165 335Z" fill="#f5f5f5" class="outline"/>
+              <path id="shirt-placket" d="M256 286 L256 534" fill="none" stroke="#0b0b0b" stroke-width="6" stroke-linecap="round"/>
+              <path id="shirt-collar-L" d="M211 282 L256 315 L239 369 L204 319Z" fill="#fff" stroke="#0b0b0b" stroke-width="7" stroke-linejoin="round"/>
+              <path id="shirt-collar-R" d="M301 282 L256 315 L273 369 L308 319Z" fill="#fff" stroke="#0b0b0b" stroke-width="7" stroke-linejoin="round"/>
+              <path id="shirt-open-neck" d="M239 369 L256 315 L273 369" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="256" cy="397" r="5" fill="#0b0b0b"/>
+              <circle cx="256" cy="429" r="5" fill="#0b0b0b"/>
+              <path d="M173 376 Q190 389 204 376 M308 376 Q322 389 339 376" fill="none" stroke="#0b0b0b" stroke-width="4" stroke-linecap="round"/>
+              <path id="top-hem" d="M164 520 Q256 540 348 520" fill="none" stroke="#0b0b0b" stroke-width="7" stroke-linecap="round"/>
+              <path id="trousers-L" d="M171 535 Q211 546 251 538 L248 640 Q222 650 188 638Z" fill="#f5f5f5" class="outline"/>
+              <path id="trousers-R" d="M261 538 Q301 546 341 535 L324 638 Q290 650 264 640Z" fill="#f5f5f5" class="outline"/>
+              <path id="trouser-seam" d="M256 545 L256 632" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round"/>
               <path id="waistband" d="M174 535 Q256 552 338 535" fill="none" stroke="#888" stroke-width="6" stroke-linecap="round"/>
             </g>
             <g id="head-group" transform="translate(0 26) scale(1 .88)">
-              <path id="head" d="M164 190 Q164 91 256 91 Q348 91 348 190 L339 320 Q329 388 256 394 Q183 388 173 320Z" fill="#0b0b0b" class="outline"/>
-              <path id="faceplate" d="M181 212 Q256 191 331 212 L326 303 Q256 330 186 303Z" fill="#000"/>
+              <path id="head" d="M164 190 Q164 91 256 91 Q348 91 348 190 L339 320 Q329 388 256 394 Q183 388 173 320Z" fill="#f5f5f5" class="outline"/>
+              <path id="faceplate" d="M181 212 Q256 191 331 212 L326 303 Q256 330 186 303Z" fill="#0b0b0b"/>
               <g class="eyes">
                 <rect id="eye-L" x="207" y="235" width="32" height="68" rx="16" class="white"/>
                 <rect id="eye-R" x="273" y="235" width="32" height="68" rx="16" class="white"/>
               </g>
-              <path id="lid-L" d="M203 237 Q223 222 243 237 L240 265 Q223 251 205 265Z" fill="#000"/>
-              <path id="lid-R" d="M269 237 Q289 222 309 237 L306 265 Q289 251 271 265Z" fill="#000"/>
-              <path id="nose" d="M256 292 L252 316 L259 319" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path id="mouth-line" d="M242 342 H270" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round"/>
-              <path id="mouth-open" d="M241 339 Q256 344 271 339 Q270 358 256 360 Q242 358 241 339Z" fill="#050505" stroke="#f5f5f5" stroke-width="5" stroke-linejoin="round"/>
-              <path id="mouth-inner" d="M247 352 Q256 347 265 352" fill="none" stroke="#f5f5f5" stroke-width="3" stroke-linecap="round"/>
+              <path id="lid-L" d="M203 237 Q223 222 243 237 L240 265 Q223 251 205 265Z" fill="#0b0b0b"/>
+              <path id="lid-R" d="M269 237 Q289 222 309 237 L306 265 Q289 251 271 265Z" fill="#0b0b0b"/>
+              <path id="mouth-line" d="M242 342 H270" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round"/>
+              <path id="mouth-open" d="M241 339 Q256 344 271 339 Q270 358 256 360 Q242 358 241 339Z" fill="#0b0b0b" stroke="#0b0b0b" stroke-width="5" stroke-linejoin="round"/>
+              <path id="mouth-inner" d="M247 352 Q256 347 265 352" fill="none" stroke="#0b0b0b" stroke-width="3" stroke-linecap="round"/>
             </g>
             <g id="hat-group" class="outline" transform="translate(0 26) scale(.94 .88)">
-              <path id="hat-crown" d="M190 157 L198 68 Q202 43 224 40 L285 40 Q308 44 314 68 L322 157 Q256 140 190 157Z" fill="#101010"/>
-              <path id="hat-band" d="M195 124 Q256 113 317 124 L320 143 Q256 133 192 143Z" fill="#000"/>
-              <path id="hat-brim" d="M126 164 Q256 133 386 164 Q393 178 375 187 Q256 166 137 187 Q119 178 126 164Z" fill="#080808"/>
-              <path d="M224 43 Q256 56 290 43" fill="none" stroke="#777" stroke-width="5" stroke-linecap="round"/>
+              <path id="hat-crown" d="M190 157 L198 68 Q202 43 224 40 L285 40 Q308 44 314 68 L322 157 Q256 140 190 157Z" fill="#f5f5f5"/>
+              <path id="hat-band" d="M195 124 Q256 113 317 124 L320 143 Q256 133 192 143Z" fill="#0b0b0b"/>
+              <path id="hat-brim" d="M126 164 Q256 133 386 164 Q393 178 375 187 Q256 166 137 187 Q119 178 126 164Z" fill="#f5f5f5"/>
+              <path d="M224 43 Q256 56 290 43" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round"/>
             </g>
           </svg>
           <script>

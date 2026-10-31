@@ -117,7 +117,11 @@ jobs:
           :root{color-scheme:dark;--ink:#f5f5f5;--coat:#0b0b0b}
           *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
           body{-webkit-app-region:drag;user-select:none}svg{width:100%;height:100%;display:block;overflow:visible}
-          #bosley{transform-origin:50% 50%;animation:float 3.8s ease-in-out infinite}\n          #body-group{transform-origin:50% 50%;animation:breathe 2.9s ease-in-out infinite}\n          #arm-L{transform-origin:100% 8%;animation:idle-arm-left 5.2s ease-in-out infinite}\n          #arm-R{transform-origin:0% 8%;animation:idle-arm-right 5.2s ease-in-out infinite}\n          #hat-group{transform-origin:50% 100%;animation:hat-settle 7s ease-in-out infinite}
+          #bosley{transform-origin:50% 50%;animation:float 3.8s ease-in-out infinite}
+          #body-group{transform-origin:50% 50%;animation:breathe 2.9s ease-in-out infinite}
+          #arm-L{transform-origin:100% 8%;animation:idle-arm-left 5.2s ease-in-out infinite}
+          #arm-R{transform-origin:0% 8%;animation:idle-arm-right 5.2s ease-in-out infinite}
+          #hat-group{transform-origin:50% 100%;animation:hat-settle 7s ease-in-out infinite}
           .outline{stroke:var(--ink);stroke-width:10;stroke-linecap:round;stroke-linejoin:round}
           .coat{fill:var(--coat)}.white{fill:var(--ink)}
           #head-group,#hat-group,#body-group,#arm-L,#arm-R,#leg-L,#leg-R{transform-box:fill-box;transform-origin:center}
@@ -144,7 +148,11 @@ jobs:
           body[data-state="walk"] #leg-L{animation:step 380ms ease-in-out infinite alternate}
           body[data-state="walk"] #leg-R{animation:step 380ms ease-in-out infinite alternate-reverse}
           body[data-state="working"] #head-group{animation:work 1.2s ease-in-out infinite}
-          @keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-.6deg)}}\n          @keyframes breathe{0%,100%{transform:translate(0 75px) scale(1 .82)}50%{transform:translate(0 73px) scale(1 .835)}}\n          @keyframes idle-arm-left{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-3deg)}}\n          @keyframes idle-arm-right{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(3deg)}}\n          @keyframes hat-settle{0%,85%,100%{transform:translate(0 26px) scale(1 .88) rotate(0)}90%{transform:translate(0 26px) scale(1 .88) rotate(2deg)}}
+          @keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-.6deg)}}
+          @keyframes breathe{0%,100%{transform:translate(0 75px) scale(1 .82)}50%{transform:translate(0 73px) scale(1 .835)}}
+          @keyframes idle-arm-left{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-3deg)}}
+          @keyframes idle-arm-right{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(3deg)}}
+          @keyframes hat-settle{0%,85%,100%{transform:translate(0 26px) scale(1 .88) rotate(0)}90%{transform:translate(0 26px) scale(1 .88) rotate(2deg)}}
           @keyframes speak{from{transform:scaleY(1)}to{transform:scaleY(.88)}}
           @keyframes mouth-talk{from{transform:scaleY(.62)}to{transform:scaleY(1.12)}}
           @keyframes step{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
@@ -182,7 +190,7 @@ jobs:
               <path id="mouth-open" d="M241 339 Q256 344 271 339 Q270 358 256 360 Q242 358 241 339Z" fill="#050505" stroke="#f5f5f5" stroke-width="5" stroke-linejoin="round"/>
               <path id="mouth-inner" d="M247 352 Q256 347 265 352" fill="none" stroke="#f5f5f5" stroke-width="3" stroke-linecap="round"/>
             </g>
-            <g id="hat-group" class="outline" transform="translate(0 26) scale(1 .88)">
+            <g id="hat-group" class="outline" transform="translate(0 26) scale(.94 .88)">
               <path id="hat-crown" d="M181 157 L191 66 Q195 40 221 37 L288 37 Q316 42 321 67 L331 157 Q256 139 181 157Z" fill="#101010"/>
               <path id="hat-band" d="M187 123 Q256 111 325 123 L329 144 Q256 132 184 144Z" fill="#000"/>
               <path id="hat-brim" d="M104 164 Q256 129 408 164 Q416 179 394 190 Q256 164 118 190 Q96 179 104 164Z" fill="#080808"/>
@@ -303,8 +311,7 @@ jobs:
               if (part instanceof Error) return part.stack || part.message;
               if (typeof part === 'string') return part;
               try { return JSON.stringify(part); } catch { return String(part); }
-            }).join(' ') + '
-';
+            }).join(' ') + '\\n';
             try { fs.appendFileSync(startupLog, line, 'utf8'); } catch {}
             console.error(line.trimEnd());
           }
@@ -601,8 +608,7 @@ jobs:
             if (!source || source.thumbnail.isEmpty()) throw new Error('Windows did not provide a screenshot.');
             const image = 'data:image/jpeg;base64,' + source.thumbnail.resize({ width: 1280, height: 720 }).toJPEG(76).toString('base64');
             const prompt = 'You are locating a UI control in a screenshot for a visual guide. Task goal: ' + guideInstructionForTarget +
-              '
-Return ONLY one JSON object: {"found":true,"x":0.0,"y":0.0,"confidence":0.0,"target":"short label"} or {"found":false,"reason":"short reason"}. x and y are normalized screenshot coordinates from 0 to 1, measured at the CENTER of the exact visible control most relevant to the task. Prefer the actual button, input, tab, or control, not a generic screen location. If the target app/control is not visible or ambiguous, return found:false. Never guess.';
+              '\\nReturn ONLY one JSON object: {"found":true,"x":0.0,"y":0.0,"confidence":0.0,"target":"short label"} or {"found":false,"reason":"short reason"}. x and y are normalized screenshot coordinates from 0 to 1, measured at the CENTER of the exact visible control most relevant to the task. Prefer the actual button, input, tab, or control, not a generic screen location. If the target app/control is not visible or ambiguous, return found:false. Never guess.';
             const response = await fetch('https://ywwfqisbmlkjcfoqehph.supabase.co/functions/v1/companion-chat', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + guideAccessToken, 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3d2ZxaXNibWxramNmb3FlaHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODA2MDksImV4cCI6MjA5NTE1NjYwOX0.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU' },

@@ -417,13 +417,36 @@ jobs:
             walkingCompanion = new BrowserWindow({
               x, y, width, height,
               frame: false, transparent: true, resizable: false, movable: true,
-              alwaysOnTop: true, skipTaskbar: true, hasShadow: false, focusable: false,
+              show: false, alwaysOnTop: true, skipTaskbar: true, hasShadow: false, focusable: false,
               backgroundColor: '#00000000',
               webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }
             });
-            walkingCompanion.setAlwaysOnTop(true, 'floating');
+            // Keep the mascot above normal app windows and explicitly reveal it only
+            // after its transparent Three.js page has finished its first paint.
+            walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
             walkingCompanion.setIgnoreMouseEvents(false);
-            walkingCompanion.loadFile(path.join(__dirname, 'companion.html')).catch(error => logStartup('COMPANION LOAD FAILED', error.message));
+            walkingCompanion.once('ready-to-show', () => {
+              if (!walkingCompanion || walkingCompanion.isDestroyed() || !walkingCompanionEnabled) return;
+              walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
+              walkingCompanion.showInactive();
+              walkingCompanion.moveTop();
+              logStartup('COMPANION VISIBLE', walkingCompanion.getBounds());
+            });
+            walkingCompanion.webContents.on('did-fail-load', (_event, code, description, url, isMainFrame) => {
+              if (isMainFrame) logStartup('COMPANION PAGE LOAD FAILED', { code, description, url });
+            });
+            walkingCompanion.webContents.on('render-process-gone', (_event, details) => {
+              logStartup('COMPANION RENDERER STOPPED', details);
+            });
+            walkingCompanion.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+              if (level >= 2) logStartup('COMPANION RENDERER ERROR', { message, line, sourceId });
+            });
+            walkingCompanion.loadFile(path.join(__dirname, 'companion.html')).then(() => {
+              if (walkingCompanion && !walkingCompanion.isDestroyed() && walkingCompanionEnabled && !walkingCompanion.isVisible()) {
+                walkingCompanion.showInactive();
+                walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
+              }
+            }).catch(error => logStartup('COMPANION LOAD FAILED', error.message));
             walkingCompanion.on('moved', () => {
               if (!walkingCompanion || walkingCompanion.isDestroyed()) return;
               const bounds = walkingCompanion.getBounds();

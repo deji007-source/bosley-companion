@@ -384,11 +384,11 @@ document.addEventListener("DOMContentLoaded",()=>{
  const dock=document.getElementById("side-dock"),tabs=document.getElementById("dock-tabs"),body=document.getElementById("dock-body");
  if(!dock||!tabs||!body)return;
  const views=[
-  {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{if(typeof drawWs==="function"){drawWs();if(typeof user!=="undefined"&&user&&typeof load==="function")load()}}},
-  {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{if(typeof initFaceSettings==="function")initFaceSettings()}},
-  {button:"autotoggle",panel:"automation",label:"Automation",init:()=>{if(typeof drawAutomation==="function")drawAutomation()}},
-  {button:"activitytoggle",panel:"activity",label:"Activity",init:()=>{if(typeof renderActivity==="function")renderActivity()}},
-  {button:"",panel:"skills-panel",label:"Skills",init:()=>{if(typeof renderBosleySkills==="function")renderBosleySkills()}}
+  {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{const r=window.BosleyPanelRenderers?.workspace;if(typeof r!=="function")throw Error("Workspace renderer is not connected to the dock.");return r()}},
+  {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{const r=window.BosleyPanelRenderers?.appearance;if(typeof r!=="function")throw Error("Appearance renderer is not connected to the dock.");return r()}},
+  {button:"autotoggle",panel:"automation",label:"Automation",init:()=>{const r=window.BosleyPanelRenderers?.automation;if(typeof r!=="function")throw Error("Automation renderer is not connected to the dock.");return r()}},
+  {button:"activitytoggle",panel:"activity",label:"Activity",init:()=>{const r=window.BosleyPanelRenderers?.activity;if(typeof r!=="function")throw Error("Activity renderer is not connected to the dock.");return r()}},
+  {button:"",panel:"skills-panel",label:"Skills",init:()=>{const r=window.BosleyPanelRenderers?.skills;if(typeof r!=="function")throw Error("Skills renderer is not connected to the dock.");return r()}}
  ];
  let active="";
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
@@ -1600,6 +1600,7 @@ function startLaptopCommandListener(activeUser){
   });
 }
 
+window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills()});
 renderBosleyKnowledgeGraph();
 renderOfflineCommandQueue();
 initializeContextEngine();

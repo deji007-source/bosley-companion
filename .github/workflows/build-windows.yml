@@ -80,6 +80,7 @@ jobs:
                 "main.cjs",
                 "preload.cjs",
                 "bubble.html",
+                "companion.html",
                 "index.html",
                 "assets/**"
               ],
@@ -107,6 +108,79 @@ jobs:
 
           # Bundle the already-installed Supabase client for file:// startup.
           cp node_modules/@supabase/supabase-js/dist/umd/supabase.js desktop/assets/supabase.js
+          cp node_modules/three/build/three.module.js desktop/assets/three.module.js
+
+          cat > desktop/companion.html <<'COMPANION_HTML_EOF'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+          html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{-webkit-app-region:drag;user-select:none}canvas{display:block;width:100%;height:100%}
+          </style></head><body><script type="module" src="./assets/companion.js"></script></body></html>
+          COMPANION_HTML_EOF
+
+          cat > desktop/assets/companion.js <<'COMPANION_JS_EOF'
+          import * as THREE from './three.module.js';
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 40);
+          camera.position.set(0, 1.35, 7.7); camera.lookAt(0, 1.05, 0);
+          const renderer = new THREE.WebGLRenderer({ alpha:true, antialias:true, powerPreference:'low-power' });
+          renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+          renderer.setSize(innerWidth, innerHeight); renderer.setClearColor(0x000000, 0);
+          renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+          renderer.outputColorSpace = THREE.SRGBColorSpace;
+          document.body.appendChild(renderer.domElement);
+          scene.add(new THREE.HemisphereLight(0xffffff,0x171717,2.0));
+          const key = new THREE.DirectionalLight(0xffffff,3.0); key.position.set(-3,5,5); key.castShadow=true; scene.add(key);
+          const rim = new THREE.DirectionalLight(0xffffff,1.15); rim.position.set(4,2,-3); scene.add(rim);
+          const black = new THREE.MeshStandardMaterial({color:0x111111,roughness:.78,metalness:.06});
+          const charcoal = new THREE.MeshStandardMaterial({color:0x292929,roughness:.88});
+          const felt = new THREE.MeshStandardMaterial({color:0x171717,roughness:1});
+          const ivory = new THREE.MeshStandardMaterial({color:0xf2f2f2,roughness:.58});
+          const faceMat = new THREE.MeshStandardMaterial({color:0x080808,roughness:.94});
+          const group = new THREE.Group(); scene.add(group);
+          function mesh(geo,mat,parent,x,y,z){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
+          function outline(obj, color=0xd7d7d7){const e=new THREE.LineSegments(new THREE.EdgesGeometry(obj.geometry,32),new THREE.LineBasicMaterial({color,transparent:true,opacity:.72}));e.position.copy(obj.position);e.rotation.copy(obj.rotation);e.scale.copy(obj.scale);obj.parent.add(e);return e;}
+          function capsule(parent,x,y,z,r,len,mat){const m=mesh(new THREE.CapsuleGeometry(r,len,5,10),mat,parent,x,y,z);outline(m);return m;}
+          // Tailored long coat, sculpted chest and separated lapels.
+          const torso=mesh(new THREE.CapsuleGeometry(.48,.72,7,14),black,group,0,1.05,0); torso.scale.set(1.02,1.05,.68); outline(torso,0xbdbdbd);
+          const coatFront=mesh(new THREE.BoxGeometry(.66,.83,.12),charcoal,group,0,.98,.39); coatFront.rotation.z=.025; outline(coatFront);
+          const lapelL=mesh(new THREE.ConeGeometry(.22,.76,4),ivory,group,-.22,1.36,.48); lapelL.rotation.z=-.28; lapelL.rotation.x=-.16;
+          const lapelR=mesh(new THREE.ConeGeometry(.22,.76,4),charcoal,group,.22,1.36,.48); lapelR.rotation.z=.28; lapelR.rotation.x=-.16; outline(lapelR,0xe5e5e5);
+          const shirt=mesh(new THREE.ConeGeometry(.22,.52,4),ivory,group,0,1.38,.47); shirt.rotation.z=Math.PI;
+          // Fedora: pinched crown, indented front and broad, gently curved brim.
+          const hat=new THREE.Group(); hat.position.set(0,2.25,0); group.add(hat);
+          const crown=mesh(new THREE.CylinderGeometry(.43,.49,.55,12,2),felt,hat,0,.22,0); crown.scale.set(1,.92,.83); outline(crown,0xe5e5e5);
+          const crownPinchL=mesh(new THREE.SphereGeometry(.18,10,8),black,hat,-.22,.48,.13); crownPinchL.scale.set(.55,.55,.8);
+          const crownPinchR=mesh(new THREE.SphereGeometry(.18,10,8),black,hat,.22,.48,.13); crownPinchR.scale.set(.55,.55,.8);
+          const brim=mesh(new THREE.CylinderGeometry(.82,.79,.075,32),black,hat,0,-.07,.02); brim.scale.set(1,.55,.78); outline(brim,0xf0f0f0);
+          const band=mesh(new THREE.TorusGeometry(.44,.035,6,24),ivory,hat,0,.02,0); band.scale.set(1,.9,.83);
+          // Shadowed face and large, clean white eyes.
+          const head=mesh(new THREE.SphereGeometry(.43,20,16),faceMat,group,0,1.93,.18); head.scale.set(.92,.75,.72); outline(head,0x9c9c9c);
+          for(const x of [-.17,.17]){const eye=mesh(new THREE.SphereGeometry(.105,16,12),ivory,group,x,1.98,.49);eye.scale.set(.82,1.18,.52);}
+          // Articulated arms with shoulder, elbow and gloved hand pivots.
+          function makeArm(side){const shoulder=new THREE.Group();shoulder.position.set(side*.48,1.62,0);group.add(shoulder);const upper=capsule(shoulder,side*.16,-.23,0,.13,.31,black);upper.rotation.z=side*-.18;const elbow=new THREE.Group();elbow.position.set(side*.29,-.42,0);shoulder.add(elbow);const fore=capsule(elbow,side*.04,-.22,.02,.105,.29,charcoal);const hand=mesh(new THREE.SphereGeometry(.13,12,10),ivory,elbow,side*.05,-.43,.07);hand.scale.set(.8,.9,.7);return {shoulder,elbow};}
+          const armL=makeArm(-1),armR=makeArm(1);
+          function makeLeg(side){const hip=new THREE.Group();hip.position.set(side*.23,.62,0);group.add(hip);const thigh=capsule(hip,0,-.27,0,.145,.35,black);const knee=new THREE.Group();knee.position.set(0,-.51,0);hip.add(knee);capsule(knee,0,-.2,.015,.115,.27,charcoal);const boot=mesh(new THREE.BoxGeometry(.25,.14,.38),black,knee,0,-.42,.1);boot.rotation.x=-.04;outline(boot);return {hip,knee};}
+          const legL=makeLeg(-1),legR=makeLeg(1);
+          // Subtle ground shadow; no emblem, magnifier, neon or colour accents.
+          const shadow=mesh(new THREE.CircleGeometry(.72,32),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.24}),group,0,.035,-.05);shadow.rotation.x=-Math.PI/2;shadow.scale.set(1,.34,1);
+          let state='idle',stateUntil=0,lastGlance=0,glance=0,walkUntil=0;
+          const allowed=new Set(['idle','thinking','working','waiting','success','error','walk']);
+          window.addEventListener('message',e=>{const next=e.data?.type==='bosley-companion-state'?e.data.state:null;if(allowed.has(next)){state=next;stateUntil=performance.now()+({success:1200,error:900,walk:1050}[next]||0);if(next==='walk')walkUntil=stateUntil;}});
+          function animate(t){requestAnimationFrame(animate);const sec=t/1000;if(state!=='idle'&&stateUntil&&t>stateUntil){state='idle';stateUntil=0;}
+            const breathing=Math.sin(sec*1.7)*.012;group.position.y=breathing;group.rotation.y=Math.sin(sec*.45)*.035;
+            if(state==='idle'&&t-lastGlance>5200){lastGlance=t;glance=(Math.random()-.5)*.16;}
+            head.rotation.y=glance+Math.sin(sec*.7)*.025;head.rotation.x=state==='thinking'?.13:state==='waiting'?.025:0;
+            hat.rotation.z=state==='thinking'?.035:0;
+            armL.shoulder.rotation.z=state==='working'?-.48:state==='success'?.55:state==='waiting'?-.08:0;
+            armR.shoulder.rotation.z=state==='working'?.48:state==='success'?-.55:state==='error'?.12:0;
+            armL.elbow.rotation.z=state==='working'?.35:0;armR.elbow.rotation.z=state==='working'?-.35:0;
+            const walking=state==='walk'&&t<walkUntil;const stride=walking?Math.sin(sec*13)*.42:0;
+            legL.hip.rotation.x=stride;legR.hip.rotation.x=-stride;legL.knee.rotation.x=walking?Math.max(0,-stride)*.8:0;legR.knee.rotation.x=walking?Math.max(0,stride)*.8:0;
+            if(state==='success'&&t<stateUntil)group.position.y+=Math.abs(Math.sin((stateUntil-t)/120))*.08;
+            renderer.render(scene,camera);
+          }
+          const resize=()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);};addEventListener('resize',resize);requestAnimationFrame(animate);
+          COMPANION_JS_EOF
           sed -i 's#https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js#./assets/supabase.js#g' desktop/index.html
 
           cat > desktop/main.cjs <<'MAIN_EOF'
@@ -344,26 +418,7 @@ jobs:
             });
             walkingCompanion.setAlwaysOnTop(true, 'floating');
             walkingCompanion.setIgnoreMouseEvents(false);
-            const character = '<!doctype html><html><head><meta charset="utf-8"><style>' +
-              'html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}' +
-              'body{-webkit-app-region:drag;cursor:grab;user-select:none}' +
-              '.mascot{position:absolute;inset:2px 2px 3px;transform:perspective(650px) rotateY(-5deg);animation:float 4s ease-in-out infinite;}' +
-              '.coat{position:absolute;left:17px;top:75px;width:91px;height:67px;border-radius:24px 24px 18px 18px;background:linear-gradient(110deg,#555660 0%,#292a33 25%,#111218 68%,#08090d 100%);border:2px solid #777985;box-shadow:inset 5px 2px 7px #ffffff18,inset -7px -6px 9px #0009,0 5px 8px #0008}' +
-              '.hat-top{position:absolute;left:30px;top:5px;width:72px;height:48px;border-radius:48% 48% 12% 12%;background:linear-gradient(115deg,#686a75 0%,#30313a 35%,#111218 78%);border:2px solid #858792;box-shadow:inset 5px 4px 7px #ffffff20,inset -5px -5px 8px #0009}' +
-              '.hat-band{position:absolute;left:29px;top:39px;width:75px;height:10px;border-radius:50%;background:linear-gradient(#34353e,#15161c);border-bottom:1px solid #858792}' +
-              '.brim{position:absolute;left:8px;top:45px;width:116px;height:18px;border-radius:50%;background:linear-gradient(180deg,#565863 0%,#20212a 55%,#08090d 100%);border:2px solid #8a8c96;box-shadow:0 4px 5px #0009}' +
-              '.face{position:absolute;left:28px;top:56px;width:72px;height:34px;border-radius:48% 48% 42% 42%;background:linear-gradient(145deg,#08090d,#171821 65%,#030407);border:1px solid #777985;box-shadow:inset 0 4px 6px #0009;display:flex;justify-content:space-evenly;align-items:center}' +
-              '.eye{width:25px;height:25px;border-radius:50%;background:radial-gradient(ellipse at 35% 25%,#fff 0%,#f0f2f5 48%,#b7bbc5 100%);border:1px solid #d5d7de;box-shadow:inset -2px -2px 3px #777;transform:rotate(-4deg)}' +
-              '.lapel{position:absolute;top:79px;width:32px;height:50px;background:linear-gradient(115deg,#777985,#30313a 48%,#121319);border:1px solid #777985;clip-path:polygon(0 0,100% 18%,64% 100%)}.lapel.left{left:23px;transform:rotate(5deg)}.lapel.right{left:69px;transform:scaleX(-1) rotate(5deg)}' +
-              '.scarf{position:absolute;left:29px;top:84px;width:65px;height:20px;border-radius:8px 8px 14px 14px;background:linear-gradient(#292a33,#090a0f);border:1px solid #555761}' +
-              '.glove{position:absolute;top:109px;width:23px;height:25px;border-radius:45% 45% 40% 40%;background:linear-gradient(120deg,#555660,#17181f 65%,#08090c);border:1px solid #666873;box-shadow:inset 3px 2px 4px #ffffff18}.glove.left{left:8px}.glove.right{right:3px}' +
-              '.lens{position:absolute;right:0;top:83px;width:34px;height:34px;border:4px solid #bfc2ca;border-radius:50%;background:linear-gradient(135deg,#65708055,#11141c 70%);box-shadow:inset 0 0 4px #ffffff30,2px 3px 4px #000a}' +
-              '.lens:after{content:"";position:absolute;width:22px;height:6px;background:linear-gradient(#bfc2ca,#555963);right:-17px;bottom:-8px;border-radius:4px;transform:rotate(48deg);box-shadow:1px 2px 3px #000}' +
-              '.badge{position:absolute;left:73px;top:111px;color:#8b68d8;font:bold 17px Arial,sans-serif;text-shadow:none}' +
-              '@keyframes float{0%,100%{transform:perspective(650px) rotateY(-5deg) translateY(0)}50%{transform:perspective(650px) rotateY(-5deg) translateY(-2px)}}' +
-              '@media(prefers-reduced-motion:reduce){.mascot{animation:none}}' +
-              '</style></head><body><div class="mascot"><div class="coat"></div><div class="hat-top"></div><div class="hat-band"></div><div class="brim"></div><div class="face"><i class="eye"></i><i class="eye"></i></div><div class="scarf"></div><div class="lapel left"></div><div class="lapel right"></div><div class="glove left"></div><div class="glove right"></div><div class="lens"></div><div class="badge">B</div></div></body></html>';
-            walkingCompanion.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(character));
+            walkingCompanion.loadFile(path.join(__dirname, 'companion.html')).catch(error => logStartup('COMPANION LOAD FAILED', error.message));
             walkingCompanion.on('moved', () => {
               if (!walkingCompanion || walkingCompanion.isDestroyed()) return;
               const bounds = walkingCompanion.getBounds();
@@ -1073,6 +1128,9 @@ jobs:
           test -s desktop/main.cjs
           test -s desktop/preload.cjs
           test -s desktop/bubble.html
+          test -s desktop/companion.html
+          test -s desktop/assets/three.module.js
+          test -s desktop/assets/companion.js
           test -s desktop/index.html
           test -d desktop/assets
           grep -q '<script' desktop/index.html
@@ -1106,10 +1164,13 @@ jobs:
           grep -Fq "walking-companion.json" desktop/main.cjs
           grep -Fq "setWalkingCompanionEnabled" desktop/main.cjs
           grep -Fq "movable: true" desktop/main.cjs
-          grep -Fq ".hat-top" desktop/main.cjs
-          grep -Fq ".brim" desktop/main.cjs
-          grep -Fq ".glove" desktop/main.cjs
-          ! grep -Fq "box-shadow:0 0 8px" desktop/main.cjs
+          grep -Fq "loadFile(path.join(__dirname, 'companion.html'))" desktop/main.cjs
+          grep -Fq "THREE.WebGLRenderer" desktop/assets/companion.js
+          grep -Fq "armL=makeArm" desktop/assets/companion.js
+          grep -Fq "legL=makeLeg" desktop/assets/companion.js
+          grep -Fq "new Set(['idle','thinking','working','waiting','success','error','walk'])" desktop/assets/companion.js
+          ! grep -Fq "magnifying" desktop/assets/companion.js
+          ! grep -Fq "badge" desktop/assets/companion.js
           grep -Fq "walkingCompanionPreference.x" desktop/main.cjs
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs

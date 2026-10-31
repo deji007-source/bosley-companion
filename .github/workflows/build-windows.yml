@@ -186,14 +186,14 @@ jobs:
               <path id="lid-L" d="M203 237 Q223 222 243 237 L240 265 Q223 251 205 265Z" fill="#000"/>
               <path id="lid-R" d="M269 237 Q289 222 309 237 L306 265 Q289 251 271 265Z" fill="#000"/>
               <path id="nose" d="M256 292 L252 316 L259 319" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path id="mouth-line" d="M240 340 Q256 347 272 340" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round"/>
+              <path id="mouth-line" d="M242 342 H270" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round"/>
               <path id="mouth-open" d="M241 339 Q256 344 271 339 Q270 358 256 360 Q242 358 241 339Z" fill="#050505" stroke="#f5f5f5" stroke-width="5" stroke-linejoin="round"/>
               <path id="mouth-inner" d="M247 352 Q256 347 265 352" fill="none" stroke="#f5f5f5" stroke-width="3" stroke-linecap="round"/>
             </g>
             <g id="hat-group" class="outline" transform="translate(0 26) scale(.94 .88)">
-              <path id="hat-crown" d="M181 157 L191 66 Q195 40 221 37 L288 37 Q316 42 321 67 L331 157 Q256 139 181 157Z" fill="#101010"/>
-              <path id="hat-band" d="M187 123 Q256 111 325 123 L329 144 Q256 132 184 144Z" fill="#000"/>
-              <path id="hat-brim" d="M104 164 Q256 129 408 164 Q416 179 394 190 Q256 164 118 190 Q96 179 104 164Z" fill="#080808"/>
+              <path id="hat-crown" d="M190 157 L198 68 Q202 43 224 40 L285 40 Q308 44 314 68 L322 157 Q256 140 190 157Z" fill="#101010"/>
+              <path id="hat-band" d="M195 124 Q256 113 317 124 L320 143 Q256 133 192 143Z" fill="#000"/>
+              <path id="hat-brim" d="M126 164 Q256 133 386 164 Q393 178 375 187 Q256 166 137 187 Q119 178 126 164Z" fill="#080808"/>
               <path d="M224 43 Q256 56 290 43" fill="none" stroke="#777" stroke-width="5" stroke-linecap="round"/>
             </g>
           </svg>

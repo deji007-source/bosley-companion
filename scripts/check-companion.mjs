@@ -106,7 +106,7 @@ const contracts = [
   ["Activity event history", 'id="activityevents"'],
   ["Windows-only incognito mascot is scoped to the native widget", 'html.widget-mode body.desktop-panel #bosley-mascot{display:block'],
   ["Detective mascot has a wide-eyed crewmate face", 'class="mascot-eyes"'],
-  ["Detective mascot wears a hat", 'class="mascot-hat"'],
+  ["Detective mascot has a clean close-cropped buzz cut", 'class="mascot-buzzcut"'],
   ["Detective mascot wears a jacket with lapels", 'class="mascot-lapel"'],
   ["Detective mascot carries a magnifying glass", 'class="mascot-magnifier"'],
   ["Detective mascot has an idle inspection gesture", "bosley-magnifier-search"],

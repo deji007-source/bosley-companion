@@ -333,3 +333,11 @@ assert.ok(html.includes("M32 41Q31 17 60 17 89 17 88 41"), "Bosley face silhouet
 assert.ok(!html.includes("mascot-hat"), "The Windows mascot must not render a hat");
 assert.ok(!html.includes('class="hat"'), "The collapsed launcher must not render a hat");
 assert.ok(!html.includes('id="hatstyle"'), "Appearance settings must no longer expose a hat control");
+
+assert.ok(html.includes("mascot-mouth-closed"), "Bosley must retain a clean neutral mouth line");
+assert.ok(html.includes("mascot-mouth-open"), "Bosley must have a separate open-mouth speaking shape");
+assert.ok(html.includes("bosley-mouth-talk"), "Bosley mouth must animate while speaking");
+assert.ok(html.includes("data-state=speaking] #bosley-mascot .mascot-mouth-open"), "Speaking state must reveal the animated mouth");
+assert.ok(html.includes("data-state=listening] #bosley-mascot .mascot-eye"), "Listening state must visibly change Bosley's eyes");
+assert.ok(html.includes("mascot-brow"), "Bosley must have expressive eyebrows");
+assert.ok(html.includes("bosley-eye-blink"), "Bosley must blink naturally");

@@ -24,6 +24,14 @@ const androidInstaller = readText(new URL("./install-android-overlay.py", import
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 
 const contracts = [
+  ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],
+  ["Automation Skill master switch is respected", "if(!settings.enabled)return {status:\"none\"}"],
+  ["Disabled Skills cannot be selected for workflow routing", "readBosleySkills().filter(skill=>skill.enabled&&(settings.ids===null||settings.ids.includes(skill.id)))"],
+  ["Skills link workflows through explicit workflow metadata", "workflowLine=content.match"],
+  ["Skills triggers require exact normalized phrase matches", "triggers.includes(command)"],
+  ["Ambiguous Skill triggers stop without executing", "skillResolution.status===\"ambiguous\""],
+  ["Unlinked Skills explain the saved-workflow requirement", "skillResolution.status===\"unlinked\""],
+  ["Skill routing reuses the saved workflow execution path", "skillResolution.status===\"match\"?skillResolution.workflow:findWorkflowCommand(t)"],
   ["Automation cloud query is account scoped", '.eq("user_id",uid)'],
   ["Automation sync captures the account-specific cache key", 'const localKey=AUTO_KEY+":"+uid'],
   ["Automation sync rejects results after an account switch", "if(user?.id!==uid)return []"],

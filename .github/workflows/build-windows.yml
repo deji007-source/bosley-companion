@@ -298,51 +298,95 @@ jobs:
             });
           }
 
-          // A lightweight, click-through desktop character. Ctrl+Alt+B toggles visibility.
+          // Persist the walking companion preference locally; never sync desktop visibility to the cloud.
+          const companionPreferenceFile = path.join(app.getPath('userData'), 'walking-companion.json');
+          let walkingCompanionPreference = { enabled: true, x: null, y: null };
+          function readWalkingCompanionPreference() {
+            try {
+              const saved = JSON.parse(fs.readFileSync(companionPreferenceFile, 'utf8'));
+              return {
+                enabled: typeof saved.enabled === 'boolean' ? saved.enabled : true,
+                x: Number.isFinite(saved.x) ? saved.x : null,
+                y: Number.isFinite(saved.y) ? saved.y : null
+              };
+            } catch { return { enabled: true, x: null, y: null }; }
+          }
+          walkingCompanionPreference = readWalkingCompanionPreference();
+          let walkingCompanionEnabled = walkingCompanionPreference.enabled;
+          function saveWalkingCompanionPreference() {
+            try {
+              fs.mkdirSync(path.dirname(companionPreferenceFile), { recursive: true });
+              fs.writeFileSync(companionPreferenceFile, JSON.stringify({
+                enabled: walkingCompanionEnabled,
+                x: walkingCompanionPreference.x,
+                y: walkingCompanionPreference.y
+              }, null, 2), 'utf8');
+            } catch (error) { logStartup('COMPANION PREFERENCE SAVE FAILED', error.message); }
+          }
+
+          // A draggable, always-on-top 3D-style desktop mascot. Ctrl+Alt+B toggles visibility.
           let walkingCompanion = null;
-          let companionTimer = null;
-          let companionDirection = 1;
           function createWalkingCompanion() {
             if (process.platform !== 'win32' || (walkingCompanion && !walkingCompanion.isDestroyed())) return;
-            const area = screen.getPrimaryDisplay().workArea;
+            const display = screen.getPrimaryDisplay();
+            const area = display.workArea;
+            const width = 132, height = 150;
+            const fallbackX = area.x + area.width - width - 36;
+            const fallbackY = area.y + Math.round((area.height - height) * 0.55);
+            const x = Math.max(area.x, Math.min(walkingCompanionPreference.x ?? fallbackX, area.x + area.width - width));
+            const y = Math.max(area.y, Math.min(walkingCompanionPreference.y ?? fallbackY, area.y + area.height - height));
             walkingCompanion = new BrowserWindow({
-              x: area.x + 24, y: area.y + area.height - 116, width: 96, height: 112,
-              frame: false, transparent: true, resizable: false, movable: false,
+              x, y, width, height,
+              frame: false, transparent: true, resizable: false, movable: true,
               alwaysOnTop: true, skipTaskbar: true, hasShadow: false, focusable: false,
               backgroundColor: '#00000000',
               webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
             });
             walkingCompanion.setAlwaysOnTop(true, 'floating');
-            walkingCompanion.setIgnoreMouseEvents(true, { forward: true });
+            walkingCompanion.setIgnoreMouseEvents(false);
             const character = '<!doctype html><html><head><meta charset="utf-8"><style>' +
               'html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}' +
-              '.walker{position:absolute;inset:5px 8px 8px;animation:bob .55s ease-in-out infinite alternate;transform-origin:bottom center}' +
-              '.body{position:absolute;left:15px;top:28px;width:54px;height:68px;border-radius:48% 48% 30% 30%;background:linear-gradient(110deg,#34343b,#09090c 70%);border:2px solid #aaa;box-shadow:0 5px 12px #0008}' +
-              '.hood{position:absolute;left:14px;top:10px;width:58px;height:48px;border-radius:50% 50% 42% 42%;background:#17171c;border:2px solid #aaa}' +
-              '.face{position:absolute;left:23px;top:29px;width:40px;height:19px;border-radius:14px;background:#050505;border:1px solid #777;display:flex;justify-content:space-evenly;align-items:center}' +
-              '.eye{width:7px;height:11px;border-radius:8px;background:#fff;box-shadow:0 0 5px #fff}' +
-              '.leg{position:absolute;top:86px;width:14px;height:13px;border-radius:0 0 8px 8px;background:#111;border:1px solid #888;animation:step .28s ease-in-out infinite alternate}' +
-              '.leg.a{left:24px}.leg.b{left:47px;animation-delay:.28s}' +
-              '.lens{position:absolute;right:0;top:60px;width:18px;height:18px;border:3px solid #ddd;border-radius:50%;box-shadow:0 0 5px #fff}.lens:after{content:"";position:absolute;width:10px;height:3px;background:#ddd;right:-8px;bottom:-4px;transform:rotate(45deg)}' +
-              '@keyframes bob{to{transform:translateY(-3px)}}@keyframes step{to{transform:translateY(-4px) rotate(12deg)}}' +
-              '</style></head><body><div class="walker"><div class="hood"></div><div class="body"></div><div class="face"><i class="eye"></i><i class="eye"></i></div><div class="leg a"></div><div class="leg b"></div><div class="lens"></div></div></body></html>';
+              'body{-webkit-app-region:drag;cursor:grab;user-select:none}' +
+              '.mascot{position:absolute;inset:2px 2px 3px;transform:perspective(650px) rotateY(-5deg);animation:float 4s ease-in-out infinite;}' +
+              '.coat{position:absolute;left:17px;top:75px;width:91px;height:67px;border-radius:24px 24px 18px 18px;background:linear-gradient(110deg,#555660 0%,#292a33 25%,#111218 68%,#08090d 100%);border:2px solid #777985;box-shadow:inset 5px 2px 7px #ffffff18,inset -7px -6px 9px #0009,0 5px 8px #0008}' +
+              '.hat-top{position:absolute;left:30px;top:5px;width:72px;height:48px;border-radius:48% 48% 12% 12%;background:linear-gradient(115deg,#686a75 0%,#30313a 35%,#111218 78%);border:2px solid #858792;box-shadow:inset 5px 4px 7px #ffffff20,inset -5px -5px 8px #0009}' +
+              '.hat-band{position:absolute;left:29px;top:39px;width:75px;height:10px;border-radius:50%;background:linear-gradient(#34353e,#15161c);border-bottom:1px solid #858792}' +
+              '.brim{position:absolute;left:8px;top:45px;width:116px;height:18px;border-radius:50%;background:linear-gradient(180deg,#565863 0%,#20212a 55%,#08090d 100%);border:2px solid #8a8c96;box-shadow:0 4px 5px #0009}' +
+              '.face{position:absolute;left:28px;top:56px;width:72px;height:34px;border-radius:48% 48% 42% 42%;background:linear-gradient(145deg,#08090d,#171821 65%,#030407);border:1px solid #777985;box-shadow:inset 0 4px 6px #0009;display:flex;justify-content:space-evenly;align-items:center}' +
+              '.eye{width:25px;height:25px;border-radius:50%;background:radial-gradient(ellipse at 35% 25%,#fff 0%,#f0f2f5 48%,#b7bbc5 100%);border:1px solid #d5d7de;box-shadow:inset -2px -2px 3px #777;transform:rotate(-4deg)}' +
+              '.lapel{position:absolute;top:79px;width:32px;height:50px;background:linear-gradient(115deg,#777985,#30313a 48%,#121319);border:1px solid #777985;clip-path:polygon(0 0,100% 18%,64% 100%)}.lapel.left{left:23px;transform:rotate(5deg)}.lapel.right{left:69px;transform:scaleX(-1) rotate(5deg)}' +
+              '.scarf{position:absolute;left:29px;top:84px;width:65px;height:20px;border-radius:8px 8px 14px 14px;background:linear-gradient(#292a33,#090a0f);border:1px solid #555761}' +
+              '.glove{position:absolute;top:109px;width:23px;height:25px;border-radius:45% 45% 40% 40%;background:linear-gradient(120deg,#555660,#17181f 65%,#08090c);border:1px solid #666873;box-shadow:inset 3px 2px 4px #ffffff18}.glove.left{left:8px}.glove.right{right:3px}' +
+              '.lens{position:absolute;right:0;top:83px;width:34px;height:34px;border:4px solid #bfc2ca;border-radius:50%;background:linear-gradient(135deg,#65708055,#11141c 70%);box-shadow:inset 0 0 4px #ffffff30,2px 3px 4px #000a}' +
+              '.lens:after{content:"";position:absolute;width:22px;height:6px;background:linear-gradient(#bfc2ca,#555963);right:-17px;bottom:-8px;border-radius:4px;transform:rotate(48deg);box-shadow:1px 2px 3px #000}' +
+              '.badge{position:absolute;left:73px;top:111px;color:#8b68d8;font:bold 17px Arial,sans-serif;text-shadow:none}' +
+              '@keyframes float{0%,100%{transform:perspective(650px) rotateY(-5deg) translateY(0)}50%{transform:perspective(650px) rotateY(-5deg) translateY(-2px)}}' +
+              '@media(prefers-reduced-motion:reduce){.mascot{animation:none}}' +
+              '</style></head><body><div class="mascot"><div class="coat"></div><div class="hat-top"></div><div class="hat-band"></div><div class="brim"></div><div class="face"><i class="eye"></i><i class="eye"></i></div><div class="scarf"></div><div class="lapel left"></div><div class="lapel right"></div><div class="glove left"></div><div class="glove right"></div><div class="lens"></div><div class="badge">B</div></div></body></html>';
             walkingCompanion.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(character));
+            walkingCompanion.on('moved', () => {
+              if (!walkingCompanion || walkingCompanion.isDestroyed()) return;
+              const bounds = walkingCompanion.getBounds();
+              walkingCompanionPreference.x = bounds.x;
+              walkingCompanionPreference.y = bounds.y;
+              saveWalkingCompanionPreference();
+            });
             walkingCompanion.on('closed', () => { walkingCompanion = null; });
-            let x = area.x + 24;
-            companionTimer = setInterval(() => {
-              if (!walkingCompanion || walkingCompanion.isDestroyed() || walkingCompanion.isMinimized()) return;
-              const current = screen.getPrimaryDisplay().workArea;
-              x += companionDirection * 2;
-              if (x >= current.x + current.width - 110) { x = current.x + current.width - 110; companionDirection = -1; }
-              if (x <= current.x + 8) { x = current.x + 8; companionDirection = 1; }
-              walkingCompanion.setPosition(Math.round(x), current.y + current.height - 116);
-            }, 45);
+          }
+          function setWalkingCompanionEnabled(enabled) {
+            walkingCompanionEnabled = Boolean(enabled);
+            saveWalkingCompanionPreference();
+            if (!walkingCompanionEnabled) {
+              if (walkingCompanion && !walkingCompanion.isDestroyed()) walkingCompanion.hide();
+              return;
+            }
+            if (!walkingCompanion || walkingCompanion.isDestroyed()) createWalkingCompanion();
+            else walkingCompanion.showInactive();
           }
           function toggleWalkingCompanion() {
-            if (!walkingCompanion || walkingCompanion.isDestroyed()) { createWalkingCompanion(); return; }
-            if (walkingCompanion.isVisible()) walkingCompanion.hide(); else walkingCompanion.showInactive();
+            setWalkingCompanionEnabled(!walkingCompanionEnabled);
           }
-          let guideLineWindow = null;
+                    let guideLineWindow = null;
           let guideCardWindow = null;
           let guideTargetWindow = null;
           function stopVisualGuide() {
@@ -841,8 +885,9 @@ jobs:
           app.whenReady().then(() => {
             createBubble();
             createPanel();
-            createWalkingCompanion();
-            globalShortcut.register('CommandOrControl+Alt+B', toggleWalkingCompanion);
+            if (walkingCompanionEnabled) createWalkingCompanion();
+            const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+B', toggleWalkingCompanion);
+            if (!shortcutRegistered) logStartup('COMPANION SHORTCUT REGISTRATION FAILED');
             positionWindows();
 
             ipcMain.on('toggle-panel', togglePanel);
@@ -855,8 +900,7 @@ jobs:
           app.on('before-quit', () => {
             app.isQuitting = true;
             globalShortcut.unregisterAll();
-            if (companionTimer) clearInterval(companionTimer);
-          });
+            });
 
           app.on('window-all-closed', () => {
             if (process.platform !== 'darwin') {
@@ -1059,6 +1103,14 @@ jobs:
           grep -Fq 'window.bosleySetTarget' desktop/main.cjs
           grep -Fq 'width: 300, height: 220' desktop/main.cjs
           grep -Fq "wake_companion" desktop/main.cjs
+          grep -Fq "walking-companion.json" desktop/main.cjs
+          grep -Fq "setWalkingCompanionEnabled" desktop/main.cjs
+          grep -Fq "movable: true" desktop/main.cjs
+          grep -Fq ".hat-top" desktop/main.cjs
+          grep -Fq ".brim" desktop/main.cjs
+          grep -Fq ".glove" desktop/main.cjs
+          ! grep -Fq "box-shadow:0 0 8px" desktop/main.cjs
+          grep -Fq "walkingCompanionPreference.x" desktop/main.cjs
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs
           grep -Fq "nodeIntegration: false" desktop/main.cjs

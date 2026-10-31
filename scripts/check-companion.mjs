@@ -317,6 +317,12 @@ assert.ok(html.includes("activityEvent(\"Completed step \""), "Completed workflo
 assert.ok(html.includes("function setBosleyCompanionState(state)"), "Agent state changes must be centralized");
 assert.ok(html.includes("bosley-teleport-in"), "Bosley must animate into view with a teleport-style arrival");
 assert.ok(html.includes("bosley-lock-focus"), "Bosley must use a focused lock-in animation while thinking or working");
+assert.ok(html.includes("agent-response-phase"), "Chat responses must expose a live agent phase indicator");
+assert.ok(html.includes("Checking skills and available actions"), "Agent phase must show its capability review stage");
+assert.ok(html.includes("Composing your response"), "Agent phase must transition when response generation starts");
+assert.ok(html.includes("Response ready"), "Agent phase must show a distinct successful completion state");
+assert.ok(html.includes("Could not complete"), "Agent phase must expose failures instead of silently resetting");
+assert.ok(html.includes("agentTrackSweep"), "Agent response progress indicator must animate");
 assert.ok(html.includes("Agent plan created: "+'"+instruction+"'), "Conversational automation must create an activity plan before routing");
 assert.ok(html.includes("Agent route status: "+'"+result.target+"'), "Automation route outcomes must be visible in activity history");
 assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow step must begin in an explicit pending state");

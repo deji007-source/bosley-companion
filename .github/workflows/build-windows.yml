@@ -298,7 +298,23 @@ jobs:
             });
           }
 
-          // A lightweight, click-through desktop character. Ctrl+Alt+B toggles visibility.
+          // Persist the walking companion preference locally; never sync desktop visibility to the cloud.
+          const companionPreferenceFile = path.join(app.getPath('userData'), 'walking-companion.json');
+          function readWalkingCompanionPreference() {
+            try {
+              const saved = JSON.parse(fs.readFileSync(companionPreferenceFile, 'utf8'));
+              return typeof saved.enabled === 'boolean' ? saved.enabled : true;
+            } catch { return true; }
+          }
+          let walkingCompanionEnabled = readWalkingCompanionPreference();
+          function saveWalkingCompanionPreference() {
+            try {
+              fs.mkdirSync(path.dirname(companionPreferenceFile), { recursive: true });
+              fs.writeFileSync(companionPreferenceFile, JSON.stringify({ enabled: walkingCompanionEnabled }, null, 2), 'utf8');
+            } catch (error) { logStartup('COMPANION PREFERENCE SAVE FAILED', error.message); }
+          }
+
+          // A lightweight, click-through desktop character. Ctrl+Alt+B toggles and remembers visibility.
           let walkingCompanion = null;
           let companionTimer = null;
           let companionDirection = 1;
@@ -338,9 +354,18 @@ jobs:
               walkingCompanion.setPosition(Math.round(x), current.y + current.height - 116);
             }, 45);
           }
+          function setWalkingCompanionEnabled(enabled) {
+            walkingCompanionEnabled = Boolean(enabled);
+            saveWalkingCompanionPreference();
+            if (!walkingCompanionEnabled) {
+              if (walkingCompanion && !walkingCompanion.isDestroyed()) walkingCompanion.hide();
+              return;
+            }
+            if (!walkingCompanion || walkingCompanion.isDestroyed()) createWalkingCompanion();
+            else walkingCompanion.showInactive();
+          }
           function toggleWalkingCompanion() {
-            if (!walkingCompanion || walkingCompanion.isDestroyed()) { createWalkingCompanion(); return; }
-            if (walkingCompanion.isVisible()) walkingCompanion.hide(); else walkingCompanion.showInactive();
+            setWalkingCompanionEnabled(!walkingCompanionEnabled);
           }
           let guideLineWindow = null;
           let guideCardWindow = null;
@@ -841,8 +866,9 @@ jobs:
           app.whenReady().then(() => {
             createBubble();
             createPanel();
-            createWalkingCompanion();
-            globalShortcut.register('CommandOrControl+Alt+B', toggleWalkingCompanion);
+            if (walkingCompanionEnabled) createWalkingCompanion();
+            const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+B', toggleWalkingCompanion);
+            if (!shortcutRegistered) logStartup('COMPANION SHORTCUT REGISTRATION FAILED');
             positionWindows();
 
             ipcMain.on('toggle-panel', togglePanel);

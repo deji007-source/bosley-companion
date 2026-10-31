@@ -112,27 +112,99 @@ jobs:
 
           cat > desktop/companion.html <<'COMPANION_HTML_EOF'
           <!doctype html>
-          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-          html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{-webkit-app-region:drag;user-select:none}
-          #fallback{position:absolute;inset:0;width:100%;height:100%;display:block}
-          #fallback.hidden{display:none}canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
-          </style></head><body>
-          <svg id="fallback" viewBox="0 0 112 128" role="img" aria-label="Bosley desktop companion">
-            <defs><linearGradient id="coat" x2="1" y2="1"><stop stop-color="#454545"/><stop offset="1" stop-color="#080808"/></linearGradient></defs>
-            <path d="M22 118 Q24 83 37 72 L75 72 Q90 85 91 118Z" fill="url(#coat)" stroke="#ddd" stroke-width="1.5"/>
-            <path d="M43 73 L56 91 L69 73 L63 113 L56 105 L49 113Z" fill="#eee"/>
-            <path d="M28 45 Q30 13 56 12 Q83 14 85 45 L95 51 Q56 61 17 51Z" fill="#111" stroke="#eee" stroke-width="2"/>
-            <path d="M39 36 Q56 25 73 36 L77 57 Q56 72 35 57Z" fill="#090909" stroke="#aaa" stroke-width="1.5"/>
-            <ellipse cx="47" cy="48" rx="5" ry="7" fill="#fff"/><ellipse cx="65" cy="48" rx="5" ry="7" fill="#fff"/>
-            <circle cx="48" cy="49" r="2.2" fill="#111"/><circle cx="66" cy="49" r="2.2" fill="#111"/>
-            <path d="M31 83 L18 104 M81 83 L94 104" stroke="#222" stroke-width="8" stroke-linecap="round"/>
-            <path d="M43 116 L37 125 M69 116 L75 125" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+          <style>
+          :root{color-scheme:dark;--ink:#f5f5f5;--coat:#0b0b0b;--shade:#161616}
+          *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
+          body{-webkit-app-region:drag;user-select:none}svg{width:100%;height:100%;display:block;overflow:visible}
+          #bosley{transform-origin:50% 50%;animation:float 3.8s ease-in-out infinite}
+          .outline{stroke:var(--ink);stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+          .coat{fill:var(--coat)}.shade{fill:var(--shade)}.white{fill:var(--ink)}
+          #head-group,#hat-group,#body-group,#arm-L,#arm-R,#leg-L,#leg-R{transform-box:fill-box;transform-origin:center}
+          #eye-L,#eye-R{transform-box:fill-box;transform-origin:center}
+          #lid-L,#lid-R{opacity:0;transform-box:fill-box;transform-origin:top center}
+          #magnifier{opacity:0;transform-box:fill-box;transform-origin:80% 80%}
+          #shadow{opacity:.35}
+          body[data-state="listening"] #head-group{transform:rotate(-5deg) translateY(-5px)}
+          body[data-state="listening"] #hat-group{transform:rotate(-3deg) translateY(-4px)}
+          body[data-state="listening"] #eye-L,body[data-state="listening"] #eye-R{transform:scaleY(1.08)}
+          body[data-state="thinking"] #head-group{transform:rotate(-8deg)}
+          body[data-state="thinking"] #lid-R{opacity:1;transform:scaleY(.28)}
+          body[data-state="thinking"] #magnifier{opacity:1;transform:rotate(-18deg) translate(-8px,-18px)}
+          body[data-state="speaking"] #eye-L,body[data-state="speaking"] #eye-R{animation:speak 555ms ease-in-out infinite alternate}
+          body[data-state="speaking"] #body-group{animation:shoulder 555ms ease-in-out infinite alternate}
+          body[data-state="error"] #head-group{transform:rotate(-5deg) translateY(8px)}
+          body[data-state="error"] #lid-L,body[data-state="error"] #lid-R{opacity:1;transform:scaleY(.5)}
+          body[data-state="error"] .eyes{opacity:.55}
+          body[data-state="success"] #arm-R{transform:rotate(-42deg) translate(-8px,-24px)}
+          body[data-state="success"] #thumb{opacity:1}
+          body[data-state="walk"] #leg-L{animation:step 380ms ease-in-out infinite alternate}
+          body[data-state="walk"] #leg-R{animation:step 380ms ease-in-out infinite alternate-reverse}
+          body[data-state="working"] #head-group{animation:work 1.2s ease-in-out infinite}
+          @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+          @keyframes speak{from{transform:scaleY(1)}to{transform:scaleY(.88)}}
+          @keyframes shoulder{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+          @keyframes step{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
+          @keyframes work{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+          @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+          </style></head><body data-state="idle">
+          <svg id="bosley" viewBox="0 0 512 768" role="img" aria-label="Bosley, monochrome noir detective companion">
+            <defs>
+              <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="12"/></filter>
+              <linearGradient id="coat-fill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#161616"/><stop offset="1" stop-color="#050505"/></linearGradient>
+            </defs>
+            <ellipse id="shadow" cx="256" cy="724" rx="132" ry="20" fill="#fff" filter="url(#soft-shadow)"/>
+            <g id="leg-L" class="outline"><path d="M202 636 Q190 674 194 714 Q198 735 224 735 Q247 735 246 713 L249 648Z" class="coat"/><path d="M194 714 Q218 724 245 713" fill="none"/></g>
+            <g id="leg-R" class="outline"><path d="M266 648 L269 713 Q269 735 293 735 Q320 735 318 713 L310 636Z" class="coat"/><path d="M270 713 Q294 724 318 713" fill="none"/></g>
+            <g id="body-group">
+              <g id="arm-L" class="outline"><path d="M158 390 Q122 418 112 484 Q108 515 131 521 Q151 524 160 494 L190 433Z" class="coat"/><path d="M112 484 Q104 506 124 518" fill="none"/></g>
+              <g id="arm-R" class="outline"><path d="M354 390 Q390 418 400 484 Q404 515 381 521 Q361 524 352 494 L322 433Z" class="coat"/><path d="M400 484 Q408 506 388 518" fill="none"/>
+                <path id="thumb" d="M382 488 Q399 470 396 448 Q394 437 384 441 L371 464Z" fill="#f5f5f5" stroke="#f5f5f5" stroke-width="8" opacity="0"/>
+              </g>
+              <path id="coat" d="M166 360 Q190 337 256 337 Q322 337 346 360 Q374 420 369 535 L356 652 Q256 682 156 652 L143 535 Q138 420 166 360Z" fill="url(#coat-fill)" class="outline"/>
+              <path id="collar" d="M178 348 L220 383 L256 424 L292 383 L334 348 L314 430 L256 475 L198 430Z" class="white outline"/>
+              <path id="shirt" d="M219 379 L256 425 L293 379 L279 506 L256 528 L233 506Z" fill="#f5f5f5" class="outline"/>
+              <path id="tie" d="M245 420 L267 420 L274 451 L256 474 L238 451Z M256 474 L274 451 L281 570 L256 592 L231 570 L238 451Z" fill="#000" stroke="#f5f5f5" stroke-width="5" stroke-linejoin="round"/>
+              <path d="M168 548 Q256 570 344 548" fill="none" class="outline" opacity=".65"/>
+            </g>
+            <g id="head-group">
+              <path id="head" d="M171 192 Q175 117 256 112 Q337 117 341 192 L332 321 Q316 366 256 369 Q196 366 180 321Z" fill="#0b0b0b" class="outline"/>
+              <path id="faceplate" d="M178 215 Q256 192 334 215 L328 292 Q256 320 184 292Z" fill="#000"/>
+              <g class="eyes">
+                <rect id="eye-L" x="211" y="235" width="25" height="66" rx="12.5" class="white"/>
+                <rect id="eye-R" x="276" y="235" width="25" height="66" rx="12.5" class="white"/>
+              </g>
+              <path id="lid-L" d="M207 235 Q223 222 240 235 L238 263 Q222 251 209 263Z" fill="#000"/>
+              <path id="lid-R" d="M272 235 Q288 222 305 235 L303 263 Q287 251 274 263Z" fill="#000"/>
+            </g>
+            <g id="hat-group" class="outline">
+              <path id="hat-crown" d="M181 158 L191 66 Q195 40 221 37 L288 37 Q316 42 321 67 L331 158 Q256 139 181 158Z" fill="#101010"/>
+              <path id="hat-band" d="M187 123 Q256 111 325 123 L329 144 Q256 132 184 144Z" fill="#000"/>
+              <path id="hat-brim" d="M104 164 Q256 129 408 164 Q416 179 394 190 Q256 164 118 190 Q96 179 104 164Z" fill="#080808"/>
+              <path d="M224 43 Q256 56 290 43" fill="none" stroke="#777" stroke-width="5" stroke-linecap="round"/>
+            </g>
+            <g id="magnifier" fill="none" stroke="#f5f5f5" stroke-width="9"><circle cx="376" cy="320" r="35"/><path d="M401 346 L438 384" stroke-linecap="round"/></g>
           </svg>
           <script>
-            window.addEventListener('error', function(e){ document.getElementById('fallback').classList.remove('hidden'); console.error('Bosley mascot fallback:', e.message); });
-            window.addEventListener('unhandledrejection', function(e){ document.getElementById('fallback').classList.remove('hidden'); console.error('Bosley mascot fallback:', e.reason); });
-          </script>
-          <script type="module" src="./assets/companion.js"></script></body></html>
+            (function(){
+              const allowed=['idle','listening','thinking','speaking','working','waiting','success','error','walk'];
+              const apply=s=>{document.body.dataset.state=allowed.includes(s)?s:'idle';};
+              if(window.BosleyDesktop?.onCompanionState) window.BosleyDesktop.onCompanionState(apply);
+              let blinkTimer;
+              const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+              function blink(){
+                if(reduced||document.hidden)return;
+                const eyes=document.querySelector('.eyes');
+                if(!eyes)return;
+                eyes.style.transform='scaleY(.08)';
+                setTimeout(()=>{eyes.style.transform='';},100);
+                if(Math.random()<.16)setTimeout(()=>{eyes.style.transform='scaleY(.08)';setTimeout(()=>eyes.style.transform='',90);},180);
+                blinkTimer=setTimeout(blink,2500+Math.random()*4000);
+              }
+              if(!reduced)blink();
+              window.addEventListener('beforeunload',()=>clearTimeout(blinkTimer));
+            })();
+          </script></body></html>
           COMPANION_HTML_EOF
 
           cat > desktop/assets/companion.js <<'COMPANION_JS_EOF'
@@ -436,9 +508,9 @@ jobs:
             if (process.platform !== 'win32' || (walkingCompanion && !walkingCompanion.isDestroyed())) return;
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            const width = 112, height = 128;
-            const fallbackX = area.x + area.width - width - 36;
-            const fallbackY = area.y + Math.round((area.height - height) * 0.55);
+            const width = 220, height = 280;
+            const fallbackX = area.x + Math.round((area.width - width) / 2);
+            const fallbackY = area.y + 8;
             const x = Math.max(area.x, Math.min(walkingCompanionPreference.x ?? fallbackX, area.x + area.width - width));
             const y = Math.max(area.y, Math.min(walkingCompanionPreference.y ?? fallbackY, area.y + area.height - height));
             walkingCompanion = new BrowserWindow({
@@ -1002,7 +1074,7 @@ jobs:
 
             ipcMain.on('toggle-panel', togglePanel);
             ipcMain.on('bosley:companion-state', (_event, state) => {
-              const allowedStates = new Set(['idle','thinking','working','waiting','success','error','walk']);
+              const allowedStates = new Set(['idle','listening','thinking','speaking','working','waiting','success','error','walk']);
               if (!allowedStates.has(state)) return;
               if (walkingCompanion && !walkingCompanion.isDestroyed()) {
                 walkingCompanion.webContents.send('bosley:companion-state-update', state);
@@ -1034,7 +1106,7 @@ jobs:
             getCapabilities: () => ipcRenderer.invoke('bosley:capabilities'),
             request: request => ipcRenderer.invoke('bosley:request', request),
             setCompanionState: state => {
-              const allowed = ['idle','thinking','working','waiting','success','error','walk'];
+              const allowed = ['idle','listening','thinking','speaking','working','waiting','success','error','walk'];
               if (allowed.includes(state)) ipcRenderer.send('bosley:companion-state', state);
             },
             onCompanionState: callback => {

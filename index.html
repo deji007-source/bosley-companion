@@ -747,12 +747,12 @@ function normalizeFaceSettings(value={}){
  };
 }
 function syncFaceSettingsControls(v){
- const fields={facepreset:v.preset,facesize:v.size,hatstyle:v.hat,eyeshape:v.eyeShape,eyegap:v.eyeGap,widgetedge:v.widgetEdge,widgetborder:v.widgetBorder,widgetsize:v.widgetSize,voiceprofile:voiceProfile};
+ const fields={facepreset:v.preset,facesize:v.size,eyeshape:v.eyeShape,eyegap:v.eyeGap,widgetedge:v.widgetEdge,widgetborder:v.widgetBorder,widgetsize:v.widgetSize,voiceprofile:voiceProfile};
  for(const [id,value] of Object.entries(fields)){const field=$("#"+id);if(field)field.value=value}
 }
 function applyFaceSettings(value){
  const v=normalizeFaceSettings(value);
- H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;H.dataset.hatStyle=v.hat;
+ H.dataset.facePreset=v.preset;H.dataset.faceSize=v.size;
  H.dataset.eyeShape=v.eyeShape;H.dataset.eyeGap=v.eyeGap;H.dataset.widgetEdge=v.widgetEdge;H.dataset.widgetBorder=v.widgetBorder;H.dataset.widgetSize=v.widgetSize;
  syncNativeWidgetAppearance(v);
 }
@@ -842,13 +842,13 @@ function initFaceSettings(){
  setupAndroidOverlayControls();
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;
- $("#facepreset").value=v.preset;$("#facesize").value=v.size;$("#hatstyle").value=v.hat;
+ $("#facepreset").value=v.preset;$("#facesize").value=v.size;
  $("#voiceprofile").value=voiceProfile; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
- form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,hat:$("#hatstyle").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved locally. Syncing your account preferences…";scheduleCompanionSettingsSync()}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved locally. Syncing your account preferences…";scheduleCompanionSettingsSync()}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
  $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
 $("#voiceprofile").value=voiceProfile;
 $("#voiceprofile").addEventListener("change",()=>{voiceProfile=$("#voiceprofile").value||"jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};scheduleCompanionSettingsSync();if("speechSynthesis"in window)speechSynthesis.cancel();const labels={jarvis:"Jarvis-style voice selected. "+getVoiceStatus(),natural:"Natural assistant voice selected. "+getVoiceStatus(),system:"System default voice selected. "+getVoiceStatus()};$("#facefeedback").textContent=labels[voiceProfile]||getVoiceStatus();});
- $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#hatstyle").value=FACE_DEFAULTS.hat;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#voiceprofile").value="jarvis";voiceProfile="jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};$("#facefeedback").textContent="Appearance and voice reset."};
+ $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#voiceprofile").value="jarvis";voiceProfile="jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};$("#facefeedback").textContent="Appearance and voice reset."};
 }
 $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
 

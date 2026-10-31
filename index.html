@@ -1264,12 +1264,12 @@ function speak(t){
  u.lang=selected?.lang||((voiceProfile==="system"&&navigator.language)?navigator.language:"en-GB");
  u.rate=voiceProfile==="jarvis"?0.88:voiceProfile==="natural"?1:1;
  u.pitch=voiceProfile==="jarvis"?0.72:1;
- const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes()};
- u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;eyes()};
+ const end=()=>{S.speaking=false;$("#stop").hidden=true;eyes();setBosleyCompanionState("idle")};
+ u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;eyes();setBosleyCompanionState("speaking")};
  u.onend=end;u.onerror=end;
  speechSynthesis.speak(u);
 }
-function stopSpeak(){const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;if(nativeVoice?.stopSpeaking){try{nativeVoice.stopSpeaking().catch(()=>{})}catch{}}if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes()}
+function stopSpeak(){const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;if(nativeVoice?.stopSpeaking){try{nativeVoice.stopSpeaking().catch(()=>{})}catch{}}if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes();setBosleyCompanionState("idle")}
 function setSpeech(v){speechOn=v;if(!v)stopSpeak();$("#voice").textContent="VOICE "+(v?"ON":"OFF");try{localStorage.setItem("bosley_prefs",JSON.stringify({speechOn:v}))}catch{}}
 $("#voice").onclick=()=>setSpeech(!speechOn);$("#stop").onclick=stopSpeak;setSpeech(speechOn);
 function setVoiceMode(next){

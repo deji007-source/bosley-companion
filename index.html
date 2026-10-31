@@ -262,6 +262,20 @@ html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!
 html.widget-mode #dock-launcher button,html.widget-mode #side-dock button,html.widget-mode #side-dock input,html.widget-mode #side-dock textarea,html.widget-mode #side-dock select{pointer-events:auto!important}
 
 
+/* Windows-only detachable side widget: movable and kept separate from the chat layout. */
+html.widget-mode body.desktop-panel #side-dock:not([hidden]){
+ position:fixed!important;top:72px!important;right:14px!important;bottom:auto!important;left:auto!important;
+ width:min(380px,calc(100vw - 28px))!important;min-width:260px!important;max-width:calc(100vw - 28px)!important;
+ height:min(680px,calc(100dvh - 86px))!important;max-height:calc(100dvh - 86px)!important;
+ z-index:2147483645!important;border:1px solid #454545!important;border-radius:16px!important;
+ box-shadow:0 22px 70px #000d,0 0 0 1px #ffffff0b!important;
+}
+html.widget-mode body.desktop-panel #side-dock .dock-head{cursor:grab!important;user-select:none!important;touch-action:none!important}
+html.widget-mode body.desktop-panel #side-dock.is-dragging .dock-head{cursor:grabbing!important}
+html.widget-mode body.desktop-panel #side-dock .dock-close{cursor:pointer!important}
+html.widget-mode body.desktop-panel #dock-launcher{right:8px!important;top:50%!important;z-index:2147483644!important}
+html.widget-mode body.desktop-panel #side-dock .dock-body{min-height:0!important;overflow:auto!important}
+
 /* Startup account gate: never expose the companion workspace before authentication. */
 #auth-gate{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:20px;background:#000f;backdrop-filter:blur(12px)}
 #auth-gate[hidden]{display:none!important}#auth-gate .gate-card{width:min(390px,100%);padding:28px;border:1px solid #333;border-radius:20px;background:#080808;box-shadow:0 24px 90px #000}
@@ -414,6 +428,24 @@ document.addEventListener("DOMContentLoaded",()=>{
    console.error("Bosley sign-in failed to open",err);
   }
  });
+ // Windows only: drag the detached workspace by its header without moving the chat window.
+ if(document.body.classList.contains("desktop-panel")){
+  const handle=dock.querySelector(".dock-head");let dragState=null;
+  handle?.addEventListener("pointerdown",event=>{
+   if(event.button!==0||event.target.closest("button"))return;
+   const rect=dock.getBoundingClientRect();dragState={pointerId:event.pointerId,x:event.clientX-rect.left,y:event.clientY-rect.top};
+   dock.classList.add("is-dragging");handle.setPointerCapture?.(event.pointerId);event.preventDefault();
+  });
+  handle?.addEventListener("pointermove",event=>{
+   if(!dragState||event.pointerId!==dragState.pointerId)return;
+   const width=dock.offsetWidth,height=dock.offsetHeight;
+   const left=Math.max(8,Math.min(window.innerWidth-width-8,event.clientX-dragState.x));
+   const top=Math.max(8,Math.min(window.innerHeight-height-8,event.clientY-dragState.y));
+   dock.style.left=left+"px";dock.style.top=top+"px";dock.style.right="auto";dock.style.bottom="auto";
+  });
+  const stopDrag=event=>{if(!dragState||event.pointerId!==dragState.pointerId)return;dragState=null;dock.classList.remove("is-dragging")};
+  handle?.addEventListener("pointerup",stopDrag);handle?.addEventListener("pointercancel",stopDrag);
+ }
  document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dock.hidden){dock.hidden=true;active="";tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))}});
 })();
@@ -755,6 +787,7 @@ $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#
 /* ---------- panel ---------- */
 const widgetMode=new URLSearchParams(location.search).get("widget")==="1"||!!window.BosleyDesktop||!!window.BosleyAndroidWidget;
 if(widgetMode)H.classList.add("widget-mode");
+if(window.BosleyDesktop&&typeof window.BosleyDesktop.request==="function")document.body.classList.add("desktop-panel");
 function notifyWidgetSize(open){
  try{if(window.BosleyDesktop&&typeof window.BosleyDesktop.widgetResize==="function")window.BosleyDesktop.widgetResize(!!open); }catch(e){console.warn("Bosley desktop resize failed",e)}
  try{if(window.BosleyAndroidWidget&&typeof window.BosleyAndroidWidget.resize==="function")window.BosleyAndroidWidget.resize(!!open); }catch(e){console.warn("Bosley Android resize failed",e)}

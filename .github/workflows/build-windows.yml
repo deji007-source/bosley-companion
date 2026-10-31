@@ -1085,6 +1085,8 @@ jobs:
           grep -Fq 'window.bosleySetTarget' desktop/main.cjs
           grep -Fq 'width: 300, height: 220' desktop/main.cjs
           grep -Fq "wake_companion" desktop/main.cjs
+          grep -Fq "walking-companion.json" desktop/main.cjs
+          grep -Fq "setWalkingCompanionEnabled" desktop/main.cjs
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs
           grep -Fq "nodeIntegration: false" desktop/main.cjs

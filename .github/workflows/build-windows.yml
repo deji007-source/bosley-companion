@@ -155,17 +155,24 @@ jobs:
               <g id="arm-R" class="outline"><path d="M361 391 Q386 410 393 456 Q396 481 377 486 Q359 489 352 465 L331 423Z" class="coat"/>
                 <path id="thumb" d="M378 461 Q395 446 390 430 Q387 421 379 428 L367 449Z" fill="#f5f5f5" stroke="#f5f5f5" stroke-width="8" opacity="0"/>
               </g>
-              <path id="coat" d="M165 335 Q183 303 213 299 Q256 287 299 299 Q329 303 347 335 Q377 390 366 496 L349 608 Q256 648 163 608 L146 496 Q135 390 165 335Z" fill="#0b0b0b" class="outline"/>
+              <path id="coat" d="M165 335 Q174 291 215 279 Q256 265 297 279 Q338 291 347 335 Q377 390 366 496 L349 608 Q256 648 163 608 L146 496 Q135 390 165 335Z" fill="#0b0b0b" class="outline"/>
+              <path id="top-hem" d="M164 520 Q256 540 348 520" fill="none" stroke="#777" stroke-width="7" stroke-linecap="round"/>
+              <path id="trousers-L" d="M171 535 Q211 546 251 538 L248 640 Q222 650 188 638Z" fill="#171717" class="outline"/>
+              <path id="trousers-R" d="M261 538 Q301 546 341 535 L324 638 Q290 650 264 640Z" fill="#171717" class="outline"/>
+              <path id="trouser-seam" d="M256 545 L256 632" fill="none" stroke="#777" stroke-width="5" stroke-linecap="round"/>
+              <path id="waistband" d="M174 535 Q256 552 338 535" fill="none" stroke="#888" stroke-width="6" stroke-linecap="round"/>
             </g>
             <g id="head-group" transform="translate(0 26) scale(1 .88)">
-              <path id="head" d="M174 183 Q176 103 256 101 Q336 103 338 183 L330 329 Q317 386 256 392 Q195 386 182 329Z" fill="#0b0b0b" class="outline"/>
+              <path id="head" d="M164 190 Q164 91 256 91 Q348 91 348 190 L339 320 Q329 388 256 394 Q183 388 173 320Z" fill="#0b0b0b" class="outline"/>
               <path id="faceplate" d="M181 212 Q256 191 331 212 L326 303 Q256 330 186 303Z" fill="#000"/>
               <g class="eyes">
-                <rect id="eye-L" x="211" y="237" width="25" height="66" rx="12.5" class="white"/>
-                <rect id="eye-R" x="276" y="237" width="25" height="66" rx="12.5" class="white"/>
+                <rect id="eye-L" x="207" y="235" width="32" height="68" rx="16" class="white"/>
+                <rect id="eye-R" x="273" y="235" width="32" height="68" rx="16" class="white"/>
               </g>
-              <path id="lid-L" d="M207 237 Q223 224 240 237 L238 265 Q222 253 209 265Z" fill="#000"/>
-              <path id="lid-R" d="M272 237 Q288 224 305 237 L303 265 Q287 253 274 265Z" fill="#000"/>
+              <path id="lid-L" d="M203 237 Q223 222 243 237 L240 265 Q223 251 205 265Z" fill="#000"/>
+              <path id="lid-R" d="M269 237 Q289 222 309 237 L306 265 Q289 251 271 265Z" fill="#000"/>
+              <path id="nose" d="M256 292 L252 316 L259 319" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path id="mouth" d="M240 340 Q256 347 272 340" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round"/>
             </g>
             <g id="hat-group" class="outline" transform="translate(0 26) scale(1 .88)">
               <path id="hat-crown" d="M181 157 L191 66 Q195 40 221 37 L288 37 Q316 42 321 67 L331 157 Q256 139 181 157Z" fill="#101010"/>

@@ -262,6 +262,27 @@ html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!
 html.widget-mode #dock-launcher button,html.widget-mode #side-dock button,html.widget-mode #side-dock input,html.widget-mode #side-dock textarea,html.widget-mode #side-dock select{pointer-events:auto!important}
 
 
+/* Windows-only Bosley incognito companion. Vector character, transparent canvas. */
+html.widget-mode body.desktop-panel .launch{width:76px!important;height:72px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+html.widget-mode body.desktop-panel .launch::after{display:none!important}
+html.widget-mode body.desktop-panel .launch .hat,html.widget-mode body.desktop-panel .launch .eyes{display:none!important}
+#bosley-mascot{display:none}
+html.widget-mode body.desktop-panel #bosley-mascot{display:block;position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 5px 8px #0009);animation:bosley-mascot-idle 3.4s ease-in-out infinite;transform-origin:50% 90%}
+html.widget-mode body.desktop-panel #bosley-mascot .mascot-cloak{fill:#11131a;stroke:#d8e1f4;stroke-width:2.1;stroke-linejoin:round}
+html.widget-mode body.desktop-panel #bosley-mascot .mascot-face{fill:#05070c;stroke:#75839a;stroke-width:1.8}
+html.widget-mode body.desktop-panel #bosley-mascot .mascot-eye{fill:#eaf3ff;filter:drop-shadow(0 0 3px #9ccaff)}
+html.widget-mode body.desktop-panel #bosley-mascot .mascot-accent{fill:#a9cfff}
+html.widget-mode body.desktop-panel #bosley-mascot .mascot-blink{transform-origin:center;animation:bosley-mascot-blink 4.8s infinite}
+html.widget-mode body.desktop-panel .launch:hover #bosley-mascot{animation:bosley-mascot-hop .48s ease-in-out}
+html.widget-mode body.desktop-panel .launch:active #bosley-mascot{transform:scale(.94)}
+html.widget-mode body.desktop-panel .launch[data-state=thinking] #bosley-mascot{animation:bosley-mascot-think 1.1s ease-in-out infinite}
+html.widget-mode body.desktop-panel .launch[data-state=listening] #bosley-mascot .mascot-eye{fill:#b6dcff;filter:drop-shadow(0 0 6px #69baff)}
+@keyframes bosley-mascot-idle{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-2deg)}}
+@keyframes bosley-mascot-hop{0%,100%{transform:translateY(0) rotate(0)}45%{transform:translateY(-9px) rotate(5deg)}}
+@keyframes bosley-mascot-think{0%,100%{transform:rotate(0)}35%{transform:rotate(5deg)}70%{transform:rotate(-4deg)}}
+@keyframes bosley-mascot-blink{0%,45%,48%,100%{transform:scaleY(1)}46%,47%{transform:scaleY(.08)}}
+@media(prefers-reduced-motion:reduce){html.widget-mode body.desktop-panel #bosley-mascot{animation:none!important}}
+
 /* Windows-only detachable side widget: movable and kept separate from the chat layout. */
 html.widget-mode body.desktop-panel #side-dock:not([hidden]){
  position:fixed!important;top:72px!important;right:14px!important;bottom:auto!important;left:auto!important;
@@ -305,7 +326,7 @@ html.widget-mode body.desktop-panel #side-dock .dock-body{min-height:0!important
 
 .activity .form select{min-width:0;width:100%;border:1px solid #333;border-radius:8px;background:#050505;color:#ddd;padding:9px;font-size:11px}.activity .item.guided{outline:1px solid #aaa;box-shadow:0 0 0 4px #ffffff14}.bosley-guide{position:fixed;inset:0;z-index:2147483646;pointer-events:none}.bosley-guide svg{position:absolute;inset:0;width:100%;height:100%}.bosley-guide path{fill:none;stroke:#f5f5f5;stroke-width:2.5;stroke-dasharray:7 8;animation:bosley-guide-flow 1s linear infinite}.bosley-guide .guide-card{position:absolute;right:16px;top:16px;max-width:280px;padding:12px;border:1px solid #777;border-radius:12px;background:#080808f5;color:#fff;pointer-events:auto;font-size:11px}.bosley-guide button{margin-top:8px;padding:7px;border:1px solid #555;border-radius:7px;background:#171717;color:#fff}@keyframes bosley-guide-flow{to{stroke-dashoffset:-30}}</style></head>
 <body><div id="root">
-<main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"></button></main>
+<main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 88 92" role="img" aria-label="Bosley companion" xmlns="http://www.w3.org/2000/svg"><path class="mascot-cloak" d="M17 37 25 14 39 24Q44 20 49 24L64 14 70 39Q80 52 75 72 69 87 44 88 19 87 13 72 8 52 17 37Z"/><path class="mascot-face" d="M23 42Q25 29 44 29 63 29 65 42L62 62Q57 72 44 72 31 72 26 62Z"/><g class="mascot-blink"><ellipse class="mascot-eye" cx="35" cy="49" rx="3.7" ry="5.2"/><ellipse class="mascot-eye" cx="53" cy="49" rx="3.7" ry="5.2"/></g><path class="mascot-accent" d="M39 61Q44 65 49 61" fill="none" stroke="#a9cfff" stroke-width="2" stroke-linecap="round"/><path d="M29 79Q44 73 59 79" fill="none" stroke="#6e83a2" stroke-width="2" stroke-linecap="round"/></svg></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="signin-open" class="signin-shortcut" type="button" aria-label="Open account sign-in" title="Account and sync">Sign in</button><button id="dock-open" aria-label="Open side views" title="Open Workspace, Automation, Appearance and Activity">▤</button><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
  <nav class="modebar" id="voicemodes" aria-label="Assistant mode">

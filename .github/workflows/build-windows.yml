@@ -113,8 +113,26 @@ jobs:
           cat > desktop/companion.html <<'COMPANION_HTML_EOF'
           <!doctype html>
           <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-          html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{-webkit-app-region:drag;user-select:none}canvas{display:block;width:100%;height:100%}
-          </style></head><body><script type="module" src="./assets/companion.js"></script></body></html>
+          html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{-webkit-app-region:drag;user-select:none}
+          #fallback{position:absolute;inset:0;width:100%;height:100%;display:block}
+          #fallback.hidden{display:none}canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+          </style></head><body>
+          <svg id="fallback" viewBox="0 0 112 128" role="img" aria-label="Bosley desktop companion">
+            <defs><linearGradient id="coat" x2="1" y2="1"><stop stop-color="#454545"/><stop offset="1" stop-color="#080808"/></linearGradient></defs>
+            <path d="M22 118 Q24 83 37 72 L75 72 Q90 85 91 118Z" fill="url(#coat)" stroke="#ddd" stroke-width="1.5"/>
+            <path d="M43 73 L56 91 L69 73 L63 113 L56 105 L49 113Z" fill="#eee"/>
+            <path d="M28 45 Q30 13 56 12 Q83 14 85 45 L95 51 Q56 61 17 51Z" fill="#111" stroke="#eee" stroke-width="2"/>
+            <path d="M39 36 Q56 25 73 36 L77 57 Q56 72 35 57Z" fill="#090909" stroke="#aaa" stroke-width="1.5"/>
+            <ellipse cx="47" cy="48" rx="5" ry="7" fill="#fff"/><ellipse cx="65" cy="48" rx="5" ry="7" fill="#fff"/>
+            <circle cx="48" cy="49" r="2.2" fill="#111"/><circle cx="66" cy="49" r="2.2" fill="#111"/>
+            <path d="M31 83 L18 104 M81 83 L94 104" stroke="#222" stroke-width="8" stroke-linecap="round"/>
+            <path d="M43 116 L37 125 M69 116 L75 125" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+          <script>
+            window.addEventListener('error', function(e){ document.getElementById('fallback').classList.remove('hidden'); console.error('Bosley mascot fallback:', e.message); });
+            window.addEventListener('unhandledrejection', function(e){ document.getElementById('fallback').classList.remove('hidden'); console.error('Bosley mascot fallback:', e.reason); });
+          </script>
+          <script type="module" src="./assets/companion.js"></script></body></html>
           COMPANION_HTML_EOF
 
           cat > desktop/assets/companion.js <<'COMPANION_JS_EOF'
@@ -122,7 +140,14 @@ jobs:
           const scene = new THREE.Scene();
           const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 40);
           camera.position.set(0, 1.35, 7.7); camera.lookAt(0, 1.05, 0);
-          const renderer = new THREE.WebGLRenderer({ alpha:true, antialias:true, powerPreference:'low-power' });
+          let renderer;
+          try {
+            renderer = new THREE.WebGLRenderer({ alpha:true, antialias:true, powerPreference:'low-power' });
+            document.getElementById('fallback')?.classList.add('hidden');
+          } catch (error) {
+            console.error('Bosley WebGL unavailable; keeping visible mascot fallback.', error);
+            throw error;
+          }
           renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
           renderer.setSize(innerWidth, innerHeight); renderer.setClearColor(0x000000, 0);
           renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;

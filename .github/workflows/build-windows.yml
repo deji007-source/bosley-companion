@@ -131,6 +131,11 @@ jobs:
           body[data-state="thinking"] #head-group{transform:rotate(-8deg)}
           body[data-state="thinking"] #lid-R{opacity:1;transform:scaleY(.28)}
           body[data-state="speaking"] #eye-L,body[data-state="speaking"] #eye-R{animation:speak 555ms ease-in-out infinite alternate}
+          body[data-state="speaking"] #mouth-line{opacity:0}
+          body[data-state="speaking"] #mouth-open{opacity:1;transform-box:fill-box;transform-origin:center;animation:mouth-talk 190ms ease-in-out infinite alternate}
+          body[data-state="speaking"] #mouth-inner{opacity:1;animation:mouth-talk 190ms ease-in-out infinite alternate}
+          #mouth-open,#mouth-inner{opacity:0;transition:opacity 90ms ease}
+          #mouth-inner{transform-box:fill-box;transform-origin:center}
           body[data-state="error"] #head-group{transform:rotate(-5deg) translateY(8px)}
           body[data-state="error"] #lid-L,body[data-state="error"] #lid-R{opacity:1;transform:scaleY(.5)}
           body[data-state="error"] .eyes{opacity:.55}
@@ -141,6 +146,7 @@ jobs:
           body[data-state="working"] #head-group{animation:work 1.2s ease-in-out infinite}
           @keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-.6deg)}}\n          @keyframes breathe{0%,100%{transform:translate(0 75px) scale(1 .82)}50%{transform:translate(0 73px) scale(1 .835)}}\n          @keyframes idle-arm-left{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-3deg)}}\n          @keyframes idle-arm-right{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(3deg)}}\n          @keyframes hat-settle{0%,85%,100%{transform:translate(0 26px) scale(1 .88) rotate(0)}90%{transform:translate(0 26px) scale(1 .88) rotate(2deg)}}
           @keyframes speak{from{transform:scaleY(1)}to{transform:scaleY(.88)}}
+          @keyframes mouth-talk{from{transform:scaleY(.62)}to{transform:scaleY(1.12)}}
           @keyframes step{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
           @keyframes work{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
           @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -172,7 +178,9 @@ jobs:
               <path id="lid-L" d="M203 237 Q223 222 243 237 L240 265 Q223 251 205 265Z" fill="#000"/>
               <path id="lid-R" d="M269 237 Q289 222 309 237 L306 265 Q289 251 271 265Z" fill="#000"/>
               <path id="nose" d="M256 292 L252 316 L259 319" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path id="mouth" d="M240 340 Q256 347 272 340" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round"/>
+              <path id="mouth-line" d="M240 340 Q256 347 272 340" fill="none" stroke="#f5f5f5" stroke-width="5" stroke-linecap="round"/>
+              <path id="mouth-open" d="M241 339 Q256 344 271 339 Q270 358 256 360 Q242 358 241 339Z" fill="#050505" stroke="#f5f5f5" stroke-width="5" stroke-linejoin="round"/>
+              <path id="mouth-inner" d="M247 352 Q256 347 265 352" fill="none" stroke="#f5f5f5" stroke-width="3" stroke-linecap="round"/>
             </g>
             <g id="hat-group" class="outline" transform="translate(0 26) scale(1 .88)">
               <path id="hat-crown" d="M181 157 L191 66 Q195 40 221 37 L288 37 Q316 42 321 67 L331 157 Q256 139 181 157Z" fill="#101010"/>

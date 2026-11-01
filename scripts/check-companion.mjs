@@ -367,3 +367,12 @@ assert.ok(html.includes('if(step.draftOnly){'), "Direct message drafts must neve
 assert.ok(html.includes('type:"desktop_action",action:"get_desktop_info"'), "Chat must expose the desktop status bridge action");
 assert.ok(html.includes('type:"desktop_action",action:"set_widget_appearance"'), "Chat must expose the widget appearance bridge action");
 assert.ok(html.includes("Chat action result:"), "Direct chat actions must record their result in workspace activity");
+
+assert.ok(html.includes('class="bosley-presence"'), "Companion must show the integrated Lovable-inspired assistant presence header");
+assert.ok(html.includes('class="bosley-hologram"'), "Companion must render the animated holographic Bosley face");
+assert.ok(html.includes("bosley-orbit"), "Holographic companion rings must animate");
+assert.ok(html.includes('id="presence-status"'), "Holographic companion must expose an accessible live status");
+assert.ok(html.includes('presence.textContent=labels[state]'), "Holographic status must follow the real assistant execution state");
+assert.ok(html.includes("width:min(900px,calc(100vw - 24px))"), "The Companion panel must open as a spacious assistant workspace");
+assert.ok(html.includes("width:min(1240px,calc(100vw - 24px))"), "Maximized Companion must support a wide desktop workspace");
+assert.ok(html.includes("prefers-reduced-motion:reduce){.holo-ring"), "Holographic motion must respect reduced-motion preferences");

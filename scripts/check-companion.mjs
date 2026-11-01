@@ -231,7 +231,8 @@ assert.ok(html.includes('id="bosley-skill-file"'), "Skills panel must accept a u
 assert.ok(html.includes('id="bosley-skill-drop" role="button" tabindex="0"'), "Workspace skills dropzone must be keyboard accessible");
 assert.ok(html.includes("Accepted: .json, .md, .markdown, .txt"), "Workspace skills intake must list supported formats");
 assert.ok(html.includes('drop.addEventListener("drop"'), "Workspace skills intake must support drag and drop");
-assert.ok(html.includes("markdown|txt)$/i.test(file.name)"), "Workspace skills intake must reject unsupported extensions");
+assert.ok(html.includes('if(!/\\.(json|md|markdown|txt)$/i.test(file.name))'), "Workspace skills intake must validate ordinary filename extensions");
+assert.ok(!html.includes('if(!/\\\\.(json|md|markdown|txt)$/i.test(file.name))'), "Workspace skills intake must not require a literal backslash in the filename");
 assert.ok(html.includes("file.size>100000"), "Workspace skills intake must enforce the 100 KB limit");
 assert.ok(html.includes("function buildActiveSkillContext()"), "Enabled skills must be included as optional chat context");
 assert.ok(html.includes('id="context-engine-enabled"'), "Context Engine must be explicitly opt-in");

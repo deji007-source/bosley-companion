@@ -316,6 +316,19 @@ html.widget-mode body.desktop-panel .launch[data-state=thinking] #bosley-mascot 
 html.widget-mode body.desktop-panel .launch[data-state=error] #bosley-mascot .mascot-brow{transform:translateY(2px) rotate(-5deg)}
 html.widget-mode body.desktop-panel .launch[data-state=success] #bosley-mascot .mascot-brow{transform:translateY(-2px)}
 html.widget-mode body.desktop-panel .launch[data-state=working] #bosley-mascot .mascot-eye{filter:drop-shadow(0 0 7px #fff)}
+html.widget-mode body.desktop-panel #bosley-mascot .mascot-eyes{transform-box:fill-box;transform-origin:center;transition:transform .22s ease}
+html.widget-mode body.desktop-panel .launch[data-state=waiting] #bosley-mascot .mascot-eyes{transform:translateX(3px) rotate(2deg)}
+html.widget-mode body.desktop-panel .launch[data-state=waiting] #bosley-mascot .mascot-brow{transform:translateY(-2px) scaleY(1.18)}
+html.widget-mode body.desktop-panel .launch[data-state=working] #bosley-mascot .mascot-eye{transform:scaleY(.88);filter:drop-shadow(0 0 7px #fff)}
+html.widget-mode body.desktop-panel .launch[data-state=working] #bosley-mascot .mascot-brow{transform:translateY(1px) scaleY(.88)}
+html.widget-mode body.desktop-panel .launch[data-state=success] #bosley-mascot .mascot-eyes{transform:translateY(-1px) scaleY(.9)}
+html.widget-mode body.desktop-panel .launch[data-state=success] #bosley-mascot .mascot-mouth-closed{transform:translateY(-1px) scaleY(.62);transform-origin:60px 65px}
+html.widget-mode body.desktop-panel .launch[data-state=error] #bosley-mascot .mascot-eyes{transform:translateY(1px) scaleY(.9)}
+html.widget-mode body.desktop-panel .launch[data-state=error] #bosley-mascot .mascot-mouth-closed{transform:translateY(1px) scaleY(1.35);transform-origin:60px 65px}
+html.widget-mode body.desktop-panel .launch[data-state=walk] #bosley-mascot{animation:bosley-mascot-walk .34s ease-in-out infinite alternate}
+html.widget-mode body.desktop-panel .launch[data-state=walk] #bosley-mascot .mascot-eyes{transform:translateY(-1px)}
+@keyframes bosley-mascot-walk{from{transform:translateY(1px) rotate(-2deg)}to{transform:translateY(-2px) rotate(2deg)}}
+
 @keyframes bosley-eye-blink{0%,43%,46%,100%{transform:scaleY(1)}44%,45%{transform:scaleY(.1)}}
 @keyframes bosley-mouth-talk{from{transform:scaleY(.48) scaleX(.88)}to{transform:scaleY(1.12) scaleX(1.04)}}
 @keyframes bosley-brow-rest{0%,100%{transform:translateY(0)}50%{transform:translateY(-.6px)}}

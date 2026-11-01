@@ -1581,6 +1581,7 @@ async function getRemoteLaptopStatus(){
 async function routeRemoteVoiceToLaptop(spoken){
  if(!remoteModeNativeAndroid||!remoteModeEnabled)return false;
  const instruction=String(spoken||"").trim();if(!instruction)return true;
+ if(handleAutomationApprovalCommand(instruction)){addMsg("you",instruction);return true}
  addMsg("you",instruction);
  queueRemoteDeviceCommand(instruction,"Windows laptop","Android Remote Mode");
  return true;

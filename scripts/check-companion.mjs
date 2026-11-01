@@ -397,3 +397,10 @@ assert.ok(html.includes("#side-dock .dock-body input,#side-dock .dock-body texta
 assert.ok(html.includes("body.desktop-panel #side-dock{left:12px;right:auto;top:12px"), "Windows side dock must open on the left side of the display");
 assert.ok(html.includes('handle?.addEventListener("pointermove"'), "Windows side dock must remain movable by dragging its header");
 
+assert.ok(html.includes(".holo-face i{display:block;flex:0 0 17px;width:17px;height:17px"), "Bosley presence eyes must be large true circles, not ovals");
+assert.ok(html.includes("border-radius:50%;background:#fff"), "Bosley presence eyes must retain a circular silhouette");
+assert.ok(html.includes("@keyframes bosley-holo-teleport"), "Holographic Bosley must have a teleport-style arrival animation");
+assert.ok(html.includes("html.bosley-arrive .bosley-hologram{animation:bosley-holo-teleport"), "Teleport arrival must animate the holographic avatar when the agent starts working");
+assert.ok(html.includes("@keyframes bosley-holo-float"), "Holographic avatar must have subtle idle movement");
+assert.ok(html.includes("html[data-agent-state=thinking] .bosley-hologram .holo-face"), "Thinking state must animate the holographic avatar");
+assert.ok(html.includes("html[data-agent-state=working] .bosley-hologram .holo-ring-a"), "Working state must accelerate the holographic orbit");

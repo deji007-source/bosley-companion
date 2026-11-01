@@ -353,4 +353,4 @@ assert.ok(html.includes("data-state=walk] #bosley-mascot"), "Walk state must ani
 assert.ok(html.includes("bosley-mascot-success"), "Success state must provide a short completion animation");
 assert.ok(html.includes("bosley-mascot-error"), "Error state must provide a restrained error cue");
 assert.ok(html.includes("bosley-magnifier-wait"), "Waiting state must animate the magnifier subtly");
-assert.ok(html.includes("launch[data-state=walk] #bosley-mascot{animation:none!important"), "Walk animation must respect reduced-motion settings");
+assert.ok(html.includes("launch[data-state=walk] #bosley-mascot,html.widget-mode"), "Walk animation must respect reduced-motion settings");

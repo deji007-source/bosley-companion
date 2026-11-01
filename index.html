@@ -443,6 +443,39 @@ html[data-agent-state=error] .presence-indicator{background:#aaa;box-shadow:0 0 
 #side-dock.is-dragging .dock-head{cursor:grabbing}
 @media(min-width:761px){html.widget-mode body.desktop-panel #side-dock,body.desktop-panel #side-dock{left:12px;right:auto;top:12px;bottom:auto;width:min(390px,calc(100vw - 24px));height:min(720px,calc(100dvh - 24px));min-width:300px;max-width:calc(100vw - 24px)}}
 @media(max-width:760px){#lovable-bosley .lovable-viewer{min-height:420px}#lovable-bosley .lovable-viewer-frame{min-height:320px}}
+/* Bosley finish: two broad signature eyes and a restrained monochrome interface. */
+.holo-face{width:54px;height:50px;gap:9px;border:1px solid #777;background:radial-gradient(ellipse at 50% 30%,#222,#050505 72%);box-shadow:0 0 18px #ffffff12,inset 0 0 14px #ffffff12}
+.holo-face i{width:12px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 8px #ffffff55;animation:bosley-holo-blink 5.4s infinite}
+.holo-face i:nth-child(2){animation-delay:.04s}
+.holo-ring{border-color:#ffffff38;box-shadow:0 0 16px #ffffff0c,inset 0 0 12px #ffffff08}
+.holo-ring-b{border-color:#ffffff28}
+.holo-scan:after{background:linear-gradient(transparent,#ffffff55,transparent)}
+.bosley-presence{background:linear-gradient(110deg,#111 0%,#080808 54%,#030303 100%);border-bottom:1px solid #252525}
+.presence-eyebrow,.presence-mode{color:#aaa}
+.bosley-presence-copy>span:last-child{color:#aaa}
+.presence-actions{color:#aaa}
+.presence-indicator{background:#ddd;box-shadow:0 0 8px #ffffff55}
+html[data-agent-state=thinking] .holo-face,html[data-agent-state=working] .holo-face{box-shadow:0 0 22px #ffffff22,inset 0 0 16px #ffffff18}
+html[data-agent-state=error] .presence-indicator{background:#777;box-shadow:none}
+#side-dock{background:#050505;border-color:#303030;color:#f2f2f2;box-shadow:0 16px 48px #000b}
+#side-dock .dock-head{background:#080808;border-bottom:1px solid #252525}
+#side-dock .dock-title{color:#eee;letter-spacing:.12em}
+#side-dock .dock-tabs{background:#050505;border-bottom:1px solid #222}
+#side-dock .dock-tabs button{border:1px solid #292929;border-radius:8px;background:#0b0b0b;color:#aaa}
+#side-dock .dock-tabs button:hover{border-color:#666;background:#151515;color:#fff}
+#side-dock .dock-tabs button.on{border-color:#eee;background:#eee;color:#050505}
+#side-dock .dock-close{border-color:#333;background:#090909;color:#eee}
+#side-dock .dock-body{background:#050505;color:#eee}
+#side-dock .dock-body input,#side-dock .dock-body textarea,#side-dock .dock-body select{border-color:#333!important;background:#090909!important;color:#f2f2f2!important;accent-color:#fff}
+#side-dock .dock-body button{border-color:#333;background:#0c0c0c;color:#eee}
+#side-dock .dock-body button:hover{border-color:#777;background:#181818;color:#fff}
+#side-dock .dock-body a{color:#ddd}
+#side-dock .dock-body .muted,#side-dock .dock-body small{color:#999}
+#dock-launcher button{border-color:#303030;background:#080808;color:#bbb}
+#dock-launcher button:hover,#dock-launcher button.on{border-color:#eee;background:#eee;color:#050505}
+#lovable-bosley .lovable-viewer-bar{border-color:#292929;background:#080808;color:#eee}
+#lovable-bosley .lovable-viewer-hint{color:#999}
+@media(max-width:520px){.holo-face{width:44px;height:40px;gap:8px}.holo-face i{width:10px;height:15px}}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">

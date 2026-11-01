@@ -337,7 +337,11 @@ assert.ok(!html.includes('id="hatstyle"'), "Appearance settings must no longer e
 assert.ok(html.includes("mascot-mouth-closed"), "Bosley must retain a clean neutral mouth line");
 assert.ok(html.includes("mascot-mouth-open"), "Bosley must have a separate open-mouth speaking shape");
 assert.ok(html.includes("bosley-mouth-talk"), "Bosley mouth must animate while speaking");
-assert.ok(html.includes("data-state=speaking] #bosley-mascot .mascot-mouth-open"), "Speaking state must reveal the animated mouth");
+assert.ok(html.includes("data-state=speaking]:not([data-mouth-sync=true])"), "Native speech must retain a speaking-mouth fallback");
+assert.ok(html.includes("data-mouth=open"), "Speech boundary events must drive the mouth shape");
+assert.ok(html.includes("u.onboundary="), "Browser speech must synchronize mouth movement to utterance boundaries");
+assert.ok(html.includes("function finishBosleySpeech()"), "Speech completion must always reset Bosley's speaking state");
+assert.ok(html.includes("Promise.resolve(nativeVoice.speakText"), "Native Android speech must share the speaking lifecycle");
 assert.ok(html.includes("data-state=listening] #bosley-mascot .mascot-eye"), "Listening state must visibly change Bosley's eyes");
 assert.ok(html.includes("mascot-brow"), "Bosley must have expressive eyebrows");
 assert.ok(html.includes("bosley-eye-blink"), "Bosley must blink naturally");

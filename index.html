@@ -790,7 +790,7 @@ const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
 let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
-let pendingAutomationWorkflow=null,automationStopRequested=false;
+let pendingAutomationWorkflow=null,pendingRemoteDeviceCommand=null,automationStopRequested=false;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
 function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").slice(0,12):[]}catch{automationRuns=[]}}
 function renderAutomationHistory(){const el=$("#auto-log");if(!el)return;el.innerHTML=automationRuns.map(r=>{const cls=r.status==="success"?"ok":["error","warning","queued"].includes(r.status)?"warn":r.status==="delivered"?"delivered":"";return `<article class="item"><main><strong class="${cls}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`}).join("")||'<p class="mute">No automation runs yet.</p>'}
@@ -1581,19 +1581,26 @@ async function getRemoteLaptopStatus(){
 async function routeRemoteVoiceToLaptop(spoken){
  if(!remoteModeNativeAndroid||!remoteModeEnabled)return false;
  const instruction=String(spoken||"").trim();if(!instruction)return true;
- setRemoteModeStatus("Checking Windows connection…","checking");
- try{
-  const sess=db?(await db.auth.getSession()).data.session:null;if(!sess||!user)throw Error("Sign in to the same Bosley account on Android and Windows first.");
-  const status=await getRemoteLaptopStatus();if(!status.online)throw Error(status.detail+". Open Bosley Companion on Windows and wait for its listener to connect.");
-  setRemoteModeStatus("Sending to Windows…","checking");
-  const {data,error}=await db.functions.invoke("remote-action",{body:{type:"automation",instruction}});if(error)throw error;
-  if(!data||data.ok!==true)throw Error(data?.error||"Windows did not accept the command.");
-  if(data.listenerNotified!==true)throw Error("The command was queued, but the Windows listener did not confirm delivery. Check the laptop before retrying.");
-  addMsg("you",instruction);addMsg("sys","Remote Mode: command delivered to your Windows laptop listener. Laptop execution depends on the supported Windows action handler.");
-  activityEvent("Remote voice command sent to Windows: "+instruction.slice(0,140),"message");autoLog("delivered","Android Remote Mode delivered to Windows listener: "+instruction);
-  setRemoteModeStatus("Windows laptop connected · command delivered","online");
- }catch(error){const message=String(error?.message||error);note("Remote Mode: "+message);setRemoteModeStatus(message,"error");autoLog("error","Android Remote Mode could not deliver command: "+message)}
+ addMsg("you",instruction);
+ queueRemoteDeviceCommand(instruction,"Windows laptop","Android Remote Mode");
  return true;
+}
+function queueRemoteDeviceCommand(instruction,target="Windows laptop",source="chat"){
+ if(automationBusy||pendingAutomationWorkflow||pendingRemoteDeviceCommand){addMsg("bosley","Another automation or device command is already awaiting approval or running. Finish that first.");return}
+ const clean=String(instruction||"").trim();if(!clean){addMsg("bosley","I need the command before I can prepare it.");return}
+ pendingRemoteDeviceCommand={instruction:clean,target,source};
+ addMsg("bosley","Remote command prepared for "+target+". Nothing has been sent yet.\n\nCommand: "+clean+"\n\nReply 'yes, send it' to queue it, or 'no, cancel' to discard it.");
+ activityEvent("Waiting for remote-device command approval: "+target,"pending");
+}
+async function sendApprovedRemoteDeviceCommand(pending){
+ const sess=db?(await db.auth.getSession()).data.session:null;
+ if(!sess||!user)throw Error("Sign in to the same Bosley account on both devices first.");
+ const {data,error}=await db.functions.invoke("remote-action",{body:{type:"automation",instruction:pending.instruction}});
+ if(error)throw error;if(!data||data.ok!==true)throw Error(data?.error||"The remote automation gateway rejected the command.");
+ const delivered=data.listenerNotified===true,telegram=data.telegramNotified===true;
+ const message=delivered?"Remote command delivered to the Windows listener. Execution is not yet confirmed.":telegram?"Remote command accepted by the gateway and Telegram trigger. Device execution is not yet confirmed.":"Remote command queued, but Windows listener delivery is unconfirmed. Open Bosley Companion on Windows and check its connection.";
+ addMsg("bosley",message);autoLog(delivered?"delivered":"queued",pending.target+": "+pending.instruction);
+ activityEvent("Approved remote command queued for "+pending.target,delivered?"delivered":"queued");
 }
 function initAndroidRemoteMode(){
  if(!remoteModeNativeAndroid)return;
@@ -2038,6 +2045,19 @@ function dispatchAgentHandoffCommand(raw){const parsed=parseAgentHandoffCommand(
 
 function handleAutomationApprovalCommand(raw){
  const t=String(raw||"").trim().toLowerCase();
+ if(pendingRemoteDeviceCommand){
+  if(/^(?:yes|yeah|yep|send|send it|send command|proceed|confirm|approve)(?:,?\s+(?:please|send it|send|it|command))?[.! ]*$/i.test(t)){
+   const pending=pendingRemoteDeviceCommand;pendingRemoteDeviceCommand=null;
+   addMsg("bosley","Approved. Sending the remote command now.");
+   (async()=>{try{await sendApprovedRemoteDeviceCommand(pending)}catch(e){const message="Remote command was not confirmed as delivered: "+String(e?.message||e);addMsg("bosley",message);autoLog("error",message)}})();
+   return true;
+  }
+  if(/^(?:no|no thanks|nope|cancel|cancel it|dont|don't|do not|not now|stop)[.! ]*$/i.test(t)){
+   const target=pendingRemoteDeviceCommand.target;pendingRemoteDeviceCommand=null;
+   addMsg("bosley","Cancelled. Nothing was sent to "+target+".");activityEvent("Remote command cancelled: "+target,"cancelled");return true;
+  }
+  addMsg("bosley","I'm waiting for approval before sending the remote command. Reply 'yes, send it' or 'no, cancel'.");return true;
+ }
  if(automationBusy && /^(stop|stop it|stop automation|cancel|cancel it|halt|pause)[.! ]*$/i.test(t)){
   automationStopRequested=true;
   addMsg("bosley","Stop requested. I'll let the current action finish safely, then stop before the next step.");
@@ -2071,7 +2091,10 @@ function queueAutomationForChatApproval(wf){
  addMsg("bosley",message);speak("I found "+wf.name+". Nothing has run yet. Would you like me to run it? Say yes or no.");
  activityEvent("Waiting for chat approval: "+wf.name,"pending");
 }
-function dispatchAutomationCommand(raw){if(handleAutomationApprovalCommand(raw))return true;const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;const skillResolution=resolveSkillWorkflowCommand(t);if(skillResolution.status==="ambiguous"){addMsg("bosley","More than one enabled Skill matches that trigger. Please specify the exact Skill or saved workflow; nothing has been run.");return true}if(skillResolution.status==="unlinked"){addMsg("bosley","The Skill “"+skillResolution.skill.title+"” is enabled but has no matching saved workflow. Add “workflow: Exact workflow name” to its file and create that workflow in Automation. Skills provide guidance only; they cannot define executable actions.");return true}const saved=skillResolution.status==="match"?skillResolution.workflow:findWorkflowCommand(t);if(saved){try{queueAutomationForChatApproval(saved)}catch(e){const message="I couldn't prepare "+saved.name+": "+String(e?.message||e);addMsg("bosley",message);autoLog("error",message)}return true}const webAppCommand=dispatchKnownWebsiteCommand(t);if(webAppCommand)return true;
+function dispatchAutomationCommand(raw){if(handleAutomationApprovalCommand(raw))return true;const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;
+ const remoteMatch=t.match(/^(?:please\s+)?(?:on|using|send(?: this)? to)\s+(?:my\s+)?(windows(?: laptop)?|laptop|pc|computer)\s*[:,]?(?:\s+to)?\s+(.+)$/i);
+ if(remoteMatch){queueRemoteDeviceCommand(remoteMatch[2].trim(),remoteMatch[1].replace(/\b\w/g,c=>c.toUpperCase()),"typed chat");return true}
+ const skillResolution=resolveSkillWorkflowCommand(t);if(skillResolution.status==="ambiguous"){addMsg("bosley","More than one enabled Skill matches that trigger. Please specify the exact Skill or saved workflow; nothing has been run.");return true}if(skillResolution.status==="unlinked"){addMsg("bosley","The Skill “"+skillResolution.skill.title+"” is enabled but has no matching saved workflow. Add “workflow: Exact workflow name” to its file and create that workflow in Automation. Skills provide guidance only; they cannot define executable actions.");return true}const saved=skillResolution.status==="match"?skillResolution.workflow:findWorkflowCommand(t);if(saved){try{queueAutomationForChatApproval(saved)}catch(e){const message="I couldn't prepare "+saved.name+": "+String(e?.message||e);addMsg("bosley",message);autoLog("error",message)}return true}const webAppCommand=dispatchKnownWebsiteCommand(t);if(webAppCommand)return true;
  if((m=t.match(/^(?:bosley[, ]+)?(?:please\s+)?open\s+(https?:\/\/\S+)$/i))){
   executeDirectChatAction({type:"open_url",input:m[1]},"open website "+m[1]);return true;
  }

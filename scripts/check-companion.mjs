@@ -378,7 +378,9 @@ assert.ok(html.includes("width:min(1240px,calc(100vw - 24px))"), "Maximized Comp
 assert.ok(html.includes("prefers-reduced-motion:reduce){html.bosley-arrive .launch #bosley-mascot"), "Mascot motion must respect reduced-motion preferences");
 assert.ok(html.includes('data-open-view="lovable-bosley"'), "Side dock must expose the hosted Lovable Bosley page");
 assert.ok(html.includes('id="lovable-bosley"'), "Companion must provide a dedicated hosted Lovable Bosley dock section");
-assert.ok(html.includes("https://id-preview--26bfbc5a-97dc-4790-be9c-f7adae8e8801.lovable.app"), "Hosted viewer must point at the existing Lovable Bosley deployment");
+assert.ok(html.includes("https://jarvis-mark85.lovable.app/home"), "Hosted viewer must point at the requested Jarvis Bosley deployment");
+assert.ok((html.match(/initAndroidRemoteMode\\s*\\(/g)||[]).length>=2, "Android Remote Mode initializer must actually be invoked, not only declared");
+assert.ok(html.includes("min-height:0;min-width:0"), "Hosted workspace iframe must flex to fit its resizable dock");
 assert.ok(html.includes('class="lovable-viewer-frame"'), "Hosted Lovable Bosley must render in an interactive embedded browser frame");
 assert.ok(html.includes('allow="microphone; camera; clipboard-read; clipboard-write; autoplay; fullscreen"'), "Hosted app frame must request browser capabilities used by voice and interaction UI");
 assert.ok(html.includes("Open separately"), "Hosted app must provide a browser fallback for embedding or authentication restrictions");

@@ -2056,7 +2056,7 @@ async function handleLaptopBroadcast(payload){
    autoLog("success","Phone-to-laptop command executed: launch "+app);
    return;
   }
-  const openSite=normalized.match(/^(?:please\\s+)?open\\s+(https?:\\/\\/\\S+|[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?:\\/\\S*)?)$/i);
+  const openSite=normalized.match(/^(?:please\s+)?open\s+(https?:\/\/\S+|[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/\S*)?)$/i);
   if(openSite){
    const raw=openSite[1].startsWith("http")?openSite[1]:"https://"+openSite[1];
    const url=new URL(raw);if(url.protocol!=="https:"&&url.protocol!=="http:")throw Error("Only web links can be opened remotely.");
@@ -2064,7 +2064,7 @@ async function handleLaptopBroadcast(payload){
    if(result?.ok!==true)throw Error(result?.error||"Windows did not confirm opening the website.");
    setLaptopListenerState("online","website opened on Windows");autoLog("success","Phone-to-laptop opened website: "+url.href);return;
   }
-  const search=normalized.match(/^(?:please\\s+)?(?:search(?: the web)? for|look up|google)\\s+(.+)$/i);
+  const search=normalized.match(/^(?:please\s+)?(?:search(?: the web)? for|look up|google)\s+(.+)$/i);
   if(search){
    const url="https://www.google.com/search?q="+encodeURIComponent(search[1].trim());
    const result=await b.request({action:"open_external_url",payload:{url}});

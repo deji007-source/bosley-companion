@@ -429,6 +429,20 @@ html[data-agent-state=error] .presence-indicator{background:#aaa;box-shadow:0 0 
 .panel .msg.you p{border-color:#294d61;border-radius:15px 5px 15px 15px;background:linear-gradient(135deg,#112938,#0a1720)}
 .panel .msg:not(.you):not(.sys) p{color:#e2edf3}
 @media(max-width:520px){.panel .chat{padding:12px}.panel .modebar{margin-left:12px;margin-right:12px}}
+/* Hosted Lovable Bosley: original hosted application inside its own interactive dock page. */
+#side-dock .dock-body>#lovable-bosley:not([hidden]){display:block!important;width:100%;height:100%;min-height:0;max-height:none;margin:0;padding:0;border:0;overflow:hidden}
+#lovable-bosley .lovable-viewer{display:flex;flex-direction:column;width:100%;height:100%;min-height:360px;gap:8px}
+#lovable-bosley .lovable-viewer-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid #292929;border-radius:10px;background:#090909}
+#lovable-bosley .lovable-viewer-bar strong,#lovable-bosley .lovable-viewer-bar small{display:block}
+#lovable-bosley .lovable-viewer-bar strong{font-size:10px;letter-spacing:.1em}
+#lovable-bosley .lovable-viewer-bar small{margin-top:4px;color:#888;font-size:9px}
+#lovable-bosley .lovable-open{flex:0 0 auto;color:#eee;font-size:10px;text-decoration:underline;text-underline-offset:3px}
+#lovable-bosley .lovable-viewer-hint{margin:0;color:#999;font-size:10px;line-height:1.45}
+#lovable-bosley .lovable-viewer-frame{display:block;flex:1 1 auto;width:100%;min-height:280px;border:1px solid #292929;border-radius:12px;background:#080808}
+#side-dock .dock-head{cursor:grab;touch-action:none;user-select:none}
+#side-dock.is-dragging .dock-head{cursor:grabbing}
+@media(min-width:761px){html.widget-mode body.desktop-panel #side-dock,body.desktop-panel #side-dock{left:12px;right:auto;top:12px;bottom:auto;width:min(390px,calc(100vw - 24px));height:min(720px,calc(100dvh - 24px));min-width:300px;max-width:calc(100vw - 24px)}}
+@media(max-width:760px){#lovable-bosley .lovable-viewer{min-height:420px}#lovable-bosley .lovable-viewer-frame{min-height:320px}}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">
@@ -508,9 +522,10 @@ html[data-agent-state=error] .presence-indicator{background:#aaa;box-shadow:0 0 
 </section>
 
 
-<nav id="dock-launcher" aria-label="Open Bosley side views"><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button></nav>
+<nav id="dock-launcher" aria-label="Open Bosley side views"><button type="button" data-open-view="lovable-bosley" aria-label="Open hosted Lovable Bosley" title="Lovable Bosley">✦</button><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button></nav>
 <aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
 <section class="workspace" id="skills-panel" hidden></section>
+<section class="workspace" id="lovable-bosley" hidden></section>
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
 
@@ -544,12 +559,23 @@ document.addEventListener("DOMContentLoaded",()=>{
 (()=>{
  const dock=document.getElementById("side-dock"),tabs=document.getElementById("dock-tabs"),body=document.getElementById("dock-body");
  if(!dock||!tabs||!body)return;
+ function initLovableBosleyViewer(){
+  const panel=document.getElementById("lovable-bosley");
+  if(!panel)throw Error("Hosted Bosley viewer container is missing.");
+  if(panel.dataset.viewerReady==="true")return;
+  const hostedUrl="https://id-preview--26bfbc5a-97dc-4790-be9c-f7adae8e8801.lovable.app";
+  panel.innerHTML='<div class="lovable-viewer"><div class="lovable-viewer-bar"><div><strong>LOVABLE BOSLEY</strong><small>Live hosted experience · same Lovable application</small></div><a class="lovable-open" href="'+hostedUrl+'" target="_blank" rel="noopener noreferrer">Open separately ↗</a></div><p class="lovable-viewer-hint" role="status">Loading the hosted Bosley app. If the embedded view is blocked or sign-in does not persist, use “Open separately”.</p><iframe class="lovable-viewer-frame" title="Live Lovable Bosley application" src="'+hostedUrl+'" loading="eager" referrerpolicy="strict-origin-when-cross-origin" allow="microphone; camera; clipboard-read; clipboard-write; autoplay; fullscreen" allowfullscreen sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-downloads allow-modals allow-top-navigation-by-user-activation"></iframe></div>';
+  const frame=panel.querySelector("iframe"),hint=panel.querySelector(".lovable-viewer-hint");
+  frame?.addEventListener("load",()=>{if(hint)hint.textContent="The hosted page responded. If it shows an embedding restriction or sign-in issue, open it separately to continue in the same Lovable app."});
+  panel.dataset.viewerReady="true";
+ }
  const views=[
   {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{const r=window.BosleyPanelRenderers?.workspace;if(typeof r!=="function")throw Error("Workspace renderer is not connected to the dock.");return r()}},
   {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{const r=window.BosleyPanelRenderers?.appearance;if(typeof r!=="function")throw Error("Appearance renderer is not connected to the dock.");return r()}},
   {button:"autotoggle",panel:"automation",label:"Automation",init:()=>{const r=window.BosleyPanelRenderers?.automation;if(typeof r!=="function")throw Error("Automation renderer is not connected to the dock.");return r()}},
   {button:"activitytoggle",panel:"activity",label:"Activity",init:()=>{const r=window.BosleyPanelRenderers?.activity;if(typeof r!=="function")throw Error("Activity renderer is not connected to the dock.");return r()}},
-  {button:"",panel:"skills-panel",label:"Skills",init:()=>{const r=window.BosleyPanelRenderers?.skills;if(typeof r!=="function")throw Error("Skills renderer is not connected to the dock.");return r()}}
+  {button:"",panel:"skills-panel",label:"Skills",init:()=>{const r=window.BosleyPanelRenderers?.skills;if(typeof r!=="function")throw Error("Skills renderer is not connected to the dock.");return r()}},
+  {button:"",panel:"lovable-bosley",label:"Lovable Bosley",init:initLovableBosleyViewer}
  ];
  let active="";
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
@@ -578,6 +604,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  // Windows only: drag the detached workspace by its header without moving the chat window.
  if(document.body.classList.contains("desktop-panel")){
   const handle=dock.querySelector(".dock-head");let dragState=null;
+  try{const saved=JSON.parse(localStorage.getItem("bosley-side-dock-position")||"null");if(saved&&Number.isFinite(saved.left)&&Number.isFinite(saved.top)){dock.style.left=Math.max(8,Math.min(window.innerWidth-dock.offsetWidth-8,saved.left))+"px";dock.style.top=Math.max(8,Math.min(window.innerHeight-dock.offsetHeight-8,saved.top))+"px";dock.style.right="auto";dock.style.bottom="auto"}}catch{}
   handle?.addEventListener("pointerdown",event=>{
    if(event.button!==0||event.target.closest("button"))return;
    const rect=dock.getBoundingClientRect();dragState={pointerId:event.pointerId,x:event.clientX-rect.left,y:event.clientY-rect.top};
@@ -590,7 +617,7 @@ document.addEventListener("DOMContentLoaded",()=>{
    const top=Math.max(8,Math.min(window.innerHeight-height-8,event.clientY-dragState.y));
    dock.style.left=left+"px";dock.style.top=top+"px";dock.style.right="auto";dock.style.bottom="auto";
   });
-  const stopDrag=event=>{if(!dragState||event.pointerId!==dragState.pointerId)return;dragState=null;dock.classList.remove("is-dragging")};
+  const stopDrag=event=>{if(!dragState||event.pointerId!==dragState.pointerId)return;dragState=null;dock.classList.remove("is-dragging");try{const rect=dock.getBoundingClientRect();localStorage.setItem("bosley-side-dock-position",JSON.stringify({left:Math.round(rect.left),top:Math.round(rect.top)}))}catch{}};
   handle?.addEventListener("pointerup",stopDrag);handle?.addEventListener("pointercancel",stopDrag);
  }
  document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});

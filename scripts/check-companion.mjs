@@ -330,6 +330,18 @@ assert.ok(html.includes("Agent plan created: "+'"+instruction+"'), "Conversation
 assert.ok(html.includes("Agent route status: "+'"+result.target+"'), "Automation route outcomes must be visible in activity history");
 assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow step must begin in an explicit pending state");
 assert.ok(html.includes("item.dataset.stepState=state"), "Workflow steps must update to their live execution state");
+assert.ok(html.includes('id="agent-provider"'), "Automation must expose selectable AI providers");
+assert.ok(html.includes('id="agent-chat-mode"'), "AI handoff must let users choose a new or existing conversation");
+assert.ok(html.includes('id="agent-chat-url"'), "Continuing an existing provider conversation must require its exact URL");
+assert.ok(html.includes('bosley_agent_handoff_v1'), "AI handoffs must retain a local resumable handoff record");
+assert.ok(html.includes('w.location.href=target'), "AI handoff must open the selected provider after preparing the prompt");
+assert.ok(html.includes('Provider submission remains under your control'), "AI handoff must not claim the external provider submitted a prompt");
+assert.ok(html.includes('{value:"notify_phone",label:"Send phone notification (MacroDroid)"}'), "Phone notification must be a reusable cross-platform workflow action");
+assert.ok(html.includes('if(step.type==="notify_phone")'), "Phone notification workflow action must execute through the authenticated bridge");
+assert.ok(html.includes('functions/v1/macrodroid-bridge-'), "Phone notification action must use the shared authenticated MacroDroid bridge");
+assert.ok(html.includes('Phone notifications are limited to 160 characters'), "Phone notifications must enforce the bridge's input limit");
+assert.ok(html.includes('Desktop bridge unavailable'), "Windows-only desktop steps must fail clearly on platforms without the native bridge");
+
 
 assert.ok(html.includes("mascot-buzzcut"), "Bosley must have a neat close-cropped buzz cut instead of a hat");
 assert.ok(html.includes("M32 41Q31 17 60 17 89 17 88 41"), "Bosley face silhouette must use a rounder head shape");

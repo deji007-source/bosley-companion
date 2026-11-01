@@ -1777,7 +1777,7 @@ function executeDirectChatAction(step,label){
  addMsg("bosley","Working on it: "+title+"…");
  setBosleyCompanionState("working");
  activityEvent("Chat action planned: "+title,"planned");
- Promise.resolve().then(()=>runAction(step,false)).then(result=>{
+ let execution;try{execution=runAction(step,false)}catch(error){execution=Promise.reject(error)}Promise.resolve(execution).then(result=>{
   addMsg("bosley",String(result||"Action returned without a message."));
   autoLog("success",title+" · "+String(result||"Completed"));
   activityEvent("Chat action result: "+title+" · "+String(result||"Completed"),"success");
@@ -1805,7 +1805,7 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handle
  if((m=t.match(/^(?:please\s+)?(?:draft|write)(?:\s+me)?\s+(?:a\s+)?(?:message|text)(?:\s+to\s+([^:\n]+?))?\s*(?:saying|that says|with the message|:)\s*([\s\S]+)$/i))){
   const recipient=(m[1]||"").trim(),body=m[2].trim();
   if(!body){addMsg("bosley","What should the message say?");return true}
-  executeDirectChatAction({type:"draft_message",recipient,input:body,draftOnly:true},"draft message"+(recipient?" to "+recipient:""));return true;
+  addMsg("bosley","Draft prepared"+(recipient?" for "+recipient:"")+":\\n\\n"+body);executeDirectChatAction({type:"draft_message",recipient,input:body,draftOnly:true},"draft message"+(recipient?" to "+recipient:""));return true;
  }
  if(/^(?:bosley[, ]+)?(?:please\s+)?(?:show|get|check) (?:my )?(?:windows )?desktop info[.!]?$/i.test(t)){
   executeDirectChatAction({type:"desktop_action",action:"get_desktop_info",input:""},"check Windows desktop status");return true;

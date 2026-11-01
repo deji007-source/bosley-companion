@@ -790,6 +790,7 @@ const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
 let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
+let pendingAutomationWorkflow=null,automationStopRequested=false;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
 function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").slice(0,12):[]}catch{automationRuns=[]}}
 function renderAutomationHistory(){const el=$("#auto-log");if(!el)return;el.innerHTML=automationRuns.map(r=>{const cls=r.status==="success"?"ok":["error","warning","queued"].includes(r.status)?"warn":r.status==="delivered"?"delivered":"";return `<article class="item"><main><strong class="${cls}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`}).join("")||'<p class="mute">No automation runs yet.</p>'}
@@ -1884,10 +1885,10 @@ function validateWorkflowForExecution(wf){
  return wf.steps.map((step,index)=>(index+1)+". "+(autoActions.find(action=>action.value===step.type)?.label||step.type)+(step.type==="open_url"?" - "+normalizeUrl(step.input):step.input?" - "+step.input.slice(0,140):"")).join("\n");
 }
 function setBosleyCompanionState(state){const allowed=["idle","thinking","working","waiting","speaking","success","error","walk"];if(!allowed.includes(state))return;const previous=document.documentElement.dataset.agentState||"idle";document.documentElement.dataset.agentState=state;const presence=document.getElementById("presence-status");if(presence){const labels={idle:"Ready when you are",thinking:"Thinking through your request",working:"Working on your request",waiting:"Waiting for a device response",speaking:"Speaking to you",success:"Task completed",error:"I need to check something",walk:"Moving between tasks"};presence.textContent=labels[state]||"Ready when you are"}const presenceMode=document.getElementById("presence-mode");if(presenceMode)presenceMode.textContent=state==="working"?"EXECUTING":state==="thinking"?"THINKING":state==="waiting"?"WAITING":state==="error"?"NEEDS ATTENTION":state==="success"?"COMPLETED":"AGENT ONLINE";const launcher=document.getElementById("launch");if(launcher)launcher.dataset.state=state;if(state==="thinking"||state==="working"){document.documentElement.dataset.agentLock="on";if(previous!=="thinking"&&previous!=="working"){document.documentElement.classList.remove("bosley-arrive");void document.documentElement.offsetWidth;document.documentElement.classList.add("bosley-arrive")}}else if(state==="idle"||state==="success"||state==="error"){document.documentElement.dataset.agentLock="off";if(state==="idle")document.documentElement.classList.remove("bosley-arrive")}try{const desktop=window.BosleyDesktop;if(desktop&&typeof desktop.setCompanionState==="function")desktop.setCompanionState(state)}catch(error){console.warn("Bosley companion animation state unavailable:",error)}}
-async function runWorkflow(wf){
+async function runWorkflow(wf,chatApproved=false){
  if(automationBusy)throw Error("An automation workflow is already running.");
  const plan=validateWorkflowForExecution(wf);
- const approved=confirm("Review Bosley automation plan: "+wf.name+"\\n\\n"+plan+"\\n\\nContinue with these "+wf.steps.length+" step(s)?");
+ const approved=chatApproved||confirm("Review Bosley automation plan: "+wf.name+"\\n\\n"+plan+"\\n\\nContinue with these "+wf.steps.length+" step(s)?");
  if(!approved){setBosleyCompanionState("idle");autoLog("cancelled","Workflow cancelled before execution: "+wf.name);activityEvent("Plan declined: "+wf.name,"cancelled");return {cancelled:true,completed:0,total:wf.steps.length}}
  setBosleyCompanionState("working");automationBusy=true;
  const btn=$("#autorun");if(btn)btn.disabled=true;
@@ -1897,19 +1898,21 @@ async function runWorkflow(wf){
  if(timeline)timeline.innerHTML=wf.steps.map((step,index)=>'<li class="workflow-step" data-step-index="'+index+'" data-step-state="pending"><span class="workflow-step-marker">'+(index+1)+'</span><span class="workflow-step-copy"><strong>'+esc(autoActions.find(action=>action.value===step.type)?.label||step.type)+'</strong><small>Waiting for execution</small></span><span class="workflow-step-state">PENDING</span></li>').join("");
  autoLog("running","Plan approved: "+wf.name+" · "+wf.steps.length+" step(s)");
  activityEvent("Plan approved: "+wf.name+" ("+wf.steps.length+" steps)","planned");
- let completed=0,cancelled=false;
+ let completed=0,cancelled=false;automationStopRequested=false;
  const updateStep=(index,state,detailText)=>{
   const item=timeline?.querySelector('[data-step-index="'+index+'"]');
   if(item){item.dataset.stepState=state;const marker=item.querySelector(".workflow-step-marker"),small=item.querySelector("small"),label=item.querySelector(".workflow-step-state");if(marker)marker.textContent=state==="success"?"✓":state==="error"?"!":String(index+1);if(small)small.textContent=detailText;if(label)label.textContent=state.toUpperCase()}
  };
  try{
   for(let index=0;index<wf.steps.length;index++){
+   if(automationStopRequested){cancelled=true;if(detail)detail.textContent="Stop requested. No further steps will run.";break}
    const step=wf.steps[index],stepLabel=autoActions.find(action=>action.value===step.type)?.label||step.type;
    if(detail)detail.textContent="Step "+(index+1)+"/"+wf.steps.length+": "+stepLabel;
    updateStep(index,"running","Executing now…");
    autoLog("running","Step "+(index+1)+"/"+wf.steps.length+": "+stepLabel);
    activityEvent("Running step "+(index+1)+"/"+wf.steps.length+": "+stepLabel,"running");
    const result=await runAction(step,false);
+   if(automationStopRequested){cancelled=true;updateStep(index,"cancelled","Stop requested; no later steps will run.");if(detail)detail.textContent="Stopped after the current step. Remaining steps were not run.";break}
    if(typeof result==="string"&&/\\bcancelled\\b/i.test(result)){
     cancelled=true;updateStep(index,"cancelled",result);autoLog("cancelled",result);activityEvent("Step cancelled: "+stepLabel,"cancelled");
     if(detail)detail.textContent="Cancelled at step "+(index+1)+"/"+wf.steps.length+"; remaining steps were not run.";
@@ -2032,7 +2035,43 @@ function executeDirectChatAction(step,label){
 }
 function parseAgentHandoffCommand(raw){const text=String(raw||"").trim();if(!text||text.length>8000)return null;const patterns=[/^(?:please\s+)?(?:send|hand off|give)\s+(?:(?:this|it|the request)\s+)?to\s+(chatgpt|claude|gemini)\s*[:\-]\s*([\s\S]{1,8000})$/i,/^(?:please\s+)?(?:ask|tell|have|let)\s+(chatgpt|claude|gemini)\s+(?:to\s+)?([\s\S]{1,8000})$/i,/^(?:please\s+)?use\s+(chatgpt|claude|gemini)\s+to\s+([\s\S]{1,8000})$/i,/^(?:please\s+)?(?:send|forward)\s+([\s\S]{1,8000}?)\s+to\s+(chatgpt|claude|gemini)$/i];for(let i=0;i<patterns.length;i++){const match=text.match(patterns[i]);if(!match)continue;const provider=(i===3?match[2]:match[1]).toLowerCase(),task=(i===3?match[1]:match[2]).trim();if(task)return {provider,task}}return null}
 function dispatchAgentHandoffCommand(raw){const parsed=parseAgentHandoffCommand(raw);if(!parsed)return false;const {provider,task}=parsed;const panel=$("#automation"),toggle=$("#autotoggle");if(panel?.hidden&&toggle)toggle.click();const providerInput=$("#agent-provider"),mode=$("#agent-chat-mode"),url=$("#agent-chat-url"),taskInput=$("#agent-task"),status=$("#agent-handoff-status");if(!providerInput||!taskInput){addMsg("bosley","Open Automation and use AI agent handoff to prepare this request.");return true}providerInput.value=provider;mode.value="new";mode.dispatchEvent(new Event("change"));if(url)url.value="";taskInput.value=task;if(status)status.textContent="Task prepared for "+provider+". Choose an existing conversation if needed, then press Copy task & open agent.";addMsg("bosley","I've prepared your request for "+provider+". Open Automation → AI agent handoff and press Copy task & open agent. You can paste an existing conversation link if you want to continue one.");activityEvent("AI agent handoff prepared from chat command: "+provider,"handoff");return true}
-function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;const skillResolution=resolveSkillWorkflowCommand(t);if(skillResolution.status==="ambiguous"){addMsg("bosley","More than one enabled Skill matches that trigger. Please specify the exact Skill or saved workflow; nothing has been run.");return true}if(skillResolution.status==="unlinked"){addMsg("bosley","The Skill “"+skillResolution.skill.title+"” is enabled but has no matching saved workflow. Add “workflow: Exact workflow name” to its file and create that workflow in Automation. Skills provide guidance only; they cannot define executable actions.");return true}const saved=skillResolution.status==="match"?skillResolution.workflow:findWorkflowCommand(t);if(saved){(async()=>{try{const confirmation="Preparing your saved automation, "+saved.name+". Review the steps before anything runs.";addMsg("bosley",confirmation);speak(confirmation);const outcome=await runWorkflow(saved);const done=outcome?.cancelled?"Cancelled saved automation: "+saved.name+". "+outcome.completed+" step(s) completed; later steps were not run.":"Completed saved automation: "+saved.name+" ("+outcome.completed+"/"+outcome.total+" steps). Check Execution history for details.";addMsg("bosley",done);speak(done)}catch(e){const message="The saved automation "+saved.name+" did not finish: "+String(e?.message||e);addMsg("bosley",message);speak(message);autoLog("error",message)}})();return true}const webAppCommand=dispatchKnownWebsiteCommand(t);if(webAppCommand)return true;
+
+function handleAutomationApprovalCommand(raw){
+ const t=String(raw||"").trim().toLowerCase();
+ if(automationBusy && /^(stop|stop it|stop automation|cancel|cancel it|halt|pause)[.! ]*$/i.test(t)){
+  automationStopRequested=true;
+  addMsg("bosley","Stop requested. I'll let the current action finish safely, then stop before the next step.");
+  speak("Stop requested. I'll stop before the next step.");
+  return true;
+ }
+ if(!pendingAutomationWorkflow)return false;
+ if(/^(yes|yes please|yeah|yep|run|run it|run automation|proceed|proceed please|confirm|start|start it|do it|go ahead|approve)[.! ]*$/i.test(t)){
+  const wf=pendingAutomationWorkflow;pendingAutomationWorkflow=null;
+  addMsg("bosley","Approved. Starting "+wf.name+". You can say stop at any time to prevent later steps from running.");
+  (async()=>{try{const outcome=await runWorkflow(wf,true);const done=outcome.cancelled?"Stopped "+wf.name+" after "+outcome.completed+" completed step(s). No later steps were run.":"Completed "+wf.name+" ("+outcome.completed+"/"+outcome.total+" steps). Check Execution history for details.";addMsg("bosley",done);speak(done)}catch(e){const message="The automation "+wf.name+" did not finish: "+String(e?.message||e);addMsg("bosley",message);speak(message);autoLog("error",message)}})();
+  return true;
+ }
+ if(/^(no|no thanks|nope|cancel|cancel it|dont|don't|do not|not now|stop|stop it)[.! ]*$/i.test(t)){
+  const name=pendingAutomationWorkflow.name;pendingAutomationWorkflow=null;
+  autoLog("cancelled","Automation declined in chat: "+name);
+  activityEvent("Automation declined: "+name,"cancelled");
+  addMsg("bosley","Okay. I won't run "+name+". Nothing was executed.");
+  speak("Okay. I won't run it.");
+  return true;
+ }
+ addMsg("bosley","I'm waiting for your approval before running "+pendingAutomationWorkflow.name+". Reply yes, run it or no, cancel.");
+ return true;
+}
+function queueAutomationForChatApproval(wf){
+ if(automationBusy){addMsg("bosley","An automation is already running. Say stop to stop it after its current action, or wait for it to finish.");return;}
+ if(pendingAutomationWorkflow){addMsg("bosley","There is already an automation awaiting approval: "+pendingAutomationWorkflow.name+". Reply yes or no first.");return;}
+ const plan=validateWorkflowForExecution(wf);
+ pendingAutomationWorkflow=wf;
+ const message="I found the saved automation '"+wf.name+"'. Nothing has run yet.\n\nPlanned steps ("+wf.steps.length+"):\n"+plan+"\n\nWould you like me to run it? Reply 'yes, run it' or 'no, cancel'. You can also say 'stop' while it is running.";
+ addMsg("bosley",message);speak("I found "+wf.name+". Nothing has run yet. Would you like me to run it? Say yes or no.");
+ activityEvent("Waiting for chat approval: "+wf.name,"pending");
+}
+function dispatchAutomationCommand(raw){if(handleAutomationApprovalCommand(raw))return true;const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;const skillResolution=resolveSkillWorkflowCommand(t);if(skillResolution.status==="ambiguous"){addMsg("bosley","More than one enabled Skill matches that trigger. Please specify the exact Skill or saved workflow; nothing has been run.");return true}if(skillResolution.status==="unlinked"){addMsg("bosley","The Skill “"+skillResolution.skill.title+"” is enabled but has no matching saved workflow. Add “workflow: Exact workflow name” to its file and create that workflow in Automation. Skills provide guidance only; they cannot define executable actions.");return true}const saved=skillResolution.status==="match"?skillResolution.workflow:findWorkflowCommand(t);if(saved){try{queueAutomationForChatApproval(saved)}catch(e){const message="I couldn't prepare "+saved.name+": "+String(e?.message||e);addMsg("bosley",message);autoLog("error",message)}return true}const webAppCommand=dispatchKnownWebsiteCommand(t);if(webAppCommand)return true;
  if((m=t.match(/^(?:bosley[, ]+)?(?:please\s+)?open\s+(https?:\/\/\S+)$/i))){
   executeDirectChatAction({type:"open_url",input:m[1]},"open website "+m[1]);return true;
  }

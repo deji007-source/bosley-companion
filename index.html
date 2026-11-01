@@ -1170,7 +1170,7 @@ async function renderBosleySkills(){
  panel.querySelector("#bosley-skill-import").onclick=async()=>{
   const file=panel.querySelector("#bosley-skill-file").files?.[0],status=panel.querySelector("#bosley-skill-status");
   if(!file){status.textContent="Choose a skill file first.";return}
-  if(!/\\.(json|md|markdown|txt)$/i.test(file.name)){status.textContent="Unsupported file type. Use .json, .md, .markdown, or .txt.";return}
+  if(!/\.(json|md|markdown|txt)$/i.test(file.name)){status.textContent="Unsupported file type. Use .json, .md, .markdown, or .txt.";return}
   if(file.size>100000){status.textContent="File is too large. Please keep skill files under 100 KB.";return}
   try{const raw=await file.text();let parsed=null;if(/\.json$/i.test(file.name)){parsed=JSON.parse(raw);if(!parsed||typeof parsed!=="object")throw Error("JSON must contain a skill object or a skills array.")}const imported=normalizeSkillImport(parsed,file.name,raw);const existing=readBosleySkills();const byId=new Map(existing.map(s=>[s.id,s]));for(const item of imported)byId.set(item.id,item);const merged=[...byId.values()].slice(-30);saveBosleySkills(merged);renderBosleySkills();const msg=document.getElementById("bosley-skill-status");if(msg)msg.textContent="Imported "+imported.length+" skill entry/entries from "+file.name+"."}catch(e){status.textContent="Could not import this file: "+String(e?.message||e).slice(0,180)}
  };

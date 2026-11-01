@@ -389,6 +389,11 @@ assert.ok(html.includes(".holo-face{width:54px;height:50px"), "Bosley face must 
 assert.ok(html.includes(".bosley-presence{background:linear-gradient(110deg,#111 0%,#080808 54%,#030303 100%)"), "Bosley presence header must use a restrained black-and-white palette");
 assert.ok(html.includes("#side-dock .dock-tabs button.on{border-color:#eee;background:#eee;color:#050505"), "Side dock selected tabs must use the monochrome theme");
 assert.ok(html.includes("#side-dock .dock-body input,#side-dock .dock-body textarea,#side-dock .dock-body select"), "Side dock form controls must use the monochrome theme");
+assert.ok(html.includes(".holo-face i{width:12px;height:18px"), "Bosley presence avatar must use two large, wide eyes");
+assert.ok(html.includes(".holo-face{width:54px;height:50px"), "Bosley face must be sized to support the larger paired eyes");
+assert.ok(html.includes(".bosley-presence{background:linear-gradient(110deg,#111 0%,#080808 54%,#030303 100%)"), "Bosley presence header must use a restrained black-and-white palette");
+assert.ok(html.includes("#side-dock .dock-tabs button.on{border-color:#eee;background:#eee;color:#050505"), "Side dock selected tabs must use the monochrome theme");
+assert.ok(html.includes("#side-dock .dock-body input,#side-dock .dock-body textarea,#side-dock .dock-body select"), "Side dock form controls must use the monochrome theme");
 assert.ok(html.includes("body.desktop-panel #side-dock{left:12px;right:auto;top:12px"), "Windows side dock must open on the left side of the display");
 assert.ok(html.includes('handle?.addEventListener("pointermove"'), "Windows side dock must remain movable by dragging its header");
 

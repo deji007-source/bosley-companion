@@ -476,6 +476,21 @@ html[data-agent-state=error] .presence-indicator{background:#777;box-shadow:none
 #lovable-bosley .lovable-viewer-bar{border-color:#292929;background:#080808;color:#eee}
 #lovable-bosley .lovable-viewer-hint{color:#999}
 @media(max-width:520px){.holo-face{width:44px;height:40px;gap:8px}.holo-face i{width:10px;height:15px}}
+
+/* Signature eyes: genuinely circular, with a crisp teleport arrival. */
+.holo-face{width:56px;height:52px;gap:8px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#242424,#050505 72%);border-color:#777;box-shadow:0 0 18px #ffffff16,inset 0 0 14px #ffffff12;animation:bosley-holo-float 4s ease-in-out infinite}
+.holo-face i{display:block;flex:0 0 17px;width:17px;height:17px;min-width:17px;min-height:17px;aspect-ratio:1/1;border-radius:50%;background:#fff;box-shadow:0 0 9px #ffffff66;animation:bosley-holo-blink 5.4s infinite}
+.holo-face i:nth-child(2){animation-delay:.04s}
+@keyframes bosley-holo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes bosley-holo-teleport{0%{opacity:.18;filter:blur(7px) brightness(2.2);transform:translate(-8px,3px) scale(.72);clip-path:inset(48% 0 48% 0)}28%{opacity:.85;filter:blur(2px) brightness(1.7);transform:translate(5px,-2px) scale(1.08);clip-path:inset(0 0 0 0)}46%{opacity:.45;filter:blur(4px);transform:translate(-3px,1px) scale(.96)}68%{opacity:1;filter:blur(0) brightness(1.2);transform:translate(1px,0) scale(1.02)}100%{opacity:1;filter:none;transform:translate(0) scale(1)}}
+@keyframes bosley-holo-phase{0%,100%{opacity:.72;filter:brightness(1)}50%{opacity:1;filter:brightness(1.55)}}
+html.bosley-arrive .bosley-hologram{animation:bosley-holo-teleport .78s cubic-bezier(.16,1,.3,1) both}
+html[data-agent-state=thinking] .bosley-hologram .holo-face,html[data-agent-state=working] .bosley-hologram .holo-face{animation:bosley-holo-phase .8s ease-in-out infinite}
+html[data-agent-state=thinking] .bosley-hologram .holo-ring-a,html[data-agent-state=working] .bosley-hologram .holo-ring-a{animation-duration:4s}
+html[data-agent-state=thinking] .bosley-hologram .holo-ring-b,html[data-agent-state=working] .bosley-hologram .holo-ring-b{animation-duration:2.8s}
+html[data-agent-state=waiting] .bosley-hologram{animation:bosley-holo-phase 1.6s ease-in-out infinite}
+@media(max-width:520px){.holo-face{width:48px;height:46px;gap:7px}.holo-face i{flex-basis:15px;width:15px;height:15px;min-width:15px;min-height:15px}}
+@media(prefers-reduced-motion:reduce){.holo-face,html.bosley-arrive .bosley-hologram,html[data-agent-state=thinking] .bosley-hologram .holo-face,html[data-agent-state=working] .bosley-hologram .holo-face,html[data-agent-state=waiting] .bosley-hologram{animation:none!important}}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">

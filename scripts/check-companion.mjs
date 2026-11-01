@@ -438,6 +438,11 @@ assert.ok(html.includes('id="remote-mode-toggle"'), "Android first page must exp
 assert.ok(html.includes('REMOTE_MODE_KEY="bosley_android_remote_mode_v1"'), "Remote Mode preference must persist on Android");
 assert.ok(html.includes('db.from("device_status").select("last_seen")'), "Remote Mode must verify the Windows listener heartbeat");
 assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automation",instruction}})'), "Remote Mode must use the authenticated automation gateway");
+assert.ok(html.includes("pendingRemoteDeviceCommand=null"), "Remote-device commands must have a separate pending approval state");
+assert.ok(html.includes("queueRemoteDeviceCommand(instruction,\"Windows laptop\",\"Android Remote Mode\")"), "Android Remote Mode must request approval before queueing a device command");
+assert.ok(html.includes("sendApprovedRemoteDeviceCommand(pending)"), "Remote-device commands must be sent only from the approval handler");
+assert.ok(html.includes("if(pendingRemoteDeviceCommand){"), "Chat must resolve pending remote-device approvals before parsing new commands");
+assert.ok(html.includes('queueRemoteDeviceCommand(remoteMatch[2].trim()'), "Typed laptop/Windows commands must use the same approval flow");
 assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
 assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not claim delivery without listener confirmation");
 

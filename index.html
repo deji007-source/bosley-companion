@@ -327,6 +327,13 @@ html.widget-mode body.desktop-panel .launch[data-state=error] #bosley-mascot .ma
 html.widget-mode body.desktop-panel .launch[data-state=error] #bosley-mascot .mascot-mouth-closed{transform:translateY(1px) scaleY(1.35);transform-origin:60px 65px}
 html.widget-mode body.desktop-panel .launch[data-state=walk] #bosley-mascot{animation:bosley-mascot-walk .34s ease-in-out infinite alternate}
 html.widget-mode body.desktop-panel .launch[data-state=walk] #bosley-mascot .mascot-eyes{transform:translateY(-1px)}
+html.widget-mode body.desktop-panel .launch[data-state=waiting] #bosley-mascot .mascot-magnifier{animation:bosley-magnifier-wait 1.4s ease-in-out infinite}
+html.widget-mode body.desktop-panel .launch[data-state=success] #bosley-mascot{animation:bosley-mascot-success .72s cubic-bezier(.2,.8,.2,1)}
+html.widget-mode body.desktop-panel .launch[data-state=error] #bosley-mascot{animation:bosley-mascot-error .38s ease-in-out}
+@keyframes bosley-magnifier-wait{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(4deg) translateY(-2px)}}
+@keyframes bosley-mascot-success{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-5px) scale(1.035)}65%{transform:translateY(1px) scale(.99)}100%{transform:translateY(0) scale(1)}}
+@keyframes bosley-mascot-error{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px) rotate(-2deg)}75%{transform:translateX(2px) rotate(2deg)}}
+
 @keyframes bosley-mascot-walk{from{transform:translateY(1px) rotate(-2deg)}to{transform:translateY(-2px) rotate(2deg)}}
 
 @keyframes bosley-eye-blink{0%,43%,46%,100%{transform:scaleY(1)}44%,45%{transform:scaleY(.1)}}

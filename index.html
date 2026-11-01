@@ -1797,12 +1797,12 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handle
  if((m=t.match(/^(?:bosley[, ]+)?(?:please\s+)?(?:search(?: the web)? for|search the internet for|look up|find online)\s+(.+)$/i))){
   executeDirectChatAction({type:"search_web",input:m[1]},"search the web for "+m[1]);return true;
  }
- if((m=t.match(/^(?:please\s+)?(?:create|make|download|save)(?:\s+me)?\s+(?:a\s+)?text file(?:\s+(?:called|named)\s+([^:\n]+?))?\s*(?::|with content|containing|that says)\s*([\s\S]+)$/i))){
+ if((m=t.match(/^(?:bosley[, ]+)?(?:please\s+)?(?:create|make|download|save)(?:\s+me)?\s+(?:a\s+)?text file(?:\s+(?:called|named)\s+([^:\n]+?))?\s*(?::|with content|containing|that says)\s*([\s\S]+)$/i))){
   const name=(m[1]||"bosley-note.txt").trim(),content=m[2].trim();
   if(!content){addMsg("bosley","What text should I put in the file?");return true}
   executeDirectChatAction({type:"create_text_file",name,input:content},"create text file "+name);return true;
  }
- if((m=t.match(/^(?:please\s+)?(?:draft|write)(?:\s+me)?\s+(?:a\s+)?(?:message|text)(?:\s+to\s+([^:\n]+?))?\s*(?:saying|that says|with the message|:)\s*([\s\S]+)$/i))){
+ if((m=t.match(/^(?:bosley[, ]+)?(?:please\s+)?(?:draft|write)(?:\s+me)?\s+(?:a\s+)?(?:message|text)(?:\s+to\s+([^:\n]+?))?\s*(?:saying|that says|with the message|:)\s*([\s\S]+)$/i))){
   const recipient=(m[1]||"").trim(),body=m[2].trim();
   if(!body){addMsg("bosley","What should the message say?");return true}
   addMsg("bosley","Draft prepared"+(recipient?" for "+recipient:"")+":\n\n"+body);executeDirectChatAction({type:"draft_message",recipient,input:body,draftOnly:true},"draft message"+(recipient?" to "+recipient:""));return true;

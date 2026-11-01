@@ -406,3 +406,12 @@ assert.ok(html.includes("html[data-agent-state=thinking] .bosley-hologram .holo-
 assert.ok(html.includes("html[data-agent-state=working] .bosley-hologram .holo-ring-a"), "Working state must accelerate the holographic orbit");
 
 assert.ok(html.includes('<circle class="mascot-eye" cx="49" cy="46" r="8"/><circle class="mascot-eye" cx="71" cy="46" r="8"/>'), "Main Bosley mascot must render two large circular eyes");
+
+assert.ok(html.includes('id="remote-mode-card" hidden'), "Remote Mode control must be hidden by default");
+assert.ok(html.includes('window.Capacitor?.getPlatform?.()==="android"||!!window.BosleyAndroidWidget'), "Remote Mode must only render in the native Android build");
+assert.ok(html.includes('id="remote-mode-toggle"'), "Android first page must expose a readily accessible Remote Mode toggle");
+assert.ok(html.includes('REMOTE_MODE_KEY="bosley_android_remote_mode_v1"'), "Remote Mode preference must persist on Android");
+assert.ok(html.includes('db.from("device_status").select("last_seen")'), "Remote Mode must verify the Windows listener heartbeat");
+assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automation",instruction}})'), "Remote Mode must use the authenticated automation gateway");
+assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
+assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not claim delivery without listener confirmation");

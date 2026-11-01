@@ -404,3 +404,5 @@ assert.ok(html.includes("html.bosley-arrive .bosley-hologram{animation:bosley-ho
 assert.ok(html.includes("@keyframes bosley-holo-float"), "Holographic avatar must have subtle idle movement");
 assert.ok(html.includes("html[data-agent-state=thinking] .bosley-hologram .holo-face"), "Thinking state must animate the holographic avatar");
 assert.ok(html.includes("html[data-agent-state=working] .bosley-hologram .holo-ring-a"), "Working state must accelerate the holographic orbit");
+
+assert.ok(html.includes('<circle class="mascot-eye" cx="49" cy="46" r="8"/><circle class="mascot-eye" cx="71" cy="46" r="8"/>'), "Main Bosley mascot must render two large circular eyes");

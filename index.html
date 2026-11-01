@@ -491,6 +491,9 @@ html[data-agent-state=thinking] .bosley-hologram .holo-ring-b,html[data-agent-st
 html[data-agent-state=waiting] .bosley-hologram{animation:bosley-holo-phase 1.6s ease-in-out infinite}
 @media(max-width:520px){.holo-face{width:48px;height:46px;gap:7px}.holo-face i{flex-basis:15px;width:15px;height:15px;min-width:15px;min-height:15px}}
 @media(prefers-reduced-motion:reduce){.holo-face,html.bosley-arrive .bosley-hologram,html[data-agent-state=thinking] .bosley-hologram .holo-face,html[data-agent-state=working] .bosley-hologram .holo-face,html[data-agent-state=waiting] .bosley-hologram{animation:none!important}}
+
+.remote-mode-card{margin:10px 14px 2px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #333;border-radius:13px;background:#080808;color:#fff}
+.remote-mode-card[hidden]{display:none}.remote-mode-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.remote-mode-copy strong{font-size:11px;letter-spacing:.14em}.remote-mode-copy span,.remote-mode-copy small{font-size:11px;color:#aaa;line-height:1.35}.remote-mode-copy small[data-state=online]{color:#fff}.remote-mode-toggle{min-width:58px;padding:8px 11px;border:1px solid #555;border-radius:999px;background:#111;color:#ddd;font-size:11px;font-weight:800;letter-spacing:.08em}.remote-mode-toggle[aria-pressed=true]{background:#fff;color:#050505;border-color:#fff}.remote-mode-toggle:disabled{opacity:.5}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">
@@ -524,6 +527,11 @@ html[data-agent-state=waiting] .bosley-hologram{animation:bosley-holo-phase 1.6s
   <button type="button" data-mode="dictate" aria-pressed="false">≋ Dictate</button>
   <button type="button" data-mode="edit" aria-pressed="false">✳ Edit</button>
  </nav>
+
+ <section class="remote-mode-card" id="remote-mode-card" hidden aria-label="Remote mode">
+  <div class="remote-mode-copy"><strong>REMOTE MODE</strong><span>Send Android voice commands to your paired Windows laptop</span><small id="remote-mode-status" role="status" aria-live="polite">Laptop connection not checked</small></div>
+  <button type="button" id="remote-mode-toggle" class="remote-mode-toggle" aria-pressed="false">OFF</button>
+ </section>
  <p class="modehint" id="modehint" aria-live="polite">Speak a request and Bosley will respond in chat.</p>
  <button class="toggle" id="wstoggle" aria-expanded="false">▤ <b>Jarvis Workspace</b><span id="wsmeta">SIGN IN</span></button>
  <section class="workspace" id="ws" hidden></section>
@@ -1487,6 +1495,47 @@ function setVoiceMode(next){
 }
 document.querySelectorAll("#voicemodes [data-mode]").forEach(button=>button.addEventListener("click",()=>setVoiceMode(button.dataset.mode)));
 setVoiceMode("agent");
+
+const REMOTE_MODE_KEY="bosley_android_remote_mode_v1";
+const remoteModeNativeAndroid=window.Capacitor?.getPlatform?.()==="android"||!!window.BosleyAndroidWidget;
+let remoteModeEnabled=false;
+function renderRemoteMode(){const card=$("#remote-mode-card"),button=$("#remote-mode-toggle");if(!card||!button)return;card.hidden=!remoteModeNativeAndroid;button.setAttribute("aria-pressed",String(remoteModeEnabled));button.textContent=remoteModeEnabled?"ON":"OFF"}
+function setRemoteModeStatus(message,state="idle"){const el=$("#remote-mode-status");if(el){el.textContent=message;el.dataset.state=state}}
+async function getRemoteLaptopStatus(){
+ if(!db||!user)return {online:false,detail:"Sign in to check the laptop"};
+ try{const {data,error}=await db.from("device_status").select("last_seen").eq("user_id",user.id).eq("device","bosley-laptop-listener").maybeSingle();if(error)throw error;const seen=data?.last_seen?new Date(data.last_seen).getTime():0;const online=!!seen&&Number.isFinite(seen)&&Date.now()-seen<90000;return {online,detail:online?"Windows laptop connected":"Windows laptop not connected"}}
+ catch{return {online:false,detail:"Could not verify laptop connection"}}
+}
+async function routeRemoteVoiceToLaptop(spoken){
+ if(!remoteModeNativeAndroid||!remoteModeEnabled)return false;
+ const instruction=String(spoken||"").trim();if(!instruction)return true;
+ setRemoteModeStatus("Checking Windows connection…","checking");
+ try{
+  const sess=db?(await db.auth.getSession()).data.session:null;if(!sess||!user)throw Error("Sign in to the same Bosley account on Android and Windows first.");
+  const status=await getRemoteLaptopStatus();if(!status.online)throw Error(status.detail+". Open Bosley Companion on Windows and wait for its listener to connect.");
+  setRemoteModeStatus("Sending to Windows…","checking");
+  const {data,error}=await db.functions.invoke("remote-action",{body:{type:"automation",instruction}});if(error)throw error;
+  if(!data||data.ok!==true)throw Error(data?.error||"Windows did not accept the command.");
+  if(data.listenerNotified!==true)throw Error("The command was queued, but the Windows listener did not confirm delivery. Check the laptop before retrying.");
+  addMsg("you",instruction);addMsg("sys","Remote Mode: command delivered to your Windows laptop listener. Laptop execution depends on the supported Windows action handler.");
+  activityEvent("Remote voice command sent to Windows: "+instruction.slice(0,140),"message");autoLog("delivered","Android Remote Mode delivered to Windows listener: "+instruction);
+  setRemoteModeStatus("Windows laptop connected · command delivered","online");
+ }catch(error){const message=String(error?.message||error);note("Remote Mode: "+message);setRemoteModeStatus(message,"error");autoLog("error","Android Remote Mode could not deliver command: "+message)}
+ return true;
+}
+function initAndroidRemoteMode(){
+ if(!remoteModeNativeAndroid)return;
+ try{remoteModeEnabled=localStorage.getItem(REMOTE_MODE_KEY)==="1"}catch{remoteModeEnabled=false}
+ renderRemoteMode();const button=$("#remote-mode-toggle");if(!button)return;
+ button.addEventListener("click",async()=>{
+  const next=!remoteModeEnabled;
+  if(next){button.disabled=true;const status=await getRemoteLaptopStatus();button.disabled=false;if(!status.online){setRemoteModeStatus(status.detail+". Open Bosley Companion on Windows first.","offline");note("Remote Mode needs your Windows Companion to be online.");return}}
+  remoteModeEnabled=next;try{localStorage.setItem(REMOTE_MODE_KEY,remoteModeEnabled?"1":"0")}catch{}renderRemoteMode();
+  if(remoteModeEnabled){setRemoteModeStatus("Windows laptop connected · voice commands route to Windows","online");note("Remote Mode ON. Your Android voice requests will be sent to Windows.")}
+  else{setRemoteModeStatus("Remote routing is off","idle");note("Remote Mode OFF. Voice requests stay on this device.")}
+ });
+}
+
 let androidMicPermissionGranted=false,androidMicPermissionPending=false;
 async function startMic(){
  const overlayPlugin=window.Capacitor?.Plugins?.BosleyOverlay;
@@ -1505,6 +1554,7 @@ async function startMic(){
    const spoken=String(result?.text||"").trim();
    if(!spoken){note("No speech captured. Tap the microphone and speak, or type a message.");return}
    if(handleVoiceModeCommand(spoken))return;
+   if(await routeRemoteVoiceToLaptop(spoken))return;
    if(voiceMode==="agent"){ $("#in").value=""; await send(spoken); }
    else { $("#in").value=spoken; $("#in").focus(); note(voiceMode==="dictate"?"Dictation ready. Review the text before sending.":"Voice text ready. Review it before sending."); }
   }catch(error){

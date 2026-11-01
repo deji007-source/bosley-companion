@@ -357,3 +357,13 @@ assert.ok(html.includes("bosley-mascot-success"), "Success state must provide a 
 assert.ok(html.includes("bosley-mascot-error"), "Error state must provide a restrained error cue");
 assert.ok(html.includes("bosley-magnifier-wait"), "Waiting state must animate the magnifier subtly");
 assert.ok(html.includes("launch[data-state=walk] #bosley-mascot,html.widget-mode"), "Walk animation must respect reduced-motion settings");
+
+assert.ok(html.includes("function executeDirectChatAction(step,label)"), "Everyday actions must be executable directly from the chat command router");
+assert.ok(html.includes('type:"open_url",input:m[1]'), "Chat must open explicit website URLs without visiting Automation");
+assert.ok(html.includes('type:"search_web",input:m[1]'), "Chat must run web searches without visiting Automation");
+assert.ok(html.includes('type:"create_text_file",name,input:content'), "Chat must create and download named text files");
+assert.ok(html.includes('type:"draft_message",recipient,input:body,draftOnly:true'), "Chat must create message drafts without sending them");
+assert.ok(html.includes('if(step.draftOnly){'), "Direct message drafts must never trigger the send-message bridge");
+assert.ok(html.includes('type:"desktop_action",action:"get_desktop_info"'), "Chat must expose the desktop status bridge action");
+assert.ok(html.includes('type:"desktop_action",action:"set_widget_appearance"'), "Chat must expose the widget appearance bridge action");
+assert.ok(html.includes("Chat action result:"), "Direct chat actions must record their result in workspace activity");

@@ -494,6 +494,34 @@ html[data-agent-state=waiting] .bosley-hologram{animation:bosley-holo-phase 1.6s
 
 .remote-mode-card{margin:10px 14px 2px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #333;border-radius:13px;background:#080808;color:#fff}
 .remote-mode-card[hidden]{display:none}.remote-mode-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.remote-mode-copy strong{font-size:11px;letter-spacing:.14em}.remote-mode-copy span,.remote-mode-copy small{font-size:11px;color:#aaa;line-height:1.35}.remote-mode-copy small[data-state=online]{color:#fff}.remote-mode-toggle{min-width:58px;padding:8px 11px;border:1px solid #555;border-radius:999px;background:#111;color:#ddd;font-size:11px;font-weight:800;letter-spacing:.08em}.remote-mode-toggle[aria-pressed=true]{background:#fff;color:#050505;border-color:#fff}.remote-mode-toggle:disabled{opacity:.5}
+
+/* Final compact shell + mascot face correction */
+.panel{background:#050505;border-color:#292929}
+.top{min-height:42px;padding:6px 12px;gap:9px;background:#050505;border-bottom:1px solid #202020}
+.top .brand strong{font-size:11px;letter-spacing:.16em}.top .brand small{margin-top:1px;font-size:8px}
+.top button{width:26px;height:26px;border-radius:7px}
+.remote-mode-card{margin:8px 14px 2px;padding:9px 11px;min-height:58px;border-radius:10px;background:#0b0b0b;border-color:#454545;box-shadow:0 3px 14px #0008}
+.remote-mode-copy strong{font-size:10px}.remote-mode-copy span,.remote-mode-copy small{font-size:10px}
+.remote-mode-toggle{min-width:64px;padding:9px 13px;font-size:10px}
+/* Keep the face open and readable: no opaque eye panel or rectangular mask. */
+#bosley-mascot{overflow:visible}
+#bosley-mascot .mascot-face{fill:#10131a;stroke:#aeb8c8;stroke-width:1.6}
+#bosley-mascot .mascot-eyes{transform:translate(2px,-1px)}
+#bosley-mascot .mascot-eye{fill:#fff;stroke:#fff;stroke-width:1;filter:drop-shadow(0 0 4px #ffffffaa);transform-box:fill-box;transform-origin:center;animation:bosley-eye-blink 5.8s ease-in-out infinite}
+#bosley-mascot .mascot-eye:first-child{r:9}
+#bosley-mascot .mascot-eye:last-child{r:9}
+#bosley-mascot .mascot-brow{stroke:#d6dce7;stroke-width:1.8;opacity:.9}
+#bosley-mascot .mascot-mouth-closed{stroke:#fff;stroke-width:1.8}
+#bosley-mascot .mascot-mouth-open{fill:#fff;stroke:#fff}
+.launch{background:transparent;border-color:#f4f4f4;box-shadow:0 0 0 1px #ffffff18,0 7px 24px #0009}
+.launch::after{background:linear-gradient(145deg,#ffffff0b 0%,transparent 40%,transparent 72%,#ffffff05 100%)}
+html.bosley-arrive .launch #bosley-mascot{animation:bosley-mascot-teleport .82s cubic-bezier(.16,1,.3,1) both}
+@keyframes bosley-mascot-teleport{0%{opacity:0;filter:blur(8px) brightness(2);transform:translateY(-7px) scale(.68);clip-path:inset(45% 0 45% 0)}28%{opacity:.9;filter:blur(2px) brightness(1.6);transform:translateY(2px) scale(1.08);clip-path:inset(0)}52%{opacity:.55;filter:blur(4px);transform:translateX(-3px) scale(.96)}76%{opacity:1;filter:blur(0) brightness(1.2);transform:translateX(1px) scale(1.02)}100%{opacity:1;filter:none;transform:none;clip-path:inset(0)}}
+html[data-agent-state=thinking] .launch #bosley-mascot{animation:bosley-lock-focus .9s ease-in-out infinite alternate}
+html[data-agent-state=working] .launch #bosley-mascot{animation:bosley-lock-focus .62s ease-in-out infinite alternate}
+html[data-agent-state=listening] .launch #bosley-mascot .mascot-eye{transform:scale(1.08);filter:drop-shadow(0 0 7px #fff)}
+html[data-agent-state=working] .launch #bosley-mascot .mascot-eye{filter:drop-shadow(0 0 8px #fff)}
+@media(prefers-reduced-motion:reduce){html.bosley-arrive .launch #bosley-mascot{animation:none!important}}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">
@@ -517,10 +545,9 @@ html[data-agent-state=waiting] .bosley-hologram{animation:bosley-holo-phase 1.6s
 </svg></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="signin-open" class="signin-shortcut" type="button" aria-label="Open account sign-in" title="Account and sync">Sign in</button><button id="dock-open" aria-label="Open side views" title="Open Workspace, Automation, Appearance and Activity">▤</button><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
- <section class="bosley-presence" aria-label="Bosley assistant status">
-  <div class="bosley-hologram" aria-hidden="true"><span class="holo-ring holo-ring-a"></span><span class="holo-ring holo-ring-b"></span><span class="holo-face"><i></i><i></i></span><span class="holo-scan"></span></div>
-  <div class="bosley-presence-copy"><span class="presence-eyebrow">YOUR AI COMPANION</span><strong>Bosley</strong><span id="presence-status" aria-live="polite">Ready when you are</span></div>
-  <div class="presence-actions"><span class="presence-indicator" aria-hidden="true"></span><span id="presence-mode">AGENT ONLINE</span></div>
+ <section class="remote-mode-card" id="remote-mode-card" hidden aria-label="Remote mode">
+  <div class="remote-mode-copy"><strong>REMOTE MODE</strong><span>Send Android voice commands to your paired Windows laptop</span><small id="remote-mode-status" role="status" aria-live="polite">Laptop connection not checked</small></div>
+  <button type="button" id="remote-mode-toggle" class="remote-mode-toggle" aria-pressed="false">OFF</button>
  </section>
  <nav class="modebar" id="voicemodes" aria-label="Assistant mode">
   <button type="button" class="on" data-mode="agent" aria-pressed="true">◈ Agent</button>
@@ -528,10 +555,7 @@ html[data-agent-state=waiting] .bosley-hologram{animation:bosley-holo-phase 1.6s
   <button type="button" data-mode="edit" aria-pressed="false">✳ Edit</button>
  </nav>
 
- <section class="remote-mode-card" id="remote-mode-card" hidden aria-label="Remote mode">
-  <div class="remote-mode-copy"><strong>REMOTE MODE</strong><span>Send Android voice commands to your paired Windows laptop</span><small id="remote-mode-status" role="status" aria-live="polite">Laptop connection not checked</small></div>
-  <button type="button" id="remote-mode-toggle" class="remote-mode-toggle" aria-pressed="false">OFF</button>
- </section>
+ 
  <p class="modehint" id="modehint" aria-live="polite">Speak a request and Bosley will respond in chat.</p>
  <button class="toggle" id="wstoggle" aria-expanded="false">▤ <b>Jarvis Workspace</b><span id="wsmeta">SIGN IN</span></button>
  <section class="workspace" id="ws" hidden></section>
@@ -1497,7 +1521,7 @@ document.querySelectorAll("#voicemodes [data-mode]").forEach(button=>button.addE
 setVoiceMode("agent");
 
 const REMOTE_MODE_KEY="bosley_android_remote_mode_v1";
-const remoteModeNativeAndroid=window.Capacitor?.getPlatform?.()==="android"||!!window.BosleyAndroidWidget;
+const remoteModeNativeAndroid=(()=>{try{return window.Capacitor?.isNativePlatform?.()===true&&String(window.Capacitor?.getPlatform?.()||"").toLowerCase()==="android"||String(window.Capacitor?.getPlatform?.()||"").toLowerCase()==="android"||!!window.BosleyAndroidWidget||!!window.BosleyAndroidBridge||!!window.AndroidBridge}catch{return !!(window.BosleyAndroidWidget||window.BosleyAndroidBridge||window.AndroidBridge)}})();
 let remoteModeEnabled=false;
 function renderRemoteMode(){const card=$("#remote-mode-card"),button=$("#remote-mode-toggle");if(!card||!button)return;card.hidden=!remoteModeNativeAndroid;button.setAttribute("aria-pressed",String(remoteModeEnabled));button.textContent=remoteModeEnabled?"ON":"OFF"}
 function setRemoteModeStatus(message,state="idle"){const el=$("#remote-mode-status");if(el){el.textContent=message;el.dataset.state=state}}

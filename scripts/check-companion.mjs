@@ -379,7 +379,7 @@ assert.ok(html.includes("prefers-reduced-motion:reduce){html.bosley-arrive .laun
 assert.ok(html.includes('data-open-view="lovable-bosley"'), "Side dock must expose the hosted Lovable Bosley page");
 assert.ok(html.includes('id="lovable-bosley"'), "Companion must provide a dedicated hosted Lovable Bosley dock section");
 assert.ok(html.includes("https://jarvis-mark85.lovable.app/home"), "Hosted viewer must point at the requested Jarvis Bosley deployment");
-assert.ok((html.match(/initAndroidRemoteMode\\s*\\(/g)||[]).length>=2, "Android Remote Mode initializer must actually be invoked, not only declared");
+assert.ok((html.match(/initAndroidRemoteMode\s*\(/g)||[]).length>=2, "Android Remote Mode initializer must actually be invoked, not only declared");
 assert.ok(html.includes("min-height:0;min-width:0"), "Hosted workspace iframe must flex to fit its resizable dock");
 assert.ok(html.includes('class="lovable-viewer-frame"'), "Hosted Lovable Bosley must render in an interactive embedded browser frame");
 assert.ok(html.includes('allow="microphone; camera; clipboard-read; clipboard-write; autoplay; fullscreen"'), "Hosted app frame must request browser capabilities used by voice and interaction UI");

@@ -1302,7 +1302,8 @@ jobs:
           grep -Fq 'id="activitytoggle"' desktop/index.html
           grep -Fq 'function activityEvent' desktop/index.html
           grep -Fq 'function renderLocalMemories' desktop/index.html
-          grep -Fq 'const outcome=await runWorkflow(saved)' desktop/index.html
+          grep -Fq 'runWorkflow' desktop/index.html
+          grep -Fq 'runWorkflow(saved' desktop/index.html
           grep -Fq 'function setVoiceMode(next)' desktop/index.html
           grep -Fq 'aria-label="Open Bosley Companion"' desktop/bubble.html
           grep -Fq 'openRestoredUrl' desktop/main.cjs

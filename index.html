@@ -522,6 +522,52 @@ html[data-agent-state=working] .launch #bosley-mascot{animation:bosley-lock-focu
 html[data-agent-state=listening] .launch #bosley-mascot .mascot-eye{transform:scale(1.08);filter:drop-shadow(0 0 7px #fff)}
 html[data-agent-state=working] .launch #bosley-mascot .mascot-eye{filter:drop-shadow(0 0 8px #fff)}
 @media(prefers-reduced-motion:reduce){html.bosley-arrive .launch #bosley-mascot{animation:none!important}}
+
+/* Responsive fit-and-finish: compact controls, explicit remote state, bounded scroll regions. */
+.remote-mode-card{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.remote-mode-card[data-mode=on]{border-color:#777;background:linear-gradient(110deg,#111,#080808)}
+.remote-mode-card[data-mode=on] .remote-mode-copy strong{color:#fff}
+.remote-mode-toggle{min-width:68px;min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.remote-mode-toggle[aria-pressed=true]{background:#fff;color:#050505;box-shadow:0 0 0 2px #ffffff20,0 0 18px #ffffff18}
+.remote-mode-toggle[aria-pressed=false]{background:#141414;color:#bbb;border-color:#555}
+.remote-mode-copy small{display:block;max-width:100%;overflow-wrap:anywhere}
+.panel{min-height:0;max-height:calc(100dvh - 24px)}
+.panel:not(.maximized){height:min(820px,calc(100dvh - 24px))}
+.panel .chat{min-height:0;max-height:none}
+.panel .workspace,.panel .automation{max-width:calc(100% - 28px);overflow:auto;overscroll-behavior:contain}
+#side-dock{min-height:0;max-height:calc(100dvh - 24px);height:min(820px,calc(100dvh - 24px))}
+#dock-body{min-height:0;overflow:auto;overscroll-behavior:contain}
+#lovable-bosley{min-height:0;overflow:hidden}
+#lovable-bosley .lovable-viewer{min-height:0;height:100%;max-height:100%}
+#lovable-bosley .lovable-viewer-bar{flex:0 0 auto;min-width:0;flex-wrap:wrap}
+#lovable-bosley .lovable-viewer-bar>div{min-width:0}
+#lovable-bosley .lovable-viewer-hint{flex:0 0 auto;margin:0;font-size:10px;line-height:1.4}
+#lovable-bosley .lovable-viewer-frame{min-height:0;min-width:0;flex:1 1 0}
+.toggle{min-height:40px;padding:9px 11px}
+.toggle b{font-size:11px}
+.toggle span{font-size:9px;letter-spacing:.04em}
+.modehint{font-size:9px;line-height:1.4}
+@media(max-width:600px){
+ .panel{left:8px;right:8px;top:8px;transform:none;width:auto;height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);border-radius:16px}
+ .panel.maximized{left:8px;right:8px;width:auto;height:calc(100dvh - 16px);max-height:calc(100dvh - 16px)}
+ .remote-mode-card{margin:7px 10px 1px;padding:8px 9px;min-height:54px}
+ .remote-mode-copy strong{font-size:9px}
+ .remote-mode-copy span,.remote-mode-copy small{font-size:9px}
+ .remote-mode-toggle{min-width:58px;min-height:36px;padding:7px 10px}
+ .modebar{margin:8px 10px 0}
+ .workspace,.automation{margin-left:10px;margin-right:10px;max-width:calc(100% - 20px)}
+ #side-dock{left:8px;right:8px;width:auto;top:8px;height:calc(100dvh - 16px);max-height:calc(100dvh - 16px)}
+ #lovable-bosley .lovable-viewer-bar{gap:6px}
+ #lovable-bosley .lovable-viewer-frame{border-radius:9px}
+}
+@media(min-width:601px) and (max-height:650px){
+ .panel{height:calc(100dvh - 16px);top:8px}
+ .remote-mode-card{min-height:48px;padding:6px 10px}
+ .modebar{margin-top:6px}
+ .modehint{margin-top:4px;min-height:10px}
+}
+@media(prefers-reduced-motion:reduce){.remote-mode-toggle{transition:none}}
+
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">
@@ -546,7 +592,7 @@ html[data-agent-state=working] .launch #bosley-mascot .mascot-eye{filter:drop-sh
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="signin-open" class="signin-shortcut" type="button" aria-label="Open account sign-in" title="Account and sync">Sign in</button><button id="dock-open" aria-label="Open side views" title="Open Workspace, Automation, Appearance and Activity">▤</button><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
  <section class="remote-mode-card" id="remote-mode-card" hidden aria-label="Remote mode">
-  <div class="remote-mode-copy"><strong>REMOTE MODE</strong><span>Send Android voice commands to your paired Windows laptop</span><small id="remote-mode-status" role="status" aria-live="polite">Laptop connection not checked</small></div>
+  <div class="remote-mode-copy"><strong>REMOTE MODE</strong><span>Route voice commands to Windows</span><small id="remote-mode-status" role="status" aria-live="polite">Windows not connected</small></div>
   <button type="button" id="remote-mode-toggle" class="remote-mode-toggle" aria-pressed="false">OFF</button>
  </section>
  <nav class="modebar" id="voicemodes" aria-label="Assistant mode">
@@ -1523,7 +1569,7 @@ setVoiceMode("agent");
 const REMOTE_MODE_KEY="bosley_android_remote_mode_v1";
 const remoteModeNativeAndroid=(()=>{try{return window.Capacitor?.isNativePlatform?.()===true&&String(window.Capacitor?.getPlatform?.()||"").toLowerCase()==="android"||String(window.Capacitor?.getPlatform?.()||"").toLowerCase()==="android"||!!window.BosleyAndroidWidget||!!window.BosleyAndroidBridge||!!window.AndroidBridge}catch{return !!(window.BosleyAndroidWidget||window.BosleyAndroidBridge||window.AndroidBridge)}})();
 let remoteModeEnabled=false;
-function renderRemoteMode(){const card=$("#remote-mode-card"),button=$("#remote-mode-toggle");if(!card||!button)return;card.hidden=!remoteModeNativeAndroid;button.setAttribute("aria-pressed",String(remoteModeEnabled));button.textContent=remoteModeEnabled?"ON":"OFF"}
+function renderRemoteMode(){const card=$("#remote-mode-card"),button=$("#remote-mode-toggle");if(!card||!button)return;card.hidden=!remoteModeNativeAndroid;card.dataset.mode=remoteModeEnabled?"on":"off";button.setAttribute("aria-pressed",String(remoteModeEnabled));button.textContent=remoteModeEnabled?"ON":"OFF";button.setAttribute("aria-label",remoteModeEnabled?"Turn Remote Mode off":"Turn Remote Mode on")}
 function setRemoteModeStatus(message,state="idle"){const el=$("#remote-mode-status");if(el){el.textContent=message;el.dataset.state=state}}
 async function getRemoteLaptopStatus(){
  if(!db||!user)return {online:false,detail:"Sign in to check the laptop"};

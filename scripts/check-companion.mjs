@@ -368,14 +368,14 @@ assert.ok(html.includes('type:"desktop_action",action:"get_desktop_info"'), "Cha
 assert.ok(html.includes('type:"desktop_action",action:"set_widget_appearance"'), "Chat must expose the widget appearance bridge action");
 assert.ok(html.includes("Chat action result:"), "Direct chat actions must record their result in workspace activity");
 
-assert.ok(html.includes('class="bosley-presence"'), "Companion must show the integrated Lovable-inspired assistant presence header");
-assert.ok(html.includes('class="bosley-hologram"'), "Companion must render the animated holographic Bosley face");
+assert.ok(!html.includes('<section class="bosley-presence"'), "Main panel must not repeat the mascot eye/avatar header");
+assert.ok(html.includes(".top{min-height:42px;padding:6px 12px"), "Panel top bar must remain slim and compact");
 assert.ok(html.includes("bosley-orbit"), "Holographic companion rings must animate");
-assert.ok(html.includes('id="presence-status"'), "Holographic companion must expose an accessible live status");
-assert.ok(html.includes('presence.textContent=labels[state]'), "Holographic status must follow the real assistant execution state");
+assert.ok(html.includes('id="remote-mode-card" hidden'), "Remote Mode card must be available near the top of the panel");
+assert.ok(html.includes("bosley-mascot-teleport"), "Floating Bosley widget must use the teleport arrival animation");
 assert.ok(html.includes("width:min(900px,calc(100vw - 24px))"), "The Companion panel must open as a spacious assistant workspace");
 assert.ok(html.includes("width:min(1240px,calc(100vw - 24px))"), "Maximized Companion must support a wide desktop workspace");
-assert.ok(html.includes("prefers-reduced-motion:reduce){.holo-ring"), "Holographic motion must respect reduced-motion preferences");
+assert.ok(html.includes("prefers-reduced-motion:reduce){html.bosley-arrive .launch #bosley-mascot"), "Mascot motion must respect reduced-motion preferences");
 assert.ok(html.includes('data-open-view="lovable-bosley"'), "Side dock must expose the hosted Lovable Bosley page");
 assert.ok(html.includes('id="lovable-bosley"'), "Companion must provide a dedicated hosted Lovable Bosley dock section");
 assert.ok(html.includes("https://id-preview--26bfbc5a-97dc-4790-be9c-f7adae8e8801.lovable.app"), "Hosted viewer must point at the existing Lovable Bosley deployment");
@@ -386,12 +386,10 @@ assert.ok(html.includes("initLovableBosleyViewer"), "Lovable viewer must initial
 assert.ok(html.includes("bosley-side-dock-position"), "Windows side dock position must persist after dragging");
 assert.ok(html.includes(".holo-face i{width:12px;height:18px"), "Bosley presence avatar must use two large, wide eyes");
 assert.ok(html.includes(".holo-face{width:54px;height:50px"), "Bosley face must be sized to support the larger paired eyes");
-assert.ok(html.includes(".bosley-presence{background:linear-gradient(110deg,#111 0%,#080808 54%,#030303 100%)"), "Bosley presence header must use a restrained black-and-white palette");
 assert.ok(html.includes("#side-dock .dock-tabs button.on{border-color:#eee;background:#eee;color:#050505"), "Side dock selected tabs must use the monochrome theme");
 assert.ok(html.includes("#side-dock .dock-body input,#side-dock .dock-body textarea,#side-dock .dock-body select"), "Side dock form controls must use the monochrome theme");
 assert.ok(html.includes(".holo-face i{width:12px;height:18px"), "Bosley presence avatar must use two large, wide eyes");
 assert.ok(html.includes(".holo-face{width:54px;height:50px"), "Bosley face must be sized to support the larger paired eyes");
-assert.ok(html.includes(".bosley-presence{background:linear-gradient(110deg,#111 0%,#080808 54%,#030303 100%)"), "Bosley presence header must use a restrained black-and-white palette");
 assert.ok(html.includes("#side-dock .dock-tabs button.on{border-color:#eee;background:#eee;color:#050505"), "Side dock selected tabs must use the monochrome theme");
 assert.ok(html.includes("#side-dock .dock-body input,#side-dock .dock-body textarea,#side-dock .dock-body select"), "Side dock form controls must use the monochrome theme");
 assert.ok(html.includes("body.desktop-panel #side-dock{left:12px;right:auto;top:12px"), "Windows side dock must open on the left side of the display");
@@ -400,15 +398,12 @@ assert.ok(html.includes('handle?.addEventListener("pointermove"'), "Windows side
 assert.ok(html.includes(".holo-face i{display:block;flex:0 0 17px;width:17px;height:17px"), "Bosley presence eyes must be large true circles, not ovals");
 assert.ok(html.includes("border-radius:50%;background:#fff"), "Bosley presence eyes must retain a circular silhouette");
 assert.ok(html.includes("@keyframes bosley-holo-teleport"), "Holographic Bosley must have a teleport-style arrival animation");
-assert.ok(html.includes("html.bosley-arrive .bosley-hologram{animation:bosley-holo-teleport"), "Teleport arrival must animate the holographic avatar when the agent starts working");
 assert.ok(html.includes("@keyframes bosley-holo-float"), "Holographic avatar must have subtle idle movement");
-assert.ok(html.includes("html[data-agent-state=thinking] .bosley-hologram .holo-face"), "Thinking state must animate the holographic avatar");
-assert.ok(html.includes("html[data-agent-state=working] .bosley-hologram .holo-ring-a"), "Working state must accelerate the holographic orbit");
 
-assert.ok(html.includes('<circle class="mascot-eye" cx="49" cy="46" r="8"/><circle class="mascot-eye" cx="71" cy="46" r="8"/>'), "Main Bosley mascot must render two large circular eyes");
+assert.ok(html.includes('<circle class="mascot-eye" cx="49" cy="46" r="9"/><circle class="mascot-eye" cx="71" cy="46" r="9"/>'), "Main Bosley mascot must render two large circular eyes");
 
 assert.ok(html.includes('id="remote-mode-card" hidden'), "Remote Mode control must be hidden by default");
-assert.ok(html.includes('window.Capacitor?.getPlatform?.()==="android"||!!window.BosleyAndroidWidget'), "Remote Mode must only render in the native Android build");
+assert.ok(html.includes('window.BosleyAndroidBridge||window.AndroidBridge'), "Remote Mode must detect supported native Android bridge runtimes");
 assert.ok(html.includes('id="remote-mode-toggle"'), "Android first page must expose a readily accessible Remote Mode toggle");
 assert.ok(html.includes('REMOTE_MODE_KEY="bosley_android_remote_mode_v1"'), "Remote Mode preference must persist on Android");
 assert.ok(html.includes('db.from("device_status").select("last_seen")'), "Remote Mode must verify the Windows listener heartbeat");

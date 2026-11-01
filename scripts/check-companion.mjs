@@ -331,6 +331,9 @@ assert.ok(html.includes("Agent route status: "+'"+result.target+"'), "Automation
 assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow step must begin in an explicit pending state");
 assert.ok(html.includes("item.dataset.stepState=state"), "Workflow steps must update to their live execution state");
 assert.ok(html.includes('id="agent-provider"'), "Automation must expose selectable AI providers");
+assert.ok(html.includes("function dispatchAgentHandoffCommand(raw)"), "Chat must route send-to-provider commands into the handoff flow");
+assert.ok(html.includes("dispatchAgentHandoffCommand(text)"), "Agent handoff routing must run before ordinary AI chat fallback");
+
 assert.ok(html.includes('id="agent-chat-mode"'), "AI handoff must let users choose a new or existing conversation");
 assert.ok(html.includes('id="agent-chat-url"'), "Continuing an existing provider conversation must require its exact URL");
 assert.ok(html.includes('bosley_agent_handoff_v1'), "AI handoffs must retain a local resumable handoff record");

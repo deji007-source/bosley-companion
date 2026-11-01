@@ -345,3 +345,9 @@ assert.ok(html.includes("Promise.resolve(nativeVoice.speakText"), "Native Androi
 assert.ok(html.includes("data-state=listening] #bosley-mascot .mascot-eye"), "Listening state must visibly change Bosley's eyes");
 assert.ok(html.includes("mascot-brow"), "Bosley must have expressive eyebrows");
 assert.ok(html.includes("bosley-eye-blink"), "Bosley must blink naturally");
+assert.ok(html.includes("data-state=waiting] #bosley-mascot .mascot-eyes"), "Waiting state must visibly shift Bosley's gaze");
+assert.ok(html.includes("data-state=working] #bosley-mascot .mascot-eye"), "Working state must use a focused eye expression");
+assert.ok(html.includes("data-state=success] #bosley-mascot .mascot-mouth-closed"), "Success state must use a distinct positive mouth expression");
+assert.ok(html.includes("data-state=error] #bosley-mascot .mascot-eyes"), "Error state must visibly alter Bosley's expression");
+assert.ok(html.includes("data-state=walk] #bosley-mascot"), "Walk state must animate Bosley's movement");
+assert.ok(html.includes("launch[data-state=walk] #bosley-mascot{animation:none!important"), "Walk animation must respect reduced-motion settings");

@@ -2237,6 +2237,7 @@ async function handleLaptopBroadcast(payload){
    setLaptopListenerState("online","Windows desktop status received");autoLog("success","Phone requested Windows desktop information");return;
   }
   if(/\bsearch\b/.test(normalized)&&/\bchrome\b/.test(normalized)){
+   commandStatus="failed";commandSummary="Chrome active-tab connector is not installed; no browser action was executed.";
    setLaptopListenerState("online","Chrome search needs the companion browser connector");
    autoLog("warning","Laptop received a Chrome search request, but no active-tab connector is installed. No extra Chrome window was opened.");
    return;

@@ -415,3 +415,7 @@ assert.ok(html.includes('db.from("device_status").select("last_seen")'), "Remote
 assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automation",instruction}})'), "Remote Mode must use the authenticated automation gateway");
 assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
 assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not claim delivery without listener confirmation");
+
+assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");
+assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
+assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");

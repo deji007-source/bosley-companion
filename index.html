@@ -2045,7 +2045,7 @@ function handleAutomationApprovalCommand(raw){
   return true;
  }
  if(!pendingAutomationWorkflow)return false;
- if(/^(yes|yes please|yeah|yep|run|run it|run automation|proceed|proceed please|confirm|start|start it|do it|go ahead|approve)[.! ]*$/i.test(t)){
+ if(/^(?:yes|yeah|yep|run|run it|run automation|proceed|confirm|start|start it|do it|go ahead|approve)(?:,?\s+(?:please|run it|run|it|automation))?[.! ]*$/i.test(t)){
   const wf=pendingAutomationWorkflow;pendingAutomationWorkflow=null;
   addMsg("bosley","Approved. Starting "+wf.name+". You can say stop at any time to prevent later steps from running.");
   (async()=>{try{const outcome=await runWorkflow(wf,true);const done=outcome.cancelled?"Stopped "+wf.name+" after "+outcome.completed+" completed step(s). No later steps were run.":"Completed "+wf.name+" ("+outcome.completed+"/"+outcome.total+" steps). Check Execution history for details.";addMsg("bosley",done);speak(done)}catch(e){const message="The automation "+wf.name+" did not finish: "+String(e?.message||e);addMsg("bosley",message);speak(message);autoLog("error",message)}})();

@@ -26,6 +26,8 @@ const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml
 const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],
   ["Automation Skill master switch is respected", "if(!settings.enabled)return {status:\"none\"}"],
+  ["Automation skill status distinguishes an empty selection", "No skills selected. Imported skills will not be used for automation guidance."],
+  ["Automation skill status distinguishes the default all-enabled selection", "skillSettings.ids===null?\"All enabled skills can guide Bosley when preparing automation requests.\""],
   ["Disabled Skills cannot be selected for workflow routing", "readBosleySkills().filter(skill=>skill.enabled&&(settings.ids===null||settings.ids.includes(skill.id)))"],
   ["Skills link workflows through explicit workflow metadata", "workflowLine=content.match"],
   ["Skills triggers require exact normalized phrase matches", "triggers.includes(command)"],

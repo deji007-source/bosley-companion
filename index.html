@@ -2179,11 +2179,24 @@ function setLaptopListenerState(state,detail){
  const status=$("#laptop-listener-status");
  if(status){status.textContent="Laptop listener: "+state.toUpperCase()+(detail?" · "+detail:"");status.dataset.state=state}
 }
+async function reportLaptopCommandResult(runId,status,summary){
+ if(!runId||!user||!db)return;
+ try{
+  const {data,error}=await db.auth.getSession();
+  const token=data?.session?.access_token;
+  if(error||!token)throw new Error("sign-in session unavailable");
+  const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+token},body:JSON.stringify({type:"automation_result",run_id:runId,status,summary:String(summary||"").slice(0,500)}),signal:AbortSignal.timeout(8000)});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||result.ok!==true)throw new Error(result.error||"result acknowledgement rejected");
+ }catch(error){autoLog("warning","Could not sync desktop execution result: "+String(error?.message||error).slice(0,140))}
+}
 async function handleLaptopBroadcast(payload){
  const instruction=String(payload?.instruction||"").trim();
  if(!instruction)return;
+ const runId=String(payload?.run_id||"");
+ let commandStatus="completed",commandSummary="Desktop action completed and native bridge confirmed success.";
  const b=bridge();
- if(!b||typeof b.request!=="function"){setLaptopListenerState("error","Desktop bridge unavailable");return}
+ if(!b||typeof b.request!=="function"){setLaptopListenerState("error","Desktop bridge unavailable");await reportLaptopCommandResult(runId,"failed","Desktop bridge unavailable; no action was executed.");return}
  const normalized=instruction.toLowerCase().replace(/[.!?]+$/,"").trim();
  try{
   if(/^(?:hey\s+)?(?:bosley[, ]+)?(?:wake up|wake bosley|show bosley|open bosley|bring bosley up)$/i.test(normalized)){
@@ -2228,11 +2241,15 @@ async function handleLaptopBroadcast(payload){
    autoLog("warning","Laptop received a Chrome search request, but no active-tab connector is installed. No extra Chrome window was opened.");
    return;
   }
+  commandStatus="failed";commandSummary="Unsupported action; no action was executed.";
   setLaptopListenerState("online","command received; unsupported action was not executed");
   autoLog("warning","Laptop listener received an unsupported remote command and safely did not execute it: "+instruction.slice(0,180));
  }catch(error){
+  commandStatus="failed";commandSummary=String(error?.message||error).slice(0,450);
   setLaptopListenerState("error",String(error?.message||error).slice(0,120));
   autoLog("error","Laptop listener action failed: "+String(error?.message||error).slice(0,180));
+ }finally{
+  await reportLaptopCommandResult(runId,commandStatus,commandSummary);
  }
 }
 async function sendLaptopHeartbeat(activeUser){

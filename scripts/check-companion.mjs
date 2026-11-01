@@ -350,4 +350,7 @@ assert.ok(html.includes("data-state=working] #bosley-mascot .mascot-eye"), "Work
 assert.ok(html.includes("data-state=success] #bosley-mascot .mascot-mouth-closed"), "Success state must use a distinct positive mouth expression");
 assert.ok(html.includes("data-state=error] #bosley-mascot .mascot-eyes"), "Error state must visibly alter Bosley's expression");
 assert.ok(html.includes("data-state=walk] #bosley-mascot"), "Walk state must animate Bosley's movement");
+assert.ok(html.includes("bosley-mascot-success"), "Success state must provide a short completion animation");
+assert.ok(html.includes("bosley-mascot-error"), "Error state must provide a restrained error cue");
+assert.ok(html.includes("bosley-magnifier-wait"), "Waiting state must animate the magnifier subtly");
 assert.ok(html.includes("launch[data-state=walk] #bosley-mascot{animation:none!important"), "Walk animation must respect reduced-motion settings");

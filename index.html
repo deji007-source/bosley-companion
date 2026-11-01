@@ -70,9 +70,9 @@ html[data-agent-state=working] .launch .mascot-eye{filter:drop-shadow(0 0 5px #f
 .launch .eyes{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
 
 /* ---- panel ---- */
-.panel{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(440px,calc(100vw - 16px));height:min(510px,calc(100dvh - 8px));min-height:360px;display:flex;flex-direction:column;border:1px solid #292929;border-top:0;border-radius:0 0 24px 24px;overflow:hidden;background:#000;box-shadow:0 24px 70px #000;animation:in .22s ease-out}
+.panel{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:min(900px,calc(100vw - 24px));height:min(820px,calc(100dvh - 24px));min-height:420px;display:flex;flex-direction:column;border:1px solid #263744;border-radius:24px;overflow:hidden;background:#05080c;box-shadow:0 24px 90px #000d,0 0 70px #1a6b8a12;animation:in .22s ease-out}
 @keyframes in{from{opacity:0;transform:translate(-50%,-6px) scale(.97)}}
-.panel.maximized{width:min(640px,calc(100vw - 24px));height:100dvh;min-height:0;max-height:100dvh}
+.panel.maximized{width:min(1240px,calc(100vw - 24px));height:calc(100dvh - 24px);min-height:0;max-height:calc(100dvh - 24px)}
 @media(max-width:520px){.panel.maximized{height:calc(100dvh - 96px);max-height:calc(100dvh - 96px)}}
 .top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #ffffff12}
 .modebar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:10px 14px 0;padding:4px;border:1px solid #242424;border-radius:12px;background:linear-gradient(135deg,#101010,#050505)}
@@ -401,7 +401,25 @@ html.widget-mode body.desktop-panel #side-dock .dock-body{min-height:0!important
  body:not(.widget-mode) .panel{max-width:760px}
 }
 
-.activity .form select{min-width:0;width:100%;border:1px solid #333;border-radius:8px;background:#050505;color:#ddd;padding:9px;font-size:11px}.activity .item.guided{outline:1px solid #aaa;box-shadow:0 0 0 4px #ffffff14}.bosley-guide{position:fixed;inset:0;z-index:2147483646;pointer-events:none}.bosley-guide svg{position:absolute;inset:0;width:100%;height:100%}.bosley-guide path{fill:none;stroke:#f5f5f5;stroke-width:2.5;stroke-dasharray:7 8;animation:bosley-guide-flow 1s linear infinite}.bosley-guide .guide-card{position:absolute;right:16px;top:16px;max-width:280px;padding:12px;border:1px solid #777;border-radius:12px;background:#080808f5;color:#fff;pointer-events:auto;font-size:11px}.bosley-guide button{margin-top:8px;padding:7px;border:1px solid #555;border-radius:7px;background:#171717;color:#fff}@keyframes bosley-guide-flow{to{stroke-dashoffset:-30}}</style></head>
+.activity .form select{min-width:0;width:100%;border:1px solid #333;border-radius:8px;background:#050505;color:#ddd;padding:9px;font-size:11px}.activity .item.guided{outline:1px solid #aaa;box-shadow:0 0 0 4px #ffffff14}.bosley-guide{position:fixed;inset:0;z-index:2147483646;pointer-events:none}.bosley-guide svg{position:absolute;inset:0;width:100%;height:100%}.bosley-guide path{fill:none;stroke:#f5f5f5;stroke-width:2.5;stroke-dasharray:7 8;animation:bosley-guide-flow 1s linear infinite}.bosley-guide .guide-card{position:absolute;right:16px;top:16px;max-width:280px;padding:12px;border:1px solid #777;border-radius:12px;background:#080808f5;color:#fff;pointer-events:auto;font-size:11px}.bosley-guide button{margin-top:8px;padding:7px;border:1px solid #555;border-radius:7px;background:#171717;color:#fff}@keyframes bosley-guide-flow{to{stroke-dashoffset:-30}}/* Lovable-inspired assistant presentation, adapted to the native Bosley shell. */
+.bosley-presence{display:flex;align-items:center;gap:16px;padding:15px 20px 13px;border-bottom:1px solid #ffffff0c;background:radial-gradient(ellipse at 16% 50%,#13212b 0%,#090d12 42%,#050505 100%)}
+.bosley-hologram{position:relative;display:grid;place-items:center;flex:0 0 72px;width:72px;height:72px;border-radius:50%;isolation:isolate}
+.holo-ring{position:absolute;inset:2px;border:1px solid #8bdcff55;border-radius:50%;box-shadow:0 0 18px #55caff18,inset 0 0 16px #55caff0b}
+.holo-ring-a{animation:bosley-orbit 12s linear infinite}.holo-ring-b{inset:8px;border-style:dashed;border-color:#b8eaff55;animation:bosley-orbit 17s linear infinite reverse}
+.holo-face{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;width:48px;height:48px;border:1px solid #9de4ff77;border-radius:48% 48% 44% 44%;background:radial-gradient(ellipse at 50% 35%,#25475a,#0b1720 70%);box-shadow:0 0 24px #38bfff30,inset 0 0 16px #a8e8ff20}
+.holo-face i{display:block;width:5px;height:13px;border-radius:8px;background:#e6f8ff;box-shadow:0 0 9px #8bdcff;animation:bosley-holo-blink 5.4s infinite}.holo-face i:nth-child(2){animation-delay:.04s}
+.holo-scan{position:absolute;inset:12px 8px;border-radius:50%;overflow:hidden;pointer-events:none}.holo-scan:after{content:"";position:absolute;left:0;right:0;top:-20%;height:16%;background:linear-gradient(transparent,#b5efff99,transparent);animation:bosley-scan 3.2s linear infinite}
+.bosley-presence-copy{display:grid;gap:3px;min-width:0}.presence-eyebrow,.presence-mode{font:8px 'DM Mono',monospace;letter-spacing:.19em;color:#80c9e7}
+.bosley-presence-copy strong{font-size:21px;letter-spacing:-.04em;font-weight:700}.bosley-presence-copy>span:last-child{font-size:10px;color:#9baab5}
+.presence-actions{display:flex;align-items:center;gap:7px;margin-left:auto;color:#a5bdca;font:8px 'DM Mono',monospace;letter-spacing:.12em}
+.presence-indicator{width:6px;height:6px;border-radius:50%;background:#8de4bd;box-shadow:0 0 9px #8de4bd99}
+html[data-agent-state=thinking] .holo-face,html[data-agent-state=working] .holo-face{box-shadow:0 0 30px #70cfff75,inset 0 0 20px #a8e8ff30}
+html[data-agent-state=error] .presence-indicator{background:#aaa;box-shadow:0 0 8px #aaa}
+@keyframes bosley-orbit{to{transform:rotate(360deg)}}@keyframes bosley-holo-blink{0%,45%,48%,100%{transform:scaleY(1)}46%,47%{transform:scaleY(.12)}}@keyframes bosley-scan{to{transform:translateY(80px)}}
+@media(max-width:520px){.bosley-presence{gap:10px;padding:10px 12px}.bosley-hologram{flex-basis:54px;width:54px;height:54px}.holo-face{width:38px;height:38px;gap:9px}.holo-face i{height:11px}.bosley-presence-copy strong{font-size:18px}.presence-actions{font-size:7px}}
+@media(prefers-reduced-motion:reduce){.holo-ring,.holo-scan:after,.holo-face i{animation:none!important}}
+@media(max-width:520px){.panel{top:6px;width:calc(100vw - 12px);height:calc(100dvh - 12px);max-height:calc(100dvh - 12px);min-height:0;border-radius:16px}.panel.maximized{width:calc(100vw - 12px);height:calc(100dvh - 12px);max-height:calc(100dvh - 12px)}}
+</style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">
  <defs><linearGradient id="bosley-coat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#252b38"/><stop offset="1" stop-color="#090c13"/></linearGradient></defs>
@@ -424,6 +442,11 @@ html.widget-mode body.desktop-panel #side-dock .dock-body{min-height:0!important
 </svg></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="signin-open" class="signin-shortcut" type="button" aria-label="Open account sign-in" title="Account and sync">Sign in</button><button id="dock-open" aria-label="Open side views" title="Open Workspace, Automation, Appearance and Activity">▤</button><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
+ <section class="bosley-presence" aria-label="Bosley assistant status">
+  <div class="bosley-hologram" aria-hidden="true"><span class="holo-ring holo-ring-a"></span><span class="holo-ring holo-ring-b"></span><span class="holo-face"><i></i><i></i></span><span class="holo-scan"></span></div>
+  <div class="bosley-presence-copy"><span class="presence-eyebrow">YOUR AI COMPANION</span><strong>Bosley</strong><span id="presence-status" aria-live="polite">Ready when you are</span></div>
+  <div class="presence-actions"><span class="presence-indicator" aria-hidden="true"></span><span id="presence-mode">AGENT ONLINE</span></div>
+ </section>
  <nav class="modebar" id="voicemodes" aria-label="Assistant mode">
   <button type="button" class="on" data-mode="agent" aria-pressed="true">◈ Agent</button>
   <button type="button" data-mode="dictate" aria-pressed="false">≋ Dictate</button>

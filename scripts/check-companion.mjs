@@ -376,3 +376,14 @@ assert.ok(html.includes('presence.textContent=labels[state]'), "Holographic stat
 assert.ok(html.includes("width:min(900px,calc(100vw - 24px))"), "The Companion panel must open as a spacious assistant workspace");
 assert.ok(html.includes("width:min(1240px,calc(100vw - 24px))"), "Maximized Companion must support a wide desktop workspace");
 assert.ok(html.includes("prefers-reduced-motion:reduce){.holo-ring"), "Holographic motion must respect reduced-motion preferences");
+assert.ok(html.includes('data-open-view="lovable-bosley"'), "Side dock must expose the hosted Lovable Bosley page");
+assert.ok(html.includes('id="lovable-bosley"'), "Companion must provide a dedicated hosted Lovable Bosley dock section");
+assert.ok(html.includes("https://id-preview--26bfbc5a-97dc-4790-be9c-f7adae8e8801.lovable.app"), "Hosted viewer must point at the existing Lovable Bosley deployment");
+assert.ok(html.includes('class="lovable-viewer-frame"'), "Hosted Lovable Bosley must render in an interactive embedded browser frame");
+assert.ok(html.includes('allow="microphone; camera; clipboard-read; clipboard-write; autoplay; fullscreen"'), "Hosted app frame must request browser capabilities used by voice and interaction UI");
+assert.ok(html.includes("Open separately"), "Hosted app must provide a browser fallback for embedding or authentication restrictions");
+assert.ok(html.includes("initLovableBosleyViewer"), "Lovable viewer must initialize when its dock page is opened");
+assert.ok(html.includes("bosley-side-dock-position"), "Windows side dock position must persist after dragging");
+assert.ok(html.includes("body.desktop-panel #side-dock{left:12px;right:auto;top:12px"), "Windows side dock must open on the left side of the display");
+assert.ok(html.includes('handle?.addEventListener("pointermove"'), "Windows side dock must remain movable by dragging its header");
+

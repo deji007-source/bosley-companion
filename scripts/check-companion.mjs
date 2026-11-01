@@ -443,6 +443,8 @@ assert.ok(html.includes("queueRemoteDeviceCommand(instruction,\"Windows laptop\"
 assert.ok(html.includes("sendApprovedRemoteDeviceCommand(pending)"), "Remote-device commands must be sent only from the approval handler");
 assert.ok(html.includes("if(pendingRemoteDeviceCommand){"), "Chat must resolve pending remote-device approvals before parsing new commands");
 assert.ok(html.includes('queueRemoteDeviceCommand(remoteMatch[2].trim()'), "Typed laptop/Windows commands must use the same approval flow");
+assert.ok(html.includes("const remoteSuffix=t.match("), "Typed remote commands must also recognize a device target at the end of the sentence");
+assert.ok(html.includes("(?:on|to)\\\\s+(?:my\\\\s+)?(windows"), "Suffix-target parsing must require an explicit Windows/laptop target");
 assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
 assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not claim delivery without listener confirmation");
 

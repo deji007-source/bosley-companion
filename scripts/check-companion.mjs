@@ -332,6 +332,21 @@ assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow ste
 assert.ok(html.includes("item.dataset.stepState=state"), "Workflow steps must update to their live execution state");
 assert.ok(html.includes('id="agent-provider"'), "Automation must expose selectable AI providers");
 assert.ok(html.includes("function dispatchAgentHandoffCommand(raw)"), "Chat must route send-to-provider commands into the handoff flow");
+assert.ok(html.includes("function parseAgentHandoffCommand(raw)"), "Natural-language handoffs must use a separately testable parser");
+const handoffParserSource = appScript.match(/function parseAgentHandoffCommand\(raw\)\{[\s\S]*?\n?\}/)?.[0];
+assert.ok(handoffParserSource, "Expected the AI handoff parser source");
+const parseAgentHandoffCommand = new Function(handoffParserSource + "; return parseAgentHandoffCommand;")();
+for (const [command, provider, task] of [
+  ["send this to ChatGPT: build a task app", "chatgpt", "build a task app"],
+  ["ask Claude to review this architecture", "claude", "review this architecture"],
+  ["let Gemini create a project plan", "gemini", "create a project plan"],
+  ["use ChatGPT to create a landing page", "chatgpt", "create a landing page"],
+  ["forward summarize this document to Claude", "claude", "summarize this document"],
+]) {
+  assert.deepEqual(parseAgentHandoffCommand(command), { provider, task }, "Natural-language handoff should parse: " + command);
+}
+assert.equal(parseAgentHandoffCommand("ChatGPT, what is the weather?"), null, "Ordinary provider mentions must not be mistaken for handoffs");
+assert.equal(parseAgentHandoffCommand("ask Claude to "), null, "Empty handoff tasks must be rejected");
 assert.ok(html.includes("dispatchAgentHandoffCommand(text)"), "Agent handoff routing must run before ordinary AI chat fallback");
 
 assert.ok(html.includes('id="agent-chat-mode"'), "AI handoff must let users choose a new or existing conversation");

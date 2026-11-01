@@ -2,6 +2,8 @@ name: Build Bosley Android APK
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     paths:
       - 'index.html'

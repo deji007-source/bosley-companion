@@ -70,12 +70,12 @@ public class BosleyOverlayService extends Service {
     for(int n=0;n<2;n++){View eye=new View(this);GradientDrawable e=new GradientDrawable();e.setColor(Color.WHITE);e.setCornerRadius(dp("soft-square".equals(eyeShape)?6:Math.max(1,eyeWidth)));eye.setBackground(e);LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(dp(eyeWidth),dp(eyeHeight));if(n==1)ep.leftMargin=dp(eyeGapDp);inner.addView(eye,ep);}
     frame.addView(inner,new LinearLayout.LayoutParams(-1,-2));bar=frame;
     lp=new WindowManager.LayoutParams(dp(widgetWidth),dp(widgetHeight),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
-    lp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;lp.y=dp(7);
+    lp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;android.content.SharedPreferences positionPrefs=getSharedPreferences("bosley_overlay_position",MODE_PRIVATE);lp.x=positionPrefs.getInt("x",0);lp.y=positionPrefs.getInt("y",dp(7));
     frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;startOverlayVoice();};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
-        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
-        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)expandPanel();return true;
+        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);int maxX=Math.max(0,(getResources().getDisplayMetrics().widthPixels-dp(widgetWidth))/2);int maxY=Math.max(0,getResources().getDisplayMetrics().heightPixels-dp(widgetHeight));lp.x=Math.max(-maxX,Math.min(maxX,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(0,Math.min(maxY,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
+        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(moved)getSharedPreferences("bosley_overlay_position",MODE_PRIVATE).edit().putInt("x",lp.x).putInt("y",lp.y).apply();if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)expandPanel();return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}

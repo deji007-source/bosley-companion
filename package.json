@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test:companion": "node scripts/check-companion.mjs",
+    "test:companion": "node scripts/check-companion.mjs && node scripts/check-agent-dispatch.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

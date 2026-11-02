@@ -227,6 +227,11 @@ public class BosleyOverlayPlugin extends Plugin {
   private VirtualDisplay captureDisplay;
   private ImageReader captureReader;
   private final Handler captureHandler=new Handler(Looper.getMainLooper());
+  @PluginMethod public void syncChatSession(PluginCall call){
+    String token=call.getString("accessToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl","");
+    getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE).edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base).apply();
+    JSObject r=new JSObject();r.put("saved",!token.isEmpty());call.resolve(r);
+  }
   @PluginMethod public void speakText(PluginCall call){
     String text=call.getString("text","");
     String profile=call.getString("profile","jarvis");

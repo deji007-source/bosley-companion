@@ -372,7 +372,7 @@ jobs:
             }
 
             if (panel && !panel.isDestroyed()) {
-              // Keep the expanded companion compact and attached to the top-center bezel.
+              // Keep enough desktop workspace visible for the navigation rail and several floating cards.
               const width = Math.min(1280, Math.max(640, area.width - 24));
               const height = Math.min(840, Math.max(500, area.height - 44));
               const x = bounds.x + Math.round((bounds.width - width) / 2);

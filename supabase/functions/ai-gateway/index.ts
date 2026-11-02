@@ -95,8 +95,15 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Local-only mode cannot route to a cloud provider." }, 400);
   }
   if (mode === "hybrid" && prefs?.allow_cloud_fallback === false) model = "bosley-local";
-  if (hasImage && model === "bosley-local") {
-    return json({ error: "The configured local text model does not accept image input. Select hybrid mode with cloud fallback enabled, or configure a local vision model." }, 400);
+  // Images use a local vision model by default. This keeps image analysis free
+  // and avoids silently sending screenshots or photos to a paid cloud provider.
+  // An explicitly selected cloud provider remains an explicit user choice.
+  if (hasImage && (model === "bosley-local" || model === "bosley-hybrid")) {
+    model = "bosley-vision";
+    route = route + ":local-vision";
+  }
+  if (hasImage && model === "bosley-cloud" && mode === "local_only") {
+    return json({ error: "Local-only mode cannot send images to a cloud model." }, 400);
   }
 
   const startedAt = Date.now();

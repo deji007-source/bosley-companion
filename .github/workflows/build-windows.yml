@@ -954,8 +954,10 @@ jobs:
                 if (panel.isMaximized()) panel.unmaximize(); else panel.maximize();
                 return { ok: true, summary: panel.isMaximized() ? 'Maximized the Bosley Companion panel.' : 'Restored the Bosley Companion panel.' };
               }
-              const x = Number(payload.param && payload.param.x);
-              const y = Number(payload.param && payload.param.y);
+              let move = payload.param;
+              if (typeof move === 'string') { try { move = JSON.parse(move); } catch { throw new Error('Move coordinates must be supplied as a JSON object with x and y.'); } }
+              const x = Number(move && move.x);
+              const y = Number(move && move.y);
               if (!Number.isInteger(x) || !Number.isInteger(y)) throw new Error('Move requires integer x and y coordinates.');
               const display = screen.getDisplayMatching(panel.getBounds());
               const area = display.workArea;

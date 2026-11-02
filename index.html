@@ -1171,7 +1171,7 @@ async function handleNativeQuickAction(){
   if(!plugin||typeof plugin.consumeLaunchAction!=="function")return;
   const result=await plugin.consumeLaunchAction();
   const action=String(result?.action||"");
-  if(!["panel","voice","automation","providers","skills","plugins","screen-record","capture-screen"].includes(action))return;
+  if(!["panel","voice","automation","providers","skills","plugins","screen-record","capture-screen","dispatch-command"].includes(action))return;
   toggle(true);
   if(action==="automation"||action==="providers"||action==="skills"||action==="plugins"){
    const target=action==="automation"?"automation":action==="providers"||action==="plugins"?"provider-panel":"skills-panel";
@@ -1185,6 +1185,7 @@ async function handleNativeQuickAction(){
    return;
   }
   if(action==="capture-screen"){setTimeout(()=>$("#screen")?.click(),180);return;}
+  if(action==="dispatch-command"){const command=String(result?.command||"").trim();if(command)setTimeout(()=>send(command),180);return;}
   if(action==="voice"){
    setVoiceMode("agent");
    note("Starting Android voice input…");

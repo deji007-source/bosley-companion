@@ -125,6 +125,7 @@ public class BosleyOverlayService extends Service {
     }
     if(!SpeechRecognizer.isRecognitionAvailable(this)){appendChat("Speech recognition is unavailable in the overlay. Opening Bosley voice as a fallback.");openCompanion("voice");return;}
     if(!beginVoiceForeground()){openCompanion("voice");return;}
+    try{android.view.inputmethod.InputMethodManager inputMethod=(android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);if(chatInput!=null)inputMethod.hideSoftInputFromWindow(chatInput.getWindowToken(),0);}catch(Exception ignored){}
     try{
       if(overlayRecognizer!=null){try{overlayRecognizer.destroy();}catch(Exception ignored){}overlayRecognizer=null;}
       overlayRecognizer=SpeechRecognizer.createSpeechRecognizer(this);

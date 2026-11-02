@@ -1337,6 +1337,11 @@ jobs:
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "setCompanionState" desktop/preload.cjs
           grep -Fq "bosley:companion-state-update" desktop/main.cjs
+          grep -Fq 'const desktopCards=new Map()' desktop/index.html
+          grep -Fq 'body.desktop-panel .desktop-view-window{position:fixed' desktop/index.html
+          grep -Fq 'desktop-view-window-close' desktop/index.html
+          grep -Fq 'width: 1180' desktop/main.cjs
+          grep -Fq 'Math.min(1280' desktop/main.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs
           grep -Fq "nodeIntegration: false" desktop/main.cjs
           grep -Fq "sandbox: true" desktop/main.cjs

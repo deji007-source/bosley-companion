@@ -10,13 +10,17 @@ if not manifest.exists():
 text = manifest.read_text()
 if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
+if "android.permission.FOREGROUND_SERVICE" not in text:
+    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\\n    <application', 1)
+if "android.permission.FOREGROUND_SERVICE_MICROPHONE" not in text:
+    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />\\n    <application', 1)
 if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
     text = text.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1) if 'xmlns:tools=' not in text else text
     text = text.replace("<application", '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <application', 1)
 if "BosleyOverlayService" not in text:
-    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" />\n    </application>')
+    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:foregroundServiceType="microphone" />\n    </application>')
 manifest.write_text(text)
 # The Android guide is intentionally stationary. Do not register an accessibility
 # service to inspect other apps or automatically reposition the guide target.
@@ -78,6 +82,22 @@ public class BosleyOverlayService extends Service {
     if(listening){try{speechRecognizer.stopListening();}catch(Exception ignored){}listening=false;if(statusText!=null)statusText.setText("Finishing transcription…");return;}
     startVoiceCapture();
   }
+  void enterMicrophoneForeground(){
+    if(Build.VERSION.SDK_INT>=26){
+      android.app.NotificationManager nm=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+      if(Build.VERSION.SDK_INT>=26){android.app.NotificationChannel channel=new android.app.NotificationChannel("bosley_voice_capture","Bosley voice capture",android.app.NotificationManager.IMPORTANCE_LOW);channel.setDescription("Visible while the floating voice widget is listening.");nm.createNotificationChannel(channel);}
+      android.app.Notification notification=new android.app.Notification.Builder(this,"bosley_voice_capture")
+        .setSmallIcon(getApplicationInfo().icon)
+        .setContentTitle("Bosley is listening")
+        .setContentText("Tap the floating Bosley circle to stop voice capture.")
+        .setOngoing(true).build();
+      if(Build.VERSION.SDK_INT>=29)startForeground(2201,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+      else startForeground(2201,notification);
+    }
+  }
+  void leaveMicrophoneForeground(){
+    try{if(Build.VERSION.SDK_INT>=24)stopForeground(STOP_FOREGROUND_REMOVE);else stopForeground(true);}catch(Exception ignored){}
+  }
   void startVoiceCapture(){
     if(androidx.core.content.ContextCompat.checkSelfPermission(this,android.Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
       showTranscriptPanel("Microphone permission is needed. Open Bosley once and allow microphone access, then try again.","Permission needed");return;
@@ -95,8 +115,8 @@ public class BosleyOverlayService extends Service {
         public void onRmsChanged(float r){}
         public void onBufferReceived(byte[] b){}
         public void onEndOfSpeech(){listening=false;if(statusText!=null)statusText.setText("Transcription ready");}
-        public void onError(int e){listening=false;String m=e==android.speech.SpeechRecognizer.ERROR_NO_MATCH?"No speech detected. Tap Talk to try again.":"Voice recognition stopped. Tap Talk to retry.";if(statusText!=null)statusText.setText(m);}
-        public void onResults(android.os.Bundle b){listening=false;java.util.ArrayList<String> r=b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);if(r!=null&&!r.isEmpty()){currentTranscript=r.get(0);showTranscriptPanel(currentTranscript,"Ready to send");}}
+        public void onError(int e){listening=false;leaveMicrophoneForeground();String m=e==android.speech.SpeechRecognizer.ERROR_NO_MATCH?"No speech detected. Tap Talk to try again.":"Voice recognition stopped. Tap Talk to retry.";if(statusText!=null)statusText.setText(m);}
+        public void onResults(android.os.Bundle b){listening=false;leaveMicrophoneForeground();java.util.ArrayList<String> r=b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);if(r!=null&&!r.isEmpty()){currentTranscript=r.get(0);showTranscriptPanel(currentTranscript,"Ready to send");}}
         public void onPartialResults(android.os.Bundle b){java.util.ArrayList<String> r=b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);if(r!=null&&!r.isEmpty()){currentTranscript=r.get(0);if(transcriptText!=null)transcriptText.setText(currentTranscript);}}
         public void onEvent(int t,android.os.Bundle b){}
       });
@@ -161,7 +181,7 @@ public class BosleyOverlayService extends Service {
   GradientDrawable circleTarget(){GradientDrawable d=new GradientDrawable();d.setShape(GradientDrawable.OVAL);d.setColor(Color.WHITE);d.setStroke(dp(3),Color.BLACK);return d;}
   void updateGuideTarget(Intent result){if(!result.getBooleanExtra("found",false)){if(guideStatusView!=null)guideStatusView.setText("No matching control found. Keep the target app visible and try a more specific instruction.");return;}guideTargetX=Math.max(0f,Math.min(1f,result.getFloatExtra("x",guideTargetX)));guideTargetY=Math.max(0f,Math.min(1f,result.getFloatExtra("y",guideTargetY)));guideTargetLabel=result.getStringExtra("label")!=null?result.getStringExtra("label"):"matching control";if(guideTarget!=null&&guideTargetLp!=null){DisplayMetrics dm=getResources().getDisplayMetrics();guideTargetLp.x=Math.max(0,(int)(dm.widthPixels*guideTargetX)-dp(21));guideTargetLp.y=Math.max(0,(int)(dm.heightPixels*guideTargetY)-dp(21));try{wm.updateViewLayout(guideTarget,guideTargetLp);}catch(Exception ignored){}}if(guideLine!=null)guideLine.invalidate();if(guideStatusView!=null)guideStatusView.setText("Target found: "+guideTargetLabel+". Visual guidance only; Bosley will not click or type.");}
   void removeGuide(){guideStatusView=null;if(wm!=null&&guideTarget!=null){try{wm.removeView(guideTarget);}catch(Exception ignored){}guideTarget=null;}if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
-  void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}removeTranscriptPanel();if(speechRecognizer!=null){try{speechRecognizer.cancel();speechRecognizer.destroy();}catch(Exception ignored){}speechRecognizer=null;}}
+  void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}removeTranscriptPanel();if(speechRecognizer!=null){try{speechRecognizer.cancel();speechRecognizer.destroy();}catch(Exception ignored){}speechRecognizer=null;}leaveMicrophoneForeground();}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   @Override public void onDestroy(){removeBar();super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}

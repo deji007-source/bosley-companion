@@ -684,6 +684,25 @@ window.addEventListener("error", event => {
   }
 });
 
+let bosleyVoiceDraftBusy=false;
+async function consumeFloatingVoiceDraft(){
+ if(bosleyVoiceDraftBusy||!user||!window.Capacitor?.Plugins?.BosleyOverlay?.consumeVoiceDraft)return;
+ bosleyVoiceDraftBusy=true;
+ try{
+  const result=await window.Capacitor.Plugins.BosleyOverlay.consumeVoiceDraft();
+  const spoken=String(result?.text||"").trim();
+  if(spoken){
+   const field=document.querySelector("#in");
+   if(field)field.value=spoken;
+   await send(spoken);
+  }
+ }catch(error){console.warn("Could not hand floating voice transcript to Bosley:",error)}
+ finally{bosleyVoiceDraftBusy=false}
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)consumeFloatingVoiceDraft()});
+window.addEventListener("focus",consumeFloatingVoiceDraft);
+setInterval(consumeFloatingVoiceDraft,1800);
+
 document.addEventListener("DOMContentLoaded",()=>{
 /* Side-view dock: workspace, appearance, automation and activity open beside chat. */
 (()=>{

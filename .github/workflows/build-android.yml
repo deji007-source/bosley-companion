@@ -80,6 +80,15 @@ jobs:
           grep -Fq 'voiceReplyToggle=new Switch(this)' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'stopOverlayVoice()' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'voice_replies_enabled' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'plus.setText("＋")' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'SCREEN RECORD' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'requestScreenRecording(PluginCall call)' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java
+          grep -Fq 'syncAgentPreference(PluginCall call)' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java
+          grep -Fq 'MediaRecorder.VideoEncoder.H264' android/app/src/main/java/com/bosley/companion/BosleyScreenRecordingService.java
+          grep -Fq 'FOREGROUND_SERVICE_MEDIA_PROJECTION' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:foregroundServiceType="mediaProjection"' android/app/src/main/AndroidManifest.xml
+          grep -Fq '/functions/v1/agent-gateway' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+
           grep -Fq '["panel","voice","automation","providers"].includes(action)' index.html
           grep -Fq 'android:foregroundServiceType="microphone"' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.speech.RecognitionService' android/app/src/main/AndroidManifest.xml

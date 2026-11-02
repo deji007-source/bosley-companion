@@ -93,8 +93,15 @@ public class BosleyOverlayService extends Service {
       String answer="";String failure=null;
       try{
         android.content.SharedPreferences prefs=getSharedPreferences("bosley_native_chat",MODE_PRIVATE);
-        String token=prefs.getString("access_token",""),anon=prefs.getString("anon_key",""),base=prefs.getString("supabase_url","");
+        String token=prefs.getString("access_token",""),refresh=prefs.getString("refresh_token",""),anon=prefs.getString("anon_key",""),base=prefs.getString("supabase_url","");
         if(token.isEmpty()||anon.isEmpty()||base.isEmpty())throw new Exception("Sign in to Bosley once to enable direct sending from the floating panel.");
+        if(!refresh.isEmpty()){
+          java.net.HttpURLConnection refreshConnection=(java.net.HttpURLConnection)new java.net.URL(base+"/auth/v1/token?grant_type=refresh_token").openConnection();
+          refreshConnection.setRequestMethod("POST");refreshConnection.setConnectTimeout(12000);refreshConnection.setReadTimeout(12000);refreshConnection.setDoOutput(true);refreshConnection.setRequestProperty("Content-Type","application/json");refreshConnection.setRequestProperty("apikey",anon);
+          byte[] refreshBody=new org.json.JSONObject().put("refresh_token",refresh).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);refreshConnection.getOutputStream().write(refreshBody);
+          if(refreshConnection.getResponseCode()>=200&&refreshConnection.getResponseCode()<300){StringBuilder refreshText=new StringBuilder();try(java.io.BufferedReader rr=new java.io.BufferedReader(new java.io.InputStreamReader(refreshConnection.getInputStream(),java.nio.charset.StandardCharsets.UTF_8))){String rl;while((rl=rr.readLine())!=null)refreshText.append(rl);}org.json.JSONObject session=new org.json.JSONObject(refreshText.toString());token=session.optString("access_token",token);refresh=session.optString("refresh_token",refresh);prefs.edit().putString("access_token",token).putString("refresh_token",refresh).apply();}
+          refreshConnection.disconnect();
+        }
         java.net.HttpURLConnection connection=(java.net.HttpURLConnection)new java.net.URL(base+"/functions/v1/companion-chat").openConnection();
         connection.setRequestMethod("POST");connection.setConnectTimeout(15000);connection.setReadTimeout(45000);connection.setDoOutput(true);
         connection.setRequestProperty("Content-Type","application/json");connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("apikey",anon);connection.setRequestProperty("Accept","text/event-stream");
@@ -228,8 +235,8 @@ public class BosleyOverlayPlugin extends Plugin {
   private ImageReader captureReader;
   private final Handler captureHandler=new Handler(Looper.getMainLooper());
   @PluginMethod public void syncChatSession(PluginCall call){
-    String token=call.getString("accessToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl","");
-    getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE).edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base).apply();
+    String token=call.getString("accessToken",""),refresh=call.getString("refreshToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl","");
+    getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE).edit().putString("access_token",token).putString("refresh_token",refresh).putString("anon_key",anon).putString("supabase_url",base).apply();
     JSObject r=new JSObject();r.put("saved",!token.isEmpty());call.resolve(r);
   }
   @PluginMethod public void speakText(PluginCall call){

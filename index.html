@@ -1458,6 +1458,9 @@ $("#file-input").addEventListener("change",async e=>{
     if(file.size>15*1024*1024)throw Error(file.name+" is over 15 MB.");
     const bitmap=await createImageBitmap(file);try{if(bitmap.width*bitmap.height>40000000)throw Error(file.name+" has too many pixels.");const scale=Math.min(1,1280/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));const ctx=canvas.getContext("2d");if(!ctx)throw Error("Image processing is unavailable.");ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);pendingImageData=canvas.toDataURL("image/jpeg",0.82);$("#imagepreview").src=pendingImageData;$("#imageattachment").hidden=false;}finally{bitmap.close?.()}
    }else{
+    const extension=file.name.split(".").pop().toLowerCase();
+    const supported=["txt","md","json","csv","log","xml","yaml","yml","html","css","js","ts"];
+    if(!supported.includes(extension)&&!file.type.startsWith("text/")&&file.type!=="application/json")throw Error(file.name+" is not a supported text document. Choose an image, TXT, MD, JSON, CSV, or code/text file.");
     if(file.size>40000)throw Error(file.name+" is larger than the 40 KB text-file limit.");
     const content=await file.text();textFiles.push({name:file.name,content});
    }

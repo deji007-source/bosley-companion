@@ -651,6 +651,7 @@ html[data-agent-state=working] .launch #bosley-mascot .mascot-eye{filter:drop-sh
 <nav id="dock-launcher" aria-label="Open Bosley side views"><button type="button" data-open-view="lovable-bosley" aria-label="Open hosted Lovable Bosley" title="Lovable Bosley">✦</button><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button></nav>
 <aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
 <section class="workspace" id="skills-panel" hidden></section>
+<section class="workspace" id="provider-panel" hidden></section>
 <section class="workspace" id="lovable-bosley" hidden></section>
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
@@ -701,6 +702,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   {button:"autotoggle",panel:"automation",label:"Automation",init:()=>{const r=window.BosleyPanelRenderers?.automation;if(typeof r!=="function")throw Error("Automation renderer is not connected to the dock.");return r()}},
   {button:"activitytoggle",panel:"activity",label:"Activity",init:()=>{const r=window.BosleyPanelRenderers?.activity;if(typeof r!=="function")throw Error("Activity renderer is not connected to the dock.");return r()}},
   {button:"",panel:"skills-panel",label:"Skills",init:()=>{const r=window.BosleyPanelRenderers?.skills;if(typeof r!=="function")throw Error("Skills renderer is not connected to the dock.");return r()}},
+  {button:"",panel:"provider-panel",label:"AI Providers",init:()=>{const r=window.BosleyPanelRenderers?.providers;if(typeof r!=="function")throw Error("AI provider manager is not connected.");return r()}},
   {button:"",panel:"lovable-bosley",label:"Lovable Bosley",init:initLovableBosleyViewer}
  ];
  let active="";
@@ -757,6 +759,8 @@ document.addEventListener("DOMContentLoaded",()=>{
 const SUPABASE_URL="https://ywwfqisbmlkjcfoqehph.supabase.co";
 const SUPABASE_PUBLIC_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3d2ZxaXNibWxramNmb3FlaHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODA2MDksImV4cCI6MjA5NTE1NjYwOX0.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
 const CHAT_URL=SUPABASE_URL+"/functions/v1/companion-chat";
+const AGENT_GATEWAY_URL=SUPABASE_URL+"/functions/v1/agent-gateway";
+const BOSLEY_PROVIDER_PREF="bosley_selected_ai_provider_v1";
 (()=>{
 const $=s=>document.querySelector(s),H=document.documentElement;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1324,6 +1328,56 @@ function buildActiveSkillContext(){
  active.map(s=>"SKILL: "+s.title+"\n"+s.content.slice(0,5000)).join("\n\n---\n\n").slice(0,14000)+
  "\n\nApply relevant guidance to the user's request. Ask before consequential external actions.";
 }
+async function renderBosleyProviderManager(){
+ const panel=document.getElementById("provider-panel");if(!panel)return;
+ const selected=()=>{try{return localStorage.getItem(BOSLEY_PROVIDER_PREF)||""}catch{return ""}};
+ const escapeValue=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ panel.innerHTML='<header class="skills-hero"><div class="skills-mark" aria-hidden="true">✦</div><div class="skills-hero-copy"><span class="skills-kicker">MODEL CONNECTIONS</span><h3>AI Providers</h3><p>Connect your own provider API keys. Credentials are sent to Bosley securely and stored encrypted on the server.</p></div><span class="skills-count">API</span></header>'+
+ '<div class="form" style="display:grid;gap:14px;padding:16px">'+
+ '<div class="item" style="display:grid;gap:8px"><strong>Choose your chat provider</strong><select id="bosley-provider-select" aria-label="Selected AI provider" style="width:100%;padding:12px;border-radius:10px"><option value="">Bosley default (existing chat)</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="gemini">Google Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="mistral">Mistral</option></select><small>When selected, new text chats use this provider. Images continue through Bosley default chat for now.</small></div>'+
+ '<div class="item" style="display:grid;gap:8px"><label for="bosley-provider-key"><strong>API key</strong></label><input id="bosley-provider-key" type="password" autocomplete="off" placeholder="Paste provider API key" style="width:100%;padding:12px;border-radius:10px"><label for="bosley-provider-model">Model ID (optional)</label><input id="bosley-provider-model" type="text" maxlength="120" placeholder="Use provider default model" style="width:100%;padding:12px;border-radius:10px"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="primary" id="bosley-provider-connect">Save connection</button><button type="button" id="bosley-provider-test">Test connection</button><button type="button" id="bosley-provider-disconnect">Disconnect</button></div></div>'+
+ '<div id="bosley-provider-status" role="status" aria-live="polite" class="mute">Loading your provider connections…</div><div id="bosley-provider-list" style="display:grid;gap:8px"></div>'+
+ '<small>API usage may incur charges with the provider. Bosley does not supply free credits. Never share your API key in chat or screenshots.</small></div>';
+ const status=panel.querySelector("#bosley-provider-status"),select=panel.querySelector("#bosley-provider-select"),key=panel.querySelector("#bosley-provider-key"),model=panel.querySelector("#bosley-provider-model"),list=panel.querySelector("#bosley-provider-list");
+ const getSession=async()=>{const result=await db?.auth.getSession();if(!result?.data?.session)throw Error("Sign in to manage AI providers.");return result.data.session};
+ const request=async(body)=>{const session=await getSession();const response=await fetch(AGENT_GATEWAY_URL,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify(body)});const data=await response.json().catch(()=>({}));if(!response.ok||data.ok===false)throw Error(data.error||"Provider request failed ("+response.status+").");return data};
+ const names={openai:"OpenAI",anthropic:"Anthropic",gemini:"Google Gemini",groq:"Groq",openrouter:"OpenRouter",mistral:"Mistral"};
+ const defaults={openai:"gpt-4.1-mini",anthropic:"claude-3-5-haiku-latest",gemini:"gemini-2.0-flash",groq:"llama-3.3-70b-versatile",openrouter:"openai/gpt-4.1-mini",mistral:"mistral-small-latest"};
+ const refresh=async()=>{
+  try{
+   const data=await request({action:"providers"});const rows=data.providers||[];
+   list.innerHTML=rows.map(row=>'<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span><strong>'+escapeValue(names[row.id]||row.id)+'</strong><br><small>'+escapeValue(row.model||defaults[row.id]||"")+'</small></span><span class="skills-count">'+(row.connected&&row.enabled!==false?"CONNECTED":"NOT CONNECTED")+'</span></div>').join("");
+   const current=selected();select.value=current;
+   status.textContent=rows.some(x=>x.connected)?"Provider connections loaded. Select one to use it for new text chats.":"No API providers connected yet.";
+  }catch(error){status.textContent=String(error?.message||error)+" Make sure the provider gateway migration and Edge Function have been deployed."}
+ };
+ select.addEventListener("change",()=>{try{if(select.value)localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value);else localStorage.removeItem(BOSLEY_PROVIDER_PREF)}catch{}status.textContent=select.value?names[select.value]+" selected for new text chats.":"Using the existing Bosley chat provider."});
+ select.addEventListener("change",()=>{model.placeholder=defaults[select.value]||"Use provider default model"});
+ panel.querySelector("#bosley-provider-connect").onclick=async()=>{
+  const provider=select.value;if(!provider){status.textContent="Choose a provider before saving a connection.";return}
+  if(!key.value.trim()){status.textContent="Enter the provider API key first.";return}
+  const button=panel.querySelector("#bosley-provider-connect");button.disabled=true;status.textContent="Encrypting and saving the provider key…";
+  try{await request({action:"connect",provider,apiKey:key.value.trim(),model:model.value.trim()});key.value="";status.textContent="Connection saved. Run Test connection before selecting it for chats.";await refresh()}
+  catch(error){status.textContent=String(error?.message||error)}
+  finally{button.disabled=false}
+ };
+ panel.querySelector("#bosley-provider-test").onclick=async()=>{
+  if(!select.value){status.textContent="Choose a provider to test.";return}
+  const button=panel.querySelector("#bosley-provider-test");button.disabled=true;status.textContent="Testing provider API…";
+  try{const result=await request({action:"test",provider:select.value});status.textContent="Connection successful · "+escapeValue(result.model||select.value)}
+  catch(error){status.textContent="Connection test failed: "+String(error?.message||error)}
+  finally{button.disabled=false}
+ };
+ panel.querySelector("#bosley-provider-disconnect").onclick=async()=>{
+  if(!select.value){status.textContent="Choose a provider to disconnect.";return}
+  const provider=select.value;const button=panel.querySelector("#bosley-provider-disconnect");button.disabled=true;
+  try{await request({action:"disconnect",provider});if(selected()===provider){try{localStorage.removeItem(BOSLEY_PROVIDER_PREF)}catch{}select.value=""}status.textContent=(names[provider]||provider)+" disconnected.";await refresh()}
+  catch(error){status.textContent=String(error?.message||error)}
+  finally{button.disabled=false}
+ };
+ if(!db){status.textContent="Account service is unavailable. Reload Bosley and sign in.";return}
+ await refresh();
+}
 async function renderBosleySkills(){
  const panel=document.getElementById("skills-panel");if(!panel)return;
  const skills=readBosleySkills();
@@ -1385,24 +1439,36 @@ async function send(text,imageData=null){
  history.push({role:"user",content:userContent});S.busy=true;setBosleyCompanionState("thinking");activityEvent("Bosley is interpreting the request and checking available skills and approved actions.","thinking");eyes();
  const p=addMsg("bosley","");const agentCard=p.parentElement;const phase=document.createElement("div");phase.className="agent-response-phase";phase.innerHTML='<span class="agent-phase-orb"></span><span class="agent-phase-label">Reviewing your request</span><span class="agent-phase-track"><i></i></span>';agentCard?.appendChild(phase);const phaseLabel=phase.querySelector(".agent-phase-label");const setPhase=(label,state)=>{if(phaseLabel)phaseLabel.textContent=label;phase.dataset.phase=state||"active"};setPhase("Checking skills and available actions","active");const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),30000);
  try{
-  const r=await fetch(CHAT_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({messages:history.slice(-16)})});
-  if(!r.ok){const j=await r.json().catch(()=>({}));throw Error(j.error||"Server returned "+r.status)}
-  const rd=r.body.getReader(),dec=new TextDecoder();let buf="",out="",streamError="";
-  for(;;){
-   const{done,value}=await rd.read();
-   if(done)break;
-   buf+=dec.decode(value,{stream:true}).replace(/\r\n/g,"\n").replace(/\r/g,"\n");
-   let i;
-   while((i=buf.indexOf("\n"))>=0){
-    const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
-    if(!line.startsWith("data:"))continue;
-    const d=line.slice(5).trim();
-    if(!d||d==="[DONE]")continue;
-    let packet;
-    try{packet=JSON.parse(d)}catch(parseError){console.warn("Ignoring malformed AI stream event",parseError);continue}
-    if(packet.error){streamError=packet.error.message||"AI provider reported a stream error";continue}
-    const token=packet.choices?.[0]?.delta?.content;
-    if(typeof token==="string"&&token){if(!out){setPhase("Composing your response","writing");activityEvent("Bosley is composing a response using the available workspace context.","working")}out+=token;p.textContent=out;chat.scrollTop=chat.scrollHeight}
+  let out="",streamError="";
+  let chosenProvider="";try{chosenProvider=localStorage.getItem(BOSLEY_PROVIDER_PREF)||""}catch{}
+  if(chosenProvider&&!imageData){
+   setPhase("Connecting to "+chosenProvider,"active");
+   const providerMessages=history.slice(-16).filter(m=>typeof m.content==="string"&&["system","user","assistant"].includes(m.role));
+   const response=await fetch(AGENT_GATEWAY_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({action:"chat",provider:chosenProvider,messages:providerMessages})});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||result.ok===false)throw Error(result.error||"AI provider returned "+response.status);
+   out=String(result.reply||"");if(!out.trim())throw Error("The selected provider returned an empty reply.");
+   p.textContent=out;setPhase("Composing your response","writing");chat.scrollTop=chat.scrollHeight;
+  }else{
+   const r=await fetch(CHAT_URL,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token,apikey:SUPABASE_PUBLIC_KEY},body:JSON.stringify({messages:history.slice(-16)})});
+   if(!r.ok){const j=await r.json().catch(()=>({}));throw Error(j.error||"Server returned "+r.status)}
+   const rd=r.body.getReader(),dec=new TextDecoder();let buf="";
+   for(;;){
+    const{done,value}=await rd.read();
+    if(done)break;
+    buf+=dec.decode(value,{stream:true}).replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+    let i;
+    while((i=buf.indexOf("\n"))>=0){
+     const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+     if(!line.startsWith("data:"))continue;
+     const d=line.slice(5).trim();
+     if(!d||d==="[DONE]")continue;
+     let packet;
+     try{packet=JSON.parse(d)}catch(parseError){console.warn("Ignoring malformed AI stream event",parseError);continue}
+     if(packet.error){streamError=packet.error.message||"AI provider reported a stream error";continue}
+     const token=packet.choices?.[0]?.delta?.content;
+     if(typeof token==="string"&&token){if(!out){setPhase("Composing your response","writing");activityEvent("Bosley is composing a response using the available workspace context.","working")}out+=token;p.textContent=out;chat.scrollTop=chat.scrollHeight}
+    }
    }
   }
   if(streamError&&!out)throw Error(streamError);
@@ -2202,7 +2268,7 @@ function startLaptopCommandListener(activeUser){
   });
 }
 
-window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills()});
+window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills(),providers:()=>renderBosleyProviderManager()});
 renderBosleyKnowledgeGraph();
 renderOfflineCommandQueue();
 initializeContextEngine();

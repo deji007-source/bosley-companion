@@ -451,3 +451,14 @@ assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not c
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");
 assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
 assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");
+
+
+const osPollSource = readFileSync(new URL("../supabase/functions/os-agent-poll/index.ts", import.meta.url), "utf8");
+assert.ok(osPollSource.includes('.eq("status", "pending")'), "OS poller must claim only pending commands");
+assert.ok(osPollSource.includes('status: "processing"'), "OS poller must mark delivery as processing, never completed");
+assert.ok(osPollSource.includes('claim_token: claimToken'), "OS poller must issue a claim token");
+assert.ok(osPollSource.includes('body.action === "ack"'), "OS poller must expose a separate acknowledgement path");
+assert.ok(osPollSource.includes('.eq("status", "processing")'), "Acknowledgements must only finalize a claimed command");
+assert.ok(osPollSource.includes('.eq("claim_token", claimToken)'), "Acknowledgements must prove possession of the active claim token");
+assert.ok(osPollSource.includes('status: "done"') && osPollSource.includes('status: "failed"'), "OS poller must record explicit execution outcomes");
+assert.ok(!/update\\(\\{\\s*status:\\s*"done"\\s*\\}\\)[\\s\\S]{0,180}\\.in\\("id", ids\\)/.test(osPollSource), "Polling must never mark commands done merely because they were returned");

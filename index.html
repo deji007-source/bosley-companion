@@ -783,7 +783,7 @@ if(gateForm)gateForm.addEventListener("submit",async e=>{
  gateSubmit.disabled=true;if(gateFeedback)gateFeedback.textContent=gateMode==="up"?"Creating your account…":"Signing in securely…";
  try{const credentials={email:gateEmail.value.trim(),password:gatePassword.value};const result=gateMode==="up"?await db.auth.signUp(credentials):await db.auth.signInWithPassword(credentials);if(result.error)throw result.error;
  if(gateMode==="up"&&!result.data.session){if(gateFeedback)gateFeedback.textContent="Account created. Check your email to confirm, then sign in here.";return}
- if(result.data.session){user=result.data.user||result.data.session.user;renderAuthGate();if(gateFeedback)gateFeedback.textContent="Signed in.";restoreLatestConversation();if(typeof load==="function")load()}
+ if(result.data.session){user=result.data.user||result.data.session.user;syncAndroidDeviceAgent();renderAuthGate();if(gateFeedback)gateFeedback.textContent="Signed in.";restoreLatestConversation();if(typeof load==="function")load()}
  else if(gateFeedback)gateFeedback.textContent="No active session returned. Check email confirmation and try again.";
  }catch(err){const m=String(err?.message||"Sign-in failed.");if(gateFeedback)gateFeedback.textContent=/invalid login credentials/i.test(m)?"Email or password is incorrect.":/email not confirmed/i.test(m)?"Confirm your email using the link we sent, then sign in.":m}
  finally{gateSubmit.disabled=false}
@@ -792,6 +792,56 @@ if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not init
 
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
+ // Keep the native voice bridge inside the authenticated app scope: the earlier
+ // bootstrap script cannot see this IIFE's user binding.
+ let bosleyVoiceDraftBusy=false;
+ async function consumeFloatingVoiceDraft(){
+  const overlay=window.Capacitor?.Plugins?.BosleyOverlay;
+  if(bosleyVoiceDraftBusy||!user||!overlay?.peekVoiceDraft||!overlay?.acknowledgeVoiceDraft)return;
+  bosleyVoiceDraftBusy=true;
+  try{
+   const result=await overlay.peekVoiceDraft();
+   const spoken=String(result?.text||"").trim();
+   const draftId=String(result?.id||"");
+   if(spoken&&draftId){
+    const field=$("#in");
+    if(field)field.value=spoken;
+    const delivered=await send(spoken);
+    if(delivered===true)await overlay.acknowledgeVoiceDraft({id:draftId});
+   }
+  }catch(error){console.warn("Could not hand floating voice transcript to Bosley; draft remains queued:",error)}
+  finally{bosleyVoiceDraftBusy=false}
+ }
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)consumeFloatingVoiceDraft()});
+ window.addEventListener("focus",consumeFloatingVoiceDraft);
+ setInterval(consumeFloatingVoiceDraft,1800);
+let androidDeviceAgent=null,androidAgentImport=null,androidAgentUserId=null;
+async function syncAndroidDeviceAgent(){
+ const native=window.Capacitor?.isNativePlatform?.()===true;
+ const android=native&&/android/i.test(window.Capacitor?.getPlatform?.()||"");
+ if(!android||!db||!user){
+  if(androidDeviceAgent){androidDeviceAgent.stop();androidDeviceAgent=null;androidAgentUserId=null}
+  return;
+ }
+ if(androidDeviceAgent&&androidAgentUserId===user.id)return;
+ if(androidDeviceAgent){androidDeviceAgent.stop();androidDeviceAgent=null}
+ try{
+  androidAgentImport ||= import("./agent-pack/android-device-agent.js");
+  const {createBosleyDeviceAgent}=await androidAgentImport;
+  if(!user||!android)return;
+  const agent=createBosleyDeviceAgent({supabase:db,onStatus:({state,detail})=>{
+   document.documentElement.dataset.deviceAgent=state;
+   if(detail)console.info("[Bosley Android agent]",state,detail);
+  }});
+  androidDeviceAgent=agent;androidAgentUserId=user.id;
+  await agent.start();
+ }catch(error){
+  androidDeviceAgent=null;androidAgentUserId=null;
+  document.documentElement.dataset.deviceAgent="error";
+  console.warn("[Bosley Android agent] startup failed:",error?.message||error);
+ }
+}
+
 let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
 let pendingAutomationWorkflow=null,pendingRemoteDeviceCommand=null,automationStopRequested=false;
@@ -1373,17 +1423,18 @@ async function renderBosleySkills(){
 }
 
 async function send(text,imageData=null){
- if(S.busy||(!text&&!imageData))return;
+ if(S.busy||(!text&&!imageData))return false;
  if(user){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
- if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}
- if(dispatchAgentHandoffCommand(text)){addMsg("you",text);return}
- if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return}
+ if(createPlannerTaskFromCommand(text)){addMsg("you",text);return true}
+ if(dispatchAgentHandoffCommand(text)){addMsg("you",text);return true}
+ if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return true}
  addMsg("you",imageData?(text||"What is in this image?"):text);activityEvent("Message sent to Bosley: "+(text||"Image attached").slice(0,140),"message");
  if(imageData){const last=chat.lastElementChild;const img=document.createElement("img");img.className="chat-image";img.alt="Image sent to Bosley";img.src=imageData;last?.appendChild(img)}
  const sess=db?(await db.auth.getSession()).data.session:null;
- if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return}
+ if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return false}
  const agentContext=await buildBosleyAgentContext();
- const skillContext=[agentContext,buildActiveSkillContext(),buildContextEngineContext()].filter(Boolean).join("\n\n");
+ const styleContext="\n\nBOSLEY CONVERSATION STYLE:\nSpeak naturally, confidently, and conversationally rather than like a formal helpdesk. Be direct, warm, witty when appropriate, and comfortable with casual language and occasional mild profanity when it fits the user's tone. Do not force slang or swear in every reply. Be honest about uncertainty, never claim an automation ran unless its executor confirms success, and keep instructions clear.\n";
+ const skillContext=[agentContext,buildActiveSkillContext(),buildContextEngineContext()].filter(Boolean).join("\n\n")+styleContext;
  const visualContext=imageData?"\n\nIMAGE ANALYSIS GUIDANCE:\nTreat the attached image as visual evidence. Identify the main subject and relevant visible details. If asked to read text, quote only legible text and state uncertainty. Separate observations from inferences; do not invent hidden details, identities, locations, or context. For screenshots, explain relevant interface elements and suggest safe, reversible next steps. If ambiguous, ask one focused clarification.":"";
  const aiText=(skillContext?skillContext+"\n\nUSER REQUEST:\n":"")+(text||(imageData?"Please describe and help me understand this image.":""))+visualContext;
  const userContent=imageData?[{type:"text",text:aiText||"Please describe and help me understand this image."},{type:"image_url",image_url:{url:imageData}}]:aiText;
@@ -1415,10 +1466,12 @@ async function send(text,imageData=null){
   history.push({role:"assistant",content:out});S.backend=true;S.busy=false;setPhase("Response ready","success");phase.dataset.phase="success";activityEvent("Bosley generated a response. No device action is reported unless its connected executor confirms it.","success");setBosleyCompanionState("success");eyes();
   try{await persistChatExchange(imageData?"[Image attached] "+(text||"Please describe this image."):text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
   speak(out);
+  return true;
  }catch(e){
   history.pop();S.busy=false;S.backend=false;setBosleyCompanionState("error");
   p.className="err";p.textContent=(e.name==="AbortError"?"The AI took too long to respond. ":"")+(e.name==="AbortError"?"Try again.":"Couldn't get a reply: "+String(e?.message||"Unknown connection error").slice(0,240)+". Your message wasn't answered; try again.");setPhase("Could not complete","error");phase.dataset.phase="error";activityEvent("Bosley response failed: "+String(e?.message||"Unknown error").slice(0,150),"error");
   flash();
+  return false;
  }finally{clearTimeout(to);setTimeout(()=>{if(!S.busy){setBosleyCompanionState("idle");eyes()}},650)}
 }
 let pendingImageData=null;
@@ -1759,8 +1812,8 @@ async function load(){
 }
 $("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
 if(db){
- db.auth.getSession().then(({data,error})=>{if(error)throw error;user=data.session?.user||null;authResolved=true;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);drawWs();if(user){restoreLatestConversation();load()}const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()}).catch(error=>{authResolved=true;renderAuthGate();drawWs();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session: "+String(error?.message||error)});
- db.auth.onAuthStateChange((_e,s)=>{const previousUserId=user?.id||null;user=s?.user||null;if(previousUserId!==(user?.id||null)){workspaceLoadToken++;workflowSyncUser=null;workflowSyncPromise=null;notes=[];tasks=[]}renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);drawWs();if(user){setTimeout(()=>{syncPlannerTasks();syncCompanionSettings()},500)}if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden&&user)load();else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()});
+ db.auth.getSession().then(({data,error})=>{if(error)throw error;user=data.session?.user||null;authResolved=true;syncAndroidDeviceAgent();$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);drawWs();if(user){restoreLatestConversation();load()}const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()}).catch(error=>{authResolved=true;renderAuthGate();drawWs();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session: "+String(error?.message||error)});
+ db.auth.onAuthStateChange((_e,s)=>{const previousUserId=user?.id||null;user=s?.user||null;syncAndroidDeviceAgent();if(previousUserId!==(user?.id||null)){workspaceLoadToken++;workflowSyncUser=null;workflowSyncPromise=null;notes=[];tasks=[]}renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);drawWs();if(user){setTimeout(()=>{syncPlannerTasks();syncCompanionSettings()},500)}if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden&&user)load();else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()});
 }
 
 /* ---------- permissioned automation layer ----------

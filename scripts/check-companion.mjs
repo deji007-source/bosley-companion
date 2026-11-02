@@ -443,3 +443,16 @@ assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not c
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");
 assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
 assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");
+
+
+assert.ok(html.includes('id="provider-panel"'), "AI Provider Manager must have a dedicated workspace panel");
+assert.ok(html.includes('panel:"provider-panel",label:"AI Providers"'), "AI Providers must be accessible from the side dock");
+assert.ok(html.includes("renderBosleyProviderManager"), "AI Provider Manager renderer must be registered");
+assert.ok(html.includes('action:"providers"'), "AI Provider Manager must load connected provider status");
+assert.ok(html.includes('action:"connect"'), "AI Provider Manager must securely connect a provider");
+assert.ok(html.includes('action:"test"'), "AI Provider Manager must test provider connections");
+assert.ok(html.includes('action:"disconnect"'), "AI Provider Manager must disconnect providers");
+assert.ok(html.includes('localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value)'), "Selected provider preference must persist on the device");
+assert.ok(html.includes("AGENT_GATEWAY_URL"), "Provider requests must use the authenticated gateway");
+assert.ok(html.includes('action:"chat",provider:chosenProvider'), "Selected provider must handle new text chats");
+assert.ok(html.includes("if(chosenProvider&&!imageData)"), "Image requests must continue using the existing image-capable Companion route");

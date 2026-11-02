@@ -138,8 +138,7 @@ public class BosleyOverlayService extends Service {
     transcriptText=new TextView(this);transcriptText.setText(transcript==null||transcript.isEmpty()?"Your transcription will appear here…":transcript);transcriptText.setTextColor(Color.WHITE);transcriptText.setTextSize(15);transcriptText.setTextIsSelectable(true);transcriptText.setMinHeight(dp(54));transcriptText.setGravity(Gravity.CENTER_VERTICAL);LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.topMargin=dp(8);tp.bottomMargin=dp(10);card.addView(transcriptText,tp);
     LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);
     Button open=new Button(this);open.setText("Open app");open.setTextSize(11);open.setMinWidth(0);open.setMinimumWidth(0);open.setPadding(dp(8),0,dp(8),0);open.setOnClickListener(v->openCompanion("open"));actions.addView(open);
-    Button openAppButton=new Button(this);openAppButton.setText("↗");openAppButton.setContentDescription("Open Bosley app");openAppButton.setTextSize(12);openAppButton.setMinWidth(dp(42));openAppButton.setOnClickListener(v->openCompanion("open_chat"));actions.addView(openAppButton);
-     Button talk=new Button(this);talk.setText("Talk");talk.setOnClickListener(v->startVoiceCapture());actions.addView(talk);
+    Button talk=new Button(this);talk.setText("Talk");talk.setOnClickListener(v->startVoiceCapture());actions.addView(talk);
     Button send=new Button(this);send.setText("Send");send.setOnClickListener(v->queueVoiceDraft());actions.addView(send);
     Button close=new Button(this);close.setText("×");close.setOnClickListener(v->removeTranscriptPanel());actions.addView(close);
     card.addView(actions);transcriptPanel=card;

@@ -317,7 +317,7 @@ public class BosleyOverlayPlugin extends Plugin {
   private Intent styledIntent(PluginCall call,String action){
     Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(action);
     JSObject p=call.getObject("payload",new JSObject());String size=p.getString("widgetSize","default"),edge=p.getString("widgetEdge","soft"),border=p.getString("widgetBorder","medium"),eyeShape=p.getString("eyeShape","pill"),eyeGap=p.getString("eyeGap","normal"),faceSize=p.getString("size","default");
-    int w="compact".equals(size)?100:("wide".equals(size)?120:110),h="compact".equals(size)?36:("wide".equals(size)?42:38);int c="sharp".equals(edge)?18:("balanced".equals(edge)?20:22);int b="thin".equals(border)?1:("bold".equals(border)?3:2);int ew="compact".equals(faceSize)?9:("default".equals(faceSize)?10:12),eh="compact".equals(faceSize)?17:("default".equals(faceSize)?20:22);int gap="close".equals(eyeGap)?8:("wide".equals(eyeGap)?16:12);
+    int w="compact".equals(size)?96:("wide".equals(size)?112:104),h="compact".equals(size)?32:("wide".equals(size)?36:34);int c="sharp".equals(edge)?18:("balanced".equals(edge)?20:22);int b="thin".equals(border)?1:("bold".equals(border)?3:2);int ew="compact".equals(faceSize)?8:("default".equals(faceSize)?9:11),eh="compact".equals(faceSize)?15:("default".equals(faceSize)?17:20);int gap="close".equals(eyeGap)?8:("wide".equals(eyeGap)?16:12);
     i.putExtra("widgetWidth",w);i.putExtra("widgetHeight",h);i.putExtra("cornerDp",c);i.putExtra("borderDp",b);i.putExtra("eyeWidth",ew);i.putExtra("eyeHeight",eh);i.putExtra("eyeGapDp",gap);i.putExtra("eyeShape",eyeShape);return i;
   }
   @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);getContext().startService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}
@@ -334,8 +334,8 @@ if not activity.exists():
 a=activity.read_text()
 if "BosleyOverlayPlugin" not in a:
     a=a.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.getcapacitor.Plugin;\nimport java.util.ArrayList;\nimport java.util.List;")
-    a=re.sub(r'public class MainActivity extends BridgeActivity \{\s*\}', 'public class MainActivity extends BridgeActivity {\n  @Override protected void onNewIntent(android.content.Intent intent) {\n    super.onNewIntent(intent);\n    setIntent(intent);\n  }\n  @Override public void onCreate(android.os.Bundle savedInstanceState) {\n    registerPlugin(BosleyOverlayPlugin.class);\n    super.onCreate(savedInstanceState);\n  }\n}', a)
-    if "setIntent(intent)" not in a or "onNewIntent" not in a:
+    a=re.sub(r'public class MainActivity extends BridgeActivity \{\s*\}', 'public class MainActivity extends BridgeActivity {\n  @Override protected void onNewIntent(android.content.Intent intent) {\n    super.onNewIntent(intent);\n    setIntent(intent);\n    String action=intent.getStringExtra("bosley_quick_action");\n    if(action!=null && ("panel".equals(action)||"voice".equals(action))){\n      String js="window.dispatchEvent(new CustomEvent(\\\'bosleyNativeAction\\\',{detail:{action:\\\'"+action+"\\\'}}));";\n      getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));\n    }\n  }\n  @Override public void onCreate(android.os.Bundle savedInstanceState) {\n    registerPlugin(BosleyOverlayPlugin.class);\n    super.onCreate(savedInstanceState);\n  }\n}', a)
+    if "setIntent(intent)" not in a or "onNewIntent" not in a or "bosleyNativeAction" not in a:
         raise SystemExit("Could not safely add intent handoff handling to MainActivity")
     if "registerPlugin(BosleyOverlayPlugin.class)" not in a:
         raise SystemExit("Could not safely register native overlay plugin in MainActivity")

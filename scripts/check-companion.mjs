@@ -451,6 +451,12 @@ assert.ok(html.includes('window.BosleyAndroidBridge||window.AndroidBridge'), "Re
 assert.ok(html.includes('id="remote-mode-toggle"'), "Android first page must expose a readily accessible Remote Mode toggle");
 assert.ok(html.includes('REMOTE_MODE_KEY="bosley_android_remote_mode_v1"'), "Remote Mode preference must persist on Android");
 assert.ok(html.includes('db.from("device_status").select("last_seen")'), "Remote Mode must verify the Windows listener heartbeat");
+
+assert.ok(html.includes("setInterval(verifyStatus,15000)"), "Remote Mode must refresh Windows presence while the panel remains open");
+assert.ok(html.includes("if(!status.online&&remoteModeEnabled)"), "Remote Mode must switch itself off when the Windows heartbeat expires");
+assert.ok(html.includes(".remote-mode-card{margin:6px 14px 1px;padding:6px 10px;min-height:42px"), "Remote Mode must use the compact card layout");
+assert.ok(html.includes("Windows connected · voice routes enabled"), "Remote Mode ON state must explicitly report verified Windows connectivity");
+
 assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automation",instruction}})'), "Remote Mode must use the authenticated automation gateway");
 assert.ok(html.includes("pendingRemoteDeviceCommand=null"), "Remote-device commands must have a separate pending approval state");
 assert.ok(html.includes("queueRemoteDeviceCommand(instruction,\"Windows laptop\",\"Android Remote Mode\")"), "Android Remote Mode must request approval before queueing a device command");

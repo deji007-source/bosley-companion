@@ -467,8 +467,8 @@ public class BosleyOverlayPlugin extends Plugin {
     String token=call.getString("accessToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl",""),userId=call.getString("userId","");
     android.content.SharedPreferences chatPrefs=getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE);
     String previousAccount=chatPrefs.getString("account_id","");
-    android.content.SharedPreferences.Editor editor=chatPrefs.edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base).putString("account_id",userId);
-    if(!previousAccount.isEmpty()&&!userId.isEmpty()&&!previousAccount.equals(userId))editor.remove("chat_history").remove("selected_provider");
+    android.content.SharedPreferences.Editor editor=chatPrefs.edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base);
+    if(!userId.isEmpty()){if(!previousAccount.isEmpty()&&!previousAccount.equals(userId))editor.remove("chat_history").remove("selected_provider");editor.putString("account_id",userId);}
     editor.apply();
     JSObject r=new JSObject();r.put("saved",!token.isEmpty());call.resolve(r);
   }

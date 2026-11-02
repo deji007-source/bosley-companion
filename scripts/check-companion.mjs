@@ -453,6 +453,6 @@ assert.ok(html.includes('id="attach-automation" role="menuitem"'), "Plus menu mu
 assert.ok(html.includes("let nativeActionBusy=false"), "Android native launch action handling must guard duplicate intent delivery");
 assert.ok(html.includes('window.addEventListener("bosleyNativeAction"'), "Android existing-activity taps must be forwarded into the live WebView");
 assert.ok(html.includes("if(++attempts<12)setTimeout(retry,250)"), "Android cold-start launch action must retry until the Capacitor plugin is ready");
-assert.ok(androidInstaller.includes("bosleyNativeAction"), "Android MainActivity must dispatch overlay tap actions to JavaScript");
+assert.ok(androidInstaller.includes("String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)"), "Android MainActivity must dispatch overlay tap actions to JavaScript");
 assert.ok(androidInstaller.includes('("wide".equals(size)?112:104)'), "Android floating widget default width must be compact");
 assert.ok(androidInstaller.includes('("wide".equals(size)?36:34)'), "Android floating widget default height must be compact");

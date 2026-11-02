@@ -248,10 +248,9 @@ public class BosleyOverlayPlugin extends Plugin {
     create.addCategory(Intent.CATEGORY_OPENABLE);
     create.setType("text/plain");
     create.putExtra(Intent.EXTRA_TITLE,name);
-    JSObject saved=new JSObject();saved.put("content",content);
-    try{startActivityForResult(call,create,"saveTextFileResult");}
-    catch(Exception e){call.reject("Android could not open the system file picker.",e);}
     saveContents.put(call.getCallbackId(),content);
+    try{startActivityForResult(call,create,"saveTextFileResult");}
+    catch(Exception e){saveContents.remove(call.getCallbackId());call.reject("Android could not open the system file picker.",e);}
   }
   private final java.util.concurrent.ConcurrentHashMap<String,String> saveContents=new java.util.concurrent.ConcurrentHashMap<>();
   @ActivityCallback private void saveTextFileResult(PluginCall call,ActivityResult result){

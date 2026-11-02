@@ -17,7 +17,7 @@ const sharedContracts = [
   ["shared appearance and voice sync", "async function syncCompanionSettings()"],
   ["skills workspace", "async function renderBosleySkills()"],
   ["agent/provider manager", "async function renderBosleyProviderManager()"],
-  ["shared command routing", "function handleDirectChatCommand"],
+  ["shared command routing", "function dispatchAutomationCommand"],
   ["remote automation gateway", "/functions/v1/remote-action"],
   ["authenticated agent gateway", "/functions/v1/agent-gateway"],
 ];

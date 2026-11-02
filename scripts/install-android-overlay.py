@@ -202,7 +202,8 @@ public class BosleyOverlayService extends Service {
         if(token.isEmpty()||anon.isEmpty()||base.isEmpty())throw new Exception("Sign in to Bosley once to enable the floating panel.");
         answer=routeOverlayCommand(message,token,anon,base);
         if(answer==null){
-          java.net.HttpURLConnection connection=(java.net.HttpURLConnection)new java.net.URL(base+"/functions/v1/companion-chat").openConnection();
+          String selectedProvider=prefs.getString("selected_provider","");
+          java.net.HttpURLConnection connection=(java.net.HttpURLConnection)new java.net.URL(base+(selectedProvider.isEmpty()?"/functions/v1/companion-chat":"/functions/v1/agent-gateway")).openConnection();
           connection.setRequestMethod("POST");connection.setConnectTimeout(15000);connection.setReadTimeout(45000);connection.setDoOutput(true);
           connection.setRequestProperty("Content-Type","application/json");connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("apikey",anon);connection.setRequestProperty("Accept","text/event-stream");
           org.json.JSONArray messages=new org.json.JSONArray().put(new org.json.JSONObject().put("role","user").put("content",message));

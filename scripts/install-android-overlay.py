@@ -386,6 +386,7 @@ public class BosleyScreenRecordingService extends Service {
     }catch(Exception error){
       android.util.Log.e("BosleyScreenRecorder","Could not start recording",error);
       getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",false).apply();
+      if(outputUri!=null){try{getContentResolver().delete(outputUri,null,null);}catch(Exception ignored){}}
       cleanup();stopForeground(true);stopSelf();return START_NOT_STICKY;
     }
   }

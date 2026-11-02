@@ -81,7 +81,8 @@ public class BosleyOverlayService extends Service {
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
   }
   LinearLayout chatPanel; EditText chatInput; TextView chatOutput; Button chatSend,chatVoice; ScrollView chatScroll; boolean chatRequestBusy=false;
-  void expandPanel(){
+  void expandPanel(){expandPanel(true);}
+  void expandPanel(boolean showKeyboard){
     if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;return;}
     LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(dp(12),dp(10),dp(12),dp(10));
     GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(12,14,19));bg.setCornerRadius(dp(18));bg.setStroke(dp(1),0xff555b68);panel.setBackground(bg);
@@ -95,7 +96,7 @@ public class BosleyOverlayService extends Service {
     chatSend=new Button(this);chatSend.setText("Send");compose.addView(chatSend,new LinearLayout.LayoutParams(dp(68),dp(48)));panel.addView(compose);chatSend.setOnClickListener(v->sendOverlayMessage());
     WindowManager.LayoutParams params=new WindowManager.LayoutParams(Math.min(dp(360),getResources().getDisplayMetrics().widthPixels-dp(24)),dp(390),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,PixelFormat.TRANSLUCENT);
     params.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;params.y=dp(58);chatPanel=panel;
-    try{wm.addView(panel,params);chatInput.requestFocus();panel.postDelayed(()->{try{params.flags=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;wm.updateViewLayout(panel,params);android.view.inputmethod.InputMethodManager keyboard=(android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);keyboard.showSoftInput(chatInput,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}catch(Exception ignored){}},180);}catch(Exception e){chatPanel=null;Toast.makeText(this,"Could not open Bosley panel.",Toast.LENGTH_SHORT).show();}
+    try{wm.addView(panel,params);chatInput.requestFocus();panel.postDelayed(()->{try{if(showKeyboard){params.flags=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;wm.updateViewLayout(panel,params);android.view.inputmethod.InputMethodManager keyboard=(android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);keyboard.showSoftInput(chatInput,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}}catch(Exception ignored){}},180);}catch(Exception e){chatPanel=null;Toast.makeText(this,"Could not open Bosley panel.",Toast.LENGTH_SHORT).show();}
   }
   void appendChat(String text){if(chatOutput==null)return;chatOutput.append("\n\n"+text);if(chatScroll!=null)chatScroll.post(()->chatScroll.fullScroll(View.FOCUS_DOWN));}
   boolean beginVoiceForeground(){
@@ -115,7 +116,7 @@ public class BosleyOverlayService extends Service {
   }
   void endVoiceForeground(){try{if(Build.VERSION.SDK_INT>=24)stopForeground(STOP_FOREGROUND_REMOVE);else stopForeground(true);}catch(Exception ignored){}}
   void startOverlayVoice(){
-    if(chatPanel==null)expandPanel();
+    if(chatPanel==null)expandPanel(false);
     if(chatInput==null){appendChat("Open the Bosley panel before starting voice input.");return;}
     if(chatRequestBusy){appendChat("Bosley is still processing the previous request.");return;}
     if(Build.VERSION.SDK_INT>=23&&checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED){

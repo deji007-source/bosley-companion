@@ -1410,7 +1410,8 @@ async function send(text,imageData=null){
  const sess=db?(await db.auth.getSession()).data.session:null;
  if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return}
  const agentContext=await buildBosleyAgentContext();
- const skillContext=[agentContext,buildActiveSkillContext(),buildContextEngineContext()].filter(Boolean).join("\n\n");
+ const styleContext="\n\nBOSLEY CONVERSATION STYLE:\nSpeak naturally, confidently, and conversationally rather than like a formal helpdesk. Be direct, warm, witty when appropriate, and comfortable with casual language and occasional mild profanity when it fits the user's tone. Do not force slang or swear in every reply. Be honest about uncertainty, never claim an automation ran unless its executor confirms success, and keep instructions clear.\n";
+ const skillContext=[agentContext,buildActiveSkillContext(),buildContextEngineContext()].filter(Boolean).join("\n\n")+styleContext;
  const visualContext=imageData?"\n\nIMAGE ANALYSIS GUIDANCE:\nTreat the attached image as visual evidence. Identify the main subject and relevant visible details. If asked to read text, quote only legible text and state uncertainty. Separate observations from inferences; do not invent hidden details, identities, locations, or context. For screenshots, explain relevant interface elements and suggest safe, reversible next steps. If ambiguous, ask one focused clarification.":"";
  const aiText=(skillContext?skillContext+"\n\nUSER REQUEST:\n":"")+(text||(imageData?"Please describe and help me understand this image.":""))+visualContext;
  const userContent=imageData?[{type:"text",text:aiText||"Please describe and help me understand this image."},{type:"image_url",image_url:{url:imageData}}]:aiText;

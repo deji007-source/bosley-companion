@@ -175,6 +175,13 @@ for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);
 }
 const remoteAction = readText(new URL("../supabase/functions/remote-action/index.ts", import.meta.url), "utf8");
+assert.ok(html.includes("async function pollLaptopOsCommands(activeUser)"), "Windows listener must poll the authenticated OS command queue");
+assert.ok(html.includes('postLaptopAgentRequest(activeUser,{type:"os_agent_poll"})'), "Windows listener must use the signed-in session for OS command polling");
+assert.ok(html.includes("async function acknowledgeOsAgentCommand"), "Windows listener must acknowledge claimed OS commands");
+assert.ok(html.includes('type:"os_agent_ack"'), "Windows listener must send claim-token acknowledgements");
+assert.ok(html.includes('setInterval(()=>pollLaptopOsCommands(activeUser),5000)'), "Windows listener must periodically poll the OS queue");
+assert.ok(html.includes('caps.actions.includes(nativeAction)'), "Windows OS actions must be gated by advertised native capabilities");
+assert.ok(html.includes("no action was executed"), "Unsupported native OS actions must fail safely without false success");
 assert.ok(remoteAction.includes('body.type === "os_agent_poll"'), "Authenticated desktop OS agent polling endpoint must exist");
 assert.ok(remoteAction.includes('body.type === "os_agent_ack"'), "Authenticated desktop OS agent acknowledgement endpoint must exist");
 assert.ok(remoteAction.includes('.eq("user_id", user.id)'), "OS agent queue access must be scoped to the authenticated user");

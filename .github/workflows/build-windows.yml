@@ -10,6 +10,7 @@ on:
       - "package.json"
       - "scripts/**"
       - "src/**"
+      - "supabase/functions/**"
       - "src/styles.css"
       - "vite.config.ts"
       - "tsconfig*.json"

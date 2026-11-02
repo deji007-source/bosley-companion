@@ -31,13 +31,13 @@ assert.ok(androidInstaller.includes('void syncChatSession(PluginCall call)'), "C
 assert.ok(html.includes('native.syncChatSession({accessToken:s?.access_token||"",anonKey:SUPABASE_PUBLIC_KEY,supabaseUrl:SUPABASE_URL})'), "Auth changes must update the native overlay session");
 
 
-assert.ok(androidInstaller.includes('Math.min(dp(360),getResources().getDisplayMetrics().heightPixels-dp(70))'), "Android floating chat panel must use a shorter height capped at 300dp");
+assert.ok(androidInstaller.includes('Math.min(dp(360),getResources().getDisplayMetrics().heightPixels-dp(70))'), "Android floating chat panel must stay compact with a 360dp maximum height");
 assert.ok(androidInstaller.includes('shortcutLabels={"AUTOMATION","AGENTS","OPEN APP"}'), "Android overlay must expose direct Automation, Agents and Open App shortcuts");
 assert.ok(androidInstaller.includes('app.setText("APP ↗")'), "Android panel header must include a direct full-app launcher");
 assert.ok(androidInstaller.includes('if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class)'), "Opening the full app must dismiss the expanded overlay panel first");
 assert.ok(androidInstaller.includes('shortcutActions={"automation","providers","panel"}'), "Android shortcuts must map to app views");
 assert.ok(html.includes('["panel","voice","automation","providers","skills","plugins","screen-record","capture-screen"].includes(action)'), "Native quick-action bridge must accept automation and provider views");
-assert.ok(html.includes('action==="providers"?"provider-panel":"skills-panel"'), "Native shortcut routing must open the selected automation or provider view");
+assert.ok(html.includes('action==="providers"||action==="plugins"?"provider-panel":"skills-panel"'), "Native shortcut routing must open the selected automation or provider view");
 assert.ok(html.includes('data-open-view="provider-panel" aria-label="Open Agents and AI connections"'), "Side dock must expose Agents and Connections directly");
 assert.ok(html.includes("Agents & Connections"), "Provider manager must be presented as the Agents and Connections control centre");
 
@@ -47,7 +47,7 @@ assert.ok(androidInstaller.includes('putBoolean("voice_input_enabled",checked)')
 assert.ok(androidInstaller.includes('putBoolean("voice_replies_enabled",checked)'), "Spoken-replies preference must persist");
 assert.ok(androidInstaller.includes('if(!checked)stopOverlayVoice()'), "Turning voice input off must stop any active recognition session");
 assert.ok(androidInstaller.includes('voiceReply||getSharedPreferences("bosley_overlay_preferences",MODE_PRIVATE).getBoolean("voice_replies_enabled",false)'), "Voice reply preference must control text-to-speech output");
-assert.ok(androidInstaller.includes('toolRows={{"▣  SCREEN RECORD","▧  CAPTURE SCREEN","⚙  AUTOMATION"},{"✦  AGENTS","⌘  SKILLS","＋  SKILLS / PLUGINS"}}'), "Android plus toolbox must expose recording, capture, automation, agents, skills, and plugins");
+assert.ok(androidInstaller.includes('toolRows={{"▣  SCREEN RECORD","▧  CAPTURE SCREEN","⚙  AUTOMATION"},{"✦  AGENTS","⌘  SKILLS","＋  PLUGINS"}}'), "Android plus toolbox must expose recording, capture, automation, agents, skills, and plugins");
 assert.ok(androidInstaller.includes('plus.setText("＋")') && androidInstaller.includes('Open Bosley tools'), "Android composer must expose an accessible plus toolbox toggle");
 assert.ok(androidInstaller.includes('BosleyScreenRecordingService.java'), "Android installer must generate the native screen recording service");
 assert.ok(androidInstaller.includes('recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264)'), "Screen recording must encode a local MP4 video");
@@ -55,6 +55,8 @@ assert.ok(androidInstaller.includes('FOREGROUND_SERVICE_MEDIA_PROJECTION'), "Scr
 assert.ok(androidInstaller.includes('requestScreenRecording(PluginCall call)'), "Android plugin must request explicit screen recording consent");
 assert.ok(androidInstaller.includes('syncAgentPreference(PluginCall call)'), "Android plugin must sync the selected agent provider to native chat");
 assert.ok(androidInstaller.includes('prefs.getString("selected_provider","")'), "Native overlay chat must use the selected AI provider");
+assert.ok(androidInstaller.includes('prefs.getString("chat_history","[]")'), "Android floating chat must retain a short conversation context");
+assert.ok(androidInstaller.includes('putString("chat_history",messages.toString())'), "Android floating chat must persist assistant replies for follow-up turns");
 assert.ok(androidInstaller.includes('/functions/v1/agent-gateway'), "Native overlay chat must call the authenticated agent gateway when a provider is selected");
 assert.ok(html.includes('plugin.requestScreenRecording()'), "Screen recording action must be initiated from the Android app after user consent");
 assert.ok(html.includes('syncAgentPreference?.({provider:select.value||""})'), "Provider selection must sync to the Android floating panel");

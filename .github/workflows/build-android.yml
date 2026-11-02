@@ -40,6 +40,7 @@ jobs:
       - name: Install web dependencies and build
         run: |
           npm install
+          npm run test:companion
           npm run build
 
       - name: Use the shared production Bosley interface for Android

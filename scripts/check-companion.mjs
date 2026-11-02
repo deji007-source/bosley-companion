@@ -34,6 +34,7 @@ assert.ok(html.includes('native.syncChatSession({accessToken:s?.access_token||""
 assert.ok(androidInstaller.includes('Math.min(dp(300),getResources().getDisplayMetrics().heightPixels-dp(90))'), "Android floating chat panel must use a shorter height capped at 300dp");
 assert.ok(androidInstaller.includes('shortcutLabels={"AUTOMATION","AGENTS","OPEN APP"}'), "Android overlay must expose direct Automation, Agents and Open App shortcuts");
 assert.ok(androidInstaller.includes('app.setText("APP ↗")'), "Android panel header must include a direct full-app launcher");
+assert.ok(androidInstaller.includes('if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class)'), "Opening the full app must dismiss the expanded overlay panel first");
 assert.ok(androidInstaller.includes('shortcutActions={"automation","providers","panel"}'), "Android shortcuts must map to app views");
 assert.ok(html.includes('["panel","voice","automation","providers"].includes(action)'), "Native quick-action bridge must accept automation and provider views");
 assert.ok(html.includes('const target=action==="automation"?"automation":"provider-panel"'), "Native shortcut routing must open the selected automation or provider view");

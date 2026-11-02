@@ -37,7 +37,7 @@ assert.ok(androidInstaller.includes('shortcutLabels={"AUTOMATION","AGENTS","OPEN
 assert.ok(androidInstaller.includes('app.setText("APP ↗")'), "Android panel header must include a direct full-app launcher");
 assert.ok(androidInstaller.includes('if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class)'), "Opening the full app must dismiss the expanded overlay panel first");
 assert.ok(androidInstaller.includes('shortcutActions={"automation","providers","panel"}'), "Android shortcuts must map to app views");
-assert.ok(html.includes('["panel","voice","automation","providers","skills","plugins","screen-record","capture-screen"].includes(action)'), "Native quick-action bridge must accept automation and provider views");
+assert.ok(html.includes('["panel","voice","automation","providers","skills","plugins","screen-record","capture-screen","dispatch-command"].includes(action)'), "Native quick-action bridge must accept automation and provider views");
 assert.ok(html.includes('action==="providers"||action==="plugins"?"provider-panel":"skills-panel"'), "Native shortcut routing must open the selected automation or provider view");
 assert.ok(html.includes('data-open-view="provider-panel" aria-label="Open Agents and AI connections"'), "Side dock must expose Agents and Connections directly");
 assert.ok(html.includes("Agents & Connections"), "Provider manager must be presented as the Agents and Connections control centre");
@@ -60,6 +60,9 @@ assert.ok(androidInstaller.includes('prefs.getString("chat_history","[]")'), "An
 assert.ok(androidInstaller.includes('putString("chat_history",messages.toString())'), "Android floating chat must persist assistant replies for follow-up turns");
 assert.ok(androidInstaller.includes('/functions/v1/agent-gateway'), "Native overlay chat must call the authenticated agent gateway when a provider is selected");
 assert.ok(html.includes('plugin.requestScreenRecording()'), "Screen recording action must be initiated from the Android app after user consent");
+assert.ok(androidInstaller.includes("if(plannerCommand||agentHandoff)") && androidInstaller.includes('openCompanion("dispatch-command",message)'), "Android planner and agent-handoff commands must use the shared workspace command router");
+assert.ok(androidInstaller.includes('putExtra("bosley_command",command)') && androidInstaller.includes('r.put("command",command==null?"":command)'), "Native quick-action bridge must carry the original planner or agent task");
+assert.ok(html.includes('if(action==="dispatch-command")') && html.includes("send(command)"), "Workspace must execute the shared planner, agent handoff, and automation routing for native commands");
 assert.ok(html.includes('syncAgentPreference?.({provider:select.value||""})'), "Provider selection must sync to the Android floating panel");
 
 

@@ -648,8 +648,9 @@ html[data-agent-state=working] .launch #bosley-mascot .mascot-eye{filter:drop-sh
 </section>
 
 
-<nav id="dock-launcher" aria-label="Open Bosley side views"><button type="button" data-open-view="lovable-bosley" aria-label="Open hosted Lovable Bosley" title="Lovable Bosley">✦</button><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="automation" aria-label="Open AI Agents and Automation" title="AI Agents">✦</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button></nav>
+<nav id="dock-launcher" aria-label="Open Bosley side views"><button type="button" data-open-view="lovable-bosley" aria-label="Open hosted Lovable Bosley" title="Lovable Bosley">✦</button><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="agents-panel" aria-label="Open AI Agents" title="AI Agents">✧</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button></nav>
 <aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
+<section class="workspace" id="agents-panel" hidden></section>
 <section class="workspace" id="skills-panel" hidden></section>
 <section class="workspace" id="lovable-bosley" hidden></section>
 <div class="sr" id="live" aria-live="polite"></div>
@@ -698,7 +699,8 @@ document.addEventListener("DOMContentLoaded",()=>{
  const views=[
   {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{const r=window.BosleyPanelRenderers?.workspace;if(typeof r!=="function")throw Error("Workspace renderer is not connected to the dock.");return r()}},
   {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{const r=window.BosleyPanelRenderers?.appearance;if(typeof r!=="function")throw Error("Appearance renderer is not connected to the dock.");return r()}},
-  {button:"autotoggle",panel:"automation",label:"AI Agents & Automation",init:()=>{const r=window.BosleyPanelRenderers?.automation;if(typeof r!=="function")throw Error("Automation renderer is not connected to the dock.");return r()}},
+  {button:"",panel:"agents-panel",label:"AI Agents",init:()=>{const r=window.BosleyPanelRenderers?.agents;if(typeof r!=="function")throw Error("AI Agents renderer is not connected to the dock.");return r()}},
+  {button:"autotoggle",panel:"automation",label:"Automation",init:()=>{const r=window.BosleyPanelRenderers?.automation;if(typeof r!=="function")throw Error("Automation renderer is not connected to the dock.");return r()}},
   {button:"activitytoggle",panel:"activity",label:"Activity",init:()=>{const r=window.BosleyPanelRenderers?.activity;if(typeof r!=="function")throw Error("Activity renderer is not connected to the dock.");return r()}},
   {button:"",panel:"skills-panel",label:"Skills",init:()=>{const r=window.BosleyPanelRenderers?.skills;if(typeof r!=="function")throw Error("Skills renderer is not connected to the dock.");return r()}},
   {button:"",panel:"lovable-bosley",label:"Lovable Bosley",init:initLovableBosleyViewer}
@@ -2254,7 +2256,55 @@ function startLaptopCommandListener(activeUser){
   });
 }
 
-window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills()});
+
+async function drawAgents(){
+ const panel=$("#agents-panel");if(!panel)return;
+ const providers=[
+  {id:"openai",name:"OpenAI",model:"gpt-4.1-mini",hint:"GPT models"},
+  {id:"anthropic",name:"Anthropic",model:"claude-3-5-haiku-latest",hint:"Claude models"},
+  {id:"gemini",name:"Google Gemini",model:"gemini-2.0-flash",hint:"Gemini models"},
+  {id:"groq",name:"Groq",model:"llama-3.3-70b-versatile",hint:"Fast hosted open models"},
+  {id:"openrouter",name:"OpenRouter",model:"openai/gpt-4.1-mini",hint:"Multiple model providers"},
+  {id:"mistral",name:"Mistral",model:"mistral-small-latest",hint:"Mistral models"}
+ ];
+ panel.innerHTML='<h3>AI Agents</h3><p class="mute">Connect model providers to Bosley using your own API keys. Credentials are sent only to the authenticated server gateway and encrypted before storage; they are never written to browser storage.</p><section class="item" style="display:block;margin:12px 0"><strong>Provider connections</strong><p class="mute">Choose a provider, add its API key and model, then test the connection. Keep provider billing and usage limits in mind.</p><div id="agent-provider-list" class="items"><p class="mute">Loading your connections…</p></div><p class="status" id="agent-provider-status" role="status" aria-live="polite"></p></section><section class="item" style="display:block;margin:12px 0"><strong>Test connected agent</strong><p class="mute">Send a short test to verify the selected provider is reachable.</p><div class="form"><label class="mute" for="agent-test-provider">Provider</label><select id="agent-test-provider"></select><button type="button" class="primary" id="agent-test-button">Test connection</button><p class="status" id="agent-test-status" role="status" aria-live="polite">No test run yet.</p></div></section><section class="item" style="display:block;margin:12px 0"><strong>Agent chat</strong><p class="mute">Route a prompt directly to a connected provider. This is separate from Bosley’s default chat and uses that provider’s API account.</p><div class="form"><label class="mute" for="agent-chat-provider">Connected provider</label><select id="agent-chat-provider"></select><textarea id="agent-chat-prompt" rows="4" maxlength="12000" placeholder="Message the selected AI provider…"></textarea><button type="button" class="primary" id="agent-chat-send">Send to agent</button><p class="status" id="agent-chat-status" role="status" aria-live="polite"></p><pre id="agent-chat-reply" class="item" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto"></pre></div></section>';
+ const status=$("#agent-provider-status"),list=$("#agent-provider-list");
+ async function gateway(action,payload={}){
+  if(!db||!user)throw Error("Sign in to your Bosley account before managing AI providers.");
+  const session=(await db.auth.getSession()).data.session;
+  if(!session?.access_token)throw Error("Your session expired. Sign in again.");
+  const response=await fetch(SUPABASE_URL+"/functions/v1/agent-gateway",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({action,...payload})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||result.ok!==true)throw Error(result.error||("Agent gateway request failed (HTTP "+response.status+")."));
+  return result;
+ }
+ async function loadConnections(){
+  const result=await gateway("providers");
+  const rows=providers.map(p=>({...p,...(result.providers||[]).find(x=>x.id===p.id)}));
+  list.innerHTML=rows.map(p=>'<article class="item" style="display:block"><div class="actions" style="justify-content:space-between"><strong>'+esc(p.name)+'</strong><span class="status">'+(p.connected?"CONNECTED":"NOT CONNECTED")+'</span></div><p class="mute">'+esc(p.hint)+' · Default: '+esc(p.defaultModel||p.model)+'</p><form class="form" data-agent-connect="'+p.id+'"><label class="mute" for="agent-key-'+p.id+'">API key</label><input id="agent-key-'+p.id+'" type="password" autocomplete="off" maxlength="500" placeholder="'+(p.connected?"Enter a new key to rotate":"Paste provider API key")+'" required><label class="mute" for="agent-model-'+p.id+'">Model ID</label><input id="agent-model-'+p.id+'" maxlength="120" value="'+esc(p.model||p.defaultModel)+'" required><div class="actions"><button class="primary" type="submit">'+(p.connected?"Update key":"Connect")+'</button>'+(p.connected?'<button type="button" data-agent-disconnect="'+p.id+'">Disconnect</button>':'')+'</div></form></article>').join("");
+  const choices=rows.filter(p=>p.connected);
+  const options=choices.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("");
+  $("#agent-test-provider").innerHTML=options||'<option value="">No connected providers</option>';
+  $("#agent-chat-provider").innerHTML=options||'<option value="">No connected providers</option>';
+  $("#agent-test-button").disabled=!choices.length;$("#agent-chat-send").disabled=!choices.length;
+  list.querySelectorAll("form[data-agent-connect]").forEach(form=>form.addEventListener("submit",async e=>{
+   e.preventDefault();const provider=form.dataset.agentConnect,key=form.querySelector('input[type="password"]'),model=form.querySelector('input[id^="agent-model-"]'),button=form.querySelector('button[type="submit"]');
+   if(!key.value.trim())return;button.disabled=true;if(status)status.textContent="Encrypting and saving provider credentials…";
+   try{await gateway("connect",{provider,apiKey:key.value.trim(),model:model.value.trim()});key.value="";if(status)status.textContent="Provider connected. Run a connection test before chatting.";await loadConnections();}
+   catch(error){if(status)status.textContent=String(error.message||error);}
+   finally{button.disabled=false}
+  }));
+  list.querySelectorAll("[data-agent-disconnect]").forEach(button=>button.addEventListener("click",async()=>{
+   if(!confirm("Disconnect this provider and delete its saved API credential from Bosley?"))return;
+   button.disabled=true;try{await gateway("disconnect",{provider:button.dataset.agentDisconnect});if(status)status.textContent="Provider disconnected.";await loadConnections()}catch(error){if(status)status.textContent=String(error.message||error)}finally{button.disabled=false}
+  }));
+ }
+ $("#agent-test-button").onclick=async()=>{const provider=$("#agent-test-provider").value,feedback=$("#agent-test-status"),button=$("#agent-test-button");if(!provider)return;button.disabled=true;feedback.textContent="Testing provider…";try{const result=await gateway("test",{provider});feedback.textContent=result.message||"Connection test passed."}catch(error){feedback.textContent=String(error.message||error)}finally{button.disabled=false}};
+ $("#agent-chat-send").onclick=async()=>{const provider=$("#agent-chat-provider").value,prompt=$("#agent-chat-prompt").value.trim(),feedback=$("#agent-chat-status"),reply=$("#agent-chat-reply"),button=$("#agent-chat-send");if(!provider||!prompt){feedback.textContent="Choose a connected provider and enter a message.";return}button.disabled=true;feedback.textContent="Waiting for provider response…";reply.textContent="";try{const result=await gateway("chat",{provider,messages:[{role:"user",content:prompt}]});reply.textContent=result.reply||"The provider returned no text.";feedback.textContent="Response received from "+(result.model||provider)+"."}catch(error){feedback.textContent=String(error.message||error)}finally{button.disabled=false}};
+ try{await loadConnections()}catch(error){list.innerHTML='<p class="mute">Could not load provider connections.</p>';if(status)status.textContent=String(error.message||error)}
+}
+
+window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),agents:()=>drawAgents(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills()});
 renderBosleyKnowledgeGraph();
 renderOfflineCommandQueue();
 initializeContextEngine();

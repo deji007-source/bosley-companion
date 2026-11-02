@@ -310,6 +310,9 @@ public class BosleyTargetAccessibilityService extends AccessibilityService {
 (src / "BosleyScreenRecordingService.java").write_text(r'''package com.bosley.companion;
 import android.app.*;
 import android.content.*;
+import android.net.Uri;
+import android.provider.MediaStore;
+import android.os.ParcelFileDescriptor;
 import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
@@ -329,6 +332,8 @@ public class BosleyScreenRecordingService extends Service {
   private VirtualDisplay display;
   private MediaRecorder recorder;
   private File output;
+  private Uri outputUri;
+  private ParcelFileDescriptor outputDescriptor;
   private boolean started=false;
   @Override public int onStartCommand(Intent intent,int flags,int startId){
     if(intent!=null&&ACTION_STOP.equals(intent.getAction())){stopRecording();return START_NOT_STICKY;}
@@ -352,14 +357,23 @@ public class BosleyScreenRecordingService extends Service {
       DisplayMetrics metrics=new DisplayMetrics();((WindowManager)getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(metrics);
       int width=Math.max(2,metrics.widthPixels),height=Math.max(2,metrics.heightPixels),density=metrics.densityDpi;
       width-=width%2;height-=height%2;
-      File folder=new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES),"Bosley");
-      if(!folder.exists()&&!folder.mkdirs())throw new IllegalStateException("Could not create the Bosley recordings folder.");
       String stamp=new SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(new Date());
-      output=new File(folder,"Bosley-"+stamp+".mp4");
+      String fileName="Bosley-"+stamp+".mp4";
       recorder=Build.VERSION.SDK_INT>=31?new MediaRecorder(this):new MediaRecorder();
       recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
       recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-      recorder.setOutputFile(output.getAbsolutePath());
+      if(Build.VERSION.SDK_INT>=29){
+        ContentValues values=new ContentValues();values.put(MediaStore.Video.Media.DISPLAY_NAME,fileName);values.put(MediaStore.Video.Media.MIME_TYPE,"video/mp4");values.put(MediaStore.Video.Media.RELATIVE_PATH,Environment.DIRECTORY_MOVIES+"/Bosley");values.put(MediaStore.Video.Media.IS_PENDING,1);
+        outputUri=getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,values);
+        if(outputUri==null)throw new IllegalStateException("Could not create the recording in Movies/Bosley.");
+        outputDescriptor=getContentResolver().openFileDescriptor(outputUri,"w");
+        if(outputDescriptor==null)throw new IllegalStateException("Could not open the new recording file.");
+        recorder.setOutputFile(outputDescriptor.getFileDescriptor());
+      }else{
+        File folder=new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES),"Bosley");
+        if(!folder.exists()&&!folder.mkdirs())throw new IllegalStateException("Could not create the Bosley recordings folder.");
+        output=new File(folder,fileName);recorder.setOutputFile(output.getAbsolutePath());
+      }
       recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
       recorder.setVideoSize(width,height);
       recorder.setVideoFrameRate(30);
@@ -367,7 +381,7 @@ public class BosleyScreenRecordingService extends Service {
       recorder.prepare();
       display=projection.createVirtualDisplay("BosleyScreenRecorder",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,recorder.getSurface(),null,null);
       recorder.start();started=true;
-      getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",true).putString("last_path",output.getAbsolutePath()).apply();
+      getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",true).putString("last_path",output==null?"":output.getAbsolutePath()).putString("last_uri",outputUri==null?"":outputUri.toString()).apply();
       return START_STICKY;
     }catch(Exception error){
       android.util.Log.e("BosleyScreenRecorder","Could not start recording",error);
@@ -377,15 +391,17 @@ public class BosleyScreenRecordingService extends Service {
   }
   private void stopRecording(){
     if(started){try{recorder.stop();}catch(Exception error){android.util.Log.w("BosleyScreenRecorder","Recording ended before a valid video frame was written",error);}started=false;}
+    if(outputUri!=null){try{ContentValues values=new ContentValues();values.put(MediaStore.Video.Media.IS_PENDING,0);getContentResolver().update(outputUri,values,null,null);}catch(Exception error){android.util.Log.w("BosleyScreenRecorder","Could not publish recording to Movies",error);}}
     cleanup();
     getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",false).apply();
-    if(output!=null&&output.exists()&&output.length()>0)android.widget.Toast.makeText(this,"Recording saved in Movies/Bosley",android.widget.Toast.LENGTH_LONG).show();
+    if((outputUri!=null)||(output!=null&&output.exists()&&output.length()>0))android.widget.Toast.makeText(this,"Recording saved in Movies/Bosley",android.widget.Toast.LENGTH_LONG).show();
     stopForeground(true);stopSelf();
   }
   private void cleanup(){
     if(display!=null){try{display.release();}catch(Exception ignored){}display=null;}
     if(recorder!=null){try{recorder.reset();}catch(Exception ignored){}try{recorder.release();}catch(Exception ignored){}recorder=null;}
     if(projection!=null){try{projection.stop();}catch(Exception ignored){}projection=null;}
+    if(outputDescriptor!=null){try{outputDescriptor.close();}catch(Exception ignored){}outputDescriptor=null;}
   }
   @Override public void onDestroy(){if(started)stopRecording();else cleanup();super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent intent){return null;}

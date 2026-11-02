@@ -568,6 +568,24 @@ html[data-agent-state=working] .launch #bosley-mascot .mascot-eye{filter:drop-sh
 }
 @media(prefers-reduced-motion:reduce){.remote-mode-toggle{transition:none}}
 
+
+/* Windows multi-window workspace: each side-view page gets its own compact, draggable card. */
+body.desktop-panel .desktop-view-window{position:fixed;z-index:2147483646;display:flex;flex-direction:column;width:min(350px,calc(100vw - 24px));height:min(420px,calc(100dvh - 92px));min-width:260px;min-height:220px;overflow:hidden;border:1px solid #454545;border-radius:13px;background:radial-gradient(ellipse at 50% -18%,#111 0%,#070707 48%,#030303 100%);color:#f4f4f4;box-shadow:0 18px 52px #000d,0 0 0 1px #ffffff0a;}
+body.desktop-panel .desktop-view-window-header{display:flex;align-items:center;gap:8px;flex:0 0 36px;min-height:36px;padding:0 9px 0 12px;border-bottom:1px solid #292929;background:#0a0a0a;cursor:grab;user-select:none;touch-action:none;}
+body.desktop-panel .desktop-view-window.is-dragging .desktop-view-window-header{cursor:grabbing;}
+body.desktop-panel .desktop-view-window-title{flex:1;min-width:0;overflow:hidden;color:#eee;font-size:10px;font-weight:800;letter-spacing:.09em;text-overflow:ellipsis;white-space:nowrap;}
+body.desktop-panel .desktop-view-window-close{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;padding:0;border:1px solid #333;border-radius:7px;background:#111;color:#ddd;font-size:16px;line-height:1;cursor:pointer;}
+body.desktop-panel .desktop-view-window-close:hover{border-color:#777;background:#242424;color:#fff;}
+body.desktop-panel .desktop-view-window-body{flex:1 1 auto;min-height:0;overflow:auto;padding:7px;overscroll-behavior:contain;}
+body.desktop-panel .desktop-view-window-body>.workspace,body.desktop-panel .desktop-view-window-body>.automation{display:block!important;width:100%!important;max-width:none!important;max-height:none!important;min-height:100%;height:auto;margin:0!important;padding:10px!important;overflow:auto!important;border:0!important;border-radius:0!important;background:transparent!important;font-size:11px;}
+body.desktop-panel .desktop-view-window-body>#skills-panel,body.desktop-panel .desktop-view-window-body>#provider-panel{width:100%!important;margin:0!important;padding:8px!important;border:0!important;}
+body.desktop-panel .desktop-view-window-body>#lovable-bosley{display:flex!important;min-height:0;height:100%;overflow:hidden;}
+body.desktop-panel .desktop-dock-hint{padding:12px;color:#777;font-size:10px;line-height:1.6;}
+body.desktop-panel .desktop-view-window input,body.desktop-panel .desktop-view-window textarea,body.desktop-panel .desktop-view-window select{max-width:100%;font-size:11px;}
+@media(max-width:900px){body.desktop-panel .desktop-view-window{width:min(330px,calc(100vw - 24px));height:min(390px,calc(100dvh - 92px));}}
+
+/* Keep the Windows navigation rail clear of its independent floating content cards. */
+html.widget-mode body.desktop-panel #side-dock:not([hidden]){left:12px!important;right:auto!important;top:12px!important;width:min(300px,calc(100vw - 24px))!important;min-width:270px!important;max-width:300px!important;height:min(720px,calc(100dvh - 24px))!important;max-height:calc(100dvh - 24px)!important;}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">
@@ -706,9 +724,53 @@ document.addEventListener("DOMContentLoaded",()=>{
   {button:"",panel:"lovable-bosley",label:"Lovable Bosley",init:initLovableBosleyViewer}
  ];
  let active="";
+ const desktopMultiWindow=document.body.classList.contains("desktop-panel");
+ const desktopCards=new Map();let desktopWindowZ=2147483646;
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
+ if(desktopMultiWindow){const hint=document.createElement("p");hint.className="desktop-dock-hint";hint.textContent="Choose a section. Each page opens in its own floating window and stays open until you close it.";body.appendChild(hint);}
  document.querySelectorAll("#dock-launcher [data-open-view]").forEach(button=>button.addEventListener("click",()=>show(button.dataset.openView)));
- function show(id){const v=views.find(x=>x.panel===id);if(!v)return;const p=document.getElementById(id);if(!p)return;const wasActive=active===id&&!dock.hidden;if(wasActive){dock.hidden=true;active="";return;}dock.hidden=false;active=id;for(const x of views){const panel=document.getElementById(x.panel),tab=tabs.querySelector('[data-view="'+x.panel+'"]'),button=document.getElementById(x.button),launcher=document.querySelector('#dock-launcher [data-open-view="'+x.panel+'"]');if(panel)panel.hidden=x.panel!==id;if(tab)tab.classList.toggle("on",x.panel===id);if(launcher)launcher.classList.toggle("on",x.panel===id);if(button)button.setAttribute("aria-expanded",String(x.panel===id));}p.setAttribute("aria-busy","true");Promise.resolve().then(()=>{if(typeof v.init!=="function")throw Error("No renderer is registered for this section.");return v.init()}).then(()=>{if(!p.isConnected)return;if(!p.innerHTML.trim()){throw Error("The section renderer completed without adding content. Check that its renderer is available in this build.")}}).catch(e=>{console.error("Bosley side view failed to initialize: "+id,e);if(p){const message=String(e?.message||e).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));p.innerHTML=`<h3>${v.label}</h3><p class="fb" role="alert">Could not load this section: ${message}</p><button type="button" id="bosley-panel-retry">Retry ${v.label}</button>`;p.querySelector("#bosley-panel-retry")?.addEventListener("click",()=>show(id))}}).finally(()=>p.removeAttribute("aria-busy"))}
+  function focusDesktopCard(card){desktopWindowZ+=1;card.style.zIndex=String(desktopWindowZ);}
+ function initializeDesktopView(v,p){
+  p.setAttribute("aria-busy","true");
+  Promise.resolve().then(()=>{if(typeof v.init!=="function")throw Error("No renderer is registered for this section.");return v.init()}).then(()=>{if(!p.isConnected)return;if(!p.innerHTML.trim())throw Error("The section renderer completed without adding content.")}).catch(error=>{
+   console.error("Bosley floating view failed to initialize: "+v.panel,error);
+   const message=String(error?.message||error).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+   p.innerHTML='<h3>'+v.label+'</h3><p class="fb" role="alert">Could not load this section: '+message+'</p><button type="button" class="desktop-view-retry">Retry '+v.label+'</button>';
+   p.querySelector(".desktop-view-retry")?.addEventListener("click",()=>initializeDesktopView(v,p));
+  }).finally(()=>p.removeAttribute("aria-busy"));
+ }
+ function createDesktopCard(v,p){
+  const card=document.createElement("section");card.className="desktop-view-window";card.dataset.view=v.panel;
+  const header=document.createElement("header");header.className="desktop-view-window-header";
+  const title=document.createElement("strong");title.className="desktop-view-window-title";title.textContent=v.label.toUpperCase();
+  const close=document.createElement("button");close.type="button";close.className="desktop-view-window-close";close.textContent="×";close.setAttribute("aria-label","Close "+v.label);
+  const content=document.createElement("div");content.className="desktop-view-window-body";
+  header.append(title,close);card.append(header,content);document.body.appendChild(card);content.appendChild(p);p.hidden=false;
+  const index=desktopCards.size,column=index%2,row=Math.floor(index/2);
+  const left=Math.max(12,Math.min(410+column*366,window.innerWidth-426));
+  const top=Math.max(52,Math.min(54+row*34,window.innerHeight-250));
+  card.style.left=left+"px";card.style.top=top+"px";focusDesktopCard(card);
+  card.addEventListener("pointerdown",()=>focusDesktopCard(card),true);
+  let drag=null;
+  header.addEventListener("pointerdown",event=>{if(event.button!==0||event.target.closest("button"))return;const rect=card.getBoundingClientRect();drag={id:event.pointerId,x:event.clientX-rect.left,y:event.clientY-rect.top};header.setPointerCapture?.(event.pointerId);card.classList.add("is-dragging");event.preventDefault();});
+  header.addEventListener("pointermove",event=>{if(!drag||drag.id!==event.pointerId)return;const x=Math.max(6,Math.min(window.innerWidth-card.offsetWidth-6,event.clientX-drag.x));const y=Math.max(6,Math.min(window.innerHeight-card.offsetHeight-6,event.clientY-drag.y));card.style.left=x+"px";card.style.top=y+"px";});
+  const stop=event=>{if(!drag||drag.id!==event.pointerId)return;drag=null;card.classList.remove("is-dragging");};header.addEventListener("pointerup",stop);header.addEventListener("pointercancel",stop);
+  close.addEventListener("click",()=>{desktopCards.delete(v.panel);p.hidden=true;body.appendChild(p);card.remove();const tab=tabs.querySelector('[data-view="'+v.panel+'"]'),launcher=document.querySelector('#dock-launcher [data-open-view="'+v.panel+'"]');tab?.classList.remove("on");launcher?.classList.remove("on");if(active===v.panel)active="";});
+  desktopCards.set(v.panel,card);return card;
+ }
+ function show(id){
+  const v=views.find(x=>x.panel===id);if(!v)return;const p=document.getElementById(id);if(!p)return;
+  if(desktopMultiWindow){
+   dock.hidden=false;active=id;let card=desktopCards.get(id);
+   if(card){focusDesktopCard(card);card.hidden=false;}
+   else{card=createDesktopCard(v,p);initializeDesktopView(v,p);}
+   for(const x of views){const tab=tabs.querySelector('[data-view="'+x.panel+'"]'),launcher=document.querySelector('#dock-launcher [data-open-view="'+x.panel+'"]'),button=document.getElementById(x.button);const opened=desktopCards.has(x.panel);if(tab)tab.classList.toggle("on",opened);if(launcher)launcher.classList.toggle("on",opened);if(button)button.setAttribute("aria-expanded",String(opened));}
+   return;
+  }
+  const wasActive=active===id&&!dock.hidden;if(wasActive){dock.hidden=true;active="";return;}dock.hidden=false;active=id;
+  for(const x of views){const panel=document.getElementById(x.panel),tab=tabs.querySelector('[data-view="'+x.panel+'"]'),button=document.getElementById(x.button),launcher=document.querySelector('#dock-launcher [data-open-view="'+x.panel+'"]');if(panel)panel.hidden=x.panel!==id;if(tab)tab.classList.toggle("on",x.panel===id);if(launcher)launcher.classList.toggle("on",x.panel===id);if(button)button.setAttribute("aria-expanded",String(x.panel===id));}
+  p.setAttribute("aria-busy","true");Promise.resolve().then(()=>{if(typeof v.init!=="function")throw Error("No renderer is registered for this section.");return v.init()}).then(()=>{if(!p.isConnected)return;if(!p.innerHTML.trim())throw Error("The section renderer completed without adding content. Check that its renderer is available in this build.")}).catch(e=>{console.error("Bosley side view failed to initialize: "+id,e);if(p){const message=String(e?.message||e).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));p.innerHTML='<h3>'+v.label+'</h3><p class="fb" role="alert">Could not load this section: '+message+'</p><button type="button" id="bosley-panel-retry">Retry '+v.label+'</button>';p.querySelector("#bosley-panel-retry")?.addEventListener("click",()=>show(id));}}).finally(()=>p.removeAttribute("aria-busy"));
+ }
  for(const v of views){const b=document.getElementById(v.button);if(b)b.addEventListener("click",e=>{e.preventDefault();e.stopImmediatePropagation();show(v.panel)},true)}
  document.getElementById("dock-open")?.addEventListener("click",()=>show(active||"ws"));
  const signInShortcut=document.getElementById("signin-open");

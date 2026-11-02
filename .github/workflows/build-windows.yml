@@ -372,11 +372,11 @@ jobs:
             }
 
             if (panel && !panel.isDestroyed()) {
-              // Keep the expanded companion compact and attached to the top-center bezel.
-              const width = Math.min(420, Math.max(320, area.width - 16));
-              const height = Math.min(480, Math.max(300, Math.round(area.height * 0.52)));
+              // Keep enough desktop workspace visible for the navigation rail and several floating cards.
+              const width = Math.min(1280, Math.max(640, area.width - 24));
+              const height = Math.min(840, Math.max(500, area.height - 44));
               const x = bounds.x + Math.round((bounds.width - width) / 2);
-              const y = bounds.y;
+              const y = area.y + Math.max(8, Math.round((area.height - height) / 2));
 
               panel.setBounds({ x, y, width, height });
             }
@@ -722,10 +722,10 @@ jobs:
 
           function createPanel() {
             panel = new BrowserWindow({
-              width: 420,
-              height: 460,
-              minWidth: 320,
-              minHeight: 300,
+              width: 1180,
+              height: 760,
+              minWidth: 640,
+              minHeight: 500,
               resizable: true,
               show: false,
               backgroundColor: '#000000',
@@ -1337,6 +1337,11 @@ jobs:
           grep -Fq "onWidgetAppearance" desktop/preload.cjs
           grep -Fq "setCompanionState" desktop/preload.cjs
           grep -Fq "bosley:companion-state-update" desktop/main.cjs
+          grep -Fq 'const desktopCards=new Map()' desktop/index.html
+          grep -Fq 'body.desktop-panel .desktop-view-window{position:fixed' desktop/index.html
+          grep -Fq 'desktop-view-window-close' desktop/index.html
+          grep -Fq 'width: 1180' desktop/main.cjs
+          grep -Fq 'Math.min(1280' desktop/main.cjs
           grep -Fq "contextIsolation: true" desktop/main.cjs
           grep -Fq "nodeIntegration: false" desktop/main.cjs
           grep -Fq "sandbox: true" desktop/main.cjs

@@ -441,6 +441,17 @@ assert.ok(html.includes("#side-dock .dock-body input,#side-dock .dock-body texta
 assert.ok(html.includes("body.desktop-panel #side-dock{left:12px;right:auto;top:12px"), "Windows side dock must open on the left side of the display");
 assert.ok(html.includes('handle?.addEventListener("pointermove"'), "Windows side dock must remain movable by dragging its header");
 
+assert.ok(html.includes("body.desktop-panel .desktop-view-window{position:fixed"), "Windows side views must open as independent floating windows");
+assert.ok(html.includes("const desktopCards=new Map()"), "Windows floating views must maintain multiple open pages independently");
+assert.ok(html.includes("desktopCards.has(x.panel)"), "Windows side navigation must preserve already-open cards");
+assert.ok(html.includes("desktopCards.delete(v.panel);p.hidden=true;body.appendChild(p);card.remove()"), "Closing one Windows floating card must leave the other cards open");
+assert.ok(html.includes("html.widget-mode body.desktop-panel #side-dock:not([hidden])"), "Windows side navigation must stay in a compact left rail");
+assert.ok(html.includes("width:min(350px,calc(100vw - 24px));height:min(420px,calc(100dvh - 92px))"), "Windows floating cards must stay compact");
+assert.ok(html.includes('setAttribute("aria-label","Close "+v.label)'), "Windows floating cards must expose individual close controls");
+assert.ok(html.includes("desktop-view-window-header"), "Windows floating cards must have draggable headers");
+assert.ok(html.includes("Each page opens in its own floating window"), "Windows dock must explain independent floating windows");
+
+
 assert.ok(html.includes(".holo-face i{display:block;flex:0 0 17px;width:17px;height:17px"), "Bosley presence eyes must be large true circles, not ovals");
 assert.ok(html.includes("border-radius:50%;background:#fff"), "Bosley presence eyes must retain a circular silhouette");
 assert.ok(html.includes("@keyframes bosley-holo-teleport"), "Holographic Bosley must have a teleport-style arrival animation");

@@ -80,7 +80,7 @@ public class BosleyOverlayService extends Service {
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
   }
-  LinearLayout chatPanel; EditText chatInput; TextView chatOutput; Button chatSend,chatVoice; ScrollView chatScroll; boolean chatRequestBusy=false;
+  LinearLayout chatPanel; EditText chatInput; TextView chatOutput; Button chatSend,chatVoice; Switch voiceInputToggle,voiceReplyToggle; ScrollView chatScroll; boolean chatRequestBusy=false,voiceInputEnabled=true,voiceRepliesEnabled=false;
   void expandPanel(){expandPanel(true);}
   void expandPanel(boolean showKeyboard){
     if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;return;}
@@ -95,9 +95,16 @@ public class BosleyOverlayService extends Service {
     String[] shortcutLabels={"AUTOMATION","AGENTS","OPEN APP"};String[] shortcutActions={"automation","providers","panel"};
     for(int n=0;n<shortcutLabels.length;n++){final String action=shortcutActions[n];TextView shortcut=new TextView(this);shortcut.setText(shortcutLabels[n]);shortcut.setTextColor(0xffd5d9e2);shortcut.setTextSize(9);shortcut.setGravity(Gravity.CENTER);GradientDrawable chip=new GradientDrawable();chip.setColor(0xff202633);chip.setCornerRadius(dp(8));shortcut.setBackground(chip);LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(28),1);cp.setMargins(0,0,dp(5),0);shortcuts.addView(shortcut,cp);shortcut.setOnClickListener(v->openCompanion(action));}
     panel.addView(shortcuts);
+    android.content.SharedPreferences voicePrefs=getSharedPreferences("bosley_overlay_preferences",MODE_PRIVATE);
+    voiceInputEnabled=voicePrefs.getBoolean("voice_input_enabled",true);voiceRepliesEnabled=voicePrefs.getBoolean("voice_replies_enabled",false);
+    LinearLayout voiceControls=new LinearLayout(this);voiceControls.setGravity(Gravity.CENTER_VERTICAL);voiceControls.setPadding(dp(2),dp(1),dp(2),dp(3));
+    TextView voiceLabel=new TextView(this);voiceLabel.setText("VOICE");voiceLabel.setTextColor(0xffaeb8c9);voiceLabel.setTextSize(9);voiceLabel.setTypeface(null,1);voiceControls.addView(voiceLabel,new LinearLayout.LayoutParams(0,dp(34),1));
+    voiceInputToggle=new Switch(this);voiceInputToggle.setText("Mic");voiceInputToggle.setTextColor(0xffe1e6ef);voiceInputToggle.setTextSize(10);voiceInputToggle.setChecked(voiceInputEnabled);voiceControls.addView(voiceInputToggle);voiceInputToggle.setOnCheckedChangeListener((button,checked)->{voiceInputEnabled=checked;voicePrefs.edit().putBoolean("voice_input_enabled",checked).apply();if(chatVoice!=null)chatVoice.setEnabled(checked&&!chatRequestBusy);if(!checked)stopOverlayVoice();});
+    voiceReplyToggle=new Switch(this);voiceReplyToggle.setText("Speak replies");voiceReplyToggle.setTextColor(0xffe1e6ef);voiceReplyToggle.setTextSize(10);voiceReplyToggle.setChecked(voiceRepliesEnabled);voiceControls.addView(voiceReplyToggle);voiceReplyToggle.setOnCheckedChangeListener((button,checked)->{voiceRepliesEnabled=checked;voicePrefs.edit().putBoolean("voice_replies_enabled",checked).apply();});
+    panel.addView(voiceControls);
     chatScroll=new ScrollView(this);chatOutput=new TextView(this);chatOutput.setTextColor(0xffe8eaf0);chatOutput.setTextSize(13);chatOutput.setText("Ready. Messages are sent directly from this panel.");chatOutput.setPadding(dp(4),dp(8),dp(4),dp(8));chatScroll.addView(chatOutput);panel.addView(chatScroll,new LinearLayout.LayoutParams(-1,0,1));
     LinearLayout compose=new LinearLayout(this);compose.setGravity(Gravity.CENTER_VERTICAL);chatInput=new EditText(this);chatInput.setSingleLine(false);chatInput.setMaxLines(2);chatInput.setTextColor(Color.WHITE);chatInput.setHintTextColor(0xff9ba3b4);chatInput.setHint("Message Bosley…");chatInput.setTextSize(14);compose.addView(chatInput,new LinearLayout.LayoutParams(0,dp(42),1));
-    chatVoice=new Button(this);chatVoice.setText("🎙");chatVoice.setContentDescription("Talk to Bosley");GradientDrawable micBg=new GradientDrawable();micBg.setColor(0xff30394a);micBg.setShape(GradientDrawable.OVAL);chatVoice.setBackground(micBg);compose.addView(chatVoice,new LinearLayout.LayoutParams(dp(42),dp(42)));chatVoice.setOnClickListener(v->startOverlayVoice());
+    chatVoice=new Button(this);chatVoice.setText("🎙");chatVoice.setContentDescription("Talk to Bosley");GradientDrawable micBg=new GradientDrawable();micBg.setColor(0xff30394a);micBg.setShape(GradientDrawable.OVAL);chatVoice.setBackground(micBg);compose.addView(chatVoice,new LinearLayout.LayoutParams(dp(42),dp(42)));chatVoice.setEnabled(voiceInputEnabled);chatVoice.setOnClickListener(v->{if(voiceInputEnabled)startOverlayVoice();else appendChat("Turn Mic on in the Voice controls first.");});
     chatSend=new Button(this);chatSend.setText("Send");compose.addView(chatSend,new LinearLayout.LayoutParams(dp(60),dp(42)));panel.addView(compose);chatSend.setOnClickListener(v->sendOverlayMessage());
     WindowManager.LayoutParams params=new WindowManager.LayoutParams(Math.min(dp(360),getResources().getDisplayMetrics().widthPixels-dp(24)),Math.min(dp(300),getResources().getDisplayMetrics().heightPixels-dp(90)),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,PixelFormat.TRANSLUCENT);
     params.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;params.y=dp(54);chatPanel=panel;
@@ -153,6 +160,7 @@ public class BosleyOverlayService extends Service {
       overlayRecognizer.startListening(intent);
     }catch(Exception error){if(chatVoice!=null)chatVoice.setEnabled(true);appendChat("BOSLEY: Could not start overlay voice. Opening the normal voice screen.");openCompanion("voice");}
   }
+  void stopOverlayVoice(){try{if(overlayRecognizer!=null){overlayRecognizer.cancel();overlayRecognizer.destroy();overlayRecognizer=null;}}catch(Exception ignored){}endVoiceForeground();if(chatVoice!=null)chatVoice.setEnabled(voiceInputEnabled&&!chatRequestBusy);}
   void speakOverlayText(String text){try{if(overlayTts!=null&&text!=null&&!text.trim().isEmpty())overlayTts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"bosley-overlay-reply");}catch(Exception ignored){}}
   String routeOverlayCommand(String message,String token,String anon,String base)throws Exception{
     String lower=message.trim();
@@ -195,7 +203,7 @@ public class BosleyOverlayService extends Service {
           reader.close();connection.disconnect();if(status<200||status>=300)throw new Exception("Bosley returned HTTP "+status);if(answer.trim().isEmpty())throw new Exception("Bosley returned an empty response.");
         }
       }catch(Exception e){failure=e.getMessage()==null?"Connection failed.":e.getMessage();}
-      final String result=answer,err=failure;final boolean shouldSpeak=voiceReply;voiceReply=false;
+      final String result=answer,err=failure;final boolean shouldSpeak=voiceReply||getSharedPreferences("bosley_overlay_preferences",MODE_PRIVATE).getBoolean("voice_replies_enabled",false);voiceReply=false;
       new Handler(Looper.getMainLooper()).post(()->{if(chatOutput!=null){String current=chatOutput.getText().toString();int pos=current.lastIndexOf("\n\nBOSLEY: Thinking…");if(pos>=0)chatOutput.setText(current.substring(0,pos));String response=err==null?"BOSLEY: "+result:"BOSLEY: "+err;appendChat(response);if(shouldSpeak&&err==null)speakOverlayText(result);}chatRequestBusy=false;if(chatSend!=null)chatSend.setEnabled(true);if(chatVoice!=null)chatVoice.setEnabled(true);});
     }).start();
   }

@@ -2126,7 +2126,7 @@ function dispatchAutomationCommand(raw){
 if(handleAutomationApprovalCommand(raw))return true;const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;
  const remotePrefix=t.match(/^(?:please\s+)?(?:on|using|send(?: this)? to)\s+(?:my\s+)?(windows(?: laptop)?|laptop|pc|computer)\s*[:,]?\s+(.+)$/i);const remoteSuffix=t.match(/^(.+?)\s+(?:on|to)\s+(?:my\s+)?(windows(?: laptop)?|laptop|pc|computer)[.!]?$/i);const remoteMatch=remotePrefix?[remotePrefix[0],remotePrefix[1],remotePrefix[2]]:remoteSuffix?[remoteSuffix[0],remoteSuffix[2],remoteSuffix[1]]:null;
  if(remoteMatch){queueRemoteDeviceCommand(remoteMatch[2].trim(),remoteMatch[1].replace(/\b\w/g,c=>c.toUpperCase()),"typed chat");return true}
- const createFile=t.match(/^(?:bosley[, ]+)?(?:please\\s+)?(?:create|make|write|save)(?:\\s+me)?\\s+(?:a\\s+)?text file(?:\\s+(?:called|named)\\s+([^:\\n]+?))?(?:\\s*(?::|with content|containing|that says)\\s*([\\s\\S]+))?$/i);
+ const createFile=t.match(/^(?:bosley[, ]+)?(?:please\s+)?(?:create|make|write|save)(?:\s+me)?\s+(?:a\s+)?text file(?:\s+(?:called|named)\s+([^:\n]+?))?(?:\s*(?::|with content|containing|that says)\s*([\s\S]+))?$/i);
  if(createFile){
   const name=(createFile[1]||"bosley-note.txt").trim().replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";
   const content=String(createFile[2]||"").trim();

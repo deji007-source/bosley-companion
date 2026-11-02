@@ -131,21 +131,23 @@ public class BosleyOverlayService extends Service {
   void showTranscriptPanel(String transcript,String status){
     if(wm==null)return;
     if(transcriptPanel!=null){try{wm.removeView(transcriptPanel);}catch(Exception ignored){}transcriptPanel=null;}
-    LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(14),dp(12),dp(14),dp(12));
-    GradientDrawable panelBg=new GradientDrawable();panelBg.setColor(Color.rgb(18,18,22));panelBg.setCornerRadius(dp(18));panelBg.setStroke(dp(1),0x99FFFFFF);card.setBackground(panelBg);
-    TextView heading=new TextView(this);heading.setText("BOSLEY VOICE");heading.setTextColor(Color.WHITE);heading.setTextSize(11);heading.setLetterSpacing(.12f);card.addView(heading);
-    statusText=new TextView(this);statusText.setText(status);statusText.setTextColor(0xFFB8C4D8);statusText.setTextSize(12);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,-2);sp.topMargin=dp(5);card.addView(statusText,sp);
-    transcriptText=new TextView(this);transcriptText.setText(transcript==null||transcript.isEmpty()?"Your transcription will appear here…":transcript);transcriptText.setTextColor(Color.WHITE);transcriptText.setTextSize(15);transcriptText.setTextIsSelectable(true);transcriptText.setMinHeight(dp(54));transcriptText.setGravity(Gravity.CENTER_VERTICAL);LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.topMargin=dp(8);tp.bottomMargin=dp(10);card.addView(transcriptText,tp);
-    LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);
-    Button open=new Button(this);open.setText("Open app");open.setTextSize(11);open.setMinWidth(0);open.setMinimumWidth(0);open.setPadding(dp(8),0,dp(8),0);open.setOnClickListener(v->openCompanion("open"));actions.addView(open);
-    Button talk=new Button(this);talk.setText("Talk");talk.setOnClickListener(v->startVoiceCapture());actions.addView(talk);
-    Button send=new Button(this);send.setText("Send");send.setOnClickListener(v->queueVoiceDraft());actions.addView(send);
-    Button close=new Button(this);close.setText("×");close.setOnClickListener(v->removeTranscriptPanel());actions.addView(close);
+    LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(12),dp(10),dp(12),dp(10));
+    GradientDrawable panelBg=new GradientDrawable();panelBg.setColor(Color.rgb(20,20,25));panelBg.setCornerRadius(dp(16));panelBg.setStroke(dp(1),0x887F8A9A);card.setBackground(panelBg);card.setElevation(dp(10));
+    TextView heading=new TextView(this);heading.setText("BOSLEY VOICE");heading.setTextColor(Color.WHITE);heading.setTextSize(12);heading.setTypeface(null,android.graphics.Typeface.BOLD);heading.setLetterSpacing(.10f);card.addView(heading);
+    statusText=new TextView(this);statusText.setText(status);statusText.setTextColor(0xFFB8C4D8);statusText.setTextSize(11);statusText.setTypeface(null,android.graphics.Typeface.BOLD);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,-2);sp.topMargin=dp(4);card.addView(statusText,sp);
+    transcriptText=new TextView(this);transcriptText.setText(transcript==null||transcript.isEmpty()?"Your transcription will appear here…":transcript);transcriptText.setTextColor(Color.WHITE);transcriptText.setTextSize(14);transcriptText.setTypeface(null,android.graphics.Typeface.BOLD);transcriptText.setTextIsSelectable(true);transcriptText.setMinHeight(dp(44));transcriptText.setGravity(Gravity.CENTER_VERTICAL);LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.topMargin=dp(6);tp.bottomMargin=dp(8);card.addView(transcriptText,tp);
+    LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);actions.setOrientation(LinearLayout.HORIZONTAL);
+    Button open=new Button(this);open.setText("Open app");styleVoiceButton(open,false);open.setOnClickListener(v->openCompanion("open"));actions.addView(open,voiceButtonParams());
+    Button talk=new Button(this);talk.setText("Talk");styleVoiceButton(talk,false);talk.setOnClickListener(v->startVoiceCapture());actions.addView(talk,voiceButtonParams());
+    Button send=new Button(this);send.setText("Send");styleVoiceButton(send,true);send.setOnClickListener(v->queueVoiceDraft());actions.addView(send,voiceButtonParams());
+    Button close=new Button(this);close.setText("×");styleVoiceButton(close,false);close.setOnClickListener(v->removeTranscriptPanel());actions.addView(close,voiceButtonParams());
     card.addView(actions);transcriptPanel=card;
-    WindowManager.LayoutParams pp=new WindowManager.LayoutParams(Math.min(getResources().getDisplayMetrics().widthPixels-dp(28),dp(340)),-2,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+    WindowManager.LayoutParams pp=new WindowManager.LayoutParams(Math.min(getResources().getDisplayMetrics().widthPixels-dp(36),dp(310)),-2,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     pp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;pp.y=dp(58);
     try{wm.addView(card,pp);}catch(Exception e){transcriptPanel=null;}
   }
+  LinearLayout.LayoutParams voiceButtonParams(){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(36),1f);p.leftMargin=dp(3);p.rightMargin=dp(3);return p;}
+  void styleVoiceButton(Button b,boolean primary){b.setAllCaps(false);b.setTextSize(10);b.setTypeface(null,android.graphics.Typeface.BOLD);b.setTextColor(Color.WHITE);b.setMinWidth(0);b.setMinimumWidth(0);b.setMinHeight(0);b.setMinimumHeight(0);b.setPadding(dp(3),0,dp(3),0);GradientDrawable d=new GradientDrawable();d.setColor(primary?0xFF34445B:0xFF292B32);d.setCornerRadius(dp(10));d.setStroke(dp(1),primary?0xFF7188A8:0xFF454954);b.setBackground(d);b.setBackgroundTintList(null);}
   void queueVoiceDraft(){
     String value=currentTranscript==null?"":currentTranscript.trim();
     if(value.isEmpty()){if(statusText!=null)statusText.setText("Say something first, then tap Send.");return;}

@@ -23,6 +23,19 @@ for (const [index, source] of inlineScripts.entries()) {
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 
+
+assert.ok(html.includes('data-open-view="agents-panel"'), "Dedicated AI Agents side-panel launcher must be visible");
+assert.ok(html.includes('id="agents-panel"'), "Dedicated AI Agents panel must exist in the dock");
+assert.ok(html.includes('panel:"agents-panel",label:"AI Agents"'), "AI Agents must have its own dock tab");
+assert.ok(html.includes("agents:()=>drawAgents()"), "AI Agents panel renderer must be registered");
+assert.ok(html.includes('"/functions/v1/agent-gateway"'), "AI Agents must use the authenticated Supabase provider gateway");
+assert.ok(html.includes('gateway("providers")'), "AI Agents must load account-scoped provider connections");
+assert.ok(html.includes('gateway("connect",{provider,apiKey:key.value.trim(),model:model.value.trim()})'), "AI provider API keys must be saved through the encrypted server gateway");
+assert.ok(html.includes('gateway("test",{provider})'), "AI Agents must expose provider connection tests");
+assert.ok(html.includes('gateway("chat",{provider,messages:[{role:"user",content:prompt}]})'), "AI Agents must route prompts to a selected connected provider");
+assert.ok(html.includes('type="password" autocomplete="off" maxlength="500"'), "Provider API keys must use masked non-persistent password inputs");
+assert.ok(html.includes('gateway("disconnect",{provider:button.dataset.agentDisconnect})'), "AI Agents must support deleting a provider connection");
+
 assert.ok(html.includes('id="plus"'), "Main chat composer must expose the Bosley plus button");
 assert.ok(html.includes('id="attach-menu"'), "Plus button must open the attachment and tools menu");
 assert.ok(html.includes('id="attach-files"'), "Attachment menu must allow photo and file selection");

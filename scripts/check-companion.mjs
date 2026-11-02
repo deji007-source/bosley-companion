@@ -470,3 +470,5 @@ assert.ok(overlayInstaller.includes('speakOverlayText(result)'), "Voice-originat
 assert.ok(overlayInstaller.includes('android.speech.RecognitionService'), "Android manifest must declare speech recognition service visibility");
 
 assert.ok(overlayInstaller.includes('if(chatPanel==null)expandPanel();'), "Long-press voice must create the native panel before using its composer");
+
+assert.ok(overlayInstaller.includes('bosley_overlay_position'), "Floating widget position must persist across service restarts");

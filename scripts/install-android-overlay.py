@@ -34,12 +34,17 @@ import android.view.*;
 import android.widget.*;
 import android.graphics.PixelFormat;
 import android.util.DisplayMetrics;
+import android.speech.SpeechRecognizer;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
+import android.os.Bundle;
 
 public class BosleyOverlayService extends Service {
   static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE";
   int widgetWidth=110,widgetHeight=38,cornerDp=22,borderDp=1,eyeWidth=10,eyeHeight=20,eyeGapDp=12; String eyeShape="soft-square";
-  WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
-  @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);}
+  WindowManager wm; View bar; WindowManager.LayoutParams lp; SpeechRecognizer overlayRecognizer; TextToSpeech overlayTts; boolean voiceReply=false; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
+  @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);overlayTts=new TextToSpeech(this,status->{if(status==TextToSpeech.SUCCESS){overlayTts.setLanguage(java.util.Locale.getDefault());overlayTts.setSpeechRate(0.96f);}});}
   @Override public int onStartCommand(Intent i,int flags,int id){
     if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
@@ -60,7 +65,7 @@ public class BosleyOverlayService extends Service {
     frame.addView(inner,new LinearLayout.LayoutParams(-1,-2));bar=frame;
     lp=new WindowManager.LayoutParams(dp(widgetWidth),dp(widgetHeight),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     lp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;lp.y=dp(7);
-    frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;openCompanion("voice");};
+    frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;startOverlayVoice();};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
         case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
@@ -69,7 +74,7 @@ public class BosleyOverlayService extends Service {
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
   }
-  LinearLayout chatPanel; EditText chatInput; TextView chatOutput; Button chatSend; ScrollView chatScroll; boolean chatRequestBusy=false;
+  LinearLayout chatPanel; EditText chatInput; TextView chatOutput; Button chatSend,chatVoice; ScrollView chatScroll; boolean chatRequestBusy=false;
   void expandPanel(){
     if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;return;}
     LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(dp(12),dp(10),dp(12),dp(10));
@@ -80,33 +85,86 @@ public class BosleyOverlayService extends Service {
     panel.addView(header);
     chatScroll=new ScrollView(this);chatOutput=new TextView(this);chatOutput.setTextColor(0xffe8eaf0);chatOutput.setTextSize(13);chatOutput.setText("Ready. Messages are sent directly from this panel.");chatOutput.setPadding(dp(4),dp(8),dp(4),dp(8));chatScroll.addView(chatOutput);panel.addView(chatScroll,new LinearLayout.LayoutParams(-1,0,1));
     LinearLayout compose=new LinearLayout(this);compose.setGravity(Gravity.CENTER_VERTICAL);chatInput=new EditText(this);chatInput.setSingleLine(false);chatInput.setMaxLines(3);chatInput.setTextColor(Color.WHITE);chatInput.setHintTextColor(0xff9ba3b4);chatInput.setHint("Message Bosley…");chatInput.setTextSize(14);compose.addView(chatInput,new LinearLayout.LayoutParams(0,dp(48),1));
+    chatVoice=new Button(this);chatVoice.setText("🎙");chatVoice.setContentDescription("Talk to Bosley");GradientDrawable micBg=new GradientDrawable();micBg.setColor(0xff30394a);micBg.setShape(GradientDrawable.OVAL);chatVoice.setBackground(micBg);compose.addView(chatVoice,new LinearLayout.LayoutParams(dp(48),dp(48)));chatVoice.setOnClickListener(v->startOverlayVoice());
     chatSend=new Button(this);chatSend.setText("Send");compose.addView(chatSend,new LinearLayout.LayoutParams(dp(68),dp(48)));panel.addView(compose);chatSend.setOnClickListener(v->sendOverlayMessage());
     WindowManager.LayoutParams params=new WindowManager.LayoutParams(Math.min(dp(360),getResources().getDisplayMetrics().widthPixels-dp(24)),dp(390),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,PixelFormat.TRANSLUCENT);
     params.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;params.y=dp(58);chatPanel=panel;
     try{wm.addView(panel,params);chatInput.requestFocus();panel.postDelayed(()->{try{params.flags=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;wm.updateViewLayout(panel,params);android.view.inputmethod.InputMethodManager keyboard=(android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);keyboard.showSoftInput(chatInput,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}catch(Exception ignored){}},180);}catch(Exception e){chatPanel=null;Toast.makeText(this,"Could not open Bosley panel.",Toast.LENGTH_SHORT).show();}
   }
   void appendChat(String text){if(chatOutput==null)return;chatOutput.append("\n\n"+text);if(chatScroll!=null)chatScroll.post(()->chatScroll.fullScroll(View.FOCUS_DOWN));}
+  void startOverlayVoice(){
+    if(chatRequestBusy){appendChat("Bosley is still processing the previous request.");return;}
+    if(Build.VERSION.SDK_INT>=23&&checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
+      appendChat("Microphone permission is needed. Opening Bosley once so Android can ask for permission; after granting it, voice can start directly from this floating panel.");
+      openCompanion("voice");return;
+    }
+    if(!SpeechRecognizer.isRecognitionAvailable(this)){appendChat("Speech recognition is not available on this device. Check that a speech recognition service is installed and enabled.");return;}
+    try{
+      if(overlayRecognizer!=null){try{overlayRecognizer.destroy();}catch(Exception ignored){}overlayRecognizer=null;}
+      overlayRecognizer=SpeechRecognizer.createSpeechRecognizer(this);
+      overlayRecognizer.setRecognitionListener(new RecognitionListener(){
+        public void onReadyForSpeech(Bundle params){appendChat("BOSLEY: Listening…");if(chatVoice!=null)chatVoice.setEnabled(false);}
+        public void onBeginningOfSpeech(){}
+        public void onRmsChanged(float rmsdB){}
+        public void onBufferReceived(byte[] buffer){}
+        public void onEndOfSpeech(){if(chatVoice!=null)chatVoice.setEnabled(true);}
+        public void onError(int error){if(chatVoice!=null)chatVoice.setEnabled(true);appendChat("BOSLEY: Voice input ended. Tap the microphone and try again (code "+error+").");}
+        public void onResults(Bundle results){if(chatVoice!=null)chatVoice.setEnabled(true);java.util.ArrayList<String> matches=results==null?null:results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);String spoken=matches==null||matches.isEmpty()?"":matches.get(0).trim();if(spoken.isEmpty()){appendChat("BOSLEY: I didn't catch that. Please try again.");return;}voiceReply=true;if(chatInput!=null)chatInput.setText(spoken);sendOverlayMessage();}
+        public void onPartialResults(Bundle results){}
+        public void onEvent(int eventType,Bundle params){}
+      });
+      Intent intent=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+      intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+      intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true);
+      intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1);
+      intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,java.util.Locale.getDefault().toLanguageTag());
+      overlayRecognizer.startListening(intent);
+    }catch(Exception error){if(chatVoice!=null)chatVoice.setEnabled(true);appendChat("BOSLEY: Could not start voice input: "+(error.getMessage()==null?"Speech service unavailable":error.getMessage()));}
+  }
+  void speakOverlayText(String text){try{if(overlayTts!=null&&text!=null&&!text.trim().isEmpty())overlayTts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"bosley-overlay-reply");}catch(Exception ignored){}}
+  String routeOverlayCommand(String message,String token,String anon,String base)throws Exception{
+    String lower=message.trim();
+    boolean phone=lower.matches("(?is)^(?:hey\\s+)?(?:bosley[, ]+)?(?:please\\s+)?(?:call|phone|dial)\\s+.+$")||lower.matches("(?is)^(?:hey\\s+)?(?:bosley[, ]+)?(?:please\\s+)?(?:send\\s+(?:a\\s+)?(?:text|message)|text|message|whatsapp)\\s+.+$");
+    boolean automation=phone||lower.matches("(?is)^(?:hey\\s+)?(?:bosley[, ]+)?(?:please\\s+)?(?:open|launch|start|close|quit|switch to|go to|turn on|turn off|enable|disable|toggle|connect|disconnect|lock|unlock|wake up|sleep|mute|unmute|volume up|volume down|take a screenshot|capture the screen|move .+ to desktop \\d+|focus|minimize|maximize|click|tap|type|search|look up|play|pause|resume|stop|skip|next song|previous song)\\b.*$");
+    if(!automation)return null;
+    String endpoint=base+"/functions/v1/remote-action";
+    org.json.JSONObject payload=new org.json.JSONObject().put("type",phone?"phone":"automation").put("instruction",lower);
+    java.net.HttpURLConnection c=(java.net.HttpURLConnection)new java.net.URL(endpoint).openConnection();
+    c.setRequestMethod("POST");c.setConnectTimeout(12000);c.setReadTimeout(20000);c.setDoOutput(true);
+    c.setRequestProperty("Content-Type","application/json");c.setRequestProperty("Authorization","Bearer "+token);c.setRequestProperty("apikey",anon);
+    c.getOutputStream().write(payload.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    int status=c.getResponseCode();java.io.InputStream input=status>=200&&status<300?c.getInputStream():c.getErrorStream();
+    java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] chunk=new byte[2048];int n;while(input!=null&&(n=input.read(chunk))>0)bytes.write(chunk,0,n);
+    c.disconnect();org.json.JSONObject result=new org.json.JSONObject(bytes.toString("UTF-8"));
+    if(status<200||status>=300||!result.optBoolean("ok",false))throw new Exception(result.optString("error",result.optString("telegramDetail","Automation gateway returned HTTP "+status)));
+    if(phone&&!result.optBoolean("telegramNotified",false))throw new Exception(result.optString("telegramDetail","Telegram-to-MacroDroid delivery was not confirmed."));
+    if(phone)return "Command delivered to the linked Telegram automation trigger. MacroDroid must have the matching Bosley notification rule enabled to carry it out.";
+    return "Automation queued. Laptop listener notification: "+(result.optBoolean("listenerNotified",false)?"sent":"not confirmed")+". Telegram trigger: "+(result.optBoolean("telegramNotified",false)?"sent":"not confirmed")+".";
+  }
   void sendOverlayMessage(){
     if(chatRequestBusy||chatInput==null)return;String message=chatInput.getText().toString().trim();if(message.isEmpty())return;
-    chatInput.setText("");appendChat("YOU: "+message);chatRequestBusy=true;chatSend.setEnabled(false);appendChat("BOSLEY: Thinking…");
+    chatInput.setText("");appendChat("YOU: "+message);chatRequestBusy=true;if(chatSend!=null)chatSend.setEnabled(false);if(chatVoice!=null)chatVoice.setEnabled(false);appendChat("BOSLEY: Thinking…");
     new Thread(()->{
       String answer="";String failure=null;
       try{
         android.content.SharedPreferences prefs=getSharedPreferences("bosley_native_chat",MODE_PRIVATE);
         String token=prefs.getString("access_token",""),anon=prefs.getString("anon_key",""),base=prefs.getString("supabase_url","");
-        if(token.isEmpty()||anon.isEmpty()||base.isEmpty())throw new Exception("Sign in to Bosley once to enable direct sending from the floating panel.");
-        java.net.HttpURLConnection connection=(java.net.HttpURLConnection)new java.net.URL(base+"/functions/v1/companion-chat").openConnection();
-        connection.setRequestMethod("POST");connection.setConnectTimeout(15000);connection.setReadTimeout(45000);connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type","application/json");connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("apikey",anon);connection.setRequestProperty("Accept","text/event-stream");
-        org.json.JSONArray messages=new org.json.JSONArray().put(new org.json.JSONObject().put("role","user").put("content",message));
-        byte[] body=new org.json.JSONObject().put("messages",messages).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);connection.getOutputStream().write(body);
-        int status=connection.getResponseCode();java.io.InputStream stream=status>=200&&status<300?connection.getInputStream():connection.getErrorStream();
-        java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));String line;
-        while((line=reader.readLine())!=null){if(!line.startsWith("data:"))continue;String data=line.substring(5).trim();if(data.isEmpty()||"[DONE]".equals(data))continue;try{org.json.JSONObject packet=new org.json.JSONObject(data);if(packet.has("error"))throw new Exception(packet.getJSONObject("error").optString("message","Bosley request failed."));org.json.JSONArray choices=packet.optJSONArray("choices");org.json.JSONObject delta=choices==null?null:choices.optJSONObject(0).optJSONObject("delta");if(delta!=null)answer+=delta.optString("content","");}catch(org.json.JSONException ignored){}}
-        reader.close();connection.disconnect();if(status<200||status>=300)throw new Exception("Bosley returned HTTP "+status);if(answer.trim().isEmpty())throw new Exception("Bosley returned an empty response.");
+        if(token.isEmpty()||anon.isEmpty()||base.isEmpty())throw new Exception("Sign in to Bosley once to enable the floating panel.");
+        answer=routeOverlayCommand(message,token,anon,base);
+        if(answer==null){
+          java.net.HttpURLConnection connection=(java.net.HttpURLConnection)new java.net.URL(base+"/functions/v1/companion-chat").openConnection();
+          connection.setRequestMethod("POST");connection.setConnectTimeout(15000);connection.setReadTimeout(45000);connection.setDoOutput(true);
+          connection.setRequestProperty("Content-Type","application/json");connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("apikey",anon);connection.setRequestProperty("Accept","text/event-stream");
+          org.json.JSONArray messages=new org.json.JSONArray().put(new org.json.JSONObject().put("role","user").put("content",message));
+          byte[] body=new org.json.JSONObject().put("messages",messages).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);connection.getOutputStream().write(body);
+          int status=connection.getResponseCode();java.io.InputStream stream=status>=200&&status<300?connection.getInputStream():connection.getErrorStream();
+          java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));String line;
+          while((line=reader.readLine())!=null){if(!line.startsWith("data:"))continue;String data=line.substring(5).trim();if(data.isEmpty()||"[DONE]".equals(data))continue;try{org.json.JSONObject packet=new org.json.JSONObject(data);if(packet.has("error"))throw new Exception(packet.getJSONObject("error").optString("message","Bosley request failed."));org.json.JSONArray choices=packet.optJSONArray("choices");org.json.JSONObject delta=choices==null?null:choices.optJSONObject(0).optJSONObject("delta");if(delta!=null)answer+=delta.optString("content","");}catch(org.json.JSONException ignored){}}
+          reader.close();connection.disconnect();if(status<200||status>=300)throw new Exception("Bosley returned HTTP "+status);if(answer.trim().isEmpty())throw new Exception("Bosley returned an empty response.");
+        }
       }catch(Exception e){failure=e.getMessage()==null?"Connection failed.":e.getMessage();}
-      final String result=answer,err=failure;
-      new Handler(Looper.getMainLooper()).post(()->{if(chatOutput!=null){String current=chatOutput.getText().toString();int pos=current.lastIndexOf("\n\nBOSLEY: Thinking…");if(pos>=0)chatOutput.setText(current.substring(0,pos));appendChat(err==null?"BOSLEY: "+result:"BOSLEY: "+err);}chatRequestBusy=false;if(chatSend!=null)chatSend.setEnabled(true);});
+      final String result=answer,err=failure;final boolean shouldSpeak=voiceReply;voiceReply=false;
+      new Handler(Looper.getMainLooper()).post(()->{if(chatOutput!=null){String current=chatOutput.getText().toString();int pos=current.lastIndexOf("\n\nBOSLEY: Thinking…");if(pos>=0)chatOutput.setText(current.substring(0,pos));String response=err==null?"BOSLEY: "+result:"BOSLEY: "+err;appendChat(response);if(shouldSpeak&&err==null)speakOverlayText(result);}chatRequestBusy=false;if(chatSend!=null)chatSend.setEnabled(true);if(chatVoice!=null)chatVoice.setEnabled(true);});
     }).start();
   }
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
@@ -138,7 +196,7 @@ public class BosleyOverlayService extends Service {
   void removeGuide(){guideStatusView=null;if(wm!=null&&guideTarget!=null){try{wm.removeView(guideTarget);}catch(Exception ignored){}guideTarget=null;}if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
   void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-  @Override public void onDestroy(){removeBar();if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}removeGuide();super.onDestroy();}
+  @Override public void onDestroy(){removeBar();if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}removeGuide();if(overlayRecognizer!=null){try{overlayRecognizer.destroy();}catch(Exception ignored){}overlayRecognizer=null;}if(overlayTts!=null){try{overlayTts.stop();overlayTts.shutdown();}catch(Exception ignored){}overlayTts=null;}super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
 }''')
 (src / "BosleyTargetAccessibilityService.java").write_text(r'''package com.bosley.companion;

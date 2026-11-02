@@ -1134,9 +1134,8 @@ async function handleNativeQuickAction(){
  }catch(error){console.warn("Bosley quick action could not be read",error);return false}
  finally{nativeActionBusy=false}
 }
-window.addEventListener("bosleyNativeAction",event=>{
- const action=String(event.detail?.action||"");
- applyNativeQuickAction(action,window.Capacitor?.Plugins?.BosleyOverlay).catch(error=>console.warn("Native panel action failed",error));
+window.addEventListener("bosleyNativeAction",()=>{
+ handleNativeQuickAction().catch(error=>console.warn("Native panel action failed",error));
 });
 document.addEventListener("DOMContentLoaded",()=>{
  let attempts=0;

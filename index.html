@@ -796,17 +796,20 @@ let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=
  // bootstrap script cannot see this IIFE's user binding.
  let bosleyVoiceDraftBusy=false;
  async function consumeFloatingVoiceDraft(){
-  if(bosleyVoiceDraftBusy||!user||!window.Capacitor?.Plugins?.BosleyOverlay?.consumeVoiceDraft)return;
+  const overlay=window.Capacitor?.Plugins?.BosleyOverlay;
+  if(bosleyVoiceDraftBusy||!user||!overlay?.peekVoiceDraft||!overlay?.acknowledgeVoiceDraft)return;
   bosleyVoiceDraftBusy=true;
   try{
-   const result=await window.Capacitor.Plugins.BosleyOverlay.consumeVoiceDraft();
+   const result=await overlay.peekVoiceDraft();
    const spoken=String(result?.text||"").trim();
-   if(spoken){
+   const draftId=String(result?.id||"");
+   if(spoken&&draftId){
     const field=$("#in");
     if(field)field.value=spoken;
-    await send(spoken);
+    const delivered=await send(spoken);
+    if(delivered===true)await overlay.acknowledgeVoiceDraft({id:draftId});
    }
-  }catch(error){console.warn("Could not hand floating voice transcript to Bosley:",error)}
+  }catch(error){console.warn("Could not hand floating voice transcript to Bosley; draft remains queued:",error)}
   finally{bosleyVoiceDraftBusy=false}
  }
  document.addEventListener("visibilitychange",()=>{if(!document.hidden)consumeFloatingVoiceDraft()});
@@ -1420,15 +1423,15 @@ async function renderBosleySkills(){
 }
 
 async function send(text,imageData=null){
- if(S.busy||(!text&&!imageData))return;
+ if(S.busy||(!text&&!imageData))return false;
  if(user){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
- if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}
- if(dispatchAgentHandoffCommand(text)){addMsg("you",text);return}
- if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return}
+ if(createPlannerTaskFromCommand(text)){addMsg("you",text);return true}
+ if(dispatchAgentHandoffCommand(text)){addMsg("you",text);return true}
+ if(dispatchAutomationCommand(text)){addMsg("you",text);addMsg("sys","Handled as a Bosley command. Check Automation → Execution history for the result.");return true}
  addMsg("you",imageData?(text||"What is in this image?"):text);activityEvent("Message sent to Bosley: "+(text||"Image attached").slice(0,140),"message");
  if(imageData){const last=chat.lastElementChild;const img=document.createElement("img");img.className="chat-image";img.alt="Image sent to Bosley";img.src=imageData;last?.appendChild(img)}
  const sess=db?(await db.auth.getSession()).data.session:null;
- if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return}
+ if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return false}
  const agentContext=await buildBosleyAgentContext();
  const styleContext="\n\nBOSLEY CONVERSATION STYLE:\nSpeak naturally, confidently, and conversationally rather than like a formal helpdesk. Be direct, warm, witty when appropriate, and comfortable with casual language and occasional mild profanity when it fits the user's tone. Do not force slang or swear in every reply. Be honest about uncertainty, never claim an automation ran unless its executor confirms success, and keep instructions clear.\n";
  const skillContext=[agentContext,buildActiveSkillContext(),buildContextEngineContext()].filter(Boolean).join("\n\n")+styleContext;
@@ -1463,10 +1466,12 @@ async function send(text,imageData=null){
   history.push({role:"assistant",content:out});S.backend=true;S.busy=false;setPhase("Response ready","success");phase.dataset.phase="success";activityEvent("Bosley generated a response. No device action is reported unless its connected executor confirms it.","success");setBosleyCompanionState("success");eyes();
   try{await persistChatExchange(imageData?"[Image attached] "+(text||"Please describe this image."):text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
   speak(out);
+  return true;
  }catch(e){
   history.pop();S.busy=false;S.backend=false;setBosleyCompanionState("error");
   p.className="err";p.textContent=(e.name==="AbortError"?"The AI took too long to respond. ":"")+(e.name==="AbortError"?"Try again.":"Couldn't get a reply: "+String(e?.message||"Unknown connection error").slice(0,240)+". Your message wasn't answered; try again.");setPhase("Could not complete","error");phase.dataset.phase="error";activityEvent("Bosley response failed: "+String(e?.message||"Unknown error").slice(0,150),"error");
   flash();
+  return false;
  }finally{clearTimeout(to);setTimeout(()=>{if(!S.busy){setBosleyCompanionState("idle");eyes()}},650)}
 }
 let pendingImageData=null;

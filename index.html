@@ -1824,7 +1824,30 @@ async function runAction(step,approved=false){
  if(step.type==="open_url"){const url=normalizeUrl(input);const b=bridge();if(b&&typeof b.request==="function"){const caps=await b.getCapabilities();if(caps?.actions?.includes("open_external_url")){const result=await b.request({action:"open_external_url",payload:{url}});if(result?.ok!==true){if(result?.cancelled)return "Opening website cancelled.";throw Error(result?.error||"Windows did not confirm opening the website.")}return "Opened website in a restored desktop window: "+url}}const w=window.open(url,"_blank","popup,width=1100,height=760,left=80,top=60");if(!w)throw Error("The browser blocked the new tab. Allow pop-ups for Bosley and retry.");try{w.opener=null}catch{};return "Opened website: "+url}
  if(step.type==="search_web"){if(!input)throw Error("Enter what to search for.");const url="https://www.google.com/search?q="+encodeURIComponent(input);const b=bridge();if(b&&typeof b.request==="function"){const caps=await b.getCapabilities();if(caps?.actions?.includes("open_external_url")){const result=await b.request({action:"open_external_url",payload:{url}});if(result?.ok!==true){if(result?.cancelled)return "Opening search cancelled.";throw Error(result?.error||"Windows did not confirm opening the search.")}return "Opened web search in a restored desktop window for: "+input}}const w=window.open(url,"_blank","popup,width=1100,height=760,left=80,top=60");if(!w)throw Error("The browser blocked the search tab.");try{w.opener=null}catch{};return "Opened web search for: "+input}
  if(step.type==="notify_phone"){if(!user||!db)throw Error("Sign in first to send a phone notification.");if(input.length>160)throw Error("Phone notifications are limited to 160 characters.");if(!confirm("Send this notification to your connected phone through MacroDroid?\\n\\n"+input+"\\n\\nContinue?"))return "Phone notification cancelled by user.";const sess=(await db.auth.getSession()).data.session;if(!sess)throw Error("Your session expired. Sign in again.");const response=await fetch(SUPABASE_URL+"/functions/v1/macrodroid-bridge-",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+sess.access_token},body:JSON.stringify({action:"notify",message:input})});let result={};try{result=await response.json()}catch{}if(!response.ok||result.ok!==true)throw Error(result.error||("MacroDroid bridge failed (HTTP "+response.status+")."));return "MacroDroid accepted the phone notification request. Verify that the notification appeared on your device."}
- if(step.type==="create_text_file") {const name=(step.name||"bosley-note.txt").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";const blob=new Blob([input],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);return "Browser initiated download: "+name}
+ if(step.type==="create_text_file") {
+  const name=(step.name||"bosley-note.txt").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";
+  if(!input)throw Error("The text file is empty. Tell me what to put in it.");
+  const androidFiles=window.Capacitor?.Plugins?.BosleyOverlay;
+  if(androidFiles&&typeof androidFiles.saveTextFile==="function"){
+   const saved=await androidFiles.saveTextFile({name,content:input});
+   if(saved?.saved===true)return "Android saved "+name+" using the system file picker.";
+   if(saved?.cancelled===true)return "File save cancelled. Nothing was saved.";
+   throw Error(saved?.error||"Android did not confirm saving the file.");
+  }
+  const b=bridge();
+  if(b&&typeof b.request==="function"){
+   const caps=await b.getCapabilities();
+   if(caps?.actions?.includes("save_text_file")){
+    const result=await b.request({action:"save_text_file",payload:{name,content:input}});
+    if(result?.ok===true)return "Windows saved "+name+" to the location you selected.";
+    if(result?.cancelled===true)return "File save cancelled. Nothing was saved.";
+    throw Error(result?.error||"Windows did not confirm saving the file.");
+   }
+  }
+  const blob=new Blob([input],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  return "Browser download started for "+name+". Check your Downloads folder.";
+ }
  if(step.type==="draft_message"){const recipient=String(step.recipient||"").trim(),body=input;if(!body)throw Error("Message body is empty.");const details="Recipient: "+(recipient||"not specified")+"\n\n"+body;if(step.draftOnly){const name=(step.name||"bosley-message-draft.txt").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-message-draft.txt";const blob=new Blob([details],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);return "Message draft created and browser download initiated: "+name+". Nothing was sent."}if(!approved){if(!confirm("Bosley prepared this message. Review before sending.\n\n"+details+"\n\nOK = continue to available send integration; Cancel = keep as draft."))return "Draft retained; sending cancelled by user."}
   const b=bridge();if(!b) {const blob=new Blob([details],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="bosley-message-draft.txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);return "No messaging connector is installed. Draft downloaded; nothing was sent."}
   if(typeof b.getCapabilities==="function"){const caps=await b.getCapabilities();if(!caps||!Array.isArray(caps.actions)||!caps.actions.includes("send_message"))throw Error("Desktop bridge does not advertise send_message capability; draft was not sent.")}
@@ -2092,9 +2115,24 @@ function queueAutomationForChatApproval(wf){
  addMsg("bosley",message);speak("I found "+wf.name+". Nothing has run yet. Would you like me to run it? Say yes or no.");
  activityEvent("Waiting for chat approval: "+wf.name,"pending");
 }
-function dispatchAutomationCommand(raw){if(handleAutomationApprovalCommand(raw))return true;const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;
+let pendingChatFileDraft=null;
+function dispatchAutomationCommand(raw){
+ const incoming=String(raw||"").trim();
+ if(pendingChatFileDraft){
+  const draft=pendingChatFileDraft;pendingChatFileDraft=null;
+  if(/^(?:cancel|never mind|no thanks)$/i.test(incoming)){addMsg("bosley","File creation cancelled. Nothing was saved.");return true}
+  executeDirectChatAction({type:"create_text_file",name:draft.name,input:incoming},"create text file "+draft.name);return true;
+ }
+if(handleAutomationApprovalCommand(raw))return true;const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;
  const remotePrefix=t.match(/^(?:please\s+)?(?:on|using|send(?: this)? to)\s+(?:my\s+)?(windows(?: laptop)?|laptop|pc|computer)\s*[:,]?\s+(.+)$/i);const remoteSuffix=t.match(/^(.+?)\s+(?:on|to)\s+(?:my\s+)?(windows(?: laptop)?|laptop|pc|computer)[.!]?$/i);const remoteMatch=remotePrefix?[remotePrefix[0],remotePrefix[1],remotePrefix[2]]:remoteSuffix?[remoteSuffix[0],remoteSuffix[2],remoteSuffix[1]]:null;
  if(remoteMatch){queueRemoteDeviceCommand(remoteMatch[2].trim(),remoteMatch[1].replace(/\b\w/g,c=>c.toUpperCase()),"typed chat");return true}
+ const createFile=t.match(/^(?:bosley[, ]+)?(?:please\\s+)?(?:create|make|write|save)(?:\\s+me)?\\s+(?:a\\s+)?text file(?:\\s+(?:called|named)\\s+([^:\\n]+?))?(?:\\s*(?::|with content|containing|that says)\\s*([\\s\\S]+))?$/i);
+ if(createFile){
+  const name=(createFile[1]||"bosley-note.txt").trim().replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";
+  const content=String(createFile[2]||"").trim();
+  if(!content){pendingChatFileDraft={name};addMsg("bosley","Sure. What text should I put in "+name+"? Reply with the content, or say cancel.");return true}
+  executeDirectChatAction({type:"create_text_file",name,input:content},"create text file "+name);return true;
+ }
  const skillResolution=resolveSkillWorkflowCommand(t);if(skillResolution.status==="ambiguous"){addMsg("bosley","More than one enabled Skill matches that trigger. Please specify the exact Skill or saved workflow; nothing has been run.");return true}if(skillResolution.status==="unlinked"){addMsg("bosley","The Skill “"+skillResolution.skill.title+"” is enabled but has no matching saved workflow. Add “workflow: Exact workflow name” to its file and create that workflow in Automation. Skills provide guidance only; they cannot define executable actions.");return true}const saved=skillResolution.status==="match"?skillResolution.workflow:findWorkflowCommand(t);if(saved){try{queueAutomationForChatApproval(saved)}catch(e){const message="I couldn't prepare "+saved.name+": "+String(e?.message||e);addMsg("bosley",message);autoLog("error",message)}return true}const webAppCommand=dispatchKnownWebsiteCommand(t);if(webAppCommand)return true;
  if((m=t.match(/^(?:bosley[, ]+)?(?:please\s+)?open\s+(https?:\/\/\S+)$/i))){
   executeDirectChatAction({type:"open_url",input:m[1]},"open website "+m[1]);return true;

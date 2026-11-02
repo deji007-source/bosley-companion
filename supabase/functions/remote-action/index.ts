@@ -38,7 +38,55 @@ Deno.serve(async (req: Request) => {
   if (!user) return new Response(JSON.stringify({ ok: false, error: "Sign-in required." }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return new Response(JSON.stringify({ ok: false, error: "Invalid JSON body." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } }); }
-  if (body.type === "listener_heartbeat") {
+  if (body.type === "os_agent_poll") {
+    const staleBefore = new Date(Date.now() - 120_000).toISOString();
+    const now = new Date().toISOString();
+    const { error: reclaimError } = await sb.from("os_commands")
+      .update({ status: "pending", claimed_at: null, claim_token: null, updated_at: now })
+      .eq("user_id", user.id).eq("status", "processing").lt("claimed_at", staleBefore);
+    if (reclaimError) {
+      console.error("OS command reclaim failed:", reclaimError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not refresh the OS command queue." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    const { data: pending, error: pendingError } = await sb.from("os_commands")
+      .select("id,action,target,param")
+      .eq("user_id", user.id).eq("status", "pending")
+      .order("created_at", { ascending: true }).limit(10);
+    if (pendingError) {
+      console.error("OS command queue read failed:", pendingError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not read the OS command queue." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    if (!pending?.length) return new Response(JSON.stringify({ ok: true, commands: [] }), { headers: { ...cors, "Content-Type": "application/json" } });
+    const claimToken = crypto.randomUUID();
+    const claimedAt = new Date().toISOString();
+    const ids = pending.map(command => command.id);
+    const { data: claimed, error: claimError } = await sb.from("os_commands")
+      .update({ status: "processing", claimed_at: claimedAt, claim_token: claimToken, updated_at: claimedAt })
+      .eq("user_id", user.id).eq("status", "pending").in("id", ids)
+      .select("id,action,target,param");
+    if (claimError) {
+      console.error("OS command claim failed:", claimError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not claim OS commands." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ ok: true, commands: (claimed ?? []).map(command => ({ ...command, claim_token: claimToken })) }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } else if (body.type === "os_agent_ack") {
+    const commandId = typeof body.command_id === "string" ? body.command_id : "";
+    const claimToken = typeof body.claim_token === "string" ? body.claim_token : "";
+    const status = body.status === "done" ? "done" : body.status === "failed" ? "failed" : "";
+    const resultText = typeof body.result === "string" ? body.result.trim().slice(0, 500) : "";
+    if (!commandId || !claimToken || !status) return new Response(JSON.stringify({ ok: false, error: "A command ID, claim token and terminal status are required." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    const now = new Date().toISOString();
+    const { data, error } = await sb.from("os_commands")
+      .update({ status, result: resultText || (status === "done" ? "Desktop agent confirmed execution." : "Desktop agent reported failure."), processed_at: now, updated_at: now })
+      .eq("id", commandId).eq("user_id", user.id).eq("status", "processing").eq("claim_token", claimToken)
+      .select("id,status").maybeSingle();
+    if (error) {
+      console.error("OS command acknowledgement failed:", error);
+      return new Response(JSON.stringify({ ok: false, error: "Could not save the OS command result." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    if (!data) return new Response(JSON.stringify({ ok: false, error: "Command claim expired, was already acknowledged, or does not belong to this account." }), { status: 409, headers: { ...cors, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, command_id: data.id, status: data.status }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } else if (body.type === "listener_heartbeat") {
     const { error } = await sb.from("device_status").upsert({
       user_id: user.id,
       device: "bosley-laptop-listener",

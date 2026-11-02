@@ -115,6 +115,8 @@ public class BosleyOverlayService extends Service {
   }
   void endVoiceForeground(){try{if(Build.VERSION.SDK_INT>=24)stopForeground(STOP_FOREGROUND_REMOVE);else stopForeground(true);}catch(Exception ignored){}}
   void startOverlayVoice(){
+    if(chatPanel==null)expandPanel();
+    if(chatInput==null){appendChat("Open the Bosley panel before starting voice input.");return;}
     if(chatRequestBusy){appendChat("Bosley is still processing the previous request.");return;}
     if(Build.VERSION.SDK_INT>=23&&checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
       appendChat("Microphone permission is needed. Opening Bosley once so Android can ask for permission; after granting it, voice can start directly from this floating panel.");

@@ -900,7 +900,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'save_text_file', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'save_text_file', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide', 'os_focus_window', 'os_minimize_window', 'os_maximize_window', 'os_move_window']
             };
           });
 
@@ -930,6 +930,40 @@ jobs:
                 return { ok: true, state: 'awake' };
               }
               throw new Error('Bosley desktop panel is not available.');
+            }
+            // OS-agent commands are deliberately scoped to Bosley's own panel.
+            // They cannot enumerate, focus, move, or manipulate unrelated applications.
+            if (['os_focus_window', 'os_minimize_window', 'os_maximize_window', 'os_move_window'].includes(request.action)) {
+              if (process.platform !== 'win32') throw new Error('Bosley window controls are supported by the Windows build only.');
+              if (!panel || panel.isDestroyed()) throw new Error('Bosley panel is not available.');
+              const payload = request.payload || {};
+              const target = String(payload.target || '').trim().toLowerCase();
+              if (target && !['bosley', 'companion', 'bosley companion', 'panel'].includes(target)) {
+                throw new Error('For safety, OS window commands can target only the Bosley Companion panel.');
+              }
+              if (request.action === 'os_focus_window') {
+                if (panel.isMinimized()) panel.restore();
+                panel.show(); panel.focus(); panel.setAlwaysOnTop(true, 'screen-saver');
+                return { ok: true, summary: 'Focused the Bosley Companion panel.' };
+              }
+              if (request.action === 'os_minimize_window') {
+                panel.minimize();
+                return { ok: true, summary: 'Minimized the Bosley Companion panel.' };
+              }
+              if (request.action === 'os_maximize_window') {
+                if (panel.isMaximized()) panel.unmaximize(); else panel.maximize();
+                return { ok: true, summary: panel.isMaximized() ? 'Maximized the Bosley Companion panel.' : 'Restored the Bosley Companion panel.' };
+              }
+              const x = Number(payload.param && payload.param.x);
+              const y = Number(payload.param && payload.param.y);
+              if (!Number.isInteger(x) || !Number.isInteger(y)) throw new Error('Move requires integer x and y coordinates.');
+              const display = screen.getDisplayMatching(panel.getBounds());
+              const area = display.workArea;
+              const bounds = panel.getBounds();
+              const nextX = Math.max(area.x, Math.min(x, area.x + area.width - bounds.width));
+              const nextY = Math.max(area.y, Math.min(y, area.y + area.height - bounds.height));
+              panel.setPosition(nextX, nextY);
+              return { ok: true, summary: 'Moved the Bosley Companion panel within the current display.' };
             }
             if (request.action === 'get_desktop_info') {
               const display = screen.getPrimaryDisplay();

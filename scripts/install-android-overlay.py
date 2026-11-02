@@ -137,6 +137,7 @@ public class BosleyOverlayService extends Service {
     statusText=new TextView(this);statusText.setText(status);statusText.setTextColor(0xFFB8C4D8);statusText.setTextSize(12);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,-2);sp.topMargin=dp(5);card.addView(statusText,sp);
     transcriptText=new TextView(this);transcriptText.setText(transcript==null||transcript.isEmpty()?"Your transcription will appear here…":transcript);transcriptText.setTextColor(Color.WHITE);transcriptText.setTextSize(15);transcriptText.setTextIsSelectable(true);transcriptText.setMinHeight(dp(54));transcriptText.setGravity(Gravity.CENTER_VERTICAL);LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.topMargin=dp(8);tp.bottomMargin=dp(10);card.addView(transcriptText,tp);
     LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);
+    Button open=new Button(this);open.setText("Open app");open.setTextSize(11);open.setMinWidth(0);open.setMinimumWidth(0);open.setPadding(dp(8),0,dp(8),0);open.setOnClickListener(v->openCompanion("open"));actions.addView(open);
     Button talk=new Button(this);talk.setText("Talk");talk.setOnClickListener(v->startVoiceCapture());actions.addView(talk);
     Button send=new Button(this);send.setText("Send");send.setOnClickListener(v->queueVoiceDraft());actions.addView(send);
     Button close=new Button(this);close.setText("×");close.setOnClickListener(v->removeTranscriptPanel());actions.addView(close);
@@ -150,8 +151,9 @@ public class BosleyOverlayService extends Service {
     if(value.isEmpty()){if(statusText!=null)statusText.setText("Say something first, then tap Send.");return;}
     getSharedPreferences("bosley_voice",MODE_PRIVATE).edit().putString("pending_transcript",value).putLong("pending_at",System.currentTimeMillis()).apply();
     Intent event=new Intent("com.bosley.companion.VOICE_DRAFT");event.setPackage(getPackageName());event.putExtra("transcript",value);sendBroadcast(event);
-    if(statusText!=null)statusText.setText("Queued for Bosley. It will send when the companion is active.");
+    if(statusText!=null)statusText.setText("Opening Bosley and sending your message…");
     currentTranscript=value;
+    openCompanion("voice");
   }
   void removeTranscriptPanel(){if(wm!=null&&transcriptPanel!=null){try{wm.removeView(transcriptPanel);}catch(Exception ignored){}transcriptPanel=null;}}
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}

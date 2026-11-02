@@ -41,6 +41,13 @@ assert.ok(html.includes('const target=action==="automation"?"automation":"provid
 assert.ok(html.includes('data-open-view="provider-panel" aria-label="Open Agents and AI connections"'), "Side dock must expose Agents and Connections directly");
 assert.ok(html.includes("Agents & Connections"), "Provider manager must be presented as the Agents and Connections control centre");
 
+assert.ok(androidInstaller.includes('Switch voiceInputToggle=new Switch(this)')||androidInstaller.includes('voiceInputToggle=new Switch(this)'), "Floating panel must include an on/off microphone control");
+assert.ok(androidInstaller.includes('voiceReplyToggle=new Switch(this)'), "Floating panel must include a spoken-replies toggle");
+assert.ok(androidInstaller.includes('putBoolean("voice_input_enabled",checked)'), "Microphone preference must persist across panel reopen/restart");
+assert.ok(androidInstaller.includes('putBoolean("voice_replies_enabled",checked)'), "Spoken-replies preference must persist");
+assert.ok(androidInstaller.includes('if(!checked)stopOverlayVoice()'), "Turning voice input off must stop any active recognition session");
+assert.ok(androidInstaller.includes('voiceReply||getSharedPreferences("bosley_overlay_preferences",MODE_PRIVATE).getBoolean("voice_replies_enabled",false)'), "Voice reply preference must control text-to-speech output");
+
 const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],
   ["Automation Skill master switch is respected", "if(!settings.enabled)return {status:\"none\"}"],

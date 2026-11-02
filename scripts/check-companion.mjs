@@ -492,3 +492,12 @@ assert.ok(html.includes('const remoteFile=instruction.match('), "Windows listene
 assert.ok(html.includes('action:"save_text_file",payload:{name,content}'), "Windows listener must save remote text files through the native bridge");
 assert.ok(html.includes('reportLaptopCommandResult(runId,commandStatus,commandSummary)'), "Windows listener must acknowledge actual remote execution outcomes");
 assert.ok(windowsWorkflow.includes("content.length > 100000"), "Windows native text-file save must enforce the 100 KB limit");
+
+assert.ok(windowsWorkflow.includes("'os_focus_window', 'os_minimize_window', 'os_maximize_window', 'os_move_window'"), "Windows bridge must advertise implemented scoped OS-agent window actions");
+assert.ok(windowsWorkflow.includes("For safety, OS window commands can target only the Bosley Companion panel."), "OS-agent window controls must not target unrelated applications");
+assert.ok(windowsWorkflow.includes("panel.focus()"), "OS-agent focus action must focus the Bosley panel");
+assert.ok(windowsWorkflow.includes("panel.minimize()"), "OS-agent minimize action must minimize the Bosley panel");
+assert.ok(windowsWorkflow.includes("panel.isMaximized()"), "OS-agent maximize action must toggle the Bosley panel state");
+assert.ok(windowsWorkflow.includes("screen.getDisplayMatching(panel.getBounds())"), "OS-agent move action must clamp movement to the current display work area");
+assert.ok(windowsWorkflow.includes("Move coordinates must be supplied as a JSON object with x and y."), "OS-agent move action must validate coordinate payloads");
+

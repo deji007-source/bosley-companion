@@ -199,7 +199,7 @@ public class BosleyOverlayService extends Service {
       new Handler(Looper.getMainLooper()).post(()->{if(chatOutput!=null){String current=chatOutput.getText().toString();int pos=current.lastIndexOf("\n\nBOSLEY: Thinking…");if(pos>=0)chatOutput.setText(current.substring(0,pos));String response=err==null?"BOSLEY: "+result:"BOSLEY: "+err;appendChat(response);if(shouldSpeak&&err==null)speakOverlayText(result);}chatRequestBusy=false;if(chatSend!=null)chatSend.setEnabled(true);if(chatVoice!=null)chatVoice.setEnabled(true);});
     }).start();
   }
-  void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
+  void openCompanion(String action){if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
   void showGuide(){
     removeGuide();
     final android.util.DisplayMetrics metrics=getResources().getDisplayMetrics();

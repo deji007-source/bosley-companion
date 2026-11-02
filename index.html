@@ -1421,7 +1421,7 @@ async function renderBosleyProviderManager(){
   try{
    const data=await request({action:"providers"});const rows=data.providers||[];
    list.innerHTML=rows.map(row=>'<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span><strong>'+escapeValue(names[row.id]||row.id)+'</strong><br><small>'+escapeValue(row.model||defaults[row.id]||"")+'</small></span><span class="skills-count">'+(row.connected&&row.enabled!==false?"CONNECTED":"NOT CONNECTED")+'</span></div>').join("");
-   const current=selected();select.value=current;
+   const current=selected();select.value=current;syncNativeProvider();
    status.textContent=rows.some(x=>x.connected)?"Provider connections loaded. Select one to use it for new text chats.":"No API providers connected yet.";
   }catch(error){status.textContent=String(error?.message||error)+" Make sure the provider gateway migration and Edge Function have been deployed."}
  };

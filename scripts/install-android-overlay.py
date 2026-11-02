@@ -151,7 +151,8 @@ public class BosleyOverlayService extends Service {
   void queueVoiceDraft(){
     String value=currentTranscript==null?"":currentTranscript.trim();
     if(value.isEmpty()){if(statusText!=null)statusText.setText("Say something first, then tap Send.");return;}
-    getSharedPreferences("bosley_voice",MODE_PRIVATE).edit().putString("pending_transcript",value).putLong("pending_at",System.currentTimeMillis()).apply();
+    String draftId=java.util.UUID.randomUUID().toString();
+    getSharedPreferences("bosley_voice",MODE_PRIVATE).edit().putString("pending_transcript",value).putString("pending_id",draftId).putLong("pending_at",System.currentTimeMillis()).apply();
     Intent event=new Intent("com.bosley.companion.VOICE_DRAFT");event.setPackage(getPackageName());event.putExtra("transcript",value);sendBroadcast(event);
     if(statusText!=null)statusText.setText("Opening Bosley and sending your message…");
     currentTranscript=value;
@@ -277,10 +278,28 @@ public class BosleyOverlayPlugin extends Plugin {
   private VirtualDisplay captureDisplay;
   private ImageReader captureReader;
   private final Handler captureHandler=new Handler(Looper.getMainLooper());
+  @PluginMethod public void peekVoiceDraft(PluginCall call){
+    android.content.SharedPreferences prefs=getContext().getSharedPreferences("bosley_voice",android.content.Context.MODE_PRIVATE);
+    String transcript=prefs.getString("pending_transcript","");
+    String draftId=prefs.getString("pending_id",String.valueOf(prefs.getLong("pending_at",0L)));
+    JSObject result=new JSObject();result.put("text",transcript==null?"":transcript);result.put("id",draftId);call.resolve(result);
+  }
+  @PluginMethod public void acknowledgeVoiceDraft(PluginCall call){
+    String expectedId=call.getString("id","");
+    android.content.SharedPreferences prefs=getContext().getSharedPreferences("bosley_voice",android.content.Context.MODE_PRIVATE);
+    String currentId=prefs.getString("pending_id",String.valueOf(prefs.getLong("pending_at",0L)));
+    String transcript=prefs.getString("pending_transcript","");
+    if(expectedId!=null&&!expectedId.isEmpty()&&expectedId.equals(currentId)&&transcript!=null&&!transcript.isEmpty()){
+      prefs.edit().remove("pending_transcript").remove("pending_id").remove("pending_at").apply();
+      call.resolve();
+    }else{
+      call.reject("Voice draft changed before acknowledgement; it was kept in the queue.");
+    }
+  }
   @PluginMethod public void consumeVoiceDraft(PluginCall call){
     android.content.SharedPreferences prefs=getContext().getSharedPreferences("bosley_voice",android.content.Context.MODE_PRIVATE);
     String transcript=prefs.getString("pending_transcript","");
-    prefs.edit().remove("pending_transcript").remove("pending_at").apply();
+    prefs.edit().remove("pending_transcript").remove("pending_id").remove("pending_at").apply();
     JSObject result=new JSObject();result.put("text",transcript==null?"":transcript);call.resolve(result);
   }
   @PluginMethod public void speakText(PluginCall call){

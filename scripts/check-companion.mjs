@@ -460,8 +460,8 @@ assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "W
 assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
 assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");
 
-assert.ok(html.includes('data-open-view="automation" aria-label="Open AI Agents and Automation" title="AI Agents"'), "Side rail must restore a dedicated AI Agents entry");
-assert.ok(html.includes('label:"AI Agents & Automation"'), "Dock tab must identify the AI agents and automation workspace");
+assert.ok(html.includes('data-open-view="agents-panel" aria-label="Open AI Agents" title="AI Agents"'), "Side rail must expose a dedicated AI Agents entry");
+assert.ok(html.includes('label:"AI Agents"')&&html.includes('label:"Automation"'), "AI Agents and Automation must have separate dock tabs");
 assert.ok(html.includes('id="attach-automation" role="menuitem"'), "Plus menu must expose the AI agents and automation entry");
 assert.ok(html.includes("let nativeActionBusy=false"), "Android native launch action handling must guard duplicate intent delivery");
 assert.ok(html.includes('window.addEventListener("bosleyNativeAction"'), "Android existing-activity taps must be forwarded into the live WebView");

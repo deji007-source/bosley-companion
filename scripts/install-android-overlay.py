@@ -464,8 +464,12 @@ public class BosleyOverlayPlugin extends Plugin {
     getContext().stopService(new Intent(getContext(),BosleyScreenRecordingService.class));JSObject response=new JSObject();response.put("stopping",true);call.resolve(response);
   }
   @PluginMethod public void syncChatSession(PluginCall call){
-    String token=call.getString("accessToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl","");
-    getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE).edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base).apply();
+    String token=call.getString("accessToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl",""),userId=call.getString("userId","");
+    android.content.SharedPreferences chatPrefs=getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE);
+    String previousAccount=chatPrefs.getString("account_id","");
+    android.content.SharedPreferences.Editor editor=chatPrefs.edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base).putString("account_id",userId);
+    if(!previousAccount.isEmpty()&&!userId.isEmpty()&&!previousAccount.equals(userId))editor.remove("chat_history").remove("selected_provider");
+    editor.apply();
     JSObject r=new JSObject();r.put("saved",!token.isEmpty());call.resolve(r);
   }
   @PluginMethod public void speakText(PluginCall call){

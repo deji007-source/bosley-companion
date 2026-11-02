@@ -460,7 +460,7 @@ assert.ok(osPollSource.includes('claim_token: claimToken'), "OS poller must issu
 assert.ok(osPollSource.includes('body.action === "ack"'), "OS poller must expose a separate acknowledgement path");
 assert.ok(osPollSource.includes('.eq("status", "processing")'), "Acknowledgements must only finalize a claimed command");
 assert.ok(osPollSource.includes('.eq("claim_token", claimToken)'), "Acknowledgements must prove possession of the active claim token");
-assert.ok(osPollSource.includes('status: "done"') && osPollSource.includes('status: "failed"'), "OS poller must record explicit execution outcomes");
+assert.ok(osPollSource.includes('body.status === "done"') && osPollSource.includes('body.status === "failed"'), "OS poller must accept explicit execution outcomes");
 assert.ok(!osPollSource.includes('.update({ status: "done" })'), "Polling must never mark commands done merely because they were returned");
 
 assert.ok(html.includes('pendingChatFileDraft=null'), "Chat must support a follow-up message containing text-file contents");

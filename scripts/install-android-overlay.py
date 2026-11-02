@@ -304,6 +304,89 @@ public class BosleyTargetAccessibilityService extends AccessibilityService {
   @Override public void onDestroy(){if(receiver!=null){try{unregisterReceiver(receiver);}catch(Exception ignored){}}super.onDestroy();}
 }''')
 
+(src / "BosleyScreenRecordingService.java").write_text(r'''package com.bosley.companion;
+import android.app.*;
+import android.content.*;
+import android.media.MediaRecorder;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
+import android.hardware.display.VirtualDisplay;
+import android.hardware.display.DisplayManager;
+import android.os.*;
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+public class BosleyScreenRecordingService extends Service {
+  static final String ACTION_STOP="com.bosley.companion.STOP_RECORDING";
+  private MediaProjection projection;
+  private VirtualDisplay display;
+  private MediaRecorder recorder;
+  private File output;
+  private boolean started=false;
+  @Override public int onStartCommand(Intent intent,int flags,int startId){
+    if(intent!=null&&ACTION_STOP.equals(intent.getAction())){stopRecording();return START_NOT_STICKY;}
+    if(started)return START_STICKY;
+    try{
+      if(Build.VERSION.SDK_INT>=26){
+        String channel="bosley-screen-recording";
+        NotificationManager nm=(NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        if(nm.getNotificationChannel(channel)==null)nm.createNotificationChannel(new NotificationChannel(channel,"Bosley screen recording",NotificationManager.IMPORTANCE_LOW));
+        Notification notification=new Notification.Builder(this,channel).setSmallIcon(android.R.drawable.presence_video_online).setContentTitle("Bosley screen recorder").setContentText("Recording is active. Stop it from the floating panel.").setOngoing(true).setCategory(Notification.CATEGORY_SERVICE).build();
+        if(Build.VERSION.SDK_INT>=29)startForeground(74,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);else startForeground(74,notification);
+      }else startForeground(74,new Notification.Builder(this).setSmallIcon(android.R.drawable.presence_video_online).setContentTitle("Bosley screen recorder").setContentText("Recording is active.").setOngoing(true).build());
+      int resultCode=intent.getIntExtra("resultCode",0);
+      Intent data;
+      if(Build.VERSION.SDK_INT>=33)data=intent.getParcelableExtra("resultData",Intent.class);else data=(Intent)intent.getParcelableExtra("resultData");
+      if(data==null)throw new IllegalStateException("Screen recording permission data is missing.");
+      MediaProjectionManager manager=(MediaProjectionManager)getSystemService(MEDIA_PROJECTION_SERVICE);
+      projection=manager.getMediaProjection(resultCode,data);
+      if(projection==null)throw new IllegalStateException("Android did not grant screen recording.");
+      DisplayMetrics metrics=new DisplayMetrics();((WindowManager)getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(metrics);
+      int width=Math.max(2,metrics.widthPixels),height=Math.max(2,metrics.heightPixels),density=metrics.densityDpi;
+      width-=width%2;height-=height%2;
+      File folder=new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES),"Bosley");
+      if(!folder.exists()&&!folder.mkdirs())throw new IllegalStateException("Could not create the Bosley recordings folder.");
+      String stamp=new SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(new Date());
+      output=new File(folder,"Bosley-"+stamp+".mp4");
+      recorder=Build.VERSION.SDK_INT>=31?new MediaRecorder(this):new MediaRecorder();
+      recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+      recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+      recorder.setOutputFile(output.getAbsolutePath());
+      recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+      recorder.setVideoSize(width,height);
+      recorder.setVideoFrameRate(30);
+      recorder.setVideoEncodingBitRate(Math.min(8000000,Math.max(2500000,width*height*4)));
+      recorder.prepare();
+      display=projection.createVirtualDisplay("BosleyScreenRecorder",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,recorder.getSurface(),null,null);
+      recorder.start();started=true;
+      getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",true).putString("last_path",output.getAbsolutePath()).apply();
+      return START_STICKY;
+    }catch(Exception error){
+      android.util.Log.e("BosleyScreenRecorder","Could not start recording",error);
+      getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",false).apply();
+      cleanup();stopForeground(true);stopSelf();return START_NOT_STICKY;
+    }
+  }
+  private void stopRecording(){
+    if(started){try{recorder.stop();}catch(Exception error){android.util.Log.w("BosleyScreenRecorder","Recording ended before a valid video frame was written",error);}started=false;}
+    cleanup();
+    getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",false).apply();
+    if(output!=null&&output.exists()&&output.length()>0)android.widget.Toast.makeText(this,"Recording saved in Movies/Bosley",android.widget.Toast.LENGTH_LONG).show();
+    stopForeground(true);stopSelf();
+  }
+  private void cleanup(){
+    if(display!=null){try{display.release();}catch(Exception ignored){}display=null;}
+    if(recorder!=null){try{recorder.reset();}catch(Exception ignored){}try{recorder.release();}catch(Exception ignored){}recorder=null;}
+    if(projection!=null){try{projection.stop();}catch(Exception ignored){}projection=null;}
+  }
+  @Override public void onDestroy(){if(started)stopRecording();else cleanup();super.onDestroy();}
+  @Override public android.os.IBinder onBind(Intent intent){return null;}
+}''')
+
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;
 import android.content.Intent;
 import android.net.Uri;
@@ -335,6 +418,31 @@ public class BosleyOverlayPlugin extends Plugin {
   private VirtualDisplay captureDisplay;
   private ImageReader captureReader;
   private final Handler captureHandler=new Handler(Looper.getMainLooper());
+  @PluginMethod public void syncAgentPreference(PluginCall call){
+    String provider=call.getString("provider","");
+    getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE).edit().putString("selected_provider",provider).apply();
+    JSObject r=new JSObject();r.put("saved",true);call.resolve(r);
+  }
+  @PluginMethod public void requestScreenRecording(PluginCall call){
+    if(Build.VERSION.SDK_INT<21){call.reject("Screen recording requires Android 5.0 or newer.");return;}
+    MediaProjectionManager manager=(MediaProjectionManager)getContext().getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE);
+    if(manager==null){call.reject("Android screen recording is unavailable.");return;}
+    try{startActivityForResult(call,manager.createScreenCaptureIntent(),"screenRecordingPermissionResult");}
+    catch(Exception e){call.reject("Could not open Android's screen-recording permission prompt.",e);}
+  }
+  @ActivityCallback private void screenRecordingPermissionResult(PluginCall call,ActivityResult result){
+    if(result.getResultCode()!=android.app.Activity.RESULT_OK||result.getData()==null){call.resolve(new JSObject().put("cancelled",true));return;}
+    try{
+      Intent service=new Intent(getContext(),BosleyScreenRecordingService.class);
+      service.putExtra("resultCode",result.getResultCode());service.putExtra("resultData",result.getData());
+      if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(service);else getContext().startService(service);
+      JSObject response=new JSObject();response.put("started",true);call.resolve(response);
+    }catch(Exception e){call.reject("Could not start the screen recorder: "+String.valueOf(e.getMessage()),e);}
+  }
+  @PluginMethod public void stopScreenRecording(PluginCall call){
+    Intent stop=new Intent(getContext(),BosleyScreenRecordingService.class).setAction(BosleyScreenRecordingService.ACTION_STOP);
+    getContext().startService(stop);JSObject response=new JSObject();response.put("stopping",true);call.resolve(response);
+  }
   @PluginMethod public void syncChatSession(PluginCall call){
     String token=call.getString("accessToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl","");
     getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE).edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base).apply();

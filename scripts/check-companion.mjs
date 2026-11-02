@@ -36,7 +36,7 @@ assert.ok(androidInstaller.includes('shortcutLabels={"AUTOMATION","AGENTS","OPEN
 assert.ok(androidInstaller.includes('app.setText("APP ↗")'), "Android panel header must include a direct full-app launcher");
 assert.ok(androidInstaller.includes('shortcutActions={"automation","providers","panel"}'), "Android shortcuts must map to app views");
 assert.ok(html.includes('["panel","voice","automation","providers"].includes(action)'), "Native quick-action bridge must accept automation and provider views");
-assert.ok(html.includes('target==="automation"?"automation":"provider-panel"'), "Native shortcut routing must open the selected automation or provider view");
+assert.ok(html.includes('const target=action==="automation"?"automation":"provider-panel"'), "Native shortcut routing must open the selected automation or provider view");
 assert.ok(html.includes('data-open-view="provider-panel" aria-label="Open Agents and AI connections"'), "Side dock must expose Agents and Connections directly");
 assert.ok(html.includes("Agents & Connections"), "Provider manager must be presented as the Agents and Connections control centre");
 

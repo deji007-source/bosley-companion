@@ -22,6 +22,14 @@ for (const [index, source] of inlineScripts.entries()) {
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
+assert.ok(androidInstaller.includes('if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)expandPanel();'), "Android floating widget tap must open the native panel instead of launching the app");
+assert.ok(androidInstaller.includes("void sendOverlayMessage()"), "Android native floating panel must have its own Send handler");
+assert.ok(androidInstaller.includes('/functions/v1/companion-chat'), "Android native Send must call the existing authenticated chat endpoint directly");
+assert.ok(androidInstaller.includes('getSharedPreferences("bosley_native_chat"'), "Android overlay must use the app-private session store");
+assert.ok(androidInstaller.includes('Authorization","Bearer "+token'), "Android native chat requests must use the signed-in user's access token");
+assert.ok(androidInstaller.includes('void syncChatSession(PluginCall call)'), "Capacitor bridge must sync the active signed-in session to the native overlay");
+assert.ok(html.includes('native.syncChatSession({accessToken:s?.access_token||"",anonKey:SUPABASE_PUBLIC_KEY,supabaseUrl:SUPABASE_URL})'), "Auth changes must update the native overlay session");
+
 
 const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],

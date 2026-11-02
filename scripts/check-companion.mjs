@@ -468,3 +468,5 @@ assert.ok(overlayInstaller.includes('phone?"phone":"automation"'), "Overlay must
 assert.ok(overlayInstaller.includes('if(answer==null)'), "Ordinary chat must fall back to the Companion AI chat endpoint");
 assert.ok(overlayInstaller.includes('speakOverlayText(result)'), "Voice-originated commands must receive spoken responses");
 assert.ok(overlayInstaller.includes('android.speech.RecognitionService'), "Android manifest must declare speech recognition service visibility");
+
+assert.ok(overlayInstaller.includes('if(chatPanel==null)expandPanel();'), "Long-press voice must create the native panel before using its composer");

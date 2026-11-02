@@ -60,15 +60,80 @@ public class BosleyOverlayService extends Service {
     frame.addView(inner,new LinearLayout.LayoutParams(-1,-2));bar=frame;
     lp=new WindowManager.LayoutParams(dp(widgetWidth),dp(widgetHeight),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     lp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;lp.y=dp(7);
-    frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;openCompanion("voice");};
+    frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
         case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
-        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)openCompanion("panel");return true;
+        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)toggleVoiceCapture();return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
   }
+  android.speech.SpeechRecognizer speechRecognizer;
+  boolean listening=false;
+  LinearLayout transcriptPanel;
+  TextView transcriptText,statusText;
+  String currentTranscript="";
+  void toggleVoiceCapture(){
+    if(listening){try{speechRecognizer.stopListening();}catch(Exception ignored){}listening=false;if(statusText!=null)statusText.setText("Finishing transcription…");return;}
+    startVoiceCapture();
+  }
+  void startVoiceCapture(){
+    if(androidx.core.content.ContextCompat.checkSelfPermission(this,android.Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
+      showTranscriptPanel("Microphone permission is needed. Open Bosley once and allow microphone access, then try again.","Permission needed");return;
+    }
+    if(!android.speech.SpeechRecognizer.isRecognitionAvailable(this)){
+      showTranscriptPanel("No Android speech recognition service is available on this device.","Voice unavailable");return;
+    }
+    showTranscriptPanel(currentTranscript,"Listening…");
+    try{
+      if(speechRecognizer!=null){try{speechRecognizer.destroy();}catch(Exception ignored){}}
+      speechRecognizer=android.speech.SpeechRecognizer.createSpeechRecognizer(this);
+      speechRecognizer.setRecognitionListener(new android.speech.RecognitionListener(){
+        public void onReadyForSpeech(android.os.Bundle b){listening=true;if(statusText!=null)statusText.setText("Listening · tap the circle to stop");}
+        public void onBeginningOfSpeech(){if(statusText!=null)statusText.setText("Hearing you…");}
+        public void onRmsChanged(float r){}
+        public void onBufferReceived(byte[] b){}
+        public void onEndOfSpeech(){listening=false;if(statusText!=null)statusText.setText("Transcription ready");}
+        public void onError(int e){listening=false;String m=e==android.speech.SpeechRecognizer.ERROR_NO_MATCH?"No speech detected. Tap Talk to try again.":"Voice recognition stopped. Tap Talk to retry.";if(statusText!=null)statusText.setText(m);}
+        public void onResults(android.os.Bundle b){listening=false;java.util.ArrayList<String> r=b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);if(r!=null&&!r.isEmpty()){currentTranscript=r.get(0);showTranscriptPanel(currentTranscript,"Ready to send");}}
+        public void onPartialResults(android.os.Bundle b){java.util.ArrayList<String> r=b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);if(r!=null&&!r.isEmpty()){currentTranscript=r.get(0);if(transcriptText!=null)transcriptText.setText(currentTranscript);}}
+        public void onEvent(int t,android.os.Bundle b){}
+      });
+      android.content.Intent intent=new android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+      intent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+      intent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE,java.util.Locale.getDefault().toLanguageTag());
+      intent.putExtra(android.speech.RecognizerIntent.EXTRA_PARTIAL_RESULTS,true);
+      intent.putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS,1);
+      speechRecognizer.startListening(intent);
+    }catch(Exception e){listening=false;showTranscriptPanel("Could not start Android voice recognition. Check microphone permission and the device speech service.","Voice unavailable");}
+  }
+  void showTranscriptPanel(String transcript,String status){
+    if(wm==null)return;
+    if(transcriptPanel!=null){try{wm.removeView(transcriptPanel);}catch(Exception ignored){}transcriptPanel=null;}
+    LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(14),dp(12),dp(14),dp(12));
+    GradientDrawable panelBg=new GradientDrawable();panelBg.setColor(Color.rgb(18,18,22));panelBg.setCornerRadius(dp(18));panelBg.setStroke(dp(1),0x99FFFFFF);card.setBackground(panelBg);
+    TextView heading=new TextView(this);heading.setText("BOSLEY VOICE");heading.setTextColor(Color.WHITE);heading.setTextSize(11);heading.setLetterSpacing(.12f);card.addView(heading);
+    statusText=new TextView(this);statusText.setText(status);statusText.setTextColor(0xFFB8C4D8);statusText.setTextSize(12);LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,-2);sp.topMargin=dp(5);card.addView(statusText,sp);
+    transcriptText=new TextView(this);transcriptText.setText(transcript==null||transcript.isEmpty()?"Your transcription will appear here…":transcript);transcriptText.setTextColor(Color.WHITE);transcriptText.setTextSize(15);transcriptText.setTextIsSelectable(true);transcriptText.setMinHeight(dp(54));transcriptText.setGravity(Gravity.CENTER_VERTICAL);LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.topMargin=dp(8);tp.bottomMargin=dp(10);card.addView(transcriptText,tp);
+    LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);
+    Button talk=new Button(this);talk.setText("Talk");talk.setOnClickListener(v->startVoiceCapture());actions.addView(talk);
+    Button send=new Button(this);send.setText("Send");send.setOnClickListener(v->queueVoiceDraft());actions.addView(send);
+    Button close=new Button(this);close.setText("×");close.setOnClickListener(v->removeTranscriptPanel());actions.addView(close);
+    card.addView(actions);transcriptPanel=card;
+    WindowManager.LayoutParams pp=new WindowManager.LayoutParams(Math.min(getResources().getDisplayMetrics().widthPixels-dp(28),dp(340)),-2,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+    pp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;pp.y=dp(58);
+    try{wm.addView(card,pp);}catch(Exception e){transcriptPanel=null;}
+  }
+  void queueVoiceDraft(){
+    String value=currentTranscript==null?"":currentTranscript.trim();
+    if(value.isEmpty()){if(statusText!=null)statusText.setText("Say something first, then tap Send.");return;}
+    getSharedPreferences("bosley_voice",MODE_PRIVATE).edit().putString("pending_transcript",value).putLong("pending_at",System.currentTimeMillis()).apply();
+    Intent event=new Intent("com.bosley.companion.VOICE_DRAFT");event.setPackage(getPackageName());event.putExtra("transcript",value);sendBroadcast(event);
+    if(statusText!=null)statusText.setText("Queued for Bosley. It will send when the companion is active.");
+    currentTranscript=value;
+  }
+  void removeTranscriptPanel(){if(wm!=null&&transcriptPanel!=null){try{wm.removeView(transcriptPanel);}catch(Exception ignored){}transcriptPanel=null;}}
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
   void showGuide(){
     removeGuide();
@@ -96,7 +161,7 @@ public class BosleyOverlayService extends Service {
   GradientDrawable circleTarget(){GradientDrawable d=new GradientDrawable();d.setShape(GradientDrawable.OVAL);d.setColor(Color.WHITE);d.setStroke(dp(3),Color.BLACK);return d;}
   void updateGuideTarget(Intent result){if(!result.getBooleanExtra("found",false)){if(guideStatusView!=null)guideStatusView.setText("No matching control found. Keep the target app visible and try a more specific instruction.");return;}guideTargetX=Math.max(0f,Math.min(1f,result.getFloatExtra("x",guideTargetX)));guideTargetY=Math.max(0f,Math.min(1f,result.getFloatExtra("y",guideTargetY)));guideTargetLabel=result.getStringExtra("label")!=null?result.getStringExtra("label"):"matching control";if(guideTarget!=null&&guideTargetLp!=null){DisplayMetrics dm=getResources().getDisplayMetrics();guideTargetLp.x=Math.max(0,(int)(dm.widthPixels*guideTargetX)-dp(21));guideTargetLp.y=Math.max(0,(int)(dm.heightPixels*guideTargetY)-dp(21));try{wm.updateViewLayout(guideTarget,guideTargetLp);}catch(Exception ignored){}}if(guideLine!=null)guideLine.invalidate();if(guideStatusView!=null)guideStatusView.setText("Target found: "+guideTargetLabel+". Visual guidance only; Bosley will not click or type.");}
   void removeGuide(){guideStatusView=null;if(wm!=null&&guideTarget!=null){try{wm.removeView(guideTarget);}catch(Exception ignored){}guideTarget=null;}if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
-  void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
+  void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}removeTranscriptPanel();if(speechRecognizer!=null){try{speechRecognizer.cancel();speechRecognizer.destroy();}catch(Exception ignored){}speechRecognizer=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   @Override public void onDestroy(){removeBar();super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
@@ -188,6 +253,12 @@ public class BosleyOverlayPlugin extends Plugin {
   private VirtualDisplay captureDisplay;
   private ImageReader captureReader;
   private final Handler captureHandler=new Handler(Looper.getMainLooper());
+  @PluginMethod public void consumeVoiceDraft(PluginCall call){
+    android.content.SharedPreferences prefs=getContext().getSharedPreferences("bosley_voice",android.content.Context.MODE_PRIVATE);
+    String transcript=prefs.getString("pending_transcript","");
+    prefs.edit().remove("pending_transcript").remove("pending_at").apply();
+    JSObject result=new JSObject();result.put("text",transcript==null?"":transcript);call.resolve(result);
+  }
   @PluginMethod public void speakText(PluginCall call){
     String text=call.getString("text","");
     String profile=call.getString("profile","jarvis");

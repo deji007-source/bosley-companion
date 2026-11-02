@@ -16,6 +16,8 @@ if "android.permission.FOREGROUND_SERVICE" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <application', 1)
 if "android.permission.FOREGROUND_SERVICE_MICROPHONE" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />\n    <application', 1)
+if "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" not in text:
+    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />\n    <application', 1)
 if "<queries>" not in text:
     text = text.replace("<application", '<queries><intent><action android:name="android.speech.RecognitionService" /></intent></queries>\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
@@ -23,6 +25,8 @@ if "SYSTEM_ALERT_WINDOW" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <application', 1)
 if "BosleyOverlayService" not in text:
     text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:foregroundServiceType="microphone" />\n    </application>')
+if "BosleyScreenRecordingService" not in text:
+    text = text.replace("</application>", '        <service android:name=".BosleyScreenRecordingService" android:exported="false" android:foregroundServiceType="mediaProjection" />\n    </application>')
 manifest.write_text(text)
 # The Android guide is intentionally stationary. Do not register an accessibility
 # service to inspect other apps or automatically reposition the guide target.
@@ -52,6 +56,7 @@ public class BosleyOverlayService extends Service {
   WindowManager wm; View bar; WindowManager.LayoutParams lp; SpeechRecognizer overlayRecognizer; TextToSpeech overlayTts; boolean voiceReply=false; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
   @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);overlayTts=new TextToSpeech(this,status->{if(status==TextToSpeech.SUCCESS){overlayTts.setLanguage(java.util.Locale.getDefault());overlayTts.setSpeechRate(0.96f);}});}
   @Override public int onStartCommand(Intent i,int flags,int id){
+    if(i!=null && "com.bosley.companion.STOP_SCREEN_RECORDING".equals(i.getAction())){stopService(new Intent(this,BosleyScreenRecordingService.class));return START_STICKY;}
     if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
     if(i!=null && ACTION_TARGET.equals(i.getAction())){updateGuideTarget(i);return START_STICKY;}
@@ -102,11 +107,16 @@ public class BosleyOverlayService extends Service {
     voiceInputToggle=new Switch(this);voiceInputToggle.setText("Mic");voiceInputToggle.setTextColor(0xffe1e6ef);voiceInputToggle.setTextSize(10);voiceInputToggle.setChecked(voiceInputEnabled);voiceControls.addView(voiceInputToggle);voiceInputToggle.setOnCheckedChangeListener((button,checked)->{voiceInputEnabled=checked;voicePrefs.edit().putBoolean("voice_input_enabled",checked).apply();if(chatVoice!=null)chatVoice.setEnabled(checked&&!chatRequestBusy);if(!checked)stopOverlayVoice();});
     voiceReplyToggle=new Switch(this);voiceReplyToggle.setText("Speak replies");voiceReplyToggle.setTextColor(0xffe1e6ef);voiceReplyToggle.setTextSize(10);voiceReplyToggle.setChecked(voiceRepliesEnabled);voiceControls.addView(voiceReplyToggle);voiceReplyToggle.setOnCheckedChangeListener((button,checked)->{voiceRepliesEnabled=checked;voicePrefs.edit().putBoolean("voice_replies_enabled",checked).apply();});
     panel.addView(voiceControls);
+    LinearLayout toolbox=new LinearLayout(this);toolbox.setOrientation(LinearLayout.VERTICAL);toolbox.setVisibility(View.GONE);toolbox.setPadding(0,dp(2),0,dp(5));
+    String[][] toolRows={{"▣  SCREEN RECORD","▧  CAPTURE SCREEN","⚙  AUTOMATION"},{"✦  AGENTS","⌘  SKILLS","＋  PLUGINS"}};
+    String[][] toolActions={{"screen-record","capture-screen","automation"},{"providers","skills","providers"}};
+    for(int r=0;r<toolRows.length;r++){LinearLayout toolRow=new LinearLayout(this);toolRow.setGravity(Gravity.CENTER);for(int c=0;c<toolRows[r].length;c++){final String action=toolActions[r][c];TextView tool=new TextView(this);tool.setText(toolRows[r][c]);tool.setTextColor(0xffe0e6f0);tool.setTextSize(8);tool.setGravity(Gravity.CENTER);tool.setSingleLine(true);tool.setEllipsize(android.text.TextUtils.TruncateAt.END);GradientDrawable toolBg=new GradientDrawable();toolBg.setColor(0xff202633);toolBg.setCornerRadius(dp(7));tool.setBackground(toolBg);LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(0,dp(29),1);tp.setMargins(0,0,dp(4),dp(4));toolRow.addView(tool,tp);tool.setOnClickListener(v->{toolbox.setVisibility(View.GONE);if("screen-record".equals(action)||"capture-screen".equals(action)||"automation".equals(action)||"providers".equals(action)||"skills".equals(action)||"plugins".equals(action))openCompanion(action);});}toolbox.addView(toolRow);}
+    TextView stopRecord=new TextView(this);stopRecord.setText("■  STOP SCREEN RECORDING");stopRecord.setTextColor(0xffffc5c5);stopRecord.setTextSize(9);stopRecord.setGravity(Gravity.CENTER);stopRecord.setPadding(0,dp(5),0,dp(5));stopRecord.setVisibility(getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).getBoolean("active",false)?View.VISIBLE:View.GONE);stopRecord.setOnClickListener(v->{stopService(new Intent(this,BosleyScreenRecordingService.class));stopRecord.setVisibility(View.GONE);appendChat("BOSLEY: Screen recording stopped. The video is saved in the Bosley app Movies folder.");});toolbox.addView(stopRecord);panel.addView(toolbox);
     chatScroll=new ScrollView(this);chatOutput=new TextView(this);chatOutput.setTextColor(0xffe8eaf0);chatOutput.setTextSize(13);chatOutput.setText("Ready. Messages are sent directly from this panel.");chatOutput.setPadding(dp(4),dp(8),dp(4),dp(8));chatScroll.addView(chatOutput);panel.addView(chatScroll,new LinearLayout.LayoutParams(-1,0,1));
-    LinearLayout compose=new LinearLayout(this);compose.setGravity(Gravity.CENTER_VERTICAL);chatInput=new EditText(this);chatInput.setSingleLine(false);chatInput.setMaxLines(2);chatInput.setTextColor(Color.WHITE);chatInput.setHintTextColor(0xff9ba3b4);chatInput.setHint("Message Bosley…");chatInput.setTextSize(14);compose.addView(chatInput,new LinearLayout.LayoutParams(0,dp(42),1));
+    LinearLayout compose=new LinearLayout(this);compose.setGravity(Gravity.CENTER_VERTICAL);TextView plus=new TextView(this);plus.setText("＋");plus.setTextColor(Color.WHITE);plus.setTextSize(24);plus.setGravity(Gravity.CENTER);plus.setContentDescription("Open Bosley tools");GradientDrawable plusBg=new GradientDrawable();plusBg.setColor(0xff263044);plusBg.setShape(GradientDrawable.OVAL);plus.setBackground(plusBg);compose.addView(plus,new LinearLayout.LayoutParams(dp(36),dp(36)));plus.setOnClickListener(v->toolbox.setVisibility(toolbox.getVisibility()==View.VISIBLE?View.GONE:View.VISIBLE));chatInput=new EditText(this);chatInput.setSingleLine(false);chatInput.setMaxLines(2);chatInput.setTextColor(Color.WHITE);chatInput.setHintTextColor(0xff9ba3b4);chatInput.setHint("Message Bosley…");chatInput.setTextSize(14);compose.addView(chatInput,new LinearLayout.LayoutParams(0,dp(42),1));
     chatVoice=new Button(this);chatVoice.setText("🎙");chatVoice.setContentDescription("Talk to Bosley");GradientDrawable micBg=new GradientDrawable();micBg.setColor(0xff30394a);micBg.setShape(GradientDrawable.OVAL);chatVoice.setBackground(micBg);compose.addView(chatVoice,new LinearLayout.LayoutParams(dp(42),dp(42)));chatVoice.setEnabled(voiceInputEnabled);chatVoice.setOnClickListener(v->{if(voiceInputEnabled)startOverlayVoice();else appendChat("Turn Mic on in the Voice controls first.");});
     chatSend=new Button(this);chatSend.setText("Send");compose.addView(chatSend,new LinearLayout.LayoutParams(dp(60),dp(42)));panel.addView(compose);chatSend.setOnClickListener(v->sendOverlayMessage());
-    WindowManager.LayoutParams params=new WindowManager.LayoutParams(Math.min(dp(360),getResources().getDisplayMetrics().widthPixels-dp(24)),Math.min(dp(300),getResources().getDisplayMetrics().heightPixels-dp(90)),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,PixelFormat.TRANSLUCENT);
+    WindowManager.LayoutParams params=new WindowManager.LayoutParams(Math.min(dp(360),getResources().getDisplayMetrics().widthPixels-dp(24)),Math.min(dp(360),getResources().getDisplayMetrics().heightPixels-dp(70)),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,PixelFormat.TRANSLUCENT);
     params.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;params.y=dp(54);chatPanel=panel;
     try{wm.addView(panel,params);chatInput.requestFocus();panel.postDelayed(()->{try{if(showKeyboard){params.flags=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;wm.updateViewLayout(panel,params);android.view.inputmethod.InputMethodManager keyboard=(android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);keyboard.showSoftInput(chatInput,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}}catch(Exception ignored){}},180);}catch(Exception e){chatPanel=null;Toast.makeText(this,"Could not open Bosley panel.",Toast.LENGTH_SHORT).show();}
   }
@@ -190,24 +200,31 @@ public class BosleyOverlayService extends Service {
         android.content.SharedPreferences prefs=getSharedPreferences("bosley_native_chat",MODE_PRIVATE);
         String token=prefs.getString("access_token",""),anon=prefs.getString("anon_key",""),base=prefs.getString("supabase_url","");
         if(token.isEmpty()||anon.isEmpty()||base.isEmpty())throw new Exception("Sign in to Bosley once to enable the floating panel.");
+        boolean plannerCommand=java.util.regex.Pattern.compile("(?is)^(?:bosley[, ]+)?(?:please\\s+)?(?:plan|add(?:\\s+this)?(?:\\s+task)?\\s+to\\s+(?:my\\s+)?planner|put\\s+(?:this\\s+)?in\\s+(?:my\\s+)?planner|create\\s+(?:a\\s+)?planner\\s+task|make\\s+(?:a\\s+)?plan(?:\\s+for)?|help\\s+me\\s+plan)(?:\\s*[:,-]?\\s+)(.+)$").matcher(message).matches();
+        boolean agentHandoff=java.util.regex.Pattern.compile("(?is)^(?:please\\s+)?(?:send|hand off|give)\\s+(?:this|it|the request)?\\s*to\\s+(chatgpt|claude|gemini)\\s*[:\\-]\\s*([\\s\\S]{1,8000})$").matcher(message).matches();
+        if(plannerCommand||agentHandoff){new Handler(Looper.getMainLooper()).post(()->{chatRequestBusy=false;openCompanion("dispatch-command",message);});return;}
         answer=routeOverlayCommand(message,token,anon,base);
         if(answer==null){
-          java.net.HttpURLConnection connection=(java.net.HttpURLConnection)new java.net.URL(base+"/functions/v1/companion-chat").openConnection();
+          String selectedProvider=prefs.getString("selected_provider","");
+          java.net.HttpURLConnection connection=(java.net.HttpURLConnection)new java.net.URL(base+(selectedProvider.isEmpty()?"/functions/v1/companion-chat":"/functions/v1/agent-gateway")).openConnection();
           connection.setRequestMethod("POST");connection.setConnectTimeout(15000);connection.setReadTimeout(45000);connection.setDoOutput(true);
-          connection.setRequestProperty("Content-Type","application/json");connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("apikey",anon);connection.setRequestProperty("Accept","text/event-stream");
-          org.json.JSONArray messages=new org.json.JSONArray().put(new org.json.JSONObject().put("role","user").put("content",message));
-          byte[] body=new org.json.JSONObject().put("messages",messages).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);connection.getOutputStream().write(body);
+          connection.setRequestProperty("Content-Type","application/json");connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("apikey",anon);connection.setRequestProperty("Accept",selectedProvider.isEmpty()?"text/event-stream":"application/json");
+          org.json.JSONArray messages;try{messages=new org.json.JSONArray(prefs.getString("chat_history","[]"));}catch(Exception ignored){messages=new org.json.JSONArray();}messages.put(new org.json.JSONObject().put("role","user").put("content",message));while(messages.length()>16)messages.remove(0);
+          org.json.JSONObject payload=selectedProvider.isEmpty()?new org.json.JSONObject().put("messages",messages):new org.json.JSONObject().put("action","chat").put("provider",selectedProvider).put("messages",messages);
+          byte[] body=payload.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);connection.getOutputStream().write(body);
           int status=connection.getResponseCode();java.io.InputStream stream=status>=200&&status<300?connection.getInputStream():connection.getErrorStream();
           java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));String line;
-          while((line=reader.readLine())!=null){if(!line.startsWith("data:"))continue;String data=line.substring(5).trim();if(data.isEmpty()||"[DONE]".equals(data))continue;try{org.json.JSONObject packet=new org.json.JSONObject(data);if(packet.has("error"))throw new Exception(packet.getJSONObject("error").optString("message","Bosley request failed."));org.json.JSONArray choices=packet.optJSONArray("choices");org.json.JSONObject delta=choices==null?null:choices.optJSONObject(0).optJSONObject("delta");if(delta!=null)answer+=delta.optString("content","");}catch(org.json.JSONException ignored){}}
-          reader.close();connection.disconnect();if(status<200||status>=300)throw new Exception("Bosley returned HTTP "+status);if(answer.trim().isEmpty())throw new Exception("Bosley returned an empty response.");
+          if(!selectedProvider.isEmpty()){StringBuilder jsonText=new StringBuilder();while((line=reader.readLine())!=null)jsonText.append(line);org.json.JSONObject providerResult=new org.json.JSONObject(jsonText.toString());if(status<200||status>=300||!providerResult.optBoolean("ok",false))throw new Exception(providerResult.optString("error","AI agent gateway returned HTTP "+status));answer=providerResult.optString("reply","");}
+          else{while((line=reader.readLine())!=null){if(!line.startsWith("data:"))continue;String data=line.substring(5).trim();if(data.isEmpty()||"[DONE]".equals(data))continue;try{org.json.JSONObject packet=new org.json.JSONObject(data);if(packet.has("error"))throw new Exception(packet.getJSONObject("error").optString("message","Bosley request failed."));org.json.JSONArray choices=packet.optJSONArray("choices");org.json.JSONObject delta=choices==null?null:choices.optJSONObject(0).optJSONObject("delta");if(delta!=null)answer+=delta.optString("content","");}catch(org.json.JSONException ignored){}}}
+          reader.close();connection.disconnect();if(selectedProvider.isEmpty()&&(status<200||status>=300))throw new Exception("Bosley returned HTTP "+status);if(answer.trim().isEmpty())throw new Exception("Bosley returned an empty response.");messages.put(new org.json.JSONObject().put("role","assistant").put("content",answer));while(messages.length()>16)messages.remove(0);prefs.edit().putString("chat_history",messages.toString()).apply();
         }
       }catch(Exception e){failure=e.getMessage()==null?"Connection failed.":e.getMessage();}
       final String result=answer,err=failure;final boolean shouldSpeak=voiceReply||getSharedPreferences("bosley_overlay_preferences",MODE_PRIVATE).getBoolean("voice_replies_enabled",false);voiceReply=false;
       new Handler(Looper.getMainLooper()).post(()->{if(chatOutput!=null){String current=chatOutput.getText().toString();int pos=current.lastIndexOf("\n\nBOSLEY: Thinking…");if(pos>=0)chatOutput.setText(current.substring(0,pos));String response=err==null?"BOSLEY: "+result:"BOSLEY: "+err;appendChat(response);if(shouldSpeak&&err==null)speakOverlayText(result);}chatRequestBusy=false;if(chatSend!=null)chatSend.setEnabled(true);if(chatVoice!=null)chatVoice.setEnabled(true);});
     }).start();
   }
-  void openCompanion(String action){if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
+  void openCompanion(String action){openCompanion(action,"");}
+  void openCompanion(String action,String command){if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);if(command!=null&&!command.isEmpty())a.putExtra("bosley_command",command);startActivity(a);}
   void showGuide(){
     removeGuide();
     final android.util.DisplayMetrics metrics=getResources().getDisplayMetrics();
@@ -294,6 +311,107 @@ public class BosleyTargetAccessibilityService extends AccessibilityService {
   @Override public void onDestroy(){if(receiver!=null){try{unregisterReceiver(receiver);}catch(Exception ignored){}}super.onDestroy();}
 }''')
 
+(src / "BosleyScreenRecordingService.java").write_text(r'''package com.bosley.companion;
+import android.app.*;
+import android.content.*;
+import android.net.Uri;
+import android.provider.MediaStore;
+import android.os.ParcelFileDescriptor;
+import android.media.MediaRecorder;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
+import android.hardware.display.VirtualDisplay;
+import android.hardware.display.DisplayManager;
+import android.os.*;
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+public class BosleyScreenRecordingService extends Service {
+  static final String ACTION_STOP="com.bosley.companion.STOP_RECORDING";
+  private MediaProjection projection;
+  private VirtualDisplay display;
+  private MediaRecorder recorder;
+  private File output;
+  private Uri outputUri;
+  private ParcelFileDescriptor outputDescriptor;
+  private boolean started=false;
+  @Override public int onStartCommand(Intent intent,int flags,int startId){
+    if(intent!=null&&ACTION_STOP.equals(intent.getAction())){stopRecording();return START_NOT_STICKY;}
+    if(started)return START_STICKY;
+    try{
+      if(Build.VERSION.SDK_INT>=26){
+        String channel="bosley-screen-recording";
+        NotificationManager nm=(NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        if(nm.getNotificationChannel(channel)==null)nm.createNotificationChannel(new NotificationChannel(channel,"Bosley screen recording",NotificationManager.IMPORTANCE_LOW));
+        Notification notification=new Notification.Builder(this,channel).setSmallIcon(android.R.drawable.presence_video_online).setContentTitle("Bosley screen recorder").setContentText("Recording is active. Stop it from the floating panel.").setOngoing(true).setCategory(Notification.CATEGORY_SERVICE).build();
+        if(Build.VERSION.SDK_INT>=29)startForeground(74,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);else startForeground(74,notification);
+      }else startForeground(74,new Notification.Builder(this).setSmallIcon(android.R.drawable.presence_video_online).setContentTitle("Bosley screen recorder").setContentText("Recording is active.").setOngoing(true).build());
+      int resultCode=intent.getIntExtra("resultCode",0);
+      Intent data;
+      if(Build.VERSION.SDK_INT>=33)data=intent.getParcelableExtra("resultData",Intent.class);else data=(Intent)intent.getParcelableExtra("resultData");
+      if(data==null)throw new IllegalStateException("Screen recording permission data is missing.");
+      MediaProjectionManager manager=(MediaProjectionManager)getSystemService(MEDIA_PROJECTION_SERVICE);
+      projection=manager.getMediaProjection(resultCode,data);
+      if(projection==null)throw new IllegalStateException("Android did not grant screen recording.");
+      projection.registerCallback(new MediaProjection.Callback(){@Override public void onStop(){stopRecording();}},new Handler(Looper.getMainLooper()));
+      DisplayMetrics metrics=new DisplayMetrics();((WindowManager)getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(metrics);
+      int width=Math.max(2,metrics.widthPixels),height=Math.max(2,metrics.heightPixels),density=metrics.densityDpi;
+      width-=width%2;height-=height%2;
+      String stamp=new SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(new Date());
+      String fileName="Bosley-"+stamp+".mp4";
+      recorder=Build.VERSION.SDK_INT>=31?new MediaRecorder(this):new MediaRecorder();
+      recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+      recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+      if(Build.VERSION.SDK_INT>=29){
+        ContentValues values=new ContentValues();values.put(MediaStore.MediaColumns.DISPLAY_NAME,fileName);values.put(MediaStore.MediaColumns.MIME_TYPE,"video/mp4");values.put(MediaStore.MediaColumns.RELATIVE_PATH,Environment.DIRECTORY_MOVIES+"/Bosley");values.put(MediaStore.MediaColumns.IS_PENDING,1);
+        outputUri=getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,values);
+        if(outputUri==null)throw new IllegalStateException("Could not create the recording in Movies/Bosley.");
+        outputDescriptor=getContentResolver().openFileDescriptor(outputUri,"w");
+        if(outputDescriptor==null)throw new IllegalStateException("Could not open the new recording file.");
+        recorder.setOutputFile(outputDescriptor.getFileDescriptor());
+      }else{
+        File folder=new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES),"Bosley");
+        if(!folder.exists()&&!folder.mkdirs())throw new IllegalStateException("Could not create the Bosley recordings folder.");
+        output=new File(folder,fileName);recorder.setOutputFile(output.getAbsolutePath());
+      }
+      recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+      recorder.setVideoSize(width,height);
+      recorder.setVideoFrameRate(30);
+      recorder.setVideoEncodingBitRate(Math.min(8000000,Math.max(2500000,width*height*4)));
+      recorder.prepare();
+      display=projection.createVirtualDisplay("BosleyScreenRecorder",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,recorder.getSurface(),null,null);
+      recorder.start();started=true;
+      getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",true).putString("last_path",output==null?"":output.getAbsolutePath()).putString("last_uri",outputUri==null?"":outputUri.toString()).apply();
+      return START_STICKY;
+    }catch(Exception error){
+      android.util.Log.e("BosleyScreenRecorder","Could not start recording",error);
+      getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",false).apply();
+      if(outputUri!=null){try{getContentResolver().delete(outputUri,null,null);}catch(Exception ignored){}}
+      cleanup();stopForeground(true);stopSelf();return START_NOT_STICKY;
+    }
+  }
+  private void stopRecording(){
+    if(started){try{recorder.stop();}catch(Exception error){android.util.Log.w("BosleyScreenRecorder","Recording ended before a valid video frame was written",error);}started=false;}
+    if(outputUri!=null){try{ContentValues values=new ContentValues();values.put(MediaStore.MediaColumns.IS_PENDING,0);getContentResolver().update(outputUri,values,null,null);}catch(Exception error){android.util.Log.w("BosleyScreenRecorder","Could not publish recording to Movies",error);}}
+    cleanup();
+    getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",false).apply();
+    if((outputUri!=null)||(output!=null&&output.exists()&&output.length()>0))android.widget.Toast.makeText(this,"Recording saved in Movies/Bosley",android.widget.Toast.LENGTH_LONG).show();
+    stopForeground(true);stopSelf();
+  }
+  private void cleanup(){
+    if(display!=null){try{display.release();}catch(Exception ignored){}display=null;}
+    if(recorder!=null){try{recorder.reset();}catch(Exception ignored){}try{recorder.release();}catch(Exception ignored){}recorder=null;}
+    if(projection!=null){try{projection.stop();}catch(Exception ignored){}projection=null;}
+    if(outputDescriptor!=null){try{outputDescriptor.close();}catch(Exception ignored){}outputDescriptor=null;}
+  }
+  @Override public void onDestroy(){if(started)stopRecording();else cleanup();super.onDestroy();}
+  @Override public android.os.IBinder onBind(Intent intent){return null;}
+}''')
+
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;
 import android.content.Intent;
 import android.net.Uri;
@@ -325,9 +443,37 @@ public class BosleyOverlayPlugin extends Plugin {
   private VirtualDisplay captureDisplay;
   private ImageReader captureReader;
   private final Handler captureHandler=new Handler(Looper.getMainLooper());
+  @PluginMethod public void syncAgentPreference(PluginCall call){
+    String provider=call.getString("provider","");
+    getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE).edit().putString("selected_provider",provider).apply();
+    JSObject r=new JSObject();r.put("saved",true);call.resolve(r);
+  }
+  @PluginMethod public void requestScreenRecording(PluginCall call){
+    if(Build.VERSION.SDK_INT<21){call.reject("Screen recording requires Android 5.0 or newer.");return;}
+    MediaProjectionManager manager=(MediaProjectionManager)getContext().getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE);
+    if(manager==null){call.reject("Android screen recording is unavailable.");return;}
+    try{startActivityForResult(call,manager.createScreenCaptureIntent(),"screenRecordingPermissionResult");}
+    catch(Exception e){call.reject("Could not open Android's screen-recording permission prompt.",e);}
+  }
+  @ActivityCallback private void screenRecordingPermissionResult(PluginCall call,ActivityResult result){
+    if(result.getResultCode()!=android.app.Activity.RESULT_OK||result.getData()==null){call.resolve(new JSObject().put("cancelled",true));return;}
+    try{
+      Intent service=new Intent(getContext(),BosleyScreenRecordingService.class);
+      service.putExtra("resultCode",result.getResultCode());service.putExtra("resultData",result.getData());
+      if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(service);else getContext().startService(service);
+      JSObject response=new JSObject();response.put("started",true);call.resolve(response);
+    }catch(Exception e){call.reject("Could not start the screen recorder: "+String.valueOf(e.getMessage()),e);}
+  }
+  @PluginMethod public void stopScreenRecording(PluginCall call){
+    getContext().stopService(new Intent(getContext(),BosleyScreenRecordingService.class));JSObject response=new JSObject();response.put("stopping",true);call.resolve(response);
+  }
   @PluginMethod public void syncChatSession(PluginCall call){
-    String token=call.getString("accessToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl","");
-    getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE).edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base).apply();
+    String token=call.getString("accessToken",""),anon=call.getString("anonKey",""),base=call.getString("supabaseUrl",""),userId=call.getString("userId","");
+    android.content.SharedPreferences chatPrefs=getContext().getSharedPreferences("bosley_native_chat",android.content.Context.MODE_PRIVATE);
+    String previousAccount=chatPrefs.getString("account_id","");
+    android.content.SharedPreferences.Editor editor=chatPrefs.edit().putString("access_token",token).putString("anon_key",anon).putString("supabase_url",base);
+    if(!userId.isEmpty()){if(!previousAccount.isEmpty()&&!previousAccount.equals(userId))editor.remove("chat_history").remove("selected_provider");editor.putString("account_id",userId);}
+    editor.apply();
     JSObject r=new JSObject();r.put("saved",!token.isEmpty());call.resolve(r);
   }
   @PluginMethod public void speakText(PluginCall call){
@@ -466,8 +612,9 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);getContext().startService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}
   @PluginMethod public void consumeLaunchAction(PluginCall call){
     String action=getActivity().getIntent().getStringExtra("bosley_quick_action");
-    getActivity().getIntent().removeExtra("bosley_quick_action");
-    JSObject r=new JSObject();r.put("action",action==null?"":action);call.resolve(r);
+    String command=getActivity().getIntent().getStringExtra("bosley_command");
+    getActivity().getIntent().removeExtra("bosley_quick_action");getActivity().getIntent().removeExtra("bosley_command");
+    JSObject r=new JSObject();r.put("action",action==null?"":action);r.put("command",command==null?"":command);call.resolve(r);
   }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}
 }''')

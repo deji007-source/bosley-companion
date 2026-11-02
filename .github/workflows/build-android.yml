@@ -74,13 +74,26 @@ jobs:
           grep -Fq 'startOverlayVoice();' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq '/functions/v1/remote-action' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'shortcutLabels={"AUTOMATION","AGENTS","OPEN APP"}' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
-          grep -Fq 'Math.min(dp(300),getResources().getDisplayMetrics().heightPixels-dp(90))' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'Math.min(dp(360),getResources().getDisplayMetrics().heightPixels-dp(70))' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'app.setText("APP ↗")' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'voiceInputToggle=new Switch(this)' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'voiceReplyToggle=new Switch(this)' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'stopOverlayVoice()' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'voice_replies_enabled' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
-          grep -Fq '["panel","voice","automation","providers"].includes(action)' index.html
+          grep -Fq 'plus.setText("＋")' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'SCREEN RECORD' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'requestScreenRecording(PluginCall call)' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java
+          grep -Fq 'syncAgentPreference(PluginCall call)' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java
+          grep -Fq 'MediaRecorder.VideoEncoder.H264' android/app/src/main/java/com/bosley/companion/BosleyScreenRecordingService.java
+          grep -Fq 'FOREGROUND_SERVICE_MEDIA_PROJECTION' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:foregroundServiceType="mediaProjection"' android/app/src/main/AndroidManifest.xml
+          grep -Fq '/functions/v1/agent-gateway' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'if(plannerCommand||agentHandoff)' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'putExtra("bosley_command",command)' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'r.put("command",command==null?"":command)' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java
+
+
+          grep -Fq '["panel","voice","automation","providers","skills","plugins","screen-record","capture-screen","dispatch-command"].includes(action)' index.html
           grep -Fq 'android:foregroundServiceType="microphone"' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.speech.RecognitionService' android/app/src/main/AndroidManifest.xml
           grep -Fq 'syncChatSession(PluginCall call)' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java

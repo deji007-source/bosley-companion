@@ -138,7 +138,7 @@ public class BosleyOverlayService extends Service {
   void removeGuide(){guideStatusView=null;if(wm!=null&&guideTarget!=null){try{wm.removeView(guideTarget);}catch(Exception ignored){}guideTarget=null;}if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
   void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-  @Override public void onDestroy(){removeBar();super.onDestroy();}
+  @Override public void onDestroy(){removeBar();if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}removeGuide();super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
 }''')
 (src / "BosleyTargetAccessibilityService.java").write_text(r'''package com.bosley.companion;

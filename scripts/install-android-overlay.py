@@ -353,5 +353,7 @@ if "BosleyOverlayPlugin" not in a:
         raise SystemExit("Could not safely add native overlay intent handoff to MainActivity")
     if "registerPlugin(BosleyOverlayPlugin.class)" not in a:
         raise SystemExit("Could not safely register native overlay plugin in MainActivity")
+    if "String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)" not in replacement:
+        raise SystemExit("Could not safely add the native floating widget tap event")
 activity.write_text(a)
 print("Installed native rounded floating widget service and Capacitor bridge.")

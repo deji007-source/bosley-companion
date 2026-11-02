@@ -11,13 +11,21 @@ This is the first provider-integration layer. It deliberately does not install o
 - Mistral
 
 ## Deployment prerequisites
-1. Apply `supabase/migrations/202611020001_agent_provider_connections.sql`.
-2. Configure the Edge Function secrets:
+1. Apply `supabase/migrations/20261102190000_agent_provider_connections.sql`. (Already applied to the existing Jarvis Supabase project.)
+2. Configure the Edge Function secret `AGENT_CREDENTIALS_ENCRYPTION_KEY` in Supabase Dashboard → Edge Functions → Secrets. This is still required before the Connect button can save a provider key. Generate a unique value locally with the command below; do not paste the value into chat or commit it.
+
+Configure the other environment variables only if they are not already present in the project: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
+
+3. Deploy `agent-gateway` with JWT verification enabled. (Already deployed to the existing Jarvis Supabase project.)
+
+ (UI is implemented on this branch; the chat route uses the gateway when a provider is selected.)
+
+5. Configure the Edge Function secrets:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `AGENT_CREDENTIALS_ENCRYPTION_KEY` — generate a unique 32-byte key and store its base64 encoding. Never commit it.
-3. Deploy `agent-gateway` with JWT verification enabled.
+3. Deploy `agent-gateway` with JWT verification enabled. (Already deployed to the existing Jarvis Supabase project.)
 
 Generate an encryption key locally with:
 ```sh

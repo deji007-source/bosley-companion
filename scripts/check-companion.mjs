@@ -23,6 +23,17 @@ for (const [index, source] of inlineScripts.entries()) {
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 
+assert.ok(html.includes('id="plus"'), "Main chat composer must expose the Bosley plus button");
+assert.ok(html.includes('id="attach-menu"'), "Plus button must open the attachment and tools menu");
+assert.ok(html.includes('id="attach-files"'), "Attachment menu must allow photo and file selection");
+assert.ok(html.includes('id="file-input"'), "Composer must provide a file picker");
+assert.ok(html.includes("function clearFileAttachments()"), "Text attachments must be removable before sending");
+assert.ok(html.includes("ATTACHED TEXT FILES"), "Selected text files must be included in the AI request as untrusted user data");
+assert.ok(html.includes("plusButton.setAttribute(\"aria-expanded\""), "Attachment menu must expose its expanded state accessibly");
+assert.ok(androidInstaller.includes("widgetWidth=116,widgetHeight=40,cornerDp=20"), "Android floating widget must use the compact Bosley companion dimensions");
+assert.ok(androidInstaller.includes("frame.setElevation(dp(8))"), "Android floating widget must have subtle elevation");
+assert.ok(androidInstaller.includes("0x664B91A6"), "Android floating widget must use the muted Bosley accent outline");
+
 const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],
   ["Automation Skill master switch is respected", "if(!settings.enabled)return {status:\"none\"}"],

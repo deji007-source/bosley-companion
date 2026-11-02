@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
-const migration = readFileSync(new URL("../supabase/migrations/202611020001_agent_provider_connections.sql", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../supabase/migrations/20261102190000_agent_provider_connections.sql", import.meta.url), "utf8");
 const docs = readFileSync(new URL("../agent-pack/provider-gateway.md", import.meta.url), "utf8");
 for (const provider of ["openai", "anthropic", "gemini", "groq", "openrouter", "mistral"]) {
   assert.ok(source.includes(provider + ":"), "Provider adapter missing: " + provider);

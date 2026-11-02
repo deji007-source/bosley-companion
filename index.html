@@ -684,25 +684,6 @@ window.addEventListener("error", event => {
   }
 });
 
-let bosleyVoiceDraftBusy=false;
-async function consumeFloatingVoiceDraft(){
- if(bosleyVoiceDraftBusy||!user||!window.Capacitor?.Plugins?.BosleyOverlay?.consumeVoiceDraft)return;
- bosleyVoiceDraftBusy=true;
- try{
-  const result=await window.Capacitor.Plugins.BosleyOverlay.consumeVoiceDraft();
-  const spoken=String(result?.text||"").trim();
-  if(spoken){
-   const field=document.querySelector("#in");
-   if(field)field.value=spoken;
-   await send(spoken);
-  }
- }catch(error){console.warn("Could not hand floating voice transcript to Bosley:",error)}
- finally{bosleyVoiceDraftBusy=false}
-}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)consumeFloatingVoiceDraft()});
-window.addEventListener("focus",consumeFloatingVoiceDraft);
-setInterval(consumeFloatingVoiceDraft,1800);
-
 document.addEventListener("DOMContentLoaded",()=>{
 /* Side-view dock: workspace, appearance, automation and activity open beside chat. */
 (()=>{
@@ -811,6 +792,26 @@ if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not init
 
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
+ // Keep the native voice bridge inside the authenticated app scope: the earlier
+ // bootstrap script cannot see this IIFE's user binding.
+ let bosleyVoiceDraftBusy=false;
+ async function consumeFloatingVoiceDraft(){
+  if(bosleyVoiceDraftBusy||!user||!window.Capacitor?.Plugins?.BosleyOverlay?.consumeVoiceDraft)return;
+  bosleyVoiceDraftBusy=true;
+  try{
+   const result=await window.Capacitor.Plugins.BosleyOverlay.consumeVoiceDraft();
+   const spoken=String(result?.text||"").trim();
+   if(spoken){
+    const field=$("#in");
+    if(field)field.value=spoken;
+    await send(spoken);
+   }
+  }catch(error){console.warn("Could not hand floating voice transcript to Bosley:",error)}
+  finally{bosleyVoiceDraftBusy=false}
+ }
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)consumeFloatingVoiceDraft()});
+ window.addEventListener("focus",consumeFloatingVoiceDraft);
+ setInterval(consumeFloatingVoiceDraft,1800);
 let androidDeviceAgent=null,androidAgentImport=null,androidAgentUserId=null;
 async function syncAndroidDeviceAgent(){
  const native=window.Capacitor?.isNativePlatform?.()===true;

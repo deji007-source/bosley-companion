@@ -1,0 +1,46 @@
+model_list:
+  # Local-first default. If Ollama is unavailable, LiteLLM tries the configured cloud fallback chain.
+  - model_name: bosley-hybrid
+    litellm_params:
+      model: ollama/qwen2.5:7b
+      api_base: http://ollama:11434
+      api_key: ollama
+  - model_name: bosley-local
+    litellm_params:
+      model: ollama/qwen2.5:7b
+      api_base: http://ollama:11434
+      api_key: ollama
+
+  # Cloud fallbacks and explicitly selectable provider routes.
+  - model_name: bosley-openai
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: bosley-anthropic
+    litellm_params:
+      model: anthropic/claude-3-5-haiku-latest
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: bosley-gemini
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: bosley-deepseek
+    litellm_params:
+      model: deepseek/deepseek-chat
+      api_key: os.environ/DEEPSEEK_API_KEY
+  - model_name: bosley-cloud
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+router_settings:
+  num_retries: 0
+  timeout: 55
+  allowed_fails: 1
+  cooldown_time: 30
+  fallbacks:
+    - bosley-hybrid: [bosley-openai, bosley-anthropic, bosley-gemini, bosley-deepseek]
+    - bosley-cloud: [bosley-openai, bosley-anthropic, bosley-gemini, bosley-deepseek]
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

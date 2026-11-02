@@ -98,7 +98,7 @@ public class BosleyOverlayService extends Service {
     try{wm.addView(panel,params);chatInput.requestFocus();panel.postDelayed(()->{try{params.flags=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;wm.updateViewLayout(panel,params);android.view.inputmethod.InputMethodManager keyboard=(android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);keyboard.showSoftInput(chatInput,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}catch(Exception ignored){}},180);}catch(Exception e){chatPanel=null;Toast.makeText(this,"Could not open Bosley panel.",Toast.LENGTH_SHORT).show();}
   }
   void appendChat(String text){if(chatOutput==null)return;chatOutput.append("\n\n"+text);if(chatScroll!=null)chatScroll.post(()->chatScroll.fullScroll(View.FOCUS_DOWN));}
-  void beginVoiceForeground(){
+  boolean beginVoiceForeground(){
     try{
       if(Build.VERSION.SDK_INT>=26){
         String channelId="bosley-voice-session";
@@ -110,7 +110,8 @@ public class BosleyOverlayService extends Service {
         android.app.Notification notification=new android.app.Notification.Builder(this).setSmallIcon(android.R.drawable.ic_btn_speak_now).setContentTitle("Bosley is listening").setContentText("Voice input is active from your floating widget.").setOngoing(true).build();
         startForeground(73,notification);
       }
-    }catch(Exception error){appendChat("BOSLEY: Android could not start a microphone session. Open Bosley and grant microphone permission, then retry.");}
+      return true;
+    }catch(Exception error){appendChat("BOSLEY: Android could not start a microphone session. Opening the normal voice screen instead.");return false;}
   }
   void endVoiceForeground(){try{if(Build.VERSION.SDK_INT>=24)stopForeground(STOP_FOREGROUND_REMOVE);else stopForeground(true);}catch(Exception ignored){}}
   void startOverlayVoice(){
@@ -120,7 +121,7 @@ public class BosleyOverlayService extends Service {
       openCompanion("voice");return;
     }
     if(!SpeechRecognizer.isRecognitionAvailable(this)){appendChat("Speech recognition is not available on this device. Check that a speech recognition service is installed and enabled.");return;}
-    beginVoiceForeground();
+    if(!beginVoiceForeground()){openCompanion("voice");return;}
     try{
       if(overlayRecognizer!=null){try{overlayRecognizer.destroy();}catch(Exception ignored){}overlayRecognizer=null;}
       overlayRecognizer=SpeechRecognizer.createSpeechRecognizer(this);

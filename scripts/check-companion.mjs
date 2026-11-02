@@ -461,4 +461,4 @@ assert.ok(osPollSource.includes('body.action === "ack"'), "OS poller must expose
 assert.ok(osPollSource.includes('.eq("status", "processing")'), "Acknowledgements must only finalize a claimed command");
 assert.ok(osPollSource.includes('.eq("claim_token", claimToken)'), "Acknowledgements must prove possession of the active claim token");
 assert.ok(osPollSource.includes('status: "done"') && osPollSource.includes('status: "failed"'), "OS poller must record explicit execution outcomes");
-assert.ok(!/update\\(\\{\\s*status:\\s*"done"\\s*\\}\\)[\\s\\S]{0,180}\\.in\\("id", ids\\)/.test(osPollSource), "Polling must never mark commands done merely because they were returned");
+assert.ok(!osPollSource.includes('.update({ status: "done" })'), "Polling must never mark commands done merely because they were returned");

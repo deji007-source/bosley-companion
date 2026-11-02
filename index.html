@@ -2211,7 +2211,7 @@ addEventListener("keydown",e=>{
 /* ---------- Authenticated laptop command listener ----------
    Realtime broadcasts are user-scoped. Only a fixed, allowlisted set of actions
    can execute here; arbitrary shell commands and arbitrary paths are never accepted. */
-let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="offline",laptopHeartbeatTimer=null;
+let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="offline",laptopHeartbeatTimer=null,laptopOsPollTimer=null,laptopOsPollBusy=false;
 function setLaptopListenerState(state,detail){
  laptopListenerState=state;
  const status=$("#laptop-listener-status");
@@ -2302,6 +2302,50 @@ async function handleLaptopBroadcast(payload){
   await reportLaptopCommandResult(runId,commandStatus,commandSummary);
  }
 }
+async function postLaptopAgentRequest(activeUser,payload){
+ if(!activeUser||laptopListenerOwner!==activeUser.id||!db)throw new Error("Desktop agent session is no longer active.");
+ const {data,error}=await db.auth.getSession();
+ const token=data?.session?.access_token;
+ if(error||!token)throw new Error("Sign-in session unavailable.");
+ const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+token},body:JSON.stringify(payload),signal:AbortSignal.timeout(12000)});
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok||result.ok!==true)throw new Error(result.error||("Desktop agent request failed (HTTP "+response.status+")."));
+ return result;
+}
+async function acknowledgeOsAgentCommand(activeUser,command,status,result){
+ return postLaptopAgentRequest(activeUser,{type:"os_agent_ack",command_id:command.id,claim_token:command.claim_token,status,result:String(result||"").slice(0,500)});
+}
+async function executeClaimedOsAgentCommand(activeUser,command){
+ const allowed=new Set(["move_window","switch_desktop","focus_window","minimize_window","maximize_window","click_text","type_text"]);
+ if(!allowed.has(command.action))return {status:"failed",result:"Unsupported OS command; no action was executed."};
+ const b=bridge();
+ if(!b||typeof b.request!=="function")return {status:"failed",result:"Native desktop bridge unavailable; no action was executed."};
+ let caps={};
+ try{caps=await b.getCapabilities()}catch{return {status:"failed",result:"Could not verify native desktop capabilities; no action was executed."}}
+ const nativeAction="os_"+command.action;
+ if(!Array.isArray(caps?.actions)||!caps.actions.includes(nativeAction))return {status:"failed",result:"This Windows build does not yet expose the approved native handler for "+command.action+"; no action was executed."};
+ try{
+  const response=await b.request({action:nativeAction,payload:{target:String(command.target||"").slice(0,200),param:String(command.param||"").slice(0,1000)}});
+  if(response?.ok!==true)return {status:"failed",result:String(response?.error||"Windows did not confirm the requested action.").slice(0,500)};
+  return {status:"done",result:String(response.summary||("Windows confirmed "+command.action+".")).slice(0,500)};
+ }catch(error){return {status:"failed",result:String(error?.message||error).slice(0,500)}}
+}
+async function pollLaptopOsCommands(activeUser){
+ if(laptopOsPollBusy||!activeUser||laptopListenerOwner!==activeUser.id||!bridge())return;
+ laptopOsPollBusy=true;
+ try{
+  const response=await postLaptopAgentRequest(activeUser,{type:"os_agent_poll"});
+  const commands=Array.isArray(response.commands)?response.commands:[];
+  for(const command of commands){
+   if(laptopListenerOwner!==activeUser.id)break;
+   if(!command?.id||!command?.claim_token)continue;
+   const outcome=await executeClaimedOsAgentCommand(activeUser,command);
+   try{await acknowledgeOsAgentCommand(activeUser,command,outcome.status,outcome.result);autoLog(outcome.status==="done"?"success":"warning","OS queue "+command.action+": "+outcome.result.slice(0,180))}
+   catch(error){autoLog("warning","OS command acknowledgement pending: "+String(error?.message||error).slice(0,160))}
+  }
+ }catch(error){setLaptopListenerState("error","OS queue poll failed · "+String(error?.message||error).slice(0,90))}
+ finally{laptopOsPollBusy=false}
+}
 async function sendLaptopHeartbeat(activeUser){
  if(!activeUser||laptopListenerOwner!==activeUser.id||!db)return false;
  try{
@@ -2316,6 +2360,7 @@ async function sendLaptopHeartbeat(activeUser){
  }catch(error){setLaptopListenerState("error","heartbeat failed · "+String(error?.message||error).slice(0,80));return false}
 }
 function startLaptopCommandListener(activeUser){
+ if(laptopOsPollTimer){clearInterval(laptopOsPollTimer);laptopOsPollTimer=null}
  if(laptopHeartbeatTimer){clearInterval(laptopHeartbeatTimer);laptopHeartbeatTimer=null}
  if(laptopListenerChannel){try{db?.removeChannel(laptopListenerChannel)}catch{};laptopListenerChannel=null}
  laptopListenerOwner=activeUser?.id||null;
@@ -2327,7 +2372,7 @@ function startLaptopCommandListener(activeUser){
   .on("broadcast",{event:"automation"},({payload})=>{handleLaptopBroadcast(payload)})
   .subscribe(status=>{
    if(laptopListenerOwner!==activeUser.id)return;
-   if(status==="SUBSCRIBED"){setLaptopListenerState("connecting","channel connected; checking heartbeat");sendLaptopHeartbeat(activeUser);laptopHeartbeatTimer=setInterval(()=>sendLaptopHeartbeat(activeUser),30000)}
+   if(status==="SUBSCRIBED"){setLaptopListenerState("connecting","secure channel connected; checking command queue");sendLaptopHeartbeat(activeUser);pollLaptopOsCommands(activeUser);laptopHeartbeatTimer=setInterval(()=>sendLaptopHeartbeat(activeUser),30000);laptopOsPollTimer=setInterval(()=>pollLaptopOsCommands(activeUser),5000)}
    else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setLaptopListenerState("error",status);
    else if(status==="CLOSED")setLaptopListenerState("offline","channel closed");
   });

@@ -456,3 +456,7 @@ assert.ok(html.includes("if(++attempts<12)setTimeout(retry,250)"), "Android cold
 assert.ok(androidInstaller.includes("String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)"), "Android MainActivity must dispatch overlay tap actions to JavaScript");
 assert.ok(androidInstaller.includes('("wide".equals(size)?112:104)'), "Android floating widget default width must be compact");
 assert.ok(androidInstaller.includes('("wide".equals(size)?36:34)'), "Android floating widget default height must be compact");
+
+assert.ok(androidInstaller.includes("widgetWidth=104,widgetHeight=34"), "Android overlay service fallback dimensions must stay compact");
+assert.ok(html.includes('aria-label="Open AI Agents and Automation"'), "AI agents must remain directly accessible from the side rail");
+assert.ok(html.includes('aria-label="Open attachments and tools"'), "The main composer plus button must remain available");

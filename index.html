@@ -747,7 +747,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const content=document.createElement("div");content.className="desktop-view-window-body";
   header.append(title,close);card.append(header,content);document.body.appendChild(card);content.appendChild(p);p.hidden=false;
   const index=desktopCards.size,column=index%2,row=Math.floor(index/2);
-  const left=Math.max(12,Math.min(410+column*366,window.innerWidth-362));
+  const left=Math.max(12,Math.min(410+column*366,window.innerWidth-426));
   const top=Math.max(52,Math.min(54+row*34,window.innerHeight-250));
   card.style.left=left+"px";card.style.top=top+"px";focusDesktopCard(card);
   card.addEventListener("pointerdown",()=>focusDesktopCard(card),true);

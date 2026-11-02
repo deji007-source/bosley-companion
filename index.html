@@ -1171,13 +1171,20 @@ async function handleNativeQuickAction(){
   if(!plugin||typeof plugin.consumeLaunchAction!=="function")return;
   const result=await plugin.consumeLaunchAction();
   const action=String(result?.action||"");
-  if(!["panel","voice","automation","providers"].includes(action))return;
+  if(!["panel","voice","automation","providers","skills","plugins","screen-record","capture-screen"].includes(action))return;
   toggle(true);
-  if(action==="automation"||action==="providers"){
-   const target=action==="automation"?"automation":"provider-panel";
+  if(action==="automation"||action==="providers"||action==="skills"||action==="plugins"){
+   const target=action==="automation"?"automation":action==="providers"?"provider-panel":"skills-panel";
    setTimeout(()=>document.querySelector('#dock-launcher [data-open-view="'+target+'"]')?.click(),180);
    return;
   }
+  if(action==="screen-record"){
+   if(typeof plugin.requestScreenRecording!=="function"){note("Screen recording is not available in this Android build.");return;}
+   try{note("Android will ask you to approve screen recording. The recording starts only after you approve.");const recording=await plugin.requestScreenRecording();note(recording?.started?"Screen recording started. Open the floating panel toolbox to stop it.":recording?.cancelled?"Screen recording was cancelled.":"Screen recorder did not start.");}
+   catch(error){note("Screen recording could not start: "+String(error?.message||error).slice(0,180));}
+   return;
+  }
+  if(action==="capture-screen"){setTimeout(()=>$("#screen")?.click(),180);return;}
   if(action==="voice"){
    setVoiceMode("agent");
    note("Starting Android voice input…");
@@ -1419,6 +1426,9 @@ async function renderBosleyProviderManager(){
   }catch(error){status.textContent=String(error?.message||error)+" Make sure the provider gateway migration and Edge Function have been deployed."}
  };
  select.addEventListener("change",()=>{try{if(select.value)localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value);else localStorage.removeItem(BOSLEY_PROVIDER_PREF)}catch{}status.textContent=select.value?names[select.value]+" selected for new text chats.":"Using the existing Bosley chat provider."});
+  const syncNativeProvider=()=>{try{window.Capacitor?.Plugins?.BosleyOverlay?.syncAgentPreference?.({provider:select.value||""}).catch(error=>console.warn("Could not sync Android agent provider",error))}catch(error){console.warn("Android agent preference bridge unavailable",error)}};
+  syncNativeProvider();
+  select.addEventListener("change",syncNativeProvider);
  select.addEventListener("change",()=>{model.placeholder=defaults[select.value]||"Use provider default model"});
  panel.querySelector("#bosley-provider-connect").onclick=async()=>{
   const provider=select.value;if(!provider){status.textContent="Choose a provider before saving a connection.";return}

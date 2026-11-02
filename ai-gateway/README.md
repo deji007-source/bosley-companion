@@ -62,3 +62,19 @@ Cloud API calls are opt-in and may cost money. Do not set a cloud provider as pr
 POST `/functions/v1/ai-gateway` with a signed-in Supabase access token and the existing `{ messages: [...] }` payload. The endpoint streams OpenAI-compatible Server-Sent Events. Existing `companion-chat` remains unchanged until the gateway has been tested end-to-end.
 
 The Edge Function validates user JWTs, validates request shape, rate-limits per user, and stores route/status/latency metadata only (not prompts or completions). RLS limits preference and usage rows to their owner. The gateway does not expose device automation tools.
+
+
+## Local image understanding (free-first)
+
+The gateway routes image attachments and screenshots to the local Ollama vision model
+`qwen2.5vl:3b` through the `bosley-vision` alias. Pull the model once on the computer
+running Ollama:
+
+```bash
+docker exec -it bosley-ollama ollama pull qwen2.5vl:3b
+```
+
+This model runs locally and does not send images to a paid provider. It needs several
+gigabytes of disk space and enough RAM/compute; performance depends on the host computer.
+Image requests will fail until the model is pulled and the updated gateway/config are deployed.
+Explicitly selected cloud providers remain separate opt-in routes.

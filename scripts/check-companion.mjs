@@ -456,3 +456,15 @@ assert.ok(html.includes('localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value)
 assert.ok(html.includes("AGENT_GATEWAY_URL"), "Provider requests must use the authenticated gateway");
 assert.ok(html.includes('action:"chat",provider:chosenProvider'), "Selected provider must handle new text chats");
 assert.ok(html.includes("if(chosenProvider&&!imageData)"), "Image requests must continue using the existing image-capable Companion route");
+
+
+const overlayInstaller = readFileSync("scripts/install-android-overlay.py", "utf8");
+assert.ok(overlayInstaller.includes('startOverlayVoice();'), "Floating widget long-press must start direct overlay voice capture");
+assert.ok(overlayInstaller.includes('SpeechRecognizer.createSpeechRecognizer(this)'), "Overlay must support native speech recognition without opening the app");
+assert.ok(overlayInstaller.includes('chatVoice.setOnClickListener(v->startOverlayVoice())'), "Floating panel must expose an immediate circular voice control");
+assert.ok(overlayInstaller.includes('routeOverlayCommand(message,token,anon,base)'), "Overlay sends must pass through command routing before chat");
+assert.ok(overlayInstaller.includes('"/functions/v1/remote-action"'), "Overlay automations must use the existing authenticated automation backend");
+assert.ok(overlayInstaller.includes('phone?"phone":"automation"'), "Overlay must preserve phone/MacroDroid and laptop automation routing");
+assert.ok(overlayInstaller.includes('if(answer==null)'), "Ordinary chat must fall back to the Companion AI chat endpoint");
+assert.ok(overlayInstaller.includes('speakOverlayText(result)'), "Voice-originated commands must receive spoken responses");
+assert.ok(overlayInstaller.includes('android.speech.RecognitionService'), "Android manifest must declare speech recognition service visibility");

@@ -1,0 +1,46 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: bosley-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_models:/root/.ollama
+    expose:
+      - "11434"
+    networks: [bosley-ai]
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: bosley-litellm
+    restart: unless-stopped
+    depends_on: [ollama]
+    command: ["--config", "/app/config.yaml", "--host", "0.0.0.0", "--port", "4000"]
+    # Localhost only. Do not publish this gateway directly to the internet.
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - ./litellm.config.yaml:/app/config.yaml:ro
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?Set a long random key in .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    networks: [bosley-ai]
+
+  # Optional free Cloudflare Quick Tunnel for testing Supabase -> laptop.
+  # The generated trycloudflare.com URL is temporary and changes on restart.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: bosley-ai-tunnel
+    profiles: ["public-tunnel"]
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "--url", "http://litellm:4000"]
+    depends_on: [litellm]
+    networks: [bosley-ai]
+
+networks:
+  bosley-ai:
+
+volumes:
+  ollama_models:

@@ -1,0 +1,49 @@
+model_list:
+  # Free-first route: local Ollama only. No automatic paid-provider fallback.
+  - model_name: bosley-hybrid
+    litellm_params:
+      model: ollama/qwen2.5:1.5b
+      api_base: http://ollama:11434
+      api_key: ollama
+  - model_name: bosley-local
+    litellm_params:
+      model: ollama/qwen2.5:1.5b
+      api_base: http://ollama:11434
+      api_key: ollama
+
+  # Local vision model for screenshot and photo understanding (no cloud API).
+  - model_name: bosley-vision
+    litellm_params:
+      model: ollama/qwen2.5vl:3b
+      api_base: http://ollama:11434
+      api_key: ollama
+
+  # Optional provider routes. These are never selected automatically by the
+  # default hybrid route and require the matching paid/free-quota API key.
+  - model_name: bosley-openai
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: bosley-anthropic
+    litellm_params:
+      model: anthropic/claude-3-5-haiku-latest
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: bosley-gemini
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: bosley-deepseek
+    litellm_params:
+      model: deepseek/deepseek-chat
+      api_key: os.environ/DEEPSEEK_API_KEY
+  - model_name: bosley-cloud
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+router_settings:
+  num_retries: 0
+  timeout: 55
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

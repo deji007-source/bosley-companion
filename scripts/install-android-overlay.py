@@ -200,6 +200,9 @@ public class BosleyOverlayService extends Service {
         android.content.SharedPreferences prefs=getSharedPreferences("bosley_native_chat",MODE_PRIVATE);
         String token=prefs.getString("access_token",""),anon=prefs.getString("anon_key",""),base=prefs.getString("supabase_url","");
         if(token.isEmpty()||anon.isEmpty()||base.isEmpty())throw new Exception("Sign in to Bosley once to enable the floating panel.");
+        boolean plannerCommand=java.util.regex.Pattern.compile("(?is)^(?:bosley[, ]+)?(?:please\\s+)?(?:plan|add(?:\\s+this)?(?:\\s+task)?\\s+to\\s+(?:my\\s+)?planner|put\\s+(?:this\\s+)?in\\s+(?:my\\s+)?planner|create\\s+(?:a\\s+)?planner\\s+task|make\\s+(?:a\\s+)?plan(?:\\s+for)?|help\\s+me\\s+plan)(?:\\s*[:,-]?\\s+)(.+)$").matcher(message).matches();
+        boolean agentHandoff=java.util.regex.Pattern.compile("(?is)^(?:please\\s+)?(?:send|hand off|give)\\s+(?:this|it|the request)?\\s*to\\s+(chatgpt|claude|gemini)\\s*[:\\-]\\s*([\\s\\S]{1,8000})$").matcher(message).matches();
+        if(plannerCommand||agentHandoff){new Handler(Looper.getMainLooper()).post(()->{chatRequestBusy=false;openCompanion("dispatch-command",message);});return;}
         answer=routeOverlayCommand(message,token,anon,base);
         if(answer==null){
           String selectedProvider=prefs.getString("selected_provider","");
@@ -220,7 +223,8 @@ public class BosleyOverlayService extends Service {
       new Handler(Looper.getMainLooper()).post(()->{if(chatOutput!=null){String current=chatOutput.getText().toString();int pos=current.lastIndexOf("\n\nBOSLEY: Thinking…");if(pos>=0)chatOutput.setText(current.substring(0,pos));String response=err==null?"BOSLEY: "+result:"BOSLEY: "+err;appendChat(response);if(shouldSpeak&&err==null)speakOverlayText(result);}chatRequestBusy=false;if(chatSend!=null)chatSend.setEnabled(true);if(chatVoice!=null)chatVoice.setEnabled(true);});
     }).start();
   }
-  void openCompanion(String action){if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
+  void openCompanion(String action){openCompanion(action,"");}
+  void openCompanion(String action,String command){if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);if(command!=null&&!command.isEmpty())a.putExtra("bosley_command",command);startActivity(a);}
   void showGuide(){
     removeGuide();
     final android.util.DisplayMetrics metrics=getResources().getDisplayMetrics();
@@ -608,8 +612,9 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);getContext().startService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}
   @PluginMethod public void consumeLaunchAction(PluginCall call){
     String action=getActivity().getIntent().getStringExtra("bosley_quick_action");
-    getActivity().getIntent().removeExtra("bosley_quick_action");
-    JSObject r=new JSObject();r.put("action",action==null?"":action);call.resolve(r);
+    String command=getActivity().getIntent().getStringExtra("bosley_command");
+    getActivity().getIntent().removeExtra("bosley_quick_action");getActivity().getIntent().removeExtra("bosley_command");
+    JSObject r=new JSObject();r.put("action",action==null?"":action);r.put("command",command==null?"":command);call.resolve(r);
   }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}
 }''')

@@ -446,3 +446,13 @@ assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not c
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");
 assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
 assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");
+
+assert.ok(html.includes('data-open-view="automation" aria-label="Open AI Agents and Automation" title="AI Agents"'), "Side rail must restore a dedicated AI Agents entry");
+assert.ok(html.includes('label:"AI Agents & Automation"'), "Dock tab must identify the AI agents and automation workspace");
+assert.ok(html.includes('id="attach-automation" role="menuitem"'), "Plus menu must expose the AI agents and automation entry");
+assert.ok(html.includes("let nativeActionBusy=false"), "Android native launch action handling must guard duplicate intent delivery");
+assert.ok(html.includes('window.addEventListener("bosleyNativeAction"'), "Android existing-activity taps must be forwarded into the live WebView");
+assert.ok(html.includes("if(++attempts<12)setTimeout(retry,250)"), "Android cold-start launch action must retry until the Capacitor plugin is ready");
+assert.ok(androidInstaller.includes("bosleyNativeAction"), "Android MainActivity must dispatch overlay tap actions to JavaScript");
+assert.ok(androidInstaller.includes('("wide".equals(size)?112:104)'), "Android floating widget default width must be compact");
+assert.ok(androidInstaller.includes('("wide".equals(size)?36:34)'), "Android floating widget default height must be compact");

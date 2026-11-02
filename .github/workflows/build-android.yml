@@ -73,6 +73,10 @@ jobs:
           grep -Fq 'SpeechRecognizer.createSpeechRecognizer(this)' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'startOverlayVoice();' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq '/functions/v1/remote-action' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'shortcutLabels={"AUTOMATION","AGENTS","OPEN APP"}' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'Math.min(dp(300),getResources().getDisplayMetrics().heightPixels-dp(90))' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'app.setText("APP ↗")' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq '["panel","voice","automation","providers"].includes(action)' index.html
           grep -Fq 'android:foregroundServiceType="microphone"' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.speech.RecognitionService' android/app/src/main/AndroidManifest.xml
           grep -Fq 'syncChatSession(PluginCall call)' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java

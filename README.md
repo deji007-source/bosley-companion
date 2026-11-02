@@ -35,6 +35,8 @@ Some of these integrations have been implemented in code but still require end-t
 - Message actions that lack a verified send integration should be treated as drafts, not as sent messages.
 - Voice support depends on browser/device capabilities and permissions; speech recognition may rely on the browser vendor's service.
 - The Windows wrapper loads the hosted site. It is not a standalone offline AI model.
+- The Android **Plugins** toolbox shortcut currently opens Agents & Connections; a separate plugin marketplace/registry is not implemented yet.
+- Imported skills and recent automation history remain device-local. Saved workflows, planner tasks, appearance/voice preferences, conversations, and provider connections use account-backed storage. See [the platform feature matrix](docs/platform-feature-matrix.md) for current cross-platform boundaries.
 - Do not add API keys, passwords, Supabase service-role keys, or other secrets to this public repository or to frontend code.
 
 ## Run locally
@@ -83,15 +85,15 @@ The current Windows installer and Android debug APK include a native visual-guid
 
 ### Install and smoke-test the current builds
 
-1. Open the [Windows build workflow](https://github.com/deji007-source/bosley-companion/actions/runs/40003886128) or [Android build workflow](https://github.com/deji007-source/bosley-companion/actions/runs/40003886096) while signed in to GitHub.
-2. In **Artifacts**, download `Bosley-Windows-Installer` or `Bosley-Android-Debug-APK`. Extract the downloaded ZIP to get the installer/APK.
+1. Open the latest verified [Windows build run](https://github.com/deji007-source/bosley-companion/actions/runs/41519511078) or [Android build run](https://github.com/deji007-source/bosley-companion/actions/runs/41519511207) while signed in to GitHub.
+2. In **Artifacts**, download `Bosley-Windows-Installer` or `Bosley-Android-Debug-APK-Development-Only`. Extract the downloaded ZIP to get the installer/APK.
 3. Install and launch Bosley Companion, then sign in if prompted.
 4. Open the Activity/Daily Planner, create an active test task, and select **Guide**. Accept the in-app confirmation.
 5. On Android, if prompted, enable **Allow display over other apps** for Bosley Companion, return to the app, and try **Guide** again.
 6. Switch to another app and check whether the guide card and tether remain visible above it. Use **Stop guide** to close the overlay.
 7. Report the platform, Android version or Windows version, and any exact error text if the overlay does not appear. Do not include passwords or tokens.
 
-These workflow artifacts are temporary and are scheduled to expire on 6 November 2026. New builds may produce newer artifacts; prefer the latest successful run when testing.
+These verified workflow artifacts are temporary and are scheduled to expire on 16 November 2026. New builds may produce newer artifacts; prefer the latest successful run when testing.
 
 ## Backend notes
 

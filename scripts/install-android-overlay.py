@@ -11,9 +11,9 @@ text = manifest.read_text()
 if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
 if "android.permission.FOREGROUND_SERVICE" not in text:
-    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\\n    <application', 1)
+    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <application', 1)
 if "android.permission.FOREGROUND_SERVICE_MICROPHONE" not in text:
-    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />\\n    <application', 1)
+    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />\n    <application', 1)
 if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
@@ -87,7 +87,7 @@ public class BosleyOverlayService extends Service {
       android.app.NotificationManager nm=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
       if(Build.VERSION.SDK_INT>=26){android.app.NotificationChannel channel=new android.app.NotificationChannel("bosley_voice_capture","Bosley voice capture",android.app.NotificationManager.IMPORTANCE_LOW);channel.setDescription("Visible while the floating voice widget is listening.");nm.createNotificationChannel(channel);}
       android.app.Notification notification=new android.app.Notification.Builder(this,"bosley_voice_capture")
-        .setSmallIcon(getApplicationInfo().icon)
+        .setSmallIcon(android.R.drawable.ic_btn_speak_now)
         .setContentTitle("Bosley is listening")
         .setContentText("Tap the floating Bosley circle to stop voice capture.")
         .setOngoing(true).build();

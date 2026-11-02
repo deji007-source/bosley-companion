@@ -12,13 +12,17 @@ if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
 if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
+if "android.permission.FOREGROUND_SERVICE" not in text:
+    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <application', 1)
+if "android.permission.FOREGROUND_SERVICE_MICROPHONE" not in text:
+    text = text.replace("<application", '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />\n    <application', 1)
 if "<queries>" not in text:
     text = text.replace("<application", '<queries><intent><action android:name="android.speech.RecognitionService" /></intent></queries>\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
     text = text.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1) if 'xmlns:tools=' not in text else text
     text = text.replace("<application", '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <application', 1)
 if "BosleyOverlayService" not in text:
-    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" />\n    </application>')
+    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:foregroundServiceType="microphone" />\n    </application>')
 manifest.write_text(text)
 # The Android guide is intentionally stationary. Do not register an accessibility
 # service to inspect other apps or automatically reposition the guide target.
@@ -94,6 +98,21 @@ public class BosleyOverlayService extends Service {
     try{wm.addView(panel,params);chatInput.requestFocus();panel.postDelayed(()->{try{params.flags=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;wm.updateViewLayout(panel,params);android.view.inputmethod.InputMethodManager keyboard=(android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);keyboard.showSoftInput(chatInput,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}catch(Exception ignored){}},180);}catch(Exception e){chatPanel=null;Toast.makeText(this,"Could not open Bosley panel.",Toast.LENGTH_SHORT).show();}
   }
   void appendChat(String text){if(chatOutput==null)return;chatOutput.append("\n\n"+text);if(chatScroll!=null)chatScroll.post(()->chatScroll.fullScroll(View.FOCUS_DOWN));}
+  void beginVoiceForeground(){
+    try{
+      if(Build.VERSION.SDK_INT>=26){
+        String channelId="bosley-voice-session";
+        android.app.NotificationManager manager=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        if(manager.getNotificationChannel(channelId)==null)manager.createNotificationChannel(new android.app.NotificationChannel(channelId,"Bosley voice session",android.app.NotificationManager.IMPORTANCE_LOW));
+        android.app.Notification notification=new android.app.Notification.Builder(this,channelId).setSmallIcon(android.R.drawable.ic_btn_speak_now).setContentTitle("Bosley is listening").setContentText("Voice input is active from your floating widget.").setCategory(android.app.Notification.CATEGORY_SERVICE).setOngoing(true).build();
+        if(Build.VERSION.SDK_INT>=29)startForeground(73,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);else startForeground(73,notification);
+      }else{
+        android.app.Notification notification=new android.app.Notification.Builder(this).setSmallIcon(android.R.drawable.ic_btn_speak_now).setContentTitle("Bosley is listening").setContentText("Voice input is active from your floating widget.").setOngoing(true).build();
+        startForeground(73,notification);
+      }
+    }catch(Exception error){appendChat("BOSLEY: Android could not start a microphone session. Open Bosley and grant microphone permission, then retry.");}
+  }
+  void endVoiceForeground(){try{if(Build.VERSION.SDK_INT>=24)stopForeground(STOP_FOREGROUND_REMOVE);else stopForeground(true);}catch(Exception ignored){}}
   void startOverlayVoice(){
     if(chatRequestBusy){appendChat("Bosley is still processing the previous request.");return;}
     if(Build.VERSION.SDK_INT>=23&&checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
@@ -101,6 +120,7 @@ public class BosleyOverlayService extends Service {
       openCompanion("voice");return;
     }
     if(!SpeechRecognizer.isRecognitionAvailable(this)){appendChat("Speech recognition is not available on this device. Check that a speech recognition service is installed and enabled.");return;}
+    beginVoiceForeground();
     try{
       if(overlayRecognizer!=null){try{overlayRecognizer.destroy();}catch(Exception ignored){}overlayRecognizer=null;}
       overlayRecognizer=SpeechRecognizer.createSpeechRecognizer(this);
@@ -110,8 +130,8 @@ public class BosleyOverlayService extends Service {
         public void onRmsChanged(float rmsdB){}
         public void onBufferReceived(byte[] buffer){}
         public void onEndOfSpeech(){if(chatVoice!=null)chatVoice.setEnabled(true);}
-        public void onError(int error){if(chatVoice!=null)chatVoice.setEnabled(true);appendChat("BOSLEY: Voice input ended. Tap the microphone and try again (code "+error+").");}
-        public void onResults(Bundle results){if(chatVoice!=null)chatVoice.setEnabled(true);java.util.ArrayList<String> matches=results==null?null:results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);String spoken=matches==null||matches.isEmpty()?"":matches.get(0).trim();if(spoken.isEmpty()){appendChat("BOSLEY: I didn't catch that. Please try again.");return;}voiceReply=true;if(chatInput!=null)chatInput.setText(spoken);sendOverlayMessage();}
+        public void onError(int error){endVoiceForeground();if(chatVoice!=null)chatVoice.setEnabled(true);appendChat("BOSLEY: Voice input ended. Tap the microphone and try again (code "+error+").");}
+        public void onResults(Bundle results){endVoiceForeground();if(chatVoice!=null)chatVoice.setEnabled(true);java.util.ArrayList<String> matches=results==null?null:results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);String spoken=matches==null||matches.isEmpty()?"":matches.get(0).trim();if(spoken.isEmpty()){appendChat("BOSLEY: I didn't catch that. Please try again.");return;}voiceReply=true;if(chatInput!=null)chatInput.setText(spoken);sendOverlayMessage();}
         public void onPartialResults(Bundle results){}
         public void onEvent(int eventType,Bundle params){}
       });
@@ -198,7 +218,7 @@ public class BosleyOverlayService extends Service {
   void removeGuide(){guideStatusView=null;if(wm!=null&&guideTarget!=null){try{wm.removeView(guideTarget);}catch(Exception ignored){}guideTarget=null;}if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
   void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-  @Override public void onDestroy(){removeBar();if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}removeGuide();if(overlayRecognizer!=null){try{overlayRecognizer.destroy();}catch(Exception ignored){}overlayRecognizer=null;}if(overlayTts!=null){try{overlayTts.stop();overlayTts.shutdown();}catch(Exception ignored){}overlayTts=null;}super.onDestroy();}
+  @Override public void onDestroy(){removeBar();if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}removeGuide();if(overlayRecognizer!=null){try{overlayRecognizer.destroy();}catch(Exception ignored){}overlayRecognizer=null;}endVoiceForeground();if(overlayTts!=null){try{overlayTts.stop();overlayTts.shutdown();}catch(Exception ignored){}overlayTts=null;}super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
 }''')
 (src / "BosleyTargetAccessibilityService.java").write_text(r'''package com.bosley.companion;

@@ -11,6 +11,13 @@ model_list:
       api_base: http://ollama:11434
       api_key: ollama
 
+  # Local vision model for screenshot and photo understanding (no cloud API).
+  - model_name: bosley-vision
+    litellm_params:
+      model: ollama/qwen2.5vl:3b
+      api_base: http://ollama:11434
+      api_key: ollama
+
   # Optional provider routes. These are never selected automatically by the
   # default hybrid route and require the matching paid/free-quota API key.
   - model_name: bosley-openai

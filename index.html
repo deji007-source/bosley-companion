@@ -721,12 +721,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   {button:"",panel:"lovable-bosley",label:"Lovable Bosley",init:initLovableBosleyViewer}
  ];
  let active="";
+ const desktopMultiWindow=document.body.classList.contains("desktop-panel");
+ const desktopCards=new Map();let desktopWindowZ=2147483646;
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
  if(desktopMultiWindow){const hint=document.createElement("p");hint.className="desktop-dock-hint";hint.textContent="Choose a section. Each page opens in its own floating window and stays open until you close it.";body.appendChild(hint);}
  document.querySelectorAll("#dock-launcher [data-open-view]").forEach(button=>button.addEventListener("click",()=>show(button.dataset.openView)));
- const desktopMultiWindow=document.body.classList.contains("desktop-panel");
- const desktopCards=new Map();let desktopWindowZ=2147483646;
- function focusDesktopCard(card){desktopWindowZ+=1;card.style.zIndex=String(desktopWindowZ);}
+  function focusDesktopCard(card){desktopWindowZ+=1;card.style.zIndex=String(desktopWindowZ);}
  function initializeDesktopView(v,p){
   p.setAttribute("aria-busy","true");
   Promise.resolve().then(()=>{if(typeof v.init!=="function")throw Error("No renderer is registered for this section.");return v.init()}).then(()=>{if(!p.isConnected)return;if(!p.innerHTML.trim())throw Error("The section renderer completed without adding content.")}).catch(error=>{

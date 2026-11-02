@@ -2237,6 +2237,17 @@ async function handleLaptopBroadcast(payload){
  if(!b||typeof b.request!=="function"){setLaptopListenerState("error","Desktop bridge unavailable");await reportLaptopCommandResult(runId,"failed","Desktop bridge unavailable; no action was executed.");return}
  const normalized=instruction.toLowerCase().replace(/[.!?]+$/,"").trim();
  try{
+  const remoteFile=instruction.match(/^(?:please\\s+)?(?:create|make|write|save)(?:\\s+me)?\\s+(?:a\\s+)?text file(?:\\s+(?:called|named)\\s+([^:\\n]+?))?\\s*(?::|with content|containing|that says|and (?:put|write)(?: this)? in it)\\s*([\\s\\S]+)$/i);
+  if(remoteFile){
+   const name=(remoteFile[1]||"bosley-note.txt").trim().replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";
+   const content=String(remoteFile[2]||"").trim();
+   if(!content)throw Error("The text file has no content.");
+   const result=await b.request({action:"save_text_file",payload:{name,content}});
+   if(result?.ok!==true){if(result?.cancelled){commandStatus="failed";commandSummary="File save was cancelled; no file was created.";return}throw Error(result?.error||"Windows did not confirm saving the text file.");}
+   setLaptopListenerState("online","text file saved on Windows");
+   autoLog("success","Remote text file saved: "+name);
+   return;
+  }
   if(/^(?:hey\s+)?(?:bosley[, ]+)?(?:wake up|wake bosley|show bosley|open bosley|bring bosley up)$/i.test(normalized)){
    const result=await b.request({action:"wake_companion",payload:{}});
    if(result?.ok!==true)throw Error(result?.error||"Wake action was not confirmed");

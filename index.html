@@ -1109,8 +1109,13 @@ async function handleNativeQuickAction(){
   if(!plugin||typeof plugin.consumeLaunchAction!=="function")return;
   const result=await plugin.consumeLaunchAction();
   const action=String(result?.action||"");
-  if(action!=="panel"&&action!=="voice")return;
+  if(!["panel","voice","automation","providers"].includes(action))return;
   toggle(true);
+  if(action==="automation"||action==="providers"){
+   const target=action==="automation"?"automation":"provider-panel";
+   setTimeout(()=>document.querySelector('#dock-launcher [data-open-view="'+target+'"]')?.click(),180);
+   return;
+  }
   if(action==="voice"){
    setVoiceMode("agent");
    note("Starting Android voice input…");

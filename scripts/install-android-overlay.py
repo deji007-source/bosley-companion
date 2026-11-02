@@ -334,7 +334,7 @@ if not activity.exists():
 a=activity.read_text()
 if "BosleyOverlayPlugin" not in a:
     a=a.replace("import com.getcapacitor.BridgeActivity;", "import com.getcapacitor.BridgeActivity;\nimport com.getcapacitor.Plugin;\nimport java.util.ArrayList;\nimport java.util.List;")
-    a=re.sub(r'public class MainActivity extends BridgeActivity \{\s*\}', 'public class MainActivity extends BridgeActivity {\n  @Override protected void onNewIntent(android.content.Intent intent) {\n    super.onNewIntent(intent);\n    setIntent(intent);\n    String action=intent.getStringExtra("bosley_quick_action");\n    if(action!=null && ("panel".equals(action)||"voice".equals(action))){\n      String js="window.dispatchEvent(new CustomEvent(\\\'bosleyNativeAction\\\',{detail:{action:\\\'"+action+"\\\'}}));";\n      getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));\n    }\n  }\n  @Override public void onCreate(android.os.Bundle savedInstanceState) {\n    registerPlugin(BosleyOverlayPlugin.class);\n    super.onCreate(savedInstanceState);\n  }\n}', a)
+      String js="window.dispatchEvent(new Event(String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)))";
     if "setIntent(intent)" not in a or "onNewIntent" not in a or "bosleyNativeAction" not in a:
         raise SystemExit("Could not safely add intent handoff handling to MainActivity")
     if "registerPlugin(BosleyOverlayPlugin.class)" not in a:

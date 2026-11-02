@@ -122,7 +122,7 @@ public class BosleyOverlayService extends Service {
       appendChat("Microphone permission is needed. Opening Bosley once so Android can ask for permission; after granting it, voice can start directly from this floating panel.");
       openCompanion("voice");return;
     }
-    if(!SpeechRecognizer.isRecognitionAvailable(this)){appendChat("Speech recognition is not available on this device. Check that a speech recognition service is installed and enabled.");return;}
+    if(!SpeechRecognizer.isRecognitionAvailable(this)){appendChat("Speech recognition is unavailable in the overlay. Opening Bosley voice as a fallback.");openCompanion("voice");return;}
     if(!beginVoiceForeground()){openCompanion("voice");return;}
     try{
       if(overlayRecognizer!=null){try{overlayRecognizer.destroy();}catch(Exception ignored){}overlayRecognizer=null;}
@@ -144,7 +144,7 @@ public class BosleyOverlayService extends Service {
       intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1);
       intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,java.util.Locale.getDefault().toLanguageTag());
       overlayRecognizer.startListening(intent);
-    }catch(Exception error){if(chatVoice!=null)chatVoice.setEnabled(true);appendChat("BOSLEY: Could not start voice input: "+(error.getMessage()==null?"Speech service unavailable":error.getMessage()));}
+    }catch(Exception error){if(chatVoice!=null)chatVoice.setEnabled(true);appendChat("BOSLEY: Could not start overlay voice. Opening the normal voice screen.");openCompanion("voice");}
   }
   void speakOverlayText(String text){try{if(overlayTts!=null&&text!=null&&!text.trim().isEmpty())overlayTts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"bosley-overlay-reply");}catch(Exception ignored){}}
   String routeOverlayCommand(String message,String token,String anon,String base)throws Exception{

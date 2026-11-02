@@ -30,7 +30,7 @@ assert.ok(html.includes('id="file-input"'), "Composer must provide a file picker
 assert.ok(html.includes("function clearFileAttachments()"), "Text attachments must be removable before sending");
 assert.ok(html.includes("ATTACHED TEXT FILES"), "Selected text files must be included in the AI request as untrusted user data");
 assert.ok(html.includes("plusButton.setAttribute(\"aria-expanded\""), "Attachment menu must expose its expanded state accessibly");
-assert.ok(androidInstaller.includes("widgetWidth=116,widgetHeight=40,cornerDp=20"), "Android floating widget must use the compact Bosley companion dimensions");
+assert.ok(androidInstaller.includes("widgetWidth=104,widgetHeight=34,cornerDp=18"), "Android floating widget must use the compact Bosley companion dimensions");
 assert.ok(androidInstaller.includes("frame.setElevation(dp(8))"), "Android floating widget must have subtle elevation");
 assert.ok(androidInstaller.includes("0x664B91A6"), "Android floating widget must use the muted Bosley accent outline");
 

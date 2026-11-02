@@ -64,10 +64,50 @@ public class BosleyOverlayService extends Service {
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
         case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
-        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)openCompanion("panel");return true;
+        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)expandPanel();return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
+  }
+  LinearLayout chatPanel; EditText chatInput; TextView chatOutput; Button chatSend; ScrollView chatScroll; boolean chatRequestBusy=false;
+  void expandPanel(){
+    if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;return;}
+    LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(dp(12),dp(10),dp(12),dp(10));
+    GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(12,14,19));bg.setCornerRadius(dp(18));bg.setStroke(dp(1),0xff555b68);panel.setBackground(bg);
+    LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
+    TextView title=new TextView(this);title.setText("BOSLEY");title.setTextColor(Color.WHITE);title.setTextSize(13);title.setTypeface(null,1);header.addView(title,new LinearLayout.LayoutParams(0,dp(32),1));
+    TextView close=new TextView(this);close.setText("×");close.setTextColor(Color.WHITE);close.setTextSize(24);close.setGravity(Gravity.CENTER);header.addView(close,new LinearLayout.LayoutParams(dp(32),dp(32)));close.setOnClickListener(v->{try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;});
+    panel.addView(header);
+    chatScroll=new ScrollView(this);chatOutput=new TextView(this);chatOutput.setTextColor(0xffe8eaf0);chatOutput.setTextSize(13);chatOutput.setText("Ready. Messages are sent directly from this panel.");chatOutput.setPadding(dp(4),dp(8),dp(4),dp(8));chatScroll.addView(chatOutput);panel.addView(chatScroll,new LinearLayout.LayoutParams(-1,0,1));
+    LinearLayout compose=new LinearLayout(this);compose.setGravity(Gravity.CENTER_VERTICAL);chatInput=new EditText(this);chatInput.setSingleLine(false);chatInput.setMaxLines(3);chatInput.setTextColor(Color.WHITE);chatInput.setHintTextColor(0xff9ba3b4);chatInput.setHint("Message Bosley…");chatInput.setTextSize(14);compose.addView(chatInput,new LinearLayout.LayoutParams(0,dp(48),1));
+    chatSend=new Button(this);chatSend.setText("Send");compose.addView(chatSend,new LinearLayout.LayoutParams(dp(68),dp(48)));panel.addView(compose);chatSend.setOnClickListener(v->sendOverlayMessage());
+    WindowManager.LayoutParams params=new WindowManager.LayoutParams(Math.min(dp(360),getResources().getDisplayMetrics().widthPixels-dp(24)),dp(390),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,PixelFormat.TRANSLUCENT);
+    params.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;params.y=dp(58);chatPanel=panel;
+    try{wm.addView(panel,params);chatInput.requestFocus();panel.postDelayed(()->{try{params.flags=WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;wm.updateViewLayout(panel,params);}catch(Exception ignored){}},150);}catch(Exception e){chatPanel=null;Toast.makeText(this,"Could not open Bosley panel.",Toast.LENGTH_SHORT).show();}
+  }
+  void appendChat(String text){if(chatOutput==null)return;chatOutput.append("\n\n"+text);if(chatScroll!=null)chatScroll.post(()->chatScroll.fullScroll(View.FOCUS_DOWN));}
+  void sendOverlayMessage(){
+    if(chatRequestBusy||chatInput==null)return;String message=chatInput.getText().toString().trim();if(message.isEmpty())return;
+    chatInput.setText("");appendChat("YOU: "+message);chatRequestBusy=true;chatSend.setEnabled(false);appendChat("BOSLEY: Thinking…");
+    new Thread(()->{
+      String answer="";String failure=null;
+      try{
+        android.content.SharedPreferences prefs=getSharedPreferences("bosley_native_chat",MODE_PRIVATE);
+        String token=prefs.getString("access_token",""),anon=prefs.getString("anon_key",""),base=prefs.getString("supabase_url","");
+        if(token.isEmpty()||anon.isEmpty()||base.isEmpty())throw new Exception("Sign in to Bosley once to enable direct sending from the floating panel.");
+        java.net.HttpURLConnection connection=(java.net.HttpURLConnection)new java.net.URL(base+"/functions/v1/companion-chat").openConnection();
+        connection.setRequestMethod("POST");connection.setConnectTimeout(15000);connection.setReadTimeout(45000);connection.setDoOutput(true);
+        connection.setRequestProperty("Content-Type","application/json");connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("apikey",anon);connection.setRequestProperty("Accept","text/event-stream");
+        org.json.JSONArray messages=new org.json.JSONArray().put(new org.json.JSONObject().put("role","user").put("content",message));
+        byte[] body=new org.json.JSONObject().put("messages",messages).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);connection.getOutputStream().write(body);
+        int status=connection.getResponseCode();java.io.InputStream stream=status>=200&&status<300?connection.getInputStream():connection.getErrorStream();
+        java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(stream,java.nio.charset.StandardCharsets.UTF_8));String line;
+        while((line=reader.readLine())!=null){if(!line.startsWith("data:"))continue;String data=line.substring(5).trim();if(data.isEmpty()||"[DONE]".equals(data))continue;try{org.json.JSONObject packet=new org.json.JSONObject(data);if(packet.has("error"))throw new Exception(packet.getJSONObject("error").optString("message","Bosley request failed."));org.json.JSONArray choices=packet.optJSONArray("choices");org.json.JSONObject delta=choices==null?null:choices.optJSONObject(0).optJSONObject("delta");if(delta!=null)answer+=delta.optString("content","");}catch(org.json.JSONException ignored){}}
+        reader.close();connection.disconnect();if(status<200||status>=300)throw new Exception("Bosley returned HTTP "+status);if(answer.trim().isEmpty())throw new Exception("Bosley returned an empty response.");
+      }catch(Exception e){failure=e.getMessage()==null?"Connection failed.":e.getMessage();}
+      final String result=answer,err=failure;
+      new Handler(Looper.getMainLooper()).post(()->{if(chatOutput!=null){String current=chatOutput.getText().toString();int pos=current.lastIndexOf("\n\nBOSLEY: Thinking…");if(pos>=0)chatOutput.setText(current.substring(0,pos));appendChat(err==null?"BOSLEY: "+result:"BOSLEY: "+err);}chatRequestBusy=false;if(chatSend!=null)chatSend.setEnabled(true);});
+    }).start();
   }
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
   void showGuide(){

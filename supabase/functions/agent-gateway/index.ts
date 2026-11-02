@@ -24,7 +24,7 @@ const unb64 = (value: string) => Uint8Array.from(atob(value), c => c.charCodeAt(
 
 async function encryptionKey() {
   if (!ENCRYPTION_KEY) throw new Error("Agent credential encryption is not configured on the server.");
-  const raw = /^[a-f0-9]{64}$/i.test(ENCRYPTION_KEY) ? unb64(btoa(String.fromCharCode(...ENCRYPTION_KEY.match(/../g)!.map(x => parseInt(x, 16))))) : unb64(ENCRYPTION_KEY);
+  const raw = /^[a-f0-9]{64}$/i.test(ENCRYPTION_KEY) ? Uint8Array.from(ENCRYPTION_KEY.match(/../g)!, x => parseInt(x, 16)) : unb64(ENCRYPTION_KEY);
   if (raw.length !== 32) throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY must be a 32-byte base64 or 64-character hex value.");
   return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
 }

@@ -31,6 +31,23 @@ assert.ok(androidInstaller.includes('void syncChatSession(PluginCall call)'), "C
 assert.ok(html.includes('native.syncChatSession({accessToken:s?.access_token||"",anonKey:SUPABASE_PUBLIC_KEY,supabaseUrl:SUPABASE_URL})'), "Auth changes must update the native overlay session");
 
 
+assert.ok(androidInstaller.includes('Math.min(dp(300),getResources().getDisplayMetrics().heightPixels-dp(90))'), "Android floating chat panel must use a shorter height capped at 300dp");
+assert.ok(androidInstaller.includes('shortcutLabels={"AUTOMATION","AGENTS","OPEN APP"}'), "Android overlay must expose direct Automation, Agents and Open App shortcuts");
+assert.ok(androidInstaller.includes('app.setText("APP ↗")'), "Android panel header must include a direct full-app launcher");
+assert.ok(androidInstaller.includes('if(chatPanel!=null){try{wm.removeView(chatPanel);}catch(Exception ignored){}chatPanel=null;}Intent a=new Intent(BosleyOverlayService.this,MainActivity.class)'), "Opening the full app must dismiss the expanded overlay panel first");
+assert.ok(androidInstaller.includes('shortcutActions={"automation","providers","panel"}'), "Android shortcuts must map to app views");
+assert.ok(html.includes('["panel","voice","automation","providers"].includes(action)'), "Native quick-action bridge must accept automation and provider views");
+assert.ok(html.includes('const target=action==="automation"?"automation":"provider-panel"'), "Native shortcut routing must open the selected automation or provider view");
+assert.ok(html.includes('data-open-view="provider-panel" aria-label="Open Agents and AI connections"'), "Side dock must expose Agents and Connections directly");
+assert.ok(html.includes("Agents & Connections"), "Provider manager must be presented as the Agents and Connections control centre");
+
+assert.ok(androidInstaller.includes('Switch voiceInputToggle=new Switch(this)')||androidInstaller.includes('voiceInputToggle=new Switch(this)'), "Floating panel must include an on/off microphone control");
+assert.ok(androidInstaller.includes('voiceReplyToggle=new Switch(this)'), "Floating panel must include a spoken-replies toggle");
+assert.ok(androidInstaller.includes('putBoolean("voice_input_enabled",checked)'), "Microphone preference must persist across panel reopen/restart");
+assert.ok(androidInstaller.includes('putBoolean("voice_replies_enabled",checked)'), "Spoken-replies preference must persist");
+assert.ok(androidInstaller.includes('if(!checked)stopOverlayVoice()'), "Turning voice input off must stop any active recognition session");
+assert.ok(androidInstaller.includes('voiceReply||getSharedPreferences("bosley_overlay_preferences",MODE_PRIVATE).getBoolean("voice_replies_enabled",false)'), "Voice reply preference must control text-to-speech output");
+
 const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],
   ["Automation Skill master switch is respected", "if(!settings.enabled)return {status:\"none\"}"],
@@ -443,3 +460,32 @@ assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not c
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");
 assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
 assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");
+
+
+assert.ok(html.includes('id="provider-panel"'), "AI Provider Manager must have a dedicated workspace panel");
+assert.ok(html.includes('panel:"provider-panel",label:"AI Providers"'), "AI Providers must be accessible from the side dock");
+assert.ok(html.includes("renderBosleyProviderManager"), "AI Provider Manager renderer must be registered");
+assert.ok(html.includes('action:"providers"'), "AI Provider Manager must load connected provider status");
+assert.ok(html.includes('action:"connect"'), "AI Provider Manager must securely connect a provider");
+assert.ok(html.includes('action:"test"'), "AI Provider Manager must test provider connections");
+assert.ok(html.includes('action:"disconnect"'), "AI Provider Manager must disconnect providers");
+assert.ok(html.includes('localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value)'), "Selected provider preference must persist on the device");
+assert.ok(html.includes("AGENT_GATEWAY_URL"), "Provider requests must use the authenticated gateway");
+assert.ok(html.includes('action:"chat",provider:chosenProvider'), "Selected provider must handle new text chats");
+assert.ok(html.includes("if(chosenProvider&&!imageData)"), "Image requests must continue using the existing image-capable Companion route");
+
+
+const overlayInstaller = readFileSync("scripts/install-android-overlay.py", "utf8");
+assert.ok(overlayInstaller.includes('startOverlayVoice();'), "Floating widget long-press must start direct overlay voice capture");
+assert.ok(overlayInstaller.includes('SpeechRecognizer.createSpeechRecognizer(this)'), "Overlay must support native speech recognition without opening the app");
+assert.ok(overlayInstaller.includes('chatVoice.setOnClickListener(v->{if(voiceInputEnabled)startOverlayVoice();'), "Floating panel must expose an immediate circular voice control");
+assert.ok(overlayInstaller.includes('routeOverlayCommand(message,token,anon,base)'), "Overlay sends must pass through command routing before chat");
+assert.ok(overlayInstaller.includes('"/functions/v1/remote-action"'), "Overlay automations must use the existing authenticated automation backend");
+assert.ok(overlayInstaller.includes('phone?"phone":"automation"'), "Overlay must preserve phone/MacroDroid and laptop automation routing");
+assert.ok(overlayInstaller.includes('if(answer==null)'), "Ordinary chat must fall back to the Companion AI chat endpoint");
+assert.ok(overlayInstaller.includes('speakOverlayText(result)'), "Voice-originated commands must receive spoken responses");
+assert.ok(overlayInstaller.includes('android.speech.RecognitionService'), "Android manifest must declare speech recognition service visibility");
+
+assert.ok(overlayInstaller.includes('if(chatPanel==null)expandPanel(false);'), "Long-press voice must create the native panel before using its composer");
+
+assert.ok(overlayInstaller.includes('bosley_overlay_position'), "Floating widget position must persist across service restarts");

@@ -444,7 +444,7 @@ assert.ok(html.includes('handle?.addEventListener("pointermove"'), "Windows side
 assert.ok(html.includes("body.desktop-panel .desktop-view-window{position:fixed"), "Windows side views must open as independent floating windows");
 assert.ok(html.includes("const desktopCards=new Map()"), "Windows floating views must maintain multiple open pages independently");
 assert.ok(html.includes("desktopCards.has(x.panel)"), "Windows side navigation must preserve already-open cards");
-assert.ok(html.includes("Close "+ " +v.label"), "Windows floating cards must expose individual close controls");
+assert.ok(html.includes('setAttribute("aria-label","Close "+v.label)'), "Windows floating cards must expose individual close controls");
 assert.ok(html.includes("desktop-view-window-header"), "Windows floating cards must have draggable headers");
 assert.ok(html.includes("Each page opens in its own floating window"), "Windows dock must explain independent floating windows");
 

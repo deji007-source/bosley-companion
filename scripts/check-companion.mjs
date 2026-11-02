@@ -462,3 +462,14 @@ assert.ok(osPollSource.includes('.eq("status", "processing")'), "Acknowledgement
 assert.ok(osPollSource.includes('.eq("claim_token", claimToken)'), "Acknowledgements must prove possession of the active claim token");
 assert.ok(osPollSource.includes('status: "done"') && osPollSource.includes('status: "failed"'), "OS poller must record explicit execution outcomes");
 assert.ok(!osPollSource.includes('.update({ status: "done" })'), "Polling must never mark commands done merely because they were returned");
+
+assert.ok(html.includes('pendingChatFileDraft=null'), "Chat must support a follow-up message containing text-file contents");
+assert.ok(html.includes('androidFiles.saveTextFile({name,content:input})'), "Android chat file creation must use the native system document picker");
+assert.ok(html.includes("save_text_file"), "Windows chat file creation must use the native save dialog when available");
+assert.ok(html.includes('executeDirectChatAction({type:"create_text_file",name,input:content}'), "Chat must create text files directly without requiring Automation page navigation");
+const androidInstallerSource = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
+assert.ok(androidInstallerSource.includes("public void saveTextFile(PluginCall call)"), "Android native plugin must expose safe text-file creation");
+assert.ok(androidInstallerSource.includes("Intent.ACTION_CREATE_DOCUMENT"), "Android text-file creation must use the system document picker");
+assert.ok(androidInstallerSource.includes("100000"), "Android native text-file creation must enforce the 100 KB limit");
+assert.ok(windowsWorkflow.includes("'save_text_file'"), "Windows native bridge must advertise text-file saving");
+assert.ok(windowsWorkflow.includes("dialog.showSaveDialog"), "Windows native text-file saving must use a user-selected save location");

@@ -174,6 +174,13 @@ const contracts = [
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);
 }
+const remoteAction = readText(new URL("../supabase/functions/remote-action/index.ts", import.meta.url), "utf8");
+assert.ok(remoteAction.includes('body.type === "os_agent_poll"'), "Authenticated desktop OS agent polling endpoint must exist");
+assert.ok(remoteAction.includes('body.type === "os_agent_ack"'), "Authenticated desktop OS agent acknowledgement endpoint must exist");
+assert.ok(remoteAction.includes('.eq("user_id", user.id)'), "OS agent queue access must be scoped to the authenticated user");
+assert.ok(remoteAction.includes('.eq("claim_token", claimToken)'), "OS agent acknowledgement must match the issued claim token");
+assert.ok(remoteAction.includes('status: "processing"'), "OS agent polling must claim commands before returning them");
+assert.ok(remoteAction.includes('status: "pending"'), "Expired OS agent claims must be safely requeued");
 assert.ok(windowsWorkflow.includes("function openVisualGuide(payload = {})"), "Missing Windows system-level guide overlay");
 assert.ok(windowsWorkflow.includes("border-radius: 0 0 999px 999px;"), "Windows floating widget must have deeply rounded lower edges");
 assert.ok(windowsWorkflow.includes("button { width: 260px; height: 18px;"), "Rendered widget height must match its slim native window bounds");

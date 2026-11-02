@@ -282,25 +282,52 @@ public class BosleyOverlayPlugin extends Plugin {
       WindowManager wm=(WindowManager)getContext().getSystemService(android.content.Context.WINDOW_SERVICE);
       DisplayMetrics metrics=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(metrics);
       int width=Math.max(1,metrics.widthPixels),height=Math.max(1,metrics.heightPixels),density=metrics.densityDpi;
-      captureReader=ImageReader.newInstance(width,height,PixelFormat.RGBA_8888,2);
-      captureDisplay=activeProjection.createVirtualDisplay("BosleyScreenCapture",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,captureReader.getSurface(),null,captureHandler);
-      captureHandler.postDelayed(()->{
+      captureReader=ImageReader.newInstance(width,height,PixelFormat.RGBA_8888,3);
+      final ImageReader reader=captureReader;
+      final int captureWidth=width,captureHeight=height;
+      final java.util.concurrent.atomic.AtomicBoolean finished=new java.util.concurrent.atomic.AtomicBoolean(false);
+      final Runnable timeout=()->{
+        if(finished.compareAndSet(false,true)){
+          cleanupScreenCapture();
+          call.reject("Android did not deliver a screenshot frame in time. Keep Bosley in the foreground and try again.");
+        }
+      };
+      reader.setOnImageAvailableListener(source->{
+        if(finished.get())return;
+        Image image=null;
         try{
-          Image image=captureReader.acquireLatestImage();
-          if(image==null)throw new IllegalStateException("Android did not provide a screenshot frame. Please try again.");
-          Bitmap bitmap=null;
-          try{
-            Image.Plane plane=image.getPlanes()[0];ByteBuffer buffer=plane.getBuffer();
-            int pixelStride=plane.getPixelStride(),rowStride=plane.getRowStride(),rowPadding=rowStride-pixelStride*width;
-            Bitmap padded=Bitmap.createBitmap(width+Math.max(0,rowPadding/pixelStride),height,Bitmap.Config.ARGB_8888);
-            padded.copyPixelsFromBuffer(buffer);bitmap=Bitmap.createBitmap(padded,0,0,width,height);padded.recycle();
-          }finally{image.close();}
-          int max=1280; if(Math.max(width,height)>max){float scale=(float)max/Math.max(width,height);Bitmap scaled=Bitmap.createScaledBitmap(bitmap,Math.max(1,Math.round(width*scale)),Math.max(1,Math.round(height*scale)),true);bitmap.recycle();bitmap=scaled;}
-          ByteArrayOutputStream out=new ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);bitmap.recycle();
-          JSObject response=new JSObject();response.put("ok",true);response.put("dataUrl","data:image/jpeg;base64,"+Base64.encodeToString(out.toByteArray(),Base64.NO_WRAP));call.resolve(response);
-        }catch(Exception e){call.reject("Screen capture failed: "+String.valueOf(e.getMessage()),e);}
-        finally{cleanupScreenCapture();}
-      },650);
+          image=source.acquireLatestImage();
+          if(image==null)return;
+          Image.Plane plane=image.getPlanes()[0];ByteBuffer buffer=plane.getBuffer();
+          int pixelStride=plane.getPixelStride(),rowStride=plane.getRowStride();
+          int paddedWidth=captureWidth+Math.max(0,(rowStride-pixelStride*captureWidth)/pixelStride);
+          Bitmap padded=Bitmap.createBitmap(paddedWidth,captureHeight,Bitmap.Config.ARGB_8888);
+          padded.copyPixelsFromBuffer(buffer);
+          Bitmap bitmap=Bitmap.createBitmap(padded,0,0,captureWidth,captureHeight);padded.recycle();
+          int max=1280;
+          if(Math.max(captureWidth,captureHeight)>max){
+            float scale=(float)max/Math.max(captureWidth,captureHeight);
+            Bitmap scaled=Bitmap.createScaledBitmap(bitmap,Math.max(1,Math.round(captureWidth*scale)),Math.max(1,Math.round(captureHeight*scale)),true);
+            bitmap.recycle();bitmap=scaled;
+          }
+          ByteArrayOutputStream out=new ByteArrayOutputStream();
+          bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);bitmap.recycle();
+          if(finished.compareAndSet(false,true)){
+            captureHandler.removeCallbacks(timeout);
+            JSObject response=new JSObject();
+            response.put("ok",true);
+            response.put("dataUrl","data:image/jpeg;base64,"+Base64.encodeToString(out.toByteArray(),Base64.NO_WRAP));
+            cleanupScreenCapture();call.resolve(response);
+          }
+        }catch(Exception e){
+          if(finished.compareAndSet(false,true)){
+            captureHandler.removeCallbacks(timeout);cleanupScreenCapture();
+            call.reject("Screen capture failed: "+String.valueOf(e.getMessage()),e);
+          }
+        }finally{if(image!=null)image.close();}
+      },captureHandler);
+      captureDisplay=activeProjection.createVirtualDisplay("BosleyScreenCapture",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,reader.getSurface(),null,captureHandler);
+      captureHandler.postDelayed(timeout,4000);
     }catch(Exception e){cleanupScreenCapture();call.reject("Could not capture the Android screen: "+String.valueOf(e.getMessage()),e);}
   }
   private void cleanupScreenCapture(){

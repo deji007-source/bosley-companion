@@ -473,3 +473,8 @@ assert.ok(androidInstallerSource.includes("Intent.ACTION_CREATE_DOCUMENT"), "And
 assert.ok(androidInstallerSource.includes("100000"), "Android native text-file creation must enforce the 100 KB limit");
 assert.ok(windowsWorkflow.includes("'save_text_file'"), "Windows native bridge must advertise text-file saving");
 assert.ok(windowsWorkflow.includes("dialog.showSaveDialog"), "Windows native text-file saving must use a user-selected save location");
+
+assert.ok(html.includes('const remoteFile=instruction.match('), "Windows listener must parse approved remote text-file commands");
+assert.ok(html.includes('action:"save_text_file",payload:{name,content}'), "Windows listener must save remote text files through the native bridge");
+assert.ok(html.includes('reportLaptopCommandResult(runId,commandStatus,commandSummary)'), "Windows listener must acknowledge actual remote execution outcomes");
+assert.ok(windowsWorkflow.includes("content.length > 100000"), "Windows native text-file save must enforce the 100 KB limit");

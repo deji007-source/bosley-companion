@@ -63,11 +63,11 @@ public class BosleyOverlayService extends Service {
     ImageView mic=new ImageView(this);mic.setImageResource(android.R.drawable.ic_btn_speak_now);mic.setColorFilter(Color.WHITE);inner.addView(mic,new LinearLayout.LayoutParams(dp(24),dp(24)));
     frame.addView(inner,new LinearLayout.LayoutParams(-1,-2));bar=frame;
     lp=new WindowManager.LayoutParams(dp(widgetWidth),dp(widgetHeight),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
-    lp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;lp.y=dp(7);
+    lp.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;lp.x=dp(8);lp.y=0;
     frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
-        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
+        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,ox-(int)(e.getRawX()-sx));lp.y=oy+(int)(e.getRawY()-sy);try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
         case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)toggleVoiceCapture();return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
@@ -138,7 +138,8 @@ public class BosleyOverlayService extends Service {
     transcriptText=new TextView(this);transcriptText.setText(transcript==null||transcript.isEmpty()?"Your transcription will appear here…":transcript);transcriptText.setTextColor(Color.WHITE);transcriptText.setTextSize(15);transcriptText.setTextIsSelectable(true);transcriptText.setMinHeight(dp(54));transcriptText.setGravity(Gravity.CENTER_VERTICAL);LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.topMargin=dp(8);tp.bottomMargin=dp(10);card.addView(transcriptText,tp);
     LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);
     Button open=new Button(this);open.setText("Open app");open.setTextSize(11);open.setMinWidth(0);open.setMinimumWidth(0);open.setPadding(dp(8),0,dp(8),0);open.setOnClickListener(v->openCompanion("open"));actions.addView(open);
-    Button talk=new Button(this);talk.setText("Talk");talk.setOnClickListener(v->startVoiceCapture());actions.addView(talk);
+    Button open=new Button(this);open.setText("↗");open.setContentDescription("Open Bosley app");open.setTextSize(12);open.setMinWidth(dp(42));open.setOnClickListener(v->openCompanion("open_chat"));actions.addView(open);
+     Button talk=new Button(this);talk.setText("Talk");talk.setOnClickListener(v->startVoiceCapture());actions.addView(talk);
     Button send=new Button(this);send.setText("Send");send.setOnClickListener(v->queueVoiceDraft());actions.addView(send);
     Button close=new Button(this);close.setText("×");close.setOnClickListener(v->removeTranscriptPanel());actions.addView(close);
     card.addView(actions);transcriptPanel=card;

@@ -363,7 +363,7 @@ public class BosleyScreenRecordingService extends Service {
       recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
       recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
       if(Build.VERSION.SDK_INT>=29){
-        ContentValues values=new ContentValues();values.put(MediaStore.Video.Media.DISPLAY_NAME,fileName);values.put(MediaStore.Video.Media.MIME_TYPE,"video/mp4");values.put(MediaStore.Video.Media.RELATIVE_PATH,Environment.DIRECTORY_MOVIES+"/Bosley");values.put(MediaStore.Video.Media.IS_PENDING,1);
+        ContentValues values=new ContentValues();values.put(MediaStore.MediaColumns.DISPLAY_NAME,fileName);values.put(MediaStore.MediaColumns.MIME_TYPE,"video/mp4");values.put(MediaStore.MediaColumns.RELATIVE_PATH,Environment.DIRECTORY_MOVIES+"/Bosley");values.put(MediaStore.MediaColumns.IS_PENDING,1);
         outputUri=getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,values);
         if(outputUri==null)throw new IllegalStateException("Could not create the recording in Movies/Bosley.");
         outputDescriptor=getContentResolver().openFileDescriptor(outputUri,"w");
@@ -391,7 +391,7 @@ public class BosleyScreenRecordingService extends Service {
   }
   private void stopRecording(){
     if(started){try{recorder.stop();}catch(Exception error){android.util.Log.w("BosleyScreenRecorder","Recording ended before a valid video frame was written",error);}started=false;}
-    if(outputUri!=null){try{ContentValues values=new ContentValues();values.put(MediaStore.Video.Media.IS_PENDING,0);getContentResolver().update(outputUri,values,null,null);}catch(Exception error){android.util.Log.w("BosleyScreenRecorder","Could not publish recording to Movies",error);}}
+    if(outputUri!=null){try{ContentValues values=new ContentValues();values.put(MediaStore.MediaColumns.IS_PENDING,0);getContentResolver().update(outputUri,values,null,null);}catch(Exception error){android.util.Log.w("BosleyScreenRecorder","Could not publish recording to Movies",error);}}
     cleanup();
     getSharedPreferences("bosley_screen_recording",MODE_PRIVATE).edit().putBoolean("active",false).apply();
     if((outputUri!=null)||(output!=null&&output.exists()&&output.length()>0))android.widget.Toast.makeText(this,"Recording saved in Movies/Bosley",android.widget.Toast.LENGTH_LONG).show();

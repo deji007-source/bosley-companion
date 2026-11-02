@@ -790,6 +790,7 @@ const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
 let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
+let pendingAutomationWorkflow=null,pendingRemoteDeviceCommand=null,automationStopRequested=false;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
 function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").slice(0,12):[]}catch{automationRuns=[]}}
 function renderAutomationHistory(){const el=$("#auto-log");if(!el)return;el.innerHTML=automationRuns.map(r=>{const cls=r.status==="success"?"ok":["error","warning","queued"].includes(r.status)?"warn":r.status==="delivered"?"delivered":"";return `<article class="item"><main><strong class="${cls}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`}).join("")||'<p class="mute">No automation runs yet.</p>'}
@@ -1580,19 +1581,27 @@ async function getRemoteLaptopStatus(){
 async function routeRemoteVoiceToLaptop(spoken){
  if(!remoteModeNativeAndroid||!remoteModeEnabled)return false;
  const instruction=String(spoken||"").trim();if(!instruction)return true;
- setRemoteModeStatus("Checking Windows connection…","checking");
- try{
-  const sess=db?(await db.auth.getSession()).data.session:null;if(!sess||!user)throw Error("Sign in to the same Bosley account on Android and Windows first.");
-  const status=await getRemoteLaptopStatus();if(!status.online)throw Error(status.detail+". Open Bosley Companion on Windows and wait for its listener to connect.");
-  setRemoteModeStatus("Sending to Windows…","checking");
-  const {data,error}=await db.functions.invoke("remote-action",{body:{type:"automation",instruction}});if(error)throw error;
-  if(!data||data.ok!==true)throw Error(data?.error||"Windows did not accept the command.");
-  if(data.listenerNotified!==true)throw Error("The command was queued, but the Windows listener did not confirm delivery. Check the laptop before retrying.");
-  addMsg("you",instruction);addMsg("sys","Remote Mode: command delivered to your Windows laptop listener. Laptop execution depends on the supported Windows action handler.");
-  activityEvent("Remote voice command sent to Windows: "+instruction.slice(0,140),"message");autoLog("delivered","Android Remote Mode delivered to Windows listener: "+instruction);
-  setRemoteModeStatus("Windows laptop connected · command delivered","online");
- }catch(error){const message=String(error?.message||error);note("Remote Mode: "+message);setRemoteModeStatus(message,"error");autoLog("error","Android Remote Mode could not deliver command: "+message)}
+ if(handleAutomationApprovalCommand(instruction)){addMsg("you",instruction);return true}
+ addMsg("you",instruction);
+ queueRemoteDeviceCommand(instruction,"Windows laptop","Android Remote Mode");
  return true;
+}
+function queueRemoteDeviceCommand(instruction,target="Windows laptop",source="chat"){
+ if(automationBusy||pendingAutomationWorkflow||pendingRemoteDeviceCommand){addMsg("bosley","Another automation or device command is already awaiting approval or running. Finish that first.");return}
+ const clean=String(instruction||"").trim();if(!clean){addMsg("bosley","I need the command before I can prepare it.");return}
+ pendingRemoteDeviceCommand={instruction:clean,target,source};
+ addMsg("bosley","Remote command prepared for "+target+". Nothing has been sent yet.\n\nCommand: "+clean+"\n\nReply 'yes, send it' to queue it, or 'no, cancel' to discard it.");
+ activityEvent("Waiting for remote-device command approval: "+target,"pending");
+}
+async function sendApprovedRemoteDeviceCommand(pending){
+ const sess=db?(await db.auth.getSession()).data.session:null;
+ if(!sess||!user)throw Error("Sign in to the same Bosley account on both devices first.");
+ const {data,error}=await db.functions.invoke("remote-action",{body:{type:"automation",instruction:pending.instruction}});
+ if(error)throw error;if(!data||data.ok!==true)throw Error(data?.error||"The remote automation gateway rejected the command.");
+ const delivered=data.listenerNotified===true,telegram=data.telegramNotified===true;
+ const message=delivered?"Remote command delivered to the Windows listener. Execution is not yet confirmed.":telegram?"Remote command accepted by the gateway and Telegram trigger. Device execution is not yet confirmed.":"Remote command queued, but Windows listener delivery is unconfirmed. Open Bosley Companion on Windows and check its connection.";
+ addMsg("bosley",message);autoLog(delivered?"delivered":"queued",pending.target+": "+pending.instruction);
+ activityEvent("Approved remote command queued for "+pending.target,delivered?"delivered":"queued");
 }
 function initAndroidRemoteMode(){
  if(!remoteModeNativeAndroid)return;
@@ -1815,7 +1824,30 @@ async function runAction(step,approved=false){
  if(step.type==="open_url"){const url=normalizeUrl(input);const b=bridge();if(b&&typeof b.request==="function"){const caps=await b.getCapabilities();if(caps?.actions?.includes("open_external_url")){const result=await b.request({action:"open_external_url",payload:{url}});if(result?.ok!==true){if(result?.cancelled)return "Opening website cancelled.";throw Error(result?.error||"Windows did not confirm opening the website.")}return "Opened website in a restored desktop window: "+url}}const w=window.open(url,"_blank","popup,width=1100,height=760,left=80,top=60");if(!w)throw Error("The browser blocked the new tab. Allow pop-ups for Bosley and retry.");try{w.opener=null}catch{};return "Opened website: "+url}
  if(step.type==="search_web"){if(!input)throw Error("Enter what to search for.");const url="https://www.google.com/search?q="+encodeURIComponent(input);const b=bridge();if(b&&typeof b.request==="function"){const caps=await b.getCapabilities();if(caps?.actions?.includes("open_external_url")){const result=await b.request({action:"open_external_url",payload:{url}});if(result?.ok!==true){if(result?.cancelled)return "Opening search cancelled.";throw Error(result?.error||"Windows did not confirm opening the search.")}return "Opened web search in a restored desktop window for: "+input}}const w=window.open(url,"_blank","popup,width=1100,height=760,left=80,top=60");if(!w)throw Error("The browser blocked the search tab.");try{w.opener=null}catch{};return "Opened web search for: "+input}
  if(step.type==="notify_phone"){if(!user||!db)throw Error("Sign in first to send a phone notification.");if(input.length>160)throw Error("Phone notifications are limited to 160 characters.");if(!confirm("Send this notification to your connected phone through MacroDroid?\\n\\n"+input+"\\n\\nContinue?"))return "Phone notification cancelled by user.";const sess=(await db.auth.getSession()).data.session;if(!sess)throw Error("Your session expired. Sign in again.");const response=await fetch(SUPABASE_URL+"/functions/v1/macrodroid-bridge-",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+sess.access_token},body:JSON.stringify({action:"notify",message:input})});let result={};try{result=await response.json()}catch{}if(!response.ok||result.ok!==true)throw Error(result.error||("MacroDroid bridge failed (HTTP "+response.status+")."));return "MacroDroid accepted the phone notification request. Verify that the notification appeared on your device."}
- if(step.type==="create_text_file") {const name=(step.name||"bosley-note.txt").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";const blob=new Blob([input],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);return "Browser initiated download: "+name}
+ if(step.type==="create_text_file") {
+  const name=(step.name||"bosley-note.txt").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";
+  if(!input)throw Error("The text file is empty. Tell me what to put in it.");
+  const androidFiles=window.Capacitor?.Plugins?.BosleyOverlay;
+  if(androidFiles&&typeof androidFiles.saveTextFile==="function"){
+   const saved=await androidFiles.saveTextFile({name,content:input});
+   if(saved?.saved===true)return "Android saved "+name+" using the system file picker.";
+   if(saved?.cancelled===true)return "File save cancelled. Nothing was saved.";
+   throw Error(saved?.error||"Android did not confirm saving the file.");
+  }
+  const b=bridge();
+  if(b&&typeof b.request==="function"){
+   const caps=await b.getCapabilities();
+   if(caps?.actions?.includes("save_text_file")){
+    const result=await b.request({action:"save_text_file",payload:{name,content:input}});
+    if(result?.ok===true)return "Windows saved "+name+" to the location you selected.";
+    if(result?.cancelled===true)return "File save cancelled. Nothing was saved.";
+    throw Error(result?.error||"Windows did not confirm saving the file.");
+   }
+  }
+  const blob=new Blob([input],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  return "Browser download started for "+name+". Check your Downloads folder.";
+ }
  if(step.type==="draft_message"){const recipient=String(step.recipient||"").trim(),body=input;if(!body)throw Error("Message body is empty.");const details="Recipient: "+(recipient||"not specified")+"\n\n"+body;if(step.draftOnly){const name=(step.name||"bosley-message-draft.txt").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-message-draft.txt";const blob=new Blob([details],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);return "Message draft created and browser download initiated: "+name+". Nothing was sent."}if(!approved){if(!confirm("Bosley prepared this message. Review before sending.\n\n"+details+"\n\nOK = continue to available send integration; Cancel = keep as draft."))return "Draft retained; sending cancelled by user."}
   const b=bridge();if(!b) {const blob=new Blob([details],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="bosley-message-draft.txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);return "No messaging connector is installed. Draft downloaded; nothing was sent."}
   if(typeof b.getCapabilities==="function"){const caps=await b.getCapabilities();if(!caps||!Array.isArray(caps.actions)||!caps.actions.includes("send_message"))throw Error("Desktop bridge does not advertise send_message capability; draft was not sent.")}
@@ -1884,10 +1916,10 @@ function validateWorkflowForExecution(wf){
  return wf.steps.map((step,index)=>(index+1)+". "+(autoActions.find(action=>action.value===step.type)?.label||step.type)+(step.type==="open_url"?" - "+normalizeUrl(step.input):step.input?" - "+step.input.slice(0,140):"")).join("\n");
 }
 function setBosleyCompanionState(state){const allowed=["idle","thinking","working","waiting","speaking","success","error","walk"];if(!allowed.includes(state))return;const previous=document.documentElement.dataset.agentState||"idle";document.documentElement.dataset.agentState=state;const presence=document.getElementById("presence-status");if(presence){const labels={idle:"Ready when you are",thinking:"Thinking through your request",working:"Working on your request",waiting:"Waiting for a device response",speaking:"Speaking to you",success:"Task completed",error:"I need to check something",walk:"Moving between tasks"};presence.textContent=labels[state]||"Ready when you are"}const presenceMode=document.getElementById("presence-mode");if(presenceMode)presenceMode.textContent=state==="working"?"EXECUTING":state==="thinking"?"THINKING":state==="waiting"?"WAITING":state==="error"?"NEEDS ATTENTION":state==="success"?"COMPLETED":"AGENT ONLINE";const launcher=document.getElementById("launch");if(launcher)launcher.dataset.state=state;if(state==="thinking"||state==="working"){document.documentElement.dataset.agentLock="on";if(previous!=="thinking"&&previous!=="working"){document.documentElement.classList.remove("bosley-arrive");void document.documentElement.offsetWidth;document.documentElement.classList.add("bosley-arrive")}}else if(state==="idle"||state==="success"||state==="error"){document.documentElement.dataset.agentLock="off";if(state==="idle")document.documentElement.classList.remove("bosley-arrive")}try{const desktop=window.BosleyDesktop;if(desktop&&typeof desktop.setCompanionState==="function")desktop.setCompanionState(state)}catch(error){console.warn("Bosley companion animation state unavailable:",error)}}
-async function runWorkflow(wf){
+async function runWorkflow(wf,chatApproved=false){
  if(automationBusy)throw Error("An automation workflow is already running.");
  const plan=validateWorkflowForExecution(wf);
- const approved=confirm("Review Bosley automation plan: "+wf.name+"\\n\\n"+plan+"\\n\\nContinue with these "+wf.steps.length+" step(s)?");
+ const approved=chatApproved||confirm("Review Bosley automation plan: "+wf.name+"\\n\\n"+plan+"\\n\\nContinue with these "+wf.steps.length+" step(s)?");
  if(!approved){setBosleyCompanionState("idle");autoLog("cancelled","Workflow cancelled before execution: "+wf.name);activityEvent("Plan declined: "+wf.name,"cancelled");return {cancelled:true,completed:0,total:wf.steps.length}}
  setBosleyCompanionState("working");automationBusy=true;
  const btn=$("#autorun");if(btn)btn.disabled=true;
@@ -1897,19 +1929,21 @@ async function runWorkflow(wf){
  if(timeline)timeline.innerHTML=wf.steps.map((step,index)=>'<li class="workflow-step" data-step-index="'+index+'" data-step-state="pending"><span class="workflow-step-marker">'+(index+1)+'</span><span class="workflow-step-copy"><strong>'+esc(autoActions.find(action=>action.value===step.type)?.label||step.type)+'</strong><small>Waiting for execution</small></span><span class="workflow-step-state">PENDING</span></li>').join("");
  autoLog("running","Plan approved: "+wf.name+" · "+wf.steps.length+" step(s)");
  activityEvent("Plan approved: "+wf.name+" ("+wf.steps.length+" steps)","planned");
- let completed=0,cancelled=false;
+ let completed=0,cancelled=false;automationStopRequested=false;
  const updateStep=(index,state,detailText)=>{
   const item=timeline?.querySelector('[data-step-index="'+index+'"]');
   if(item){item.dataset.stepState=state;const marker=item.querySelector(".workflow-step-marker"),small=item.querySelector("small"),label=item.querySelector(".workflow-step-state");if(marker)marker.textContent=state==="success"?"✓":state==="error"?"!":String(index+1);if(small)small.textContent=detailText;if(label)label.textContent=state.toUpperCase()}
  };
  try{
   for(let index=0;index<wf.steps.length;index++){
+   if(automationStopRequested){cancelled=true;if(detail)detail.textContent="Stop requested. No further steps will run.";break}
    const step=wf.steps[index],stepLabel=autoActions.find(action=>action.value===step.type)?.label||step.type;
    if(detail)detail.textContent="Step "+(index+1)+"/"+wf.steps.length+": "+stepLabel;
    updateStep(index,"running","Executing now…");
    autoLog("running","Step "+(index+1)+"/"+wf.steps.length+": "+stepLabel);
    activityEvent("Running step "+(index+1)+"/"+wf.steps.length+": "+stepLabel,"running");
    const result=await runAction(step,false);
+   if(automationStopRequested){cancelled=true;updateStep(index,"cancelled","Stop requested; no later steps will run.");if(detail)detail.textContent="Stopped after the current step. Remaining steps were not run.";break}
    if(typeof result==="string"&&/\\bcancelled\\b/i.test(result)){
     cancelled=true;updateStep(index,"cancelled",result);autoLog("cancelled",result);activityEvent("Step cancelled: "+stepLabel,"cancelled");
     if(detail)detail.textContent="Cancelled at step "+(index+1)+"/"+wf.steps.length+"; remaining steps were not run.";
@@ -2030,8 +2064,76 @@ function executeDirectChatAction(step,label){
   setBosleyCompanionState("error");
  });
 }
-function dispatchAgentHandoffCommand(raw){const match=String(raw||"").trim().match(/^(?:please\s+)?(?:send|hand off|give)\s+(?:this|it|the request)?\s*to\s+(chatgpt|claude|gemini)\s*[:\-]\s*([\s\S]{1,8000})$/i);if(!match)return false;const provider=match[1].toLowerCase(),task=match[2].trim();if(!task)return false;const panel=$("#automation"),toggle=$("#autotoggle");if(panel?.hidden&&toggle)toggle.click();const providerInput=$("#agent-provider"),mode=$("#agent-chat-mode"),url=$("#agent-chat-url"),taskInput=$("#agent-task"),status=$("#agent-handoff-status");if(!providerInput||!taskInput){addMsg("bosley","Open Automation and use AI agent handoff to prepare this request.");return true}providerInput.value=provider;mode.value="new";mode.dispatchEvent(new Event("change"));if(url)url.value="";taskInput.value=task;if(status)status.textContent="Task prepared for "+provider+". Choose an existing conversation if needed, then press Copy task & open agent.";addMsg("bosley","I've prepared your request for "+provider+". Open Automation → AI agent handoff and press Copy task & open agent. You can choose a new chat or paste an existing conversation link first.");activityEvent("AI agent handoff prepared from chat command: "+provider,"handoff");return true}
-function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;const skillResolution=resolveSkillWorkflowCommand(t);if(skillResolution.status==="ambiguous"){addMsg("bosley","More than one enabled Skill matches that trigger. Please specify the exact Skill or saved workflow; nothing has been run.");return true}if(skillResolution.status==="unlinked"){addMsg("bosley","The Skill “"+skillResolution.skill.title+"” is enabled but has no matching saved workflow. Add “workflow: Exact workflow name” to its file and create that workflow in Automation. Skills provide guidance only; they cannot define executable actions.");return true}const saved=skillResolution.status==="match"?skillResolution.workflow:findWorkflowCommand(t);if(saved){(async()=>{try{const confirmation="Preparing your saved automation, "+saved.name+". Review the steps before anything runs.";addMsg("bosley",confirmation);speak(confirmation);const outcome=await runWorkflow(saved);const done=outcome?.cancelled?"Cancelled saved automation: "+saved.name+". "+outcome.completed+" step(s) completed; later steps were not run.":"Completed saved automation: "+saved.name+" ("+outcome.completed+"/"+outcome.total+" steps). Check Execution history for details.";addMsg("bosley",done);speak(done)}catch(e){const message="The saved automation "+saved.name+" did not finish: "+String(e?.message||e);addMsg("bosley",message);speak(message);autoLog("error",message)}})();return true}const webAppCommand=dispatchKnownWebsiteCommand(t);if(webAppCommand)return true;
+function parseAgentHandoffCommand(raw){const text=String(raw||"").trim();if(!text||text.length>8000)return null;const patterns=[/^(?:please\s+)?(?:send|hand off|give)\s+(?:(?:this|it|the request)\s+)?to\s+(chatgpt|claude|gemini)\s*[:\-]\s*([\s\S]{1,8000})$/i,/^(?:please\s+)?(?:ask|tell|have|let)\s+(chatgpt|claude|gemini)\s+(?:to\s+)?([\s\S]{1,8000})$/i,/^(?:please\s+)?use\s+(chatgpt|claude|gemini)\s+to\s+([\s\S]{1,8000})$/i,/^(?:please\s+)?(?:send|forward)\s+([\s\S]{1,8000}?)\s+to\s+(chatgpt|claude|gemini)$/i];for(let i=0;i<patterns.length;i++){const match=text.match(patterns[i]);if(!match)continue;const provider=(i===3?match[2]:match[1]).toLowerCase(),task=(i===3?match[1]:match[2]).trim();if(task)return {provider,task}}return null}
+function dispatchAgentHandoffCommand(raw){const parsed=parseAgentHandoffCommand(raw);if(!parsed)return false;const {provider,task}=parsed;const panel=$("#automation"),toggle=$("#autotoggle");if(panel?.hidden&&toggle)toggle.click();const providerInput=$("#agent-provider"),mode=$("#agent-chat-mode"),url=$("#agent-chat-url"),taskInput=$("#agent-task"),status=$("#agent-handoff-status");if(!providerInput||!taskInput){addMsg("bosley","Open Automation and use AI agent handoff to prepare this request.");return true}providerInput.value=provider;mode.value="new";mode.dispatchEvent(new Event("change"));if(url)url.value="";taskInput.value=task;if(status)status.textContent="Task prepared for "+provider+". Choose an existing conversation if needed, then press Copy task & open agent.";addMsg("bosley","I've prepared your request for "+provider+". Open Automation → AI agent handoff and press Copy task & open agent. You can paste an existing conversation link if you want to continue one.");activityEvent("AI agent handoff prepared from chat command: "+provider,"handoff");return true}
+
+function handleAutomationApprovalCommand(raw){
+ const t=String(raw||"").trim().toLowerCase();
+ if(pendingRemoteDeviceCommand){
+  if(/^(?:yes|yeah|yep|send|send it|send command|proceed|confirm|approve)(?:,?\s+(?:please|send it|send|it|command))?[.! ]*$/i.test(t)){
+   const pending=pendingRemoteDeviceCommand;pendingRemoteDeviceCommand=null;
+   addMsg("bosley","Approved. Sending the remote command now.");
+   (async()=>{try{await sendApprovedRemoteDeviceCommand(pending)}catch(e){const message="Remote command was not confirmed as delivered: "+String(e?.message||e);addMsg("bosley",message);autoLog("error",message)}})();
+   return true;
+  }
+  if(/^(?:no|no thanks|nope|cancel|cancel it|dont|don't|do not|not now|stop)[.! ]*$/i.test(t)){
+   const target=pendingRemoteDeviceCommand.target;pendingRemoteDeviceCommand=null;
+   addMsg("bosley","Cancelled. Nothing was sent to "+target+".");activityEvent("Remote command cancelled: "+target,"cancelled");return true;
+  }
+  addMsg("bosley","I'm waiting for approval before sending the remote command. Reply 'yes, send it' or 'no, cancel'.");return true;
+ }
+ if(automationBusy && /^(stop|stop it|stop automation|cancel|cancel it|halt|pause)[.! ]*$/i.test(t)){
+  automationStopRequested=true;
+  addMsg("bosley","Stop requested. I'll let the current action finish safely, then stop before the next step.");
+  speak("Stop requested. I'll stop before the next step.");
+  return true;
+ }
+ if(!pendingAutomationWorkflow)return false;
+ if(/^(?:yes|yeah|yep|run|run it|run automation|proceed|confirm|start|start it|do it|go ahead|approve)(?:,?\s+(?:please|run it|run|it|automation))?[.! ]*$/i.test(t)){
+  const wf=pendingAutomationWorkflow;pendingAutomationWorkflow=null;
+  addMsg("bosley","Approved. Starting "+wf.name+". You can say stop at any time to prevent later steps from running.");
+  (async()=>{try{const outcome=await runWorkflow(wf,true);const done=outcome.cancelled?"Stopped "+wf.name+" after "+outcome.completed+" completed step(s). No later steps were run.":"Completed "+wf.name+" ("+outcome.completed+"/"+outcome.total+" steps). Check Execution history for details.";addMsg("bosley",done);speak(done)}catch(e){const message="The automation "+wf.name+" did not finish: "+String(e?.message||e);addMsg("bosley",message);speak(message);autoLog("error",message)}})();
+  return true;
+ }
+ if(/^(no|no thanks|nope|cancel|cancel it|dont|don't|do not|not now|stop|stop it)[.! ]*$/i.test(t)){
+  const name=pendingAutomationWorkflow.name;pendingAutomationWorkflow=null;
+  autoLog("cancelled","Automation declined in chat: "+name);
+  activityEvent("Automation declined: "+name,"cancelled");
+  addMsg("bosley","Okay. I won't run "+name+". Nothing was executed.");
+  speak("Okay. I won't run it.");
+  return true;
+ }
+ addMsg("bosley","I'm waiting for your approval before running "+pendingAutomationWorkflow.name+". Reply yes, run it or no, cancel.");
+ return true;
+}
+function queueAutomationForChatApproval(wf){
+ if(automationBusy){addMsg("bosley","An automation is already running. Say stop to stop it after its current action, or wait for it to finish.");return;}
+ if(pendingAutomationWorkflow){addMsg("bosley","There is already an automation awaiting approval: "+pendingAutomationWorkflow.name+". Reply yes or no first.");return;}
+ const plan=validateWorkflowForExecution(wf);
+ pendingAutomationWorkflow=wf;
+ const message="I found the saved automation '"+wf.name+"'. Nothing has run yet.\n\nPlanned steps ("+wf.steps.length+"):\n"+plan+"\n\nWould you like me to run it? Reply 'yes, run it' or 'no, cancel'. You can also say 'stop' while it is running.";
+ addMsg("bosley",message);speak("I found "+wf.name+". Nothing has run yet. Would you like me to run it? Say yes or no.");
+ activityEvent("Waiting for chat approval: "+wf.name,"pending");
+}
+let pendingChatFileDraft=null;
+function dispatchAutomationCommand(raw){
+ const incoming=String(raw||"").trim();
+ if(pendingChatFileDraft){
+  const draft=pendingChatFileDraft;pendingChatFileDraft=null;
+  if(/^(?:cancel|never mind|no thanks)$/i.test(incoming)){addMsg("bosley","File creation cancelled. Nothing was saved.");return true}
+  executeDirectChatAction({type:"create_text_file",name:draft.name,input:incoming},"create text file "+draft.name);return true;
+ }
+if(handleAutomationApprovalCommand(raw))return true;const t=String(raw||"").trim();if(handleVoiceModeCommand(t))return true;let m;
+ const remotePrefix=t.match(/^(?:please\s+)?(?:on|using|send(?: this)? to)\s+(?:my\s+)?(windows(?: laptop)?|laptop|pc|computer)\s*[:,]?\s+(.+)$/i);const remoteSuffix=t.match(/^(.+?)\s+(?:on|to)\s+(?:my\s+)?(windows(?: laptop)?|laptop|pc|computer)[.!]?$/i);const remoteMatch=remotePrefix?[remotePrefix[0],remotePrefix[1],remotePrefix[2]]:remoteSuffix?[remoteSuffix[0],remoteSuffix[2],remoteSuffix[1]]:null;
+ if(remoteMatch){queueRemoteDeviceCommand(remoteMatch[2].trim(),remoteMatch[1].replace(/\b\w/g,c=>c.toUpperCase()),"typed chat");return true}
+ const createFile=t.match(/^(?:bosley[, ]+)?(?:please\s+)?(?:create|make|write|save)(?:\s+me)?\s+(?:a\s+)?text file(?:\s+(?:called|named)\s+([^:\n]+?))?(?:\s*(?::|with content|containing|that says)\s*([\s\S]+))?$/i);
+ if(createFile){
+  const name=(createFile[1]||"bosley-note.txt").trim().replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";
+  const content=String(createFile[2]||"").trim();
+  if(!content){pendingChatFileDraft={name};addMsg("bosley","Sure. What text should I put in "+name+"? Reply with the content, or say cancel.");return true}
+  executeDirectChatAction({type:"create_text_file",name,input:content},"create text file "+name);return true;
+ }
+ const skillResolution=resolveSkillWorkflowCommand(t);if(skillResolution.status==="ambiguous"){addMsg("bosley","More than one enabled Skill matches that trigger. Please specify the exact Skill or saved workflow; nothing has been run.");return true}if(skillResolution.status==="unlinked"){addMsg("bosley","The Skill “"+skillResolution.skill.title+"” is enabled but has no matching saved workflow. Add “workflow: Exact workflow name” to its file and create that workflow in Automation. Skills provide guidance only; they cannot define executable actions.");return true}const saved=skillResolution.status==="match"?skillResolution.workflow:findWorkflowCommand(t);if(saved){try{queueAutomationForChatApproval(saved)}catch(e){const message="I couldn't prepare "+saved.name+": "+String(e?.message||e);addMsg("bosley",message);autoLog("error",message)}return true}const webAppCommand=dispatchKnownWebsiteCommand(t);if(webAppCommand)return true;
  if((m=t.match(/^(?:bosley[, ]+)?(?:please\s+)?open\s+(https?:\/\/\S+)$/i))){
   executeDirectChatAction({type:"open_url",input:m[1]},"open website "+m[1]);return true;
  }
@@ -2115,13 +2217,37 @@ function setLaptopListenerState(state,detail){
  const status=$("#laptop-listener-status");
  if(status){status.textContent="Laptop listener: "+state.toUpperCase()+(detail?" · "+detail:"");status.dataset.state=state}
 }
+async function reportLaptopCommandResult(runId,status,summary){
+ if(!runId||!user||!db)return;
+ try{
+  const {data,error}=await db.auth.getSession();
+  const token=data?.session?.access_token;
+  if(error||!token)throw new Error("sign-in session unavailable");
+  const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+token},body:JSON.stringify({type:"automation_result",run_id:runId,status,summary:String(summary||"").slice(0,500)}),signal:AbortSignal.timeout(8000)});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||result.ok!==true)throw new Error(result.error||"result acknowledgement rejected");
+ }catch(error){autoLog("warning","Could not sync desktop execution result: "+String(error?.message||error).slice(0,140))}
+}
 async function handleLaptopBroadcast(payload){
  const instruction=String(payload?.instruction||"").trim();
  if(!instruction)return;
+ const runId=String(payload?.run_id||"");
+ let commandStatus="completed",commandSummary="Desktop action completed and native bridge confirmed success.";
  const b=bridge();
- if(!b||typeof b.request!=="function"){setLaptopListenerState("error","Desktop bridge unavailable");return}
+ if(!b||typeof b.request!=="function"){setLaptopListenerState("error","Desktop bridge unavailable");await reportLaptopCommandResult(runId,"failed","Desktop bridge unavailable; no action was executed.");return}
  const normalized=instruction.toLowerCase().replace(/[.!?]+$/,"").trim();
  try{
+  const remoteFile=instruction.match(/^(?:please\s+)?(?:create|make|write|save)(?:\s+me)?\s+(?:a\s+)?text file(?:\s+(?:called|named)\s+([^:\n]+?))?\s*(?::|with content|containing|that says|and (?:put|write)(?: this)? in it)\s*([\s\S]+)$/i);
+  if(remoteFile){
+   const name=(remoteFile[1]||"bosley-note.txt").trim().replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,100)||"bosley-note.txt";
+   const content=String(remoteFile[2]||"").trim();
+   if(!content)throw Error("The text file has no content.");
+   const result=await b.request({action:"save_text_file",payload:{name,content}});
+   if(result?.ok!==true){if(result?.cancelled){commandStatus="failed";commandSummary="File save was cancelled; no file was created.";return}throw Error(result?.error||"Windows did not confirm saving the text file.");}
+   setLaptopListenerState("online","text file saved on Windows");
+   autoLog("success","Remote text file saved: "+name);
+   return;
+  }
   if(/^(?:hey\s+)?(?:bosley[, ]+)?(?:wake up|wake bosley|show bosley|open bosley|bring bosley up)$/i.test(normalized)){
    const result=await b.request({action:"wake_companion",payload:{}});
    if(result?.ok!==true)throw Error(result?.error||"Wake action was not confirmed");
@@ -2160,15 +2286,20 @@ async function handleLaptopBroadcast(payload){
    setLaptopListenerState("online","Windows desktop status received");autoLog("success","Phone requested Windows desktop information");return;
   }
   if(/\bsearch\b/.test(normalized)&&/\bchrome\b/.test(normalized)){
+   commandStatus="failed";commandSummary="Chrome active-tab connector is not installed; no browser action was executed.";
    setLaptopListenerState("online","Chrome search needs the companion browser connector");
    autoLog("warning","Laptop received a Chrome search request, but no active-tab connector is installed. No extra Chrome window was opened.");
    return;
   }
+  commandStatus="failed";commandSummary="Unsupported action; no action was executed.";
   setLaptopListenerState("online","command received; unsupported action was not executed");
   autoLog("warning","Laptop listener received an unsupported remote command and safely did not execute it: "+instruction.slice(0,180));
  }catch(error){
+  commandStatus="failed";commandSummary=String(error?.message||error).slice(0,450);
   setLaptopListenerState("error",String(error?.message||error).slice(0,120));
   autoLog("error","Laptop listener action failed: "+String(error?.message||error).slice(0,180));
+ }finally{
+  await reportLaptopCommandResult(runId,commandStatus,commandSummary);
  }
 }
 async function sendLaptopHeartbeat(activeUser){

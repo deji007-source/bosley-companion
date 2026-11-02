@@ -30,7 +30,7 @@ Some of these integrations have been implemented in code but still require end-t
 ## Important limitations
 
 - **Native desktop automation remains limited.** The Electron wrapper now has a restricted native bridge for specific actions, including opening/stopping the system visual guide and allowlisted app launches. This is not general-purpose remote control of arbitrary apps.
-- **The OS command queue needs a lifecycle correction before it can be trusted.** The current `os-agent-poll` endpoint marks commands as `done` when it returns them, before any desktop agent confirms execution. Do not use this status as proof that an OS action ran.
+- **The OS command queue now distinguishes claims from execution results.** `os-agent-poll` moves commands from `pending` to `processing`, returns a per-claim token, and accepts a separate authenticated-by-secret acknowledgement from the native agent before setting `done` or `failed`. Claims older than two minutes are returned to `pending`. This backend lifecycle is deployed, but the native Windows agent still needs to be wired to send the acknowledgement after its allowlisted bridge reports the actual result; until that integration is verified, do not treat queued or processing commands as completed.
 - Browser-safe workflow actions are not the same as controlling Windows applications. Desktop actions must remain unavailable unless a secure, allowlisted native bridge is installed and confirms the result.
 - Message actions that lack a verified send integration should be treated as drafts, not as sent messages.
 - Voice support depends on browser/device capabilities and permissions; speech recognition may rely on the browser vendor's service.

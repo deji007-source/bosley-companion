@@ -3,6 +3,8 @@ name: Build Bosley Windows App
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     paths:
       - ".github/workflows/build-windows.yml"
@@ -898,7 +900,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'save_text_file', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide']
             };
           });
 
@@ -1056,6 +1058,27 @@ jobs:
               child.on('error', () => {});
               child.unref();
               return { ok: true, launched: appId, label: target.label };
+            }
+            if (request.action === 'save_text_file') {
+              if (process.platform !== 'win32') throw new Error('Native text-file saving is supported by the Windows desktop build only.');
+              const name = String(request.payload?.name || 'bosley-note.txt').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100) || 'bosley-note.txt';
+              const content = String(request.payload?.content ?? '');
+              if (!content.trim()) throw new Error('Text file content cannot be empty.');
+              if (content.length > 100000) throw new Error('Text files are limited to 100 KB.');
+              const choice = await dialog.showSaveDialog(panel, {
+                title: 'Save text file',
+                defaultPath: name,
+                buttonLabel: 'Save file',
+                filters: [{ name: 'Text files', extensions: ['txt', 'md', 'csv', 'json'] }, { name: 'All files', extensions: ['*'] }]
+              });
+              if (choice.canceled || !choice.filePath) return { ok: false, cancelled: true };
+              await fs.promises.writeFile(choice.filePath, content, { encoding: 'utf8', flag: 'wx' }).catch(async error => {
+                if (error.code !== 'EEXIST') throw error;
+                const overwrite = await dialog.showMessageBox(panel, { type: 'warning', buttons: ['Cancel', 'Replace file'], defaultId: 0, cancelId: 0, title: 'Replace existing file?', message: 'A file with this name already exists.', detail: choice.filePath });
+                if (overwrite.response !== 1) throw new Error('Save cancelled; existing file was not changed.');
+                await fs.promises.writeFile(choice.filePath, content, { encoding: 'utf8' });
+              });
+              return { ok: true, saved: true, filePath: choice.filePath };
             }
             if (request.action === 'open_external_url') {
               const rawUrl = String(request.payload?.url || '');
@@ -1302,7 +1325,7 @@ jobs:
           grep -Fq 'id="activitytoggle"' desktop/index.html
           grep -Fq 'function activityEvent' desktop/index.html
           grep -Fq 'function renderLocalMemories' desktop/index.html
-          grep -Fq 'const outcome=await runWorkflow(saved)' desktop/index.html
+          grep -Fq 'const outcome=await runWorkflow(wf,true)' desktop/index.html
           grep -Fq 'function setVoiceMode(next)' desktop/index.html
           grep -Fq 'aria-label="Open Bosley Companion"' desktop/bubble.html
           grep -Fq 'openRestoredUrl' desktop/main.cjs

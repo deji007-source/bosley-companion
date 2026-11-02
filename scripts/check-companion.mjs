@@ -67,6 +67,10 @@ const contracts = [
   ["Workflow preflight bounds recipient metadata", 'invalid recipient field'],
   ["Workflow preflight bounds file-name metadata", 'invalid file name'],
   ["Saved workflows require plan confirmation", "Review Bosley automation plan:"],
+  ["Chat workflow invocation queues an approval instead of executing immediately", "queueAutomationForChatApproval(saved)"],
+  ["Chat approval accepts affirmative replies", "yes|yeah|yep|run|run it"],
+  ["Chat decline clears the pending workflow", "Automation declined in chat:"],
+  ["Chat stop requests halt before later workflow steps", "automationStopRequested"],
   ["Cancelled workflow does not execute steps", "Workflow cancelled before execution:"],
   ["Voice profile control", 'voiceprofile'],
   ["Automation history", 'automationHistoryKey'],
@@ -170,6 +174,13 @@ const contracts = [
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);
 }
+const remoteAction = readText(new URL("../supabase/functions/remote-action/index.ts", import.meta.url), "utf8");
+assert.ok(remoteAction.includes('body.type === "os_agent_poll"'), "Authenticated desktop OS agent polling endpoint must exist");
+assert.ok(remoteAction.includes('body.type === "os_agent_ack"'), "Authenticated desktop OS agent acknowledgement endpoint must exist");
+assert.ok(remoteAction.includes('.eq("user_id", user.id)'), "OS agent queue access must be scoped to the authenticated user");
+assert.ok(remoteAction.includes('.eq("claim_token", claimToken)'), "OS agent acknowledgement must match the issued claim token");
+assert.ok(remoteAction.includes('status: "processing"'), "OS agent polling must claim commands before returning them");
+assert.ok(remoteAction.includes('status: "pending"'), "Expired OS agent claims must be safely requeued");
 assert.ok(windowsWorkflow.includes("function openVisualGuide(payload = {})"), "Missing Windows system-level guide overlay");
 assert.ok(windowsWorkflow.includes("border-radius: 0 0 999px 999px;"), "Windows floating widget must have deeply rounded lower edges");
 assert.ok(windowsWorkflow.includes("button { width: 260px; height: 18px;"), "Rendered widget height must match its slim native window bounds");
@@ -332,6 +343,11 @@ assert.ok(html.includes('data-step-state="pending"'), "Each planned workflow ste
 assert.ok(html.includes("item.dataset.stepState=state"), "Workflow steps must update to their live execution state");
 assert.ok(html.includes('id="agent-provider"'), "Automation must expose selectable AI providers");
 assert.ok(html.includes("function dispatchAgentHandoffCommand(raw)"), "Chat must route send-to-provider commands into the handoff flow");
+assert.ok(html.includes("function parseAgentHandoffCommand(raw)"), "Natural-language handoffs must use a separately testable parser");
+assert.ok(html.includes("const patterns="), "AI handoff parser must support multiple natural-language command forms");
+assert.ok(html.includes("(?:ask|tell|have|let)"), "AI handoff parser must support asking or delegating to a provider");
+assert.ok(html.includes("(?:send|forward)"), "AI handoff parser must support forwarding a task to a provider");
+assert.ok(html.includes("text.length>8000"), "AI handoff parser must enforce its task-size limit");
 assert.ok(html.includes("dispatchAgentHandoffCommand(text)"), "Agent handoff routing must run before ordinary AI chat fallback");
 
 assert.ok(html.includes('id="agent-chat-mode"'), "AI handoff must let users choose a new or existing conversation");
@@ -429,9 +445,43 @@ assert.ok(html.includes('id="remote-mode-toggle"'), "Android first page must exp
 assert.ok(html.includes('REMOTE_MODE_KEY="bosley_android_remote_mode_v1"'), "Remote Mode preference must persist on Android");
 assert.ok(html.includes('db.from("device_status").select("last_seen")'), "Remote Mode must verify the Windows listener heartbeat");
 assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automation",instruction}})'), "Remote Mode must use the authenticated automation gateway");
+assert.ok(html.includes("pendingRemoteDeviceCommand=null"), "Remote-device commands must have a separate pending approval state");
+assert.ok(html.includes("queueRemoteDeviceCommand(instruction,\"Windows laptop\",\"Android Remote Mode\")"), "Android Remote Mode must request approval before queueing a device command");
+assert.ok(html.includes("sendApprovedRemoteDeviceCommand(pending)"), "Remote-device commands must be sent only from the approval handler");
+assert.ok(html.includes("if(pendingRemoteDeviceCommand){"), "Chat must resolve pending remote-device approvals before parsing new commands");
+assert.ok(html.includes('queueRemoteDeviceCommand(remoteMatch[2].trim()'), "Typed laptop/Windows commands must use the same approval flow");
+assert.ok(html.includes("const remoteSuffix=t.match("), "Typed remote commands must also recognize a device target at the end of the sentence");
+assert.ok(html.includes("(?:on|to)") && html.includes("(windows(?: laptop)?|laptop|pc|computer)"), "Suffix-target parsing must require an explicit Windows/laptop target");
 assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
 assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not claim delivery without listener confirmation");
 
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");
 assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
 assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");
+
+
+const osPollSource = readFileSync(new URL("../supabase/functions/os-agent-poll/index.ts", import.meta.url), "utf8");
+assert.ok(osPollSource.includes('.eq("status", "pending")'), "OS poller must claim only pending commands");
+assert.ok(osPollSource.includes('status: "processing"'), "OS poller must mark delivery as processing, never completed");
+assert.ok(osPollSource.includes('claim_token: claimToken'), "OS poller must issue a claim token");
+assert.ok(osPollSource.includes('body.action === "ack"'), "OS poller must expose a separate acknowledgement path");
+assert.ok(osPollSource.includes('.eq("status", "processing")'), "Acknowledgements must only finalize a claimed command");
+assert.ok(osPollSource.includes('.eq("claim_token", claimToken)'), "Acknowledgements must prove possession of the active claim token");
+assert.ok(osPollSource.includes('body.status === "done"') && osPollSource.includes('body.status === "failed"'), "OS poller must accept explicit execution outcomes");
+assert.ok(!osPollSource.includes('.update({ status: "done" })'), "Polling must never mark commands done merely because they were returned");
+
+assert.ok(html.includes('pendingChatFileDraft=null'), "Chat must support a follow-up message containing text-file contents");
+assert.ok(html.includes('androidFiles.saveTextFile({name,content:input})'), "Android chat file creation must use the native system document picker");
+assert.ok(html.includes("save_text_file"), "Windows chat file creation must use the native save dialog when available");
+assert.ok(html.includes('executeDirectChatAction({type:"create_text_file",name,input:content}'), "Chat must create text files directly without requiring Automation page navigation");
+const androidInstallerSource = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
+assert.ok(androidInstallerSource.includes("public void saveTextFile(PluginCall call)"), "Android native plugin must expose safe text-file creation");
+assert.ok(androidInstallerSource.includes("Intent.ACTION_CREATE_DOCUMENT"), "Android text-file creation must use the system document picker");
+assert.ok(androidInstallerSource.includes("100000"), "Android native text-file creation must enforce the 100 KB limit");
+assert.ok(windowsWorkflow.includes("'save_text_file'"), "Windows native bridge must advertise text-file saving");
+assert.ok(windowsWorkflow.includes("dialog.showSaveDialog"), "Windows native text-file saving must use a user-selected save location");
+
+assert.ok(html.includes('const remoteFile=instruction.match('), "Windows listener must parse approved remote text-file commands");
+assert.ok(html.includes('action:"save_text_file",payload:{name,content}'), "Windows listener must save remote text files through the native bridge");
+assert.ok(html.includes('reportLaptopCommandResult(runId,commandStatus,commandSummary)'), "Windows listener must acknowledge actual remote execution outcomes");
+assert.ok(windowsWorkflow.includes("content.length > 100000"), "Windows native text-file save must enforce the 100 KB limit");

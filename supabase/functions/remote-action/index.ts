@@ -16,10 +16,10 @@ async function authenticatedUser(req: Request) {
 }
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 
-async function notifyLaptopListener(userId: string, instruction: string): Promise<boolean> {
+async function notifyLaptopListener(userId: string, instruction: string, runId: string): Promise<boolean> {
   const channel = sb.channel("bosley-laptop-" + userId);
   try {
-    const status = await channel.send({ type: "broadcast", event: "automation", payload: { instruction } });
+    const status = await channel.send({ type: "broadcast", event: "automation", payload: { instruction, run_id: runId } });
     return status === "ok";
   } catch (error) {
     console.error("Laptop Listener broadcast failed:", error);
@@ -38,14 +38,102 @@ Deno.serve(async (req: Request) => {
   if (!user) return new Response(JSON.stringify({ ok: false, error: "Sign-in required." }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return new Response(JSON.stringify({ ok: false, error: "Invalid JSON body." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } }); }
-  if (body.type === "automation") {
+  if (body.type === "os_agent_poll") {
+    const staleBefore = new Date(Date.now() - 120_000).toISOString();
+    const now = new Date().toISOString();
+    const { error: reclaimError } = await sb.from("os_commands")
+      .update({ status: "pending", claimed_at: null, claim_token: null, updated_at: now })
+      .eq("user_id", user.id).eq("status", "processing").lt("claimed_at", staleBefore);
+    if (reclaimError) {
+      console.error("OS command reclaim failed:", reclaimError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not refresh the OS command queue." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    const { data: pending, error: pendingError } = await sb.from("os_commands")
+      .select("id,action,target,param")
+      .eq("user_id", user.id).eq("status", "pending")
+      .order("created_at", { ascending: true }).limit(10);
+    if (pendingError) {
+      console.error("OS command queue read failed:", pendingError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not read the OS command queue." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    if (!pending?.length) return new Response(JSON.stringify({ ok: true, commands: [] }), { headers: { ...cors, "Content-Type": "application/json" } });
+    const claimToken = crypto.randomUUID();
+    const claimedAt = new Date().toISOString();
+    const ids = pending.map(command => command.id);
+    const { data: claimed, error: claimError } = await sb.from("os_commands")
+      .update({ status: "processing", claimed_at: claimedAt, claim_token: claimToken, updated_at: claimedAt })
+      .eq("user_id", user.id).eq("status", "pending").in("id", ids)
+      .select("id,action,target,param");
+    if (claimError) {
+      console.error("OS command claim failed:", claimError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not claim OS commands." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ ok: true, commands: (claimed ?? []).map(command => ({ ...command, claim_token: claimToken })) }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } else if (body.type === "os_agent_ack") {
+    const commandId = typeof body.command_id === "string" ? body.command_id : "";
+    const claimToken = typeof body.claim_token === "string" ? body.claim_token : "";
+    const status = body.status === "done" ? "done" : body.status === "failed" ? "failed" : "";
+    const resultText = typeof body.result === "string" ? body.result.trim().slice(0, 500) : "";
+    if (!commandId || !claimToken || !status) return new Response(JSON.stringify({ ok: false, error: "A command ID, claim token and terminal status are required." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    const now = new Date().toISOString();
+    const { data, error } = await sb.from("os_commands")
+      .update({ status, result: resultText || (status === "done" ? "Desktop agent confirmed execution." : "Desktop agent reported failure."), processed_at: now, updated_at: now })
+      .eq("id", commandId).eq("user_id", user.id).eq("status", "processing").eq("claim_token", claimToken)
+      .select("id,status").maybeSingle();
+    if (error) {
+      console.error("OS command acknowledgement failed:", error);
+      return new Response(JSON.stringify({ ok: false, error: "Could not save the OS command result." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    if (!data) return new Response(JSON.stringify({ ok: false, error: "Command claim expired, was already acknowledged, or does not belong to this account." }), { status: 409, headers: { ...cors, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, command_id: data.id, status: data.status }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } else if (body.type === "listener_heartbeat") {
+    const { error } = await sb.from("device_status").upsert({
+      user_id: user.id,
+      device: "bosley-laptop-listener",
+      last_seen: new Date().toISOString(),
+    }, { onConflict: "user_id,device" });
+    if (error) {
+      console.error("Laptop listener heartbeat write failed:", error);
+      return new Response(JSON.stringify({ ok: false, online: false, error: "Could not update listener status." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ ok: true, online: true, last_seen: new Date().toISOString() }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } else if (body.type === "automation_result") {
+    const runId = typeof body.run_id === "string" ? body.run_id : "";
+    const status = body.status === "completed" ? "done" : body.status === "failed" ? "failed" : "";
+    const summary = typeof body.summary === "string" ? body.summary.trim().slice(0, 500) : "";
+    if (!runId || !status) return new Response(JSON.stringify({ ok: false, error: "A valid run ID and terminal status are required." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    const { data, error } = await sb.from("automation_runs").update({ status, summary: summary || (status === "done" ? "Desktop execution confirmed." : "Desktop execution failed."), finished_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", runId).eq("user_id", user.id).in("status", ["pending", "queued", "running"]).select("id").maybeSingle();
+    if (error) {
+      console.error("Automation result update failed:", error);
+      return new Response(JSON.stringify({ ok: false, error: "Could not save execution result." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    if (!data?.id) return new Response(JSON.stringify({ ok: false, error: "Run not found, not owned by this account, or already finalized." }), { status: 404, headers: { ...cors, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, status }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } else if (body.type === "phone") {
+    const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
+    if (!instruction || instruction.length > 2000) return new Response(JSON.stringify({ ok: false, error: "Instruction must be 1–2000 characters." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    if (!INTERNAL_PUSH_SECRET) return new Response(JSON.stringify({ ok: false, telegramNotified: false, telegramDetail: "Telegram trigger is not configured on the server." }), { status: 503, headers: { ...cors, "Content-Type": "application/json" } });
+    try {
+      const pushed = await fetch(SUPABASE_URL + "/functions/v1/push-automation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-internal-secret": INTERNAL_PUSH_SECRET },
+        body: JSON.stringify({ user_id: user.id, instruction }),
+        signal: AbortSignal.timeout(8000),
+      });
+      const detail = (await pushed.text()).trim();
+      const telegramNotified = pushed.ok && detail === "ok";
+      return new Response(JSON.stringify({ ok: telegramNotified, telegramNotified, telegramDetail: telegramNotified ? "Telegram trigger accepted." : detail.slice(0, 200) || "Telegram trigger rejected." }), { status: telegramNotified ? 200 : 502, headers: { ...cors, "Content-Type": "application/json" } });
+    } catch (e) {
+      return new Response(JSON.stringify({ ok: false, telegramNotified: false, telegramDetail: "Telegram trigger request failed: " + String((e as Error)?.message || e).slice(0, 120) }), { status: 502, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+  } else if (body.type === "automation") {
     const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
     if (!instruction || instruction.length > 2000) return new Response(JSON.stringify({ ok: false, error: "Instruction must be 1–2000 characters." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     const { data: queued, error } = await sb.from("automation_runs").insert({ user_id: user.id, instruction, status: "pending" }).select("id").single();
     if (error || !queued?.id) return new Response(JSON.stringify({ ok: false, error: "Could not queue automation." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     // Attempt both connected execution paths. Telegram delivery is optional and never
     // blocks the durable laptop queue if the trigger bot isn't configured/linked.
-    const listenerNotified = await notifyLaptopListener(user.id, instruction);
+    const listenerNotified = await notifyLaptopListener(user.id, instruction, queued.id);
     let telegramNotified = false;
     let telegramDetail = "Telegram trigger not configured on the server.";
     if (INTERNAL_PUSH_SECRET) {

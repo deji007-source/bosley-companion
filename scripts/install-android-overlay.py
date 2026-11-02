@@ -176,6 +176,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
@@ -233,6 +234,38 @@ public class BosleyOverlayPlugin extends Plugin {
       response.put("text",matches!=null&&!matches.isEmpty()?matches.get(0):"");
     }else response.put("text","");
     call.resolve(response);
+  }
+  @PluginMethod public void saveTextFile(PluginCall call){
+    String name=call.getString("name","bosley-note.txt");
+    String content=call.getString("content","");
+    if(content==null||content.trim().isEmpty()){call.reject("Text file content cannot be empty.");return;}
+    if(content.length()>100000){call.reject("Text files are limited to 100 KB.");return;}
+    if(name==null||name.trim().isEmpty())name="bosley-note.txt";
+    name=name.replaceAll("[^a-zA-Z0-9._-]","_");
+    if(name.length()>100)name=name.substring(0,100);
+    if(!name.contains("."))name=name+".txt";
+    Intent create=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+    create.addCategory(Intent.CATEGORY_OPENABLE);
+    create.setType("text/plain");
+    create.putExtra(Intent.EXTRA_TITLE,name);
+    JSObject saved=new JSObject();saved.put("content",content);
+    try{startActivityForResult(call,create,"saveTextFileResult");}
+    catch(Exception e){call.reject("Android could not open the system file picker.",e);}
+    saveContents.put(call.getCallbackId(),content);
+  }
+  private final java.util.concurrent.ConcurrentHashMap<String,String> saveContents=new java.util.concurrent.ConcurrentHashMap<>();
+  @ActivityCallback private void saveTextFileResult(PluginCall call,ActivityResult result){
+    String content=saveContents.remove(call.getCallbackId());
+    if(result.getResultCode()!=android.app.Activity.RESULT_OK||result.getData()==null){
+      JSObject cancelled=new JSObject();cancelled.put("cancelled",true);call.resolve(cancelled);return;
+    }
+    Uri uri=result.getData().getData();
+    try(OutputStream output=getContext().getContentResolver().openOutputStream(uri,"w")){
+      if(output==null)throw new java.io.IOException("Android did not open the selected document.");
+      output.write((content==null?"":content).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      output.flush();
+      JSObject response=new JSObject();response.put("saved",true);response.put("uri",uri.toString());call.resolve(response);
+    }catch(Exception e){call.reject("Android could not save the text file to the selected location.",e);}
   }
   @PluginMethod public void requestScreenCapture(PluginCall call){
     if(Build.VERSION.SDK_INT<21){call.reject("Screen capture requires Android 5.0 or newer.");return;}

@@ -347,7 +347,7 @@ assert.ok(html.includes("BOSLEY_CONTEXT_ENGINE_KEY"), "Context Engine preference
 assert.ok(html.includes("Active planner tasks:"), "Context Engine must include active planner tasks when enabled");
 assert.ok(html.includes("Recent Bosley activity:"), "Context Engine must include bounded recent activity when enabled");
 assert.ok(html.includes("not background screen or microphone monitoring"), "Context Engine UI must disclose its privacy boundary");
-assert.ok(html.includes("buildContextEngineContext()].filter(Boolean)"), "Chat must include Context Engine data only when enabled");
+assert.ok(html.includes("String(buildContextEngineContext()||\"\").slice(0,900)"), "Chat must include bounded Context Engine data only when enabled");
 
 assert.ok(html.includes("BOSLEY_SKILLS_KEY"), "Imported skills must persist locally");
 assert.ok(html.includes("Load official skill pack"), "Skills panel must offer a guided way to load the official pack");

@@ -549,6 +549,7 @@ assert.ok(appScript.includes('db.functions.invoke("bosley-search"'), "Search mus
 assert.ok(appScript.includes('db.from("agent_devices").select("id,platform,device_label,app_version,capabilities,status,last_seen")'), "Control Centre must show account-scoped device status");
 assert.ok(appScript.includes('db.from("ai_gateway_usage").select("requested_provider,model_id,status,http_status,latency_ms,created_at")'), "Control Centre must display recent AI gateway health without exposing credentials");
 assert.ok(appScript.includes('db.from("ai_gateway_preferences").select("mode,preferred_provider,allow_cloud_fallback,updated_at")'), "Control Centre must use RLS-protected provider preferences rather than reading encrypted provider keys");
+assert.ok(appScript.includes('id="control-topology"'), "Control Centre must render a visual system connection blueprint");
 assert.ok(appScript.includes("insertDictationAtFocus"), "Universal Input must insert dictated text into the focused editable field");
 assert.ok(appScript.includes('window.__bosleyDictationTarget=target'), "Universal Input must preserve the last focused text field when its dock opens");
 for (const view of ["bosley-search", "control-centre", "universal-input"]) assert.ok(windowsWorkflow.includes("'"+view+"'"), "Windows must register "+view+" as a floating view");

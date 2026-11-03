@@ -10,30 +10,28 @@ const clean = (value: unknown, max = 700) => String(value ?? "").replace(/[\u000
 const html = (value: string) => value.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
 function publicResults(page: string) {
   const results: any[] = [];
-  const blocks = page.split(/<div\\b[^>]*class=["'][^"']*\\bresult\\b[^"']*["'][^>]*>/i).slice(1);
+  const blocks = page.split(/<div\b[^>]*class=["'][^"']*\bresult\b[^"']*["'][^>]*>/i).slice(1);
   const candidates = blocks.length ? blocks : [page];
   for (const block of candidates) {
-    const anchors = block.matchAll(/<a\\b([^>]*)>([\\s\\S]*?)<\\/a>/gi);
-    for (const match of anchors) {
-      const attrs = match[1] ?? "";
-      const className = attrs.match(/class=["']([^"']*)["']/i)?.[1] ?? "";
-      if (!/(^|\\s)result__a(\\s|$)/i.test(className)) continue;
-      const rawHref = attrs.match(/href=["']([^"']+)["']/i)?.[1];
-      if (!rawHref) continue;
-      let href = html(rawHref);
-      try {
-        const parsed = new URL(href, "https://html.duckduckgo.com");
-        const redirect = parsed.searchParams.get("uddg");
-        href = redirect ? decodeURIComponent(redirect) : parsed.href;
-        const target = new URL(href);
-        if (!["https:", "http:"].includes(target.protocol)) continue;
-      } catch { continue; }
-      const title = clean(html(match[2].replace(/<[^>]+>/g, " ")), 180);
-      if (!title || results.some(x => x.url === href)) continue;
-      const snippetMatch = block.match(/class=["'][^"']*result__snippet[^"']*["'][^>]*>([\\s\\S]*?)<\\/[^>]+>/i);
-      results.push({ title, url: href, snippet: clean(html((snippetMatch?.[1] ?? "").replace(/<[^>]+>/g, " ")), 420), source: "web" });
-      break;
-    }
+    const openTag = block.match(/<a\b[^>]*class=["'][^"']*result__a[^"']*["'][^>]*>/i)?.[0];
+    if (!openTag) continue;
+    const rawHref = openTag.match(/href=["']([^"']+)["']/i)?.[1];
+    if (!rawHref) continue;
+    const titleStart = block.indexOf(openTag) + openTag.length;
+    const titleEnd = block.indexOf("</a>", titleStart);
+    if (titleEnd < 0) continue;
+    let href = html(rawHref);
+    try {
+      const parsed = new URL(href, "https://html.duckduckgo.com");
+      const redirect = parsed.searchParams.get("uddg");
+      href = redirect ? decodeURIComponent(redirect) : parsed.href;
+      const target = new URL(href);
+      if (!["https:", "http:"].includes(target.protocol)) continue;
+    } catch { continue; }
+    const title = clean(html(block.slice(titleStart, titleEnd).replace(/<[^>]+>/g, " ")), 180);
+    if (!title || results.some(x => x.url === href)) continue;
+    const snippetMatch = block.match(/<div\b[^>]*class=["'][^"']*result__snippet[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+    results.push({ title, url: href, snippet: clean(html((snippetMatch?.[1] ?? "").replace(/<[^>]+>/g, " ")), 420), source: "web" });
     if (results.length >= 8) break;
   }
   return results;

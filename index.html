@@ -1439,7 +1439,7 @@ async function renderBosleyProviderManager(){
    status.textContent=rows.some(x=>x.connected)?"Provider connections loaded. Select one to use it for new text chats.":"No API providers connected yet.";
   }catch(error){status.textContent=String(error?.message||error)+" Make sure the provider gateway migration and Edge Function have been deployed."}
  };
- select.addEventListener("change",()=>{try{if(select.value)localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value);else localStorage.removeItem(BOSLEY_PROVIDER_PREF)}catch{}status.textContent=select.value?names[select.value]+" selected for new text chats.":"Using the existing Bosley chat provider."});
+ select.addEventListener("change",()=>{try{if(select.value)localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value);else localStorage.removeItem(BOSLEY_PROVIDER_PREF);localStorage.setItem(BOSLEY_PROVIDER_PREF+"_updated_at",String(Date.now()))}catch{}status.textContent=select.value?names[select.value]+" selected for new text chats.":"Using the existing Bosley chat provider.";schedulePersonalWorkspaceSync()});
   const syncNativeProvider=()=>{try{window.Capacitor?.Plugins?.BosleyOverlay?.syncAgentPreference?.({provider:select.value||""}).catch(error=>console.warn("Could not sync Android agent provider",error))}catch(error){console.warn("Android agent preference bridge unavailable",error)}};
   syncNativeProvider();
   select.addEventListener("change",syncNativeProvider);
@@ -1492,7 +1492,7 @@ async function syncPersonalWorkspace(){
   let localSkills=readBosleySkills(),localDeleted=readDeletedBosleySkillIds();
   const legacySkills=localSkills.length?[]:legacySkillSnapshot();
   if(legacySkills.length)localSkills=legacySkills.map(x=>({...x,updatedAt:Number(x.updatedAt)||Date.now()}));
-  const {data:remote,error}=await db.from("user_companion_sync").select("skills,deleted_skill_ids,automation_history,automation_history_cleared_at").eq("user_id",uid).maybeSingle();
+  const {data:remote,error}=await db.from("user_companion_sync").select("skills,deleted_skill_ids,automation_history,automation_history_cleared_at,selected_ai_provider,selected_ai_provider_updated_at").eq("user_id",uid).maybeSingle();
   if(error)throw error;
   const remoteSkills=Array.isArray(remote?.skills)?remote.skills:[],remoteDeleted=Array.isArray(remote?.deleted_skill_ids)?remote.deleted_skill_ids:[];
   const deletedMap=new Map();
@@ -1514,11 +1514,20 @@ async function syncPersonalWorkspace(){
    const previous=historyMap.get(id);if(!previous||(Number(previous.createdAt)||0)<=createdAt)historyMap.set(id,{...item,id,createdAt});
   }
   const mergedHistory=[...historyMap.values()].sort((a,b)=>b.createdAt-a.createdAt).slice(0,12);
+  let localProvider="",localProviderAt=0;
+  try{localProvider=localStorage.getItem(BOSLEY_PROVIDER_PREF)||"";localProviderAt=Number(localStorage.getItem(BOSLEY_PROVIDER_PREF+"_updated_at"))||0}catch{}
+  const allowedProviders=["","openai","anthropic","gemini","groq","openrouter","mistral"];
+  if(localProvider&&!localProviderAt)localProviderAt=Date.now();
+  const remoteProvider=allowedProviders.includes(remote?.selected_ai_provider)?remote.selected_ai_provider:"";
+  const remoteProviderAt=remote?.selected_ai_provider_updated_at?Date.parse(remote.selected_ai_provider_updated_at)||0:0;
+  const selectedProvider=localProviderAt>remoteProviderAt?localProvider:remoteProvider;
+  const selectedProviderAt=Math.max(localProviderAt,remoteProviderAt);
   const {data:check,error:checkError}=await db.auth.getSession();
   if(checkError||check?.session?.user?.id!==uid||user?.id!==uid)throw Error("Account changed during sync. Sign in again and retry.");
   const {error:writeError}=await db.from("user_companion_sync").upsert({
    user_id:uid,skills:mergedSkills,deleted_skill_ids:[...deletedMap].map(([id,deletedAt])=>({id,deletedAt})).slice(-100),
-   automation_history:mergedHistory,automation_history_cleared_at:new Date(clearAt||0).toISOString(),updated_at:new Date().toISOString()
+   automation_history:mergedHistory,automation_history_cleared_at:new Date(clearAt||0).toISOString(),
+   selected_ai_provider:selectedProvider,selected_ai_provider_updated_at:new Date(selectedProviderAt||0).toISOString(),updated_at:new Date().toISOString()
   },{onConflict:"user_id"});
   if(writeError)throw writeError;
   personalWorkspaceSyncApplying=true;
@@ -1527,11 +1536,15 @@ async function syncPersonalWorkspace(){
    localStorage.setItem(bosleySkillsDeletedStorageKey(),JSON.stringify([...deletedMap].map(([id,deletedAt])=>({id,deletedAt})).slice(-100)));
    localStorage.setItem(automationHistoryKey(),JSON.stringify(mergedHistory));
    localStorage.setItem(automationHistoryClearedKey(),String(clearAt));
+   if(selectedProvider)localStorage.setItem(BOSLEY_PROVIDER_PREF,selectedProvider);else localStorage.removeItem(BOSLEY_PROVIDER_PREF);
+   localStorage.setItem(BOSLEY_PROVIDER_PREF+"_updated_at",String(selectedProviderAt));
    if(legacySkills.length)localStorage.removeItem(BOSLEY_SKILLS_KEY);
    automationRuns=mergedHistory;automationHistoryOwner=uid;automationHistoryClearedAt=clearAt;
   }finally{personalWorkspaceSyncApplying=false}
   if(skillStatus)skillStatus.textContent=mergedSkills.length+" skill entries · synced to your account across devices.";
   const count=document.querySelector("#bosley-skill-count");if(count)count.textContent="CLOUD";
+  const providerSelect=document.querySelector("#bosley-provider-select");if(providerSelect&&providerSelect.value!==selectedProvider){providerSelect.value=selectedProvider;providerSelect.dispatchEvent(new Event("change"))}
+  try{window.Capacitor?.Plugins?.BosleyOverlay?.syncAgentPreference?.({provider:selectedProvider}).catch(error=>console.warn("Could not sync Android agent provider",error))}catch(error){console.warn("Android agent preference bridge unavailable",error)}
   renderAutomationHistory();
   return true;
  }catch(error){

@@ -489,3 +489,12 @@ assert.ok(androidInstaller.includes('("wide".equals(size)?36:34)'), "Android flo
 assert.ok(androidInstaller.includes("widgetWidth=104,widgetHeight=34"), "Android overlay service fallback dimensions must stay compact");
 assert.ok(html.includes('aria-label="Open AI Agents"')&&html.includes('data-open-view="agents-panel"'), "AI agents must remain directly accessible from the side rail");
 assert.ok(html.includes('aria-label="Open attachments and tools"'), "The main composer plus button must remain available");
+
+
+const osAgentPoll = readText(new URL("../supabase/functions/os-agent-poll/index.ts", import.meta.url), "utf8");
+assert.ok(osAgentPoll.includes('if (body.action === "ack")'), "OS commands must be completed only through explicit desktop-agent acknowledgement");
+assert.ok(osAgentPoll.includes('.eq("status", "processing")') && osAgentPoll.includes('.eq("claim_token", claimToken)'), "OS acknowledgements must match the active claim and processing state");
+assert.ok(osAgentPoll.includes('status: "processing", claimed_at: claimedAt, claim_token: claimToken'), "OS command polling must claim pending work rather than mark it complete");
+assert.ok(osAgentPoll.includes('.eq("status", "pending").in("id", ids)'), "OS command claims must be conditional so concurrent pollers cannot claim the same pending row");
+assert.ok(osAgentPoll.includes('status: "pending", claimed_at: null, claim_token: null') && osAgentPoll.includes('.lt("claimed_at", staleBefore)'), "Abandoned OS claims must become eligible for retry after the lease expires");
+assert.ok(osAgentPoll.includes('commands: (claimed ?? []).map((command) => ({ ...command, claim_token: claimToken }))'), "The OS agent must receive claim tokens for later acknowledgement");

@@ -146,6 +146,15 @@ Deno.serve(async (req: Request) => {
       if (lastAssistant) retryMessages.push({ role: "assistant", content: String(lastAssistant.content).slice(-900) });
       retryMessages.push({ role: "user", content: String(lastUser.content).slice(-4_000) });
       upstream = await callProvider(retryMessages, 600);
+      // Last-resort compact retry: retain the latest user request, but drop
+      // accumulated memories, skill context and older turns. Never retry images.
+      if (upstream.status === 413) {
+        const minimalMessages = [
+          { role: "system", content: "You are Bosley, a helpful conversational companion. Understand informal language, slang and abbreviations. Answer the latest request clearly and preserve the user's intent." },
+          { role: "user", content: String(lastUser.content).slice(-2_400) },
+        ];
+        upstream = await callProvider(minimalMessages, 350);
+      }
     }
 
     if (!upstream.ok || !upstream.body) {

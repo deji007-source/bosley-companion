@@ -550,6 +550,10 @@ assert.ok(appScript.includes('db.from("agent_devices").select("id,platform,devic
 assert.ok(appScript.includes('db.from("ai_gateway_usage").select("requested_provider,model_id,status,http_status,latency_ms,created_at")'), "Control Centre must display recent AI gateway health without exposing credentials");
 assert.ok(appScript.includes('db.from("ai_gateway_preferences").select("mode,preferred_provider,allow_cloud_fallback,updated_at")'), "Control Centre must use RLS-protected provider preferences rather than reading encrypted provider keys");
 assert.ok(appScript.includes('id="control-topology"'), "Control Centre must render a visual system connection blueprint");
+assert.ok(appScript.includes("renderBosleyWritingAssist"), "Writing Assist must be implemented in the shared Companion UI");
+assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist"'), "Writing Assist must call the authenticated editing service");
+assert.ok(appScript.includes('data-open-view="writing-assist"'), "Writing Assist must be reachable from the dock launcher");
+assert.ok(appScript.includes("look\\s*up"), "Natural-language search command must use a real whitespace matcher");
 assert.ok(appScript.includes("insertDictationAtFocus"), "Universal Input must insert dictated text into the focused editable field");
 assert.ok(appScript.includes('$("#bosley-universal-copy").onclick'), "Universal Input must support clipboard handoff to other apps");
 assert.ok(appScript.includes('window.__bosleyDictationTarget=target'), "Universal Input must preserve the last focused text field when its dock opens");
@@ -558,6 +562,10 @@ for (const view of ["bosley-search", "control-centre", "universal-input"]) asser
 
 
 
+const writingAssistFunction = readText(new URL("../supabase/functions/bosley-writing-assist/index.ts", import.meta.url), "utf8");
+assert.ok(writingAssistFunction.includes("admin.auth.getUser(token)"), "Writing Assist must authenticate the caller");
+assert.ok(writingAssistFunction.includes("Preserve intent and voice"), "Writing Assist must preserve the author’s meaning and voice");
+assert.ok(writingAssistFunction.includes("Your original text is safe"), "Writing Assist failures must not imply drafts were changed");
 const bosleySearchFunction = readText(new URL("../supabase/functions/bosley-search/index.ts", import.meta.url), "utf8");
 assert.ok(bosleySearchFunction.includes("admin.auth.getUser(token)"), "Bosley Search must validate the caller's Supabase access token");
 assert.ok(bosleySearchFunction.includes('.eq("user_id", userId)'), "Every personal search source must be scoped to the authenticated user");

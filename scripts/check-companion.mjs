@@ -540,7 +540,7 @@ assert.ok(appScript.includes("RELEVANT BOSLEY WORKSPACE CONTEXT"), "Retrieved cr
 assert.ok(appScript.includes("const requestHistory=history.slice(-8)"), "Chat requests must keep a bounded rolling conversation window");
 assert.ok(appScript.includes("String(knowledgeContext||\"\").slice(0,4200)"), "Second Brain context must be bounded before sending to the provider");
 assert.ok(appScript.includes("historyText.slice(0,9000)"), "Rolling chat history must store compact text rather than repeated large context");
-assert.ok(appScript.includes("Temporary response issue · message kept"), "Provider failures must preserve the user's message for retry");
+assert.ok(appScript.includes("Could not complete · message kept"), "Provider failures must preserve the user's message for retry");
 assert.ok(appScript.includes("requestHistory[requestHistory.length-1]={role:\"user\",content:userContent}"), "The latest request must retain its full current context while earlier turns remain compact");
 
 

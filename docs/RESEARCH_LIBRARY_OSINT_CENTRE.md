@@ -13,6 +13,7 @@ Start.me documents bookmark export as HTML and CSV-compatible import formats. It
 - URL validation limited to HTTP and HTTPS.
 - Start.me HTML bookmark and CSV export parsing in the browser; no third-party credentials are requested.
 - Duplicate URL suppression against resources already loaded in the current user's vault.
+- Import filtering: automatically imports supported public-interest research, data, mapping, archive, news, education and technology references; unsupported or privacy-invasive categories are skipped.
 - A curated starter collection for public web archives, open datasets, geospatial data, public news/event datasets, and software/education references.
 - Resource entries retain source URL, description, topic and import provenance.
 

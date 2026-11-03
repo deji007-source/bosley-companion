@@ -1394,7 +1394,7 @@ document.addEventListener("click",event=>{
 });
 const BOSLEY_AUTOMATION_SKILLS_KEY="bosley_automation_skills_v1";
 function readAutomationSkillSettings(){try{const v=JSON.parse(localStorage.getItem(BOSLEY_AUTOMATION_SKILLS_KEY)||"null");return {enabled:v?.enabled!==false,ids:Array.isArray(v?.ids)?v.ids.filter(x=>typeof x==="string"):null}}catch{return {enabled:true,ids:null}}}
-function saveAutomationSkillSettings(v){try{localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY,JSON.stringify(v))}catch{}}
+function saveAutomationSkillSettings(v){try{localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY,JSON.stringify(v));localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY+"_updated_at",String(Date.now()))}catch{}schedulePersonalWorkspaceSync()}
 async function buildBosleyAgentContext(){
  const desktop=await getDesktopBridgeStatus().catch(error=>({connected:false,label:"BRIDGE ERROR",detail:String(error?.message||error)}));
  const phoneRoute=!!(db&&user);
@@ -1502,7 +1502,7 @@ async function syncPersonalWorkspace(){
   let localSkills=readBosleySkills(),localDeleted=readDeletedBosleySkillIds();
   const legacySkills=localSkills.length?[]:legacySkillSnapshot();
   if(legacySkills.length)localSkills=legacySkills.map(x=>({...x,updatedAt:Number(x.updatedAt)||Date.now()}));
-  const {data:remote,error}=await db.from("user_companion_sync").select("skills,deleted_skill_ids,automation_history,automation_history_cleared_at,selected_ai_provider,selected_ai_provider_updated_at").eq("user_id",uid).maybeSingle();
+  const {data:remote,error}=await db.from("user_companion_sync").select("skills,deleted_skill_ids,automation_history,automation_history_cleared_at,selected_ai_provider,selected_ai_provider_updated_at,automation_skill_settings,automation_skill_settings_updated_at").eq("user_id",uid).maybeSingle();
   if(error)throw error;
   const remoteSkills=Array.isArray(remote?.skills)?remote.skills:[],remoteDeleted=Array.isArray(remote?.deleted_skill_ids)?remote.deleted_skill_ids:[];
   const deletedMap=new Map();
@@ -1534,6 +1534,13 @@ async function syncPersonalWorkspace(){
   const remoteProviderAt=remote?.selected_ai_provider_updated_at?Date.parse(remote.selected_ai_provider_updated_at)||0:0;
   const selectedProvider=localProviderAt>remoteProviderAt?localProvider:remoteProvider;
   const selectedProviderAt=Math.max(localProviderAt,remoteProviderAt);
+  let localAutomationSkillSettings=readAutomationSkillSettings(),localAutomationSkillSettingsAt=0;
+  try{localAutomationSkillSettingsAt=Number(localStorage.getItem(BOSLEY_AUTOMATION_SKILLS_KEY+"_updated_at"))||0}catch{}
+  const remoteAutomationSkillSettings=remote?.automation_skill_settings&&typeof remote.automation_skill_settings==="object"?remote.automation_skill_settings:{enabled:true,ids:null};
+  const remoteAutomationSkillSettingsAt=remote?.automation_skill_settings_updated_at?Date.parse(remote.automation_skill_settings_updated_at)||0:0;
+  if(!localAutomationSkillSettingsAt&&localStorage.getItem(BOSLEY_AUTOMATION_SKILLS_KEY))localAutomationSkillSettingsAt=Date.now();
+  const selectedAutomationSkillSettings=localAutomationSkillSettingsAt>remoteAutomationSkillSettingsAt?localAutomationSkillSettings:remoteAutomationSkillSettings;
+  const selectedAutomationSkillSettingsAt=Math.max(localAutomationSkillSettingsAt,remoteAutomationSkillSettingsAt);
   const {data:check,error:checkError}=await db.auth.getSession();
   if(checkError||check?.session?.user?.id!==uid||user?.id!==uid)throw Error("Account changed during sync. Sign in again and retry.");
   const mergedDeleted=[...deletedMap].map(([id,deletedAt])=>({id,deletedAt})).sort((a,b)=>a.id.localeCompare(b.id)).slice(-100);
@@ -1544,12 +1551,15 @@ async function syncPersonalWorkspace(){
    JSON.stringify(remote.automation_history||[])!==JSON.stringify(mergedHistory)||
    (Date.parse(remote.automation_history_cleared_at||"1970-01-01T00:00:00Z")||0)!==clearAt||
    (remote.selected_ai_provider||"")!==selectedProvider||
-   (Date.parse(remote.selected_ai_provider_updated_at||"1970-01-01T00:00:00Z")||0)!==selectedProviderAt;
+   (Date.parse(remote.selected_ai_provider_updated_at||"1970-01-01T00:00:00Z")||0)!==selectedProviderAt||
+   JSON.stringify(remote.automation_skill_settings||{enabled:true,ids:null})!==JSON.stringify(selectedAutomationSkillSettings)||
+   (Date.parse(remote.automation_skill_settings_updated_at||"1970-01-01T00:00:00Z")||0)!==selectedAutomationSkillSettingsAt;
   if(syncNeedsWrite){
    const {error:writeError}=await db.from("user_companion_sync").upsert({
     user_id:uid,skills:mergedSkills,deleted_skill_ids:mergedDeleted,
     automation_history:mergedHistory,automation_history_cleared_at:new Date(clearAt||0).toISOString(),
-    selected_ai_provider:selectedProvider,selected_ai_provider_updated_at:new Date(selectedProviderAt||0).toISOString(),updated_at:new Date().toISOString()
+    selected_ai_provider:selectedProvider,selected_ai_provider_updated_at:new Date(selectedProviderAt||0).toISOString(),
+    automation_skill_settings:selectedAutomationSkillSettings,automation_skill_settings_updated_at:new Date(selectedAutomationSkillSettingsAt||0).toISOString(),updated_at:new Date().toISOString()
    },{onConflict:"user_id"});
    if(writeError)throw writeError;
   }
@@ -1561,6 +1571,8 @@ async function syncPersonalWorkspace(){
    localStorage.setItem(automationHistoryClearedKey(),String(clearAt));
    if(selectedProvider)localStorage.setItem(providerPreferenceStorageKey(),selectedProvider);else localStorage.removeItem(providerPreferenceStorageKey());
    localStorage.setItem(providerPreferenceStorageKey()+"_updated_at",String(selectedProviderAt));
+   localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY,JSON.stringify(selectedAutomationSkillSettings));
+   localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY+"_updated_at",String(selectedAutomationSkillSettingsAt));
    localStorage.removeItem(BOSLEY_PROVIDER_PREF);localStorage.removeItem(BOSLEY_PROVIDER_PREF+"_updated_at");
    if(legacySkills.length)localStorage.removeItem(BOSLEY_SKILLS_KEY);
    automationRuns=mergedHistory;automationHistoryOwner=uid;automationHistoryClearedAt=clearAt;

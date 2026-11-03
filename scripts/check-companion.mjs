@@ -531,6 +531,8 @@ assert.ok(html.includes('(clearAt>0?0:Date.now())'), "Legacy history entries mus
 assert.ok(html.includes('if(skillsPanel&&!skillsPanel.hidden)renderBosleySkills()'), "An open Skills panel must refresh after remote changes arrive");
 
 assert.ok(html.includes("selected_ai_provider_updated_at") && html.includes("BOSLEY_PROVIDER_PREF"), "Selected AI provider preference must sync across signed-in devices");
+assert.ok(html.includes("automation_skill_settings_updated_at") && html.includes("automationSkillSettingsStorageKey"), "Automation skill selection and filters must sync per signed-in account");
+
 assert.ok(html.includes('function providerPreferenceStorageKey(){return BOSLEY_PROVIDER_PREF+(user?.id?":"+user.id:"")}'), "Selected AI provider preference must be isolated per signed-in account");
 assert.ok(html.includes('localStorage.removeItem(BOSLEY_PROVIDER_PREF)'), "Legacy global provider preference must be migrated and cleared after account sync");
 

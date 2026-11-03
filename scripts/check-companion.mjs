@@ -498,7 +498,7 @@ assert.ok(html.includes('action:"providers"'), "AI Provider Manager must load co
 assert.ok(html.includes('action:"connect"'), "AI Provider Manager must securely connect a provider");
 assert.ok(html.includes('action:"test"'), "AI Provider Manager must test provider connections");
 assert.ok(html.includes('action:"disconnect"'), "AI Provider Manager must disconnect providers");
-assert.ok(html.includes('localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value)'), "Selected provider preference must persist on the device");
+assert.ok(html.includes('localStorage.setItem(providerPreferenceStorageKey(),select.value)'), "Selected provider preference must persist per signed-in account");
 assert.ok(html.includes("AGENT_GATEWAY_URL"), "Provider requests must use the authenticated gateway");
 assert.ok(html.includes('action:"chat",provider:chosenProvider'), "Selected provider must handle new text chats");
 assert.ok(html.includes("if(chosenProvider&&!imageData)"), "Image requests must continue using the existing image-capable Companion route");
@@ -518,3 +518,52 @@ assert.ok(overlayInstaller.includes('android.speech.RecognitionService'), "Andro
 assert.ok(overlayInstaller.includes('if(chatPanel==null)expandPanel(false);'), "Long-press voice must create the native panel before using its composer");
 
 assert.ok(overlayInstaller.includes('bosley_overlay_position'), "Floating widget position must persist across service restarts");
+
+
+const personalSyncMigration = readText(new URL("../supabase/migrations/20261103103000_user_companion_cross_device_sync.sql", import.meta.url), "utf8");
+const providerSyncMigration = readText(new URL("../supabase/migrations/20261103104500_sync_selected_ai_provider.sql", import.meta.url), "utf8");
+const realtimeSyncMigration = readText(new URL("../supabase/migrations/20261103105500_enable_realtime_for_companion_sync.sql", import.meta.url), "utf8");
+const automationSkillSyncMigration = readText(new URL("../supabase/migrations/20261103111500_sync_automation_skill_settings.sql", import.meta.url), "utf8");
+assert.ok(html.includes("async function syncPersonalWorkspace()"), "Skills and automation history must have an account-backed sync engine");
+assert.ok(html.includes('from("user_companion_sync")'), "Personal workspace sync must use the dedicated account storage table");
+assert.ok(html.includes("deleted_skill_ids") && html.includes("automation_history_cleared_at"), "Sync must preserve skill deletions and history clear operations across devices");
+assert.ok(html.includes('(deletedMap.has(item.id)?0:Date.now())'), "Unversioned legacy skills must not override a newer cross-device deletion marker");
+assert.ok(html.includes('(clearAt>0?0:Date.now())'), "Legacy history entries must not reappear after a history clear has synced");
+assert.ok(html.includes('if(skillsPanel&&!skillsPanel.hidden)renderBosleySkills()'), "An open Skills panel must refresh after remote changes arrive");
+
+assert.ok(html.includes("selected_ai_provider_updated_at") && html.includes("BOSLEY_PROVIDER_PREF"), "Selected AI provider preference must sync across signed-in devices");
+assert.ok(html.includes("automation_skill_settings_updated_at") && html.includes("automationSkillSettingsStorageKey"), "Automation skill selection and filters must sync per signed-in account");
+
+assert.ok(html.includes('function providerPreferenceStorageKey(){return BOSLEY_PROVIDER_PREF+(user?.id?":"+user.id:"")}'), "Selected AI provider preference must be isolated per signed-in account");
+assert.ok(html.includes('localStorage.removeItem(BOSLEY_PROVIDER_PREF)'), "Legacy global provider preference must be migrated and cleared after account sync");
+
+assert.ok(html.includes("startPersonalWorkspaceRealtime") && html.includes("postgres_changes"), "Personal workspace should refresh from remote changes in realtime");
+assert.ok(html.includes("const syncNeedsWrite=!remote||") && html.includes("if(syncNeedsWrite){"), "Realtime notifications must not cause endless no-op database upserts");
+assert.ok(html.includes("sort((a,b)=>a.id.localeCompare(b.id))"), "Skill deletion markers must be serialized in a stable order for idempotent sync");
+
+assert.ok(html.includes('window.addEventListener("focus"') && html.includes('window.addEventListener("online"'), "Personal workspace must refresh when a device returns online or to the foreground");
+assert.ok(html.includes("LOCAL COPY KEPT"), "Cloud sync failures must preserve local data and report the fallback");
+assert.ok(personalSyncMigration.includes("enable row level security") && personalSyncMigration.includes("(select auth.uid()) = user_id"), "Personal workspace table must be protected by per-user RLS");
+assert.ok(personalSyncMigration.includes("revoke all on public.user_companion_sync from anon"), "Anonymous users must not access personal sync storage");
+assert.ok(providerSyncMigration.includes("selected_ai_provider") && providerSyncMigration.includes("openrouter"), "Provider sync migration must constrain the allowed provider values");
+assert.ok(automationSkillSyncMigration.includes("automation_skill_settings") && automationSkillSyncMigration.includes("jsonb_typeof(automation_skill_settings) = 'object'"), "Automation skill filter preferences must have a validated account sync column");
+assert.ok(realtimeSyncMigration.includes("alter publication supabase_realtime add table public.user_companion_sync"), "Personal workspace changes must be published to Supabase Realtime");
+
+
+const osAgentPoll = readText(new URL("../supabase/functions/os-agent-poll/index.ts", import.meta.url), "utf8");
+assert.ok(osAgentPoll.includes('if (body.action === "ack")'), "OS commands must be completed only through explicit desktop-agent acknowledgement");
+assert.ok(osAgentPoll.includes('.eq("status", "processing")') && osAgentPoll.includes('.eq("claim_token", claimToken)'), "OS acknowledgements must match the active claim and claim token");
+assert.ok(osAgentPoll.includes('status: "processing", claimed_at: claimedAt, claim_token: claimToken'), "Polling must claim pending commands without marking them complete");
+assert.ok(osAgentPoll.includes('.eq("status", "pending").in("id", ids)'), "Command claims must be conditional to prevent duplicate concurrent claims");
+assert.ok(osAgentPoll.includes('status: "pending", claimed_at: null, claim_token: null') && osAgentPoll.includes('.lt("claimed_at", staleBefore)'), "Abandoned command claims must be requeued after their lease expires");
+
+
+const secondBrainMigration = readText(new URL("../supabase/migrations/20261103113000_second_brain_knowledge_vault.sql", import.meta.url), "utf8");
+assert.ok(html.includes('id="second-brain-panel"') && html.includes('data-open-view="second-brain-panel"'), "Second Brain must be reachable through the shared workspace dock");
+assert.ok(html.includes("function loadSecondBrain()") && html.includes("function saveSecondBrainEntry()"), "Second Brain must provide account-backed create and read operations");
+assert.ok(html.includes("function updateSecondBrainEntry") && html.includes("function deleteSecondBrainEntry"), "Second Brain must support editing, pinning and deletion");
+assert.ok(html.includes("function exportSecondBrain()") && html.includes("function addBosleyStarterNotes()"), "Second Brain must support export and verified project starter notes");
+assert.ok(secondBrainMigration.includes("enable row level security") && secondBrainMigration.includes("(select auth.uid()) = user_id"), "Second Brain records must be isolated by per-user RLS");
+assert.ok(secondBrainMigration.includes("revoke all on public.user_second_brain_entries from anon"), "Anonymous users must not access Second Brain records");
+assert.ok(secondBrainMigration.includes("alter publication supabase_realtime add table public.user_second_brain_entries"), "Second Brain changes must publish realtime updates");
+assert.ok(secondBrainMigration.includes("user_second_brain_entries_owner_updated_idx"), "Second Brain must index per-user sorted reads");

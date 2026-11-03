@@ -12,11 +12,13 @@ The currently maintained companion experience is the root `index.html`, which co
 
 ## Current capabilities
 
+- **Second Brain:** a private, searchable account-backed knowledge vault for project overviews, repository/CI links, code snippets, design decisions, bugs, sprint tasks, references, private contacts, command shortcuts, and meeting notes. Entries support tags, category filters, pinning, edit/delete, JSON export, and Supabase Realtime updates across signed-in devices. The Second Brain includes an optional verified Bosley starter pack; unrelated project details should be added only when confirmed.
+
 - Dark companion interface and floating Windows widget.
 - Supabase authentication and a chat Edge Function that streams AI responses.
 - Per-user conversation/message persistence in Supabase.
 - Per-user workflow storage using `automation_workflows`.
-- Automation execution history persists locally per signed-in user (up to 12 recent status entries), survives page refreshes, and can be cleared from the Automation panel. History stays in that browser's local storage; it is not uploaded to the cloud.
+- Imported skills, automation skill filters, selected AI provider, and the 12 most recent automation status entries sync to the signed-in user's private `user_companion_sync` row. Sync merges skill edits by timestamp, carries deletion markers and history-clear timestamps across devices, and refreshes on realtime updates, app focus, and reconnect. Local copies remain available when offline; cloud errors do not erase them.
 - Saved-workflow command dispatch: chat messages such as `Open Spotify`, `run Open Spotify`, `please run my Morning Research automation`, and `could you start Morning Research for me` are matched to the signed-in user's saved workflow names before AI chat fallback. Matching ignores case and punctuation and tolerates common polite prefixes/suffixes; the existing workflow runner executes configured steps and records step-level results.
 - Voice profiles: Jarvis-style, natural assistant, and system default. Voice selection prioritizes available English voices, reports the actual selected device voice when available, follows the selected voice's language, and falls back to browser/device defaults when voice metadata is unavailable. The Jarvis-style profile uses slower, lower-pitch speech settings; exact timbre depends on the browser and operating system.
 - Browser-safe workflow actions such as opening URLs, web search, creating a text file, and preparing a message draft.
@@ -30,12 +32,18 @@ Some of these integrations have been implemented in code but still require end-t
 ## Important limitations
 
 - **Native desktop automation remains limited.** The Electron wrapper now has a restricted native bridge for specific actions, including opening/stopping the system visual guide and allowlisted app launches. This is not general-purpose remote control of arbitrary apps.
-- **The OS command queue needs a lifecycle correction before it can be trusted.** The current `os-agent-poll` endpoint marks commands as `done` when it returns them, before any desktop agent confirms execution. Do not use this status as proof that an OS action ran.
+- **OS command lifecycle:** `os-agent-poll` claims commands as `processing`; it does not mark them `done` when delivered. The desktop agent must acknowledge a claimed command with its claim token before the row becomes `done` or `failed`. Claims abandoned for two minutes are returned to `pending` so a disconnected agent does not leave work stuck. The deployed function source is tracked at `supabase/functions/os-agent-poll/index.ts` and covered by `npm run test:companion`.
 - Browser-safe workflow actions are not the same as controlling Windows applications. Desktop actions must remain unavailable unless a secure, allowlisted native bridge is installed and confirms the result.
 - Message actions that lack a verified send integration should be treated as drafts, not as sent messages.
 - Voice support depends on browser/device capabilities and permissions; speech recognition may rely on the browser vendor's service.
 - The Windows wrapper loads the hosted site. It is not a standalone offline AI model.
+- The Android **Plugins** toolbox shortcut currently opens Agents & Connections; a separate plugin marketplace/registry is not implemented yet.
+- Imported skills, automation skill filters, recent automation history, and selected AI provider now use account-backed cross-device sync. Saved workflows, planner tasks, appearance/voice preferences, conversations, and provider connections also use account-backed storage. See [the platform feature matrix](docs/platform-feature-matrix.md) for current cross-platform boundaries.
 - Do not add API keys, passwords, Supabase service-role keys, or other secrets to this public repository or to frontend code.
+
+## Second Brain
+
+Open **Second Brain** from the workspace dock. Sign in to create and sync private notes across devices. Use the category filter and search field to find entries, pin important notes, and export your vault as JSON. The optional starter pack adds verified Bosley project architecture, repository/branch context, CI workflow names, and local development commands. Contact entries are private account data; add only information you are authorized to store.
 
 ## Run locally
 
@@ -70,8 +78,8 @@ The workflow builds an Electron installer that loads the hosted Bosley site. A s
 1. Download and install the latest **Bosley-Windows-Installer** artifact.
 2. Open Bosley and select **Skills** in the workspace side dock.
 3. Choose **Load official skill pack** to import the repository's default skills, or choose **Import skill file** to load a local `.json`, `.md`, `.markdown`, or `.txt` file (maximum 100 KB).
-4. Enable the specific skills you want Bosley to consider. Ask for the task normally in chat; relevant enabled skill text is attached as optional context.
-5. Use **Search skills** to find an imported skill, **Export skills** to back up the local collection as JSON, or disable/delete entries you no longer need. Re-importing a skill with the same ID updates it rather than duplicating it. Imported skills are stored locally in that browser/device; they are not automatically synced to another device.
+4. Enable the specific skills you want Bosley to consider. When signed in, imported skills and enabled state sync to your account and appear on your other signed-in devices. Ask for the task normally in chat; relevant enabled skill text is attached as optional context.
+5. Use **Search skills** to find an imported skill, **Export skills** to back up the local collection as JSON, or disable/delete entries you no longer need. Re-importing a skill with the same ID updates it rather than duplicating it. Imported skills are cached locally for offline use and synced to your signed-in account. If cloud sync is unavailable, the local copy is kept.
 
 The skills are guidance, not new tools or permissions. Imported text is treated as untrusted reference material, not system instructions; it cannot enable arbitrary shell commands, skip confirmations, or guarantee that a capability exists. Review files before importing them. If the official-pack button cannot reach GitHub, download `agent-pack/skills.json` from the repository and import it manually. The Windows workflow also publishes a separate `Bosley-Optional-Agent-Pack` artifact.
 
@@ -83,15 +91,15 @@ The current Windows installer and Android debug APK include a native visual-guid
 
 ### Install and smoke-test the current builds
 
-1. Open the [Windows build workflow](https://github.com/deji007-source/bosley-companion/actions/runs/40003886128) or [Android build workflow](https://github.com/deji007-source/bosley-companion/actions/runs/40003886096) while signed in to GitHub.
-2. In **Artifacts**, download `Bosley-Windows-Installer` or `Bosley-Android-Debug-APK`. Extract the downloaded ZIP to get the installer/APK.
+1. Open the latest verified [Windows build run](https://github.com/deji007-source/bosley-companion/actions/runs/41519511078) or [Android build run](https://github.com/deji007-source/bosley-companion/actions/runs/41519511207) while signed in to GitHub.
+2. In **Artifacts**, download `Bosley-Windows-Installer` or `Bosley-Android-Debug-APK-Development-Only`. Extract the downloaded ZIP to get the installer/APK.
 3. Install and launch Bosley Companion, then sign in if prompted.
 4. Open the Activity/Daily Planner, create an active test task, and select **Guide**. Accept the in-app confirmation.
 5. On Android, if prompted, enable **Allow display over other apps** for Bosley Companion, return to the app, and try **Guide** again.
 6. Switch to another app and check whether the guide card and tether remain visible above it. Use **Stop guide** to close the overlay.
 7. Report the platform, Android version or Windows version, and any exact error text if the overlay does not appear. Do not include passwords or tokens.
 
-These workflow artifacts are temporary and are scheduled to expire on 6 November 2026. New builds may produce newer artifacts; prefer the latest successful run when testing.
+These verified workflow artifacts are temporary and are scheduled to expire on 16 November 2026. New builds may produce newer artifacts; prefer the latest successful run when testing.
 
 ## Backend notes
 

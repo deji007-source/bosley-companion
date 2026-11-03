@@ -1,7 +1,7 @@
 -- Keep the shared website and Companion views live-synchronized.
 -- Every subscribed table already has RLS and per-user ownership policies.
-alter publication supabase_realtime
-  add table
+ALTER PUBLICATION supabase_realtime
+  ADD TABLE
     public.agent_devices,
     public.automation_workflows,
     public.bosley_planner_tasks,

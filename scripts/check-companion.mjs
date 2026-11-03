@@ -430,6 +430,13 @@ assert.ok(html.includes('allow="microphone; camera; clipboard-read; clipboard-wr
 assert.ok(html.includes("Open separately"), "Hosted app must provide a browser fallback for embedding or authentication restrictions");
 assert.ok(html.includes("initLovableBosleyViewer"), "Lovable viewer must initialize when its dock page is opened");
 assert.ok(html.includes("bosley-side-dock-position"), "Windows side dock position must persist after dragging");
+
+assert.ok(html.includes('dock.hidden=false;active=id;if(document.body.classList.contains("desktop-panel"))'), "Windows side dock must apply its restored position only after it becomes visible");
+assert.ok(html.includes('dock.offsetWidth||Math.min(380,window.innerWidth-28)'), "Windows side dock must measure its actual visible width before restoring a saved position");
+assert.ok(html.includes('window.innerWidth-width-8'), "Windows side dock saved horizontal position must be clamped inside its current app window");
+assert.ok(html.includes('window.innerHeight-height-8'), "Windows side dock saved vertical position must be clamped inside its current app window");
+assert.ok(html.includes('dock.style.left="auto";dock.style.right="14px";dock.style.top="72px"'), "Windows side dock must have a visible in-window default position");
+
 assert.ok(html.includes(".holo-face i{width:12px;height:18px"), "Bosley presence avatar must use two large, wide eyes");
 assert.ok(html.includes(".holo-face{width:54px;height:50px"), "Bosley face must be sized to support the larger paired eyes");
 assert.ok(html.includes("#side-dock .dock-tabs button.on{border-color:#eee;background:#eee;color:#050505"), "Side dock selected tabs must use the monochrome theme");

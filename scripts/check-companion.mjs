@@ -528,6 +528,9 @@ assert.ok(html.includes('from("user_companion_sync")'), "Personal workspace sync
 assert.ok(html.includes("deleted_skill_ids") && html.includes("automation_history_cleared_at"), "Sync must preserve skill deletions and history clear operations across devices");
 assert.ok(html.includes("selected_ai_provider_updated_at") && html.includes("BOSLEY_PROVIDER_PREF"), "Selected AI provider preference must sync across signed-in devices");
 assert.ok(html.includes("startPersonalWorkspaceRealtime") && html.includes("postgres_changes"), "Personal workspace should refresh from remote changes in realtime");
+assert.ok(html.includes("const syncNeedsWrite=!remote||") && html.includes("if(syncNeedsWrite){"), "Realtime notifications must not cause endless no-op database upserts");
+assert.ok(html.includes("sort((a,b)=>a.id.localeCompare(b.id))"), "Skill deletion markers must be serialized in a stable order for idempotent sync");
+
 assert.ok(html.includes('window.addEventListener("focus"') && html.includes('window.addEventListener("online"'), "Personal workspace must refresh when a device returns online or to the foreground");
 assert.ok(html.includes("LOCAL COPY KEPT"), "Cloud sync failures must preserve local data and report the fallback");
 assert.ok(personalSyncMigration.includes("enable row level security") && personalSyncMigration.includes("(select auth.uid()) = user_id"), "Personal workspace table must be protected by per-user RLS");

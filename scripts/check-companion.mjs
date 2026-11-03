@@ -551,6 +551,7 @@ assert.ok(appScript.includes('db.from("ai_gateway_usage").select("requested_prov
 assert.ok(appScript.includes('db.from("ai_gateway_preferences").select("mode,preferred_provider,allow_cloud_fallback,updated_at")'), "Control Centre must use RLS-protected provider preferences rather than reading encrypted provider keys");
 assert.ok(appScript.includes('id="control-topology"'), "Control Centre must render a visual system connection blueprint");
 assert.ok(appScript.includes("insertDictationAtFocus"), "Universal Input must insert dictated text into the focused editable field");
+assert.ok(appScript.includes('$("#bosley-universal-copy").onclick'), "Universal Input must support clipboard handoff to other apps");
 assert.ok(appScript.includes('window.__bosleyDictationTarget=target'), "Universal Input must preserve the last focused text field when its dock opens");
 for (const view of ["bosley-search", "control-centre", "universal-input"]) assert.ok(windowsWorkflow.includes("'"+view+"'"), "Windows must register "+view+" as a floating view");
 
@@ -563,6 +564,7 @@ assert.ok(bosleySearchFunction.includes('.eq("user_id", userId)'), "Every person
 assert.ok(!bosleySearchFunction.includes("api_key_ciphertext") && !bosleySearchFunction.includes("api_key_iv"), "Search must never retrieve encrypted provider credentials");
 assert.ok(bosleySearchFunction.includes("html.duckduckgo.com"), "Bosley Search must attempt public web discovery");
 assert.ok(bosleySearchFunction.includes("recentCalls.length >= 12"), "Bosley Search must enforce a per-user request limit");
+for (const table of ["reminders", "schedules", "bosley_planner_tasks"]) assert.ok(bosleySearchFunction.includes(`from("${table}")`), "Personal search must include "+table);
 
 const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");
 assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automation_instruction(text, uuid) SET search_path = ''"), "Automation instruction SQL function must pin its search_path");

@@ -551,6 +551,7 @@ assert.ok(appScript.includes('db.from("ai_gateway_usage").select("requested_prov
 assert.ok(appScript.includes('db.from("ai_gateway_preferences").select("mode,preferred_provider,allow_cloud_fallback,updated_at")'), "Control Centre must use RLS-protected provider preferences rather than reading encrypted provider keys");
 assert.ok(appScript.includes("insertDictationAtFocus"), "Universal Input must insert dictated text into the focused editable field");
 assert.ok(appScript.includes('window.__bosleyDictationTarget=target'), "Universal Input must preserve the last focused text field when its dock opens");
+for (const view of ["bosley-search", "control-centre", "universal-input"]) assert.ok(windowsWorkflow.includes("'"+view+"'"), "Windows must register "+view+" as a floating view");
 
 
 

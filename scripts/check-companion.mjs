@@ -554,7 +554,7 @@ assert.ok(appScript.includes("renderBosleyWritingAssist"), "Writing Assist must 
 assert.ok(appScript.includes('window.SpeechRecognition||window.webkitSpeechRecognition'), "Voice input must prefer live interim speech recognition when supported");
 assert.ok(appScript.includes("window.__bosleyControlTimer=setInterval"), "Control Centre must refresh its live status periodically");
 assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist"'), "Writing Assist must call the authenticated editing service");
-assert.ok(appScript.includes('data-open-view="writing-assist"'), "Writing Assist must be reachable from the dock launcher");
+assert.ok(html.includes('data-open-view="writing-assist"'), "Writing Assist must be reachable from the dock launcher");
 assert.ok(appScript.includes("look\\s*up"), "Natural-language search command must use a real whitespace matcher");
 assert.ok(appScript.includes("insertDictationAtFocus"), "Universal Input must insert dictated text into the focused editable field");
 assert.ok(appScript.includes('$("#bosley-universal-copy").onclick'), "Universal Input must support clipboard handoff to other apps");

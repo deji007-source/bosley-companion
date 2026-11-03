@@ -2476,22 +2476,23 @@ async function renderBosleyControlCentre(){
  if(!db||!user){status.textContent="Sign in to view your private system map.";map.innerHTML="";return}
  status.textContent="Checking devices, provider connections and workflows…";
  const uid=user.id;
- const [devices,providers,workflows,usageRows,shortcuts]=await Promise.all([
+ const [devices,providerPrefs,workflows,usageRows,shortcuts]=await Promise.all([
  db.from("agent_devices").select("id,platform,device_label,app_version,capabilities,status,last_seen").eq("user_id",uid).order("last_seen",{ascending:false}).limit(20),
- db.from("agent_provider_connections").select("id,provider,model,enabled,updated_at").eq("user_id",uid).limit(20),
+ db.from("ai_gateway_preferences").select("mode,preferred_provider,allow_cloud_fallback,updated_at").eq("user_id",uid).maybeSingle(),
  db.from("automation_workflows").select("id,name,updated_at").eq("user_id",uid).limit(50),
  db.from("ai_gateway_usage").select("requested_provider,model_id,status,http_status,latency_ms,created_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(12),
  db.from("user_shortcuts").select("id,title,url").eq("user_id",uid).limit(30)
  ]);
  if(user?.id!==uid)return;
- const errors=[devices,providers,workflows,usageRows,shortcuts].filter(x=>x.error);
+ const errors=[devices,providerPrefs,workflows,usageRows,shortcuts].filter(x=>x.error);
  const online=(devices.data||[]).filter(x=>x.status==="online"&&Date.now()-new Date(x.last_seen).getTime()<120000).length;
- const enabled=(providers.data||[]).filter(x=>x.enabled).length;
+ const enabled=providerPrefs.data?.preferred_provider?1:0;
  const successful=(usageRows.data||[]).filter(x=>x.status==="success"||x.http_status===200).length;
  metrics.innerHTML=[["DEVICES",(devices.data||[]).length],["ONLINE",online],["AI PROVIDERS",enabled],["WORKFLOWS",(workflows.data||[]).length],["SHORTCUTS",(shortcuts.data||[]).length]].map(x=>'<article class="item"><main><small>'+x[0]+'</small><strong style="display:block;font-size:22px">'+x[1]+'</strong></main></article>').join("");
  const cards=[];
  for(const x of devices.data||[]){const alive=x.status==="online"&&Date.now()-new Date(x.last_seen).getTime()<120000;cards.push({title:x.device_label||x.platform,kind:"Device · "+x.platform,state:alive?"ONLINE":"OFFLINE",detail:(x.app_version||"Version not reported")+" · Last seen "+(x.last_seen?new Date(x.last_seen).toLocaleString():"unknown"),ok:alive})}
- for(const x of providers.data||[])cards.push({title:x.provider,kind:"AI provider · "+(x.model||"model not specified"),state:x.enabled?"CONFIGURED":"DISABLED",detail:"Updated "+new Date(x.updated_at).toLocaleString(),ok:!!x.enabled});
+ if(providerPrefs.data)cards.push({title:providerPrefs.data.preferred_provider||"Automatic provider routing",kind:"AI routing · "+(providerPrefs.data.mode||"hybrid"),state:"CONFIGURED",detail:"Cloud fallback "+(providerPrefs.data.allow_cloud_fallback?"enabled":"disabled")+" · Updated "+new Date(providerPrefs.data.updated_at).toLocaleString(),ok:true});
+ for(const provider of [...new Set((usageRows.data||[]).map(x=>x.requested_provider).filter(Boolean))])cards.push({title:provider,kind:"AI provider · observed in gateway usage",state:"RECENTLY USED",detail:"Observed in recent authenticated requests",ok:true});
  cards.push({title:"Supabase account database",kind:"Shared account storage",state:"CONNECTED",detail:"Authenticated account-scoped data and realtime sync",ok:true});
  cards.push({title:"Bosley Search",kind:"Second Brain + public web",state:"AVAILABLE",detail:"Authenticated search function deployed",ok:true});
  cards.push({title:"Bosley chat",kind:"AI conversation service",state:"AVAILABLE",detail:"Provider health is determined by recent gateway requests",ok:successful>0});
@@ -2521,7 +2522,7 @@ async function renderUniversalInput(){
  const area=$("#bosley-universal-text"),status=$("#bosley-universal-status"),start=$("#bosley-universal-mic"),stop=$("#bosley-universal-stop");
  
  $("#bosley-universal-insert").onclick=()=>{const ok=insertDictationAtFocus(area.value);status.textContent=ok?"Text inserted into the focused field. Review it before sending.":"No editable field is focused. Tap the destination text box first, then insert again."};
- let recognition=null;
+ let recognition=null,recorder=null,recordingStream=null;
  start.onclick=async()=>{
   if(!user){status.textContent="Sign in to use Bosley voice services.";return}
   window.__bosleyDictationTarget=window.__bosleyDictationTarget||$("#in")||document.activeElement;
@@ -2539,9 +2540,31 @@ async function renderUniversalInput(){
    recognition.onerror=e=>status.textContent="Speech recognition: "+e.error+". Check microphone permission.";
    recognition.onend=()=>{start.disabled=false;stop.disabled=true;if(status.textContent==="Dictation running…")status.textContent="Dictation paused. Insert the captured text when ready."};
    try{recognition.start();start.disabled=true;stop.disabled=false;status.textContent="Listening… speak naturally. Tap Stop when finished."}catch(error){status.textContent=String(error?.message||error)}
+  }else if(navigator.mediaDevices?.getUserMedia&&window.MediaRecorder){
+   start.disabled=true;stop.disabled=false;status.textContent="Starting microphone…";
+   try{
+    const session=(await db.auth.getSession()).data.session;if(!session)throw Error("Sign in again to use voice transcription.");
+    recordingStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mime=["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(type=>MediaRecorder.isTypeSupported(type));
+    recorder=new MediaRecorder(recordingStream,mime?{mimeType:mime}:undefined);const chunks=[];const started=Date.now();
+    recorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data)};
+    recorder.onstart=()=>status.textContent="Listening… tap Stop when finished.";
+    recorder.onerror=()=>status.textContent="Microphone recording failed. Check app microphone permissions.";
+    recorder.onstop=async()=>{
+     recordingStream?.getTracks().forEach(track=>track.stop());recordingStream=null;start.disabled=false;stop.disabled=true;
+     const blob=new Blob(chunks,{type:recorder?.mimeType||"audio/webm"});if((Date.now()-started)<900||!blob.size){status.textContent="Recording was too short. Try again.";return}
+     try{const active=(await db.auth.getSession()).data.session;if(!active)throw Error("Your sign-in session expired.");
+      const form=new FormData();form.append("audio",blob,"voice.webm");form.append("duration",String((Date.now()-started)/1000));
+      status.textContent="Transcribing your recording…";const response=await fetch(SUPABASE_URL+"/functions/v1/remote-transcribe",{method:"POST",headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:"Bearer "+active.access_token},body:form});
+      const result=await response.json().catch(()=>({}));if(!response.ok||!result.transcript)throw Error(result.error||("Transcription failed (HTTP "+response.status+")."));
+      area.value+=(area.value?" ":"")+String(result.transcript).trim();area.dispatchEvent(new Event("input",{bubbles:true}));status.textContent="Transcription ready. Insert or edit it before sending.";
+     }catch(error){status.textContent=String(error?.message||"Voice transcription unavailable.")}
+    };
+    recorder.start();
+   }catch(error){recordingStream?.getTracks().forEach(track=>track.stop());recordingStream=null;start.disabled=false;stop.disabled=true;status.textContent=String(error?.message||"Microphone access unavailable.")}
   }else status.textContent="Continuous dictation is unavailable in this browser. Use the normal microphone button for one-shot voice input.";
  };
- stop.onclick=()=>{try{recognition?.stop()}catch{};stop.disabled=true;start.disabled=false;status.textContent="Dictation stopped. Review and insert your text."};
+ stop.onclick=()=>{try{recognition?.stop();if(recorder?.state==="recording")recorder.stop()}catch{};stop.disabled=true;start.disabled=false;if(!recorder||recorder.state!=="recording")status.textContent="Dictation stopped. Review and insert your text."};
 }
 
 document.addEventListener("focusin",event=>{const target=event.target;if(target&&(target.isContentEditable||target.matches?.("input:not([type=button]):not([type=submit]):not([type=hidden]),textarea,[contenteditable=true]")))window.__bosleyDictationTarget=target});

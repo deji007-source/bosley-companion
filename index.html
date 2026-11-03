@@ -1393,8 +1393,9 @@ document.addEventListener("click",event=>{
  if(remove){saveOfflineCommandQueue(readOfflineCommandQueue().filter(x=>x.id!==remove.dataset.offlineDelete));renderOfflineCommandQueue()}
 });
 const BOSLEY_AUTOMATION_SKILLS_KEY="bosley_automation_skills_v1";
-function readAutomationSkillSettings(){try{const v=JSON.parse(localStorage.getItem(BOSLEY_AUTOMATION_SKILLS_KEY)||"null");return {enabled:v?.enabled!==false,ids:Array.isArray(v?.ids)?v.ids.filter(x=>typeof x==="string"):null}}catch{return {enabled:true,ids:null}}}
-function saveAutomationSkillSettings(v){try{localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY,JSON.stringify(v));localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY+"_updated_at",String(Date.now()))}catch{}schedulePersonalWorkspaceSync()}
+function automationSkillSettingsStorageKey(){return BOSLEY_AUTOMATION_SKILLS_KEY+(user?.id?":"+user.id:"")}
+function readAutomationSkillSettings(){try{const v=JSON.parse(localStorage.getItem(automationSkillSettingsStorageKey())||"null");return {enabled:v?.enabled!==false,ids:Array.isArray(v?.ids)?v.ids.filter(x=>typeof x==="string"):null}}catch{return {enabled:true,ids:null}}}
+function saveAutomationSkillSettings(v){try{localStorage.setItem(automationSkillSettingsStorageKey(),JSON.stringify(v));localStorage.setItem(automationSkillSettingsStorageKey()+"_updated_at",String(Date.now()))}catch{}schedulePersonalWorkspaceSync()}
 async function buildBosleyAgentContext(){
  const desktop=await getDesktopBridgeStatus().catch(error=>({connected:false,label:"BRIDGE ERROR",detail:String(error?.message||error)}));
  const phoneRoute=!!(db&&user);
@@ -1534,11 +1535,18 @@ async function syncPersonalWorkspace(){
   const remoteProviderAt=remote?.selected_ai_provider_updated_at?Date.parse(remote.selected_ai_provider_updated_at)||0:0;
   const selectedProvider=localProviderAt>remoteProviderAt?localProvider:remoteProvider;
   const selectedProviderAt=Math.max(localProviderAt,remoteProviderAt);
-  let localAutomationSkillSettings=readAutomationSkillSettings(),localAutomationSkillSettingsAt=0;
-  try{localAutomationSkillSettingsAt=Number(localStorage.getItem(BOSLEY_AUTOMATION_SKILLS_KEY+"_updated_at"))||0}catch{}
-  const remoteAutomationSkillSettings=remote?.automation_skill_settings&&typeof remote.automation_skill_settings==="object"?remote.automation_skill_settings:{enabled:true,ids:null};
+  let localAutomationSkillSettings=readAutomationSkillSettings(),localAutomationSkillSettingsAt=0,legacyAutomationSkillSettings=false;
+  const settingsKey=automationSkillSettingsStorageKey();
   const remoteAutomationSkillSettingsAt=remote?.automation_skill_settings_updated_at?Date.parse(remote.automation_skill_settings_updated_at)||0:0;
-  if(!localAutomationSkillSettingsAt&&localStorage.getItem(BOSLEY_AUTOMATION_SKILLS_KEY))localAutomationSkillSettingsAt=Date.now();
+  const remoteSettingsRaw=remote?.automation_skill_settings&&typeof remote.automation_skill_settings==="object"?remote.automation_skill_settings:{enabled:true,ids:null};
+  const remoteAutomationSkillSettings={enabled:remoteSettingsRaw.enabled!==false,ids:Array.isArray(remoteSettingsRaw.ids)?remoteSettingsRaw.ids.filter(x=>typeof x==="string"):null};
+  try{
+   localAutomationSkillSettingsAt=Number(localStorage.getItem(settingsKey+"_updated_at"))||0;
+   if(!localStorage.getItem(settingsKey)&&!remoteAutomationSkillSettingsAt){
+    const legacyRaw=localStorage.getItem(BOSLEY_AUTOMATION_SKILLS_KEY);
+    if(legacyRaw){const legacy=JSON.parse(legacyRaw);localAutomationSkillSettings={enabled:legacy?.enabled!==false,ids:Array.isArray(legacy?.ids)?legacy.ids.filter(x=>typeof x==="string"):null};localAutomationSkillSettingsAt=Date.now();legacyAutomationSkillSettings=true}
+   }
+  }catch{}
   const selectedAutomationSkillSettings=localAutomationSkillSettingsAt>remoteAutomationSkillSettingsAt?localAutomationSkillSettings:remoteAutomationSkillSettings;
   const selectedAutomationSkillSettingsAt=Math.max(localAutomationSkillSettingsAt,remoteAutomationSkillSettingsAt);
   const {data:check,error:checkError}=await db.auth.getSession();
@@ -1571,8 +1579,9 @@ async function syncPersonalWorkspace(){
    localStorage.setItem(automationHistoryClearedKey(),String(clearAt));
    if(selectedProvider)localStorage.setItem(providerPreferenceStorageKey(),selectedProvider);else localStorage.removeItem(providerPreferenceStorageKey());
    localStorage.setItem(providerPreferenceStorageKey()+"_updated_at",String(selectedProviderAt));
-   localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY,JSON.stringify(selectedAutomationSkillSettings));
-   localStorage.setItem(BOSLEY_AUTOMATION_SKILLS_KEY+"_updated_at",String(selectedAutomationSkillSettingsAt));
+   localStorage.setItem(automationSkillSettingsStorageKey(),JSON.stringify(selectedAutomationSkillSettings));
+   localStorage.setItem(automationSkillSettingsStorageKey()+"_updated_at",String(selectedAutomationSkillSettingsAt));
+   if(legacyAutomationSkillSettings||user?.id)localStorage.removeItem(BOSLEY_AUTOMATION_SKILLS_KEY);
    localStorage.removeItem(BOSLEY_PROVIDER_PREF);localStorage.removeItem(BOSLEY_PROVIDER_PREF+"_updated_at");
    if(legacySkills.length)localStorage.removeItem(BOSLEY_SKILLS_KEY);
    automationRuns=mergedHistory;automationHistoryOwner=uid;automationHistoryClearedAt=clearAt;
@@ -1583,6 +1592,7 @@ async function syncPersonalWorkspace(){
   const providerSelect=document.querySelector("#bosley-provider-select");if(providerSelect&&providerSelect.value!==selectedProvider)providerSelect.value=selectedProvider
   try{window.Capacitor?.Plugins?.BosleyOverlay?.syncAgentPreference?.({provider:selectedProvider}).catch(error=>console.warn("Could not sync Android agent provider",error))}catch(error){console.warn("Android agent preference bridge unavailable",error)}
   renderAutomationHistory();
+  const automationPanel=document.querySelector("#automation");if(automationPanel&&!automationPanel.hidden)drawAutomation();
   return true;
  }catch(error){
   console.warn("Personal workspace cloud sync failed:",error);

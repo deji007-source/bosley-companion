@@ -520,9 +520,9 @@ assert.ok(overlayInstaller.includes('if(chatPanel==null)expandPanel(false);'), "
 assert.ok(overlayInstaller.includes('bosley_overlay_position'), "Floating widget position must persist across service restarts");
 
 
-const personalSyncMigration = readText("../supabase/migrations/20261103103000_user_companion_cross_device_sync.sql", "utf8");
-const providerSyncMigration = readText("../supabase/migrations/20261103104500_sync_selected_ai_provider.sql", "utf8");
-const realtimeSyncMigration = readText("../supabase/migrations/20261103105500_enable_realtime_for_companion_sync.sql", "utf8");
+const personalSyncMigration = readText(new URL("../supabase/migrations/20261103103000_user_companion_cross_device_sync.sql", import.meta.url), "utf8");
+const providerSyncMigration = readText(new URL("../supabase/migrations/20261103104500_sync_selected_ai_provider.sql", import.meta.url), "utf8");
+const realtimeSyncMigration = readText(new URL("../supabase/migrations/20261103105500_enable_realtime_for_companion_sync.sql", import.meta.url), "utf8");
 assert.ok(html.includes("async function syncPersonalWorkspace()"), "Skills and automation history must have an account-backed sync engine");
 assert.ok(html.includes('from("user_companion_sync")'), "Personal workspace sync must use the dedicated account storage table");
 assert.ok(html.includes("deleted_skill_ids") && html.includes("automation_history_cleared_at"), "Sync must preserve skill deletions and history clear operations across devices");

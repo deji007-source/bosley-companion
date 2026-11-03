@@ -186,6 +186,7 @@ const contracts = [
   ["Start.me import enforces per-user ownership", "user_id:user.id,category:\"reference\""],
   ["Research resources retain import provenance", "source:start.me"],
   ["Start.me import filters unsupported and privacy-invasive resources", "function isAllowedResearchResource(item)"],
+  ["Start.me import restricts automatic ingestion to supported public research topics", "supportedPublicResearch"],
   ["Start.me import reports filtered resource counts", "unsupported or privacy-invasive links skipped"],
   ["Research Library only opens validated HTTP(S) links", "safeNoteUrl(x.url)"],
   ["Second Brain records are retrieved into relevant AI conversations", "async function buildBosleyKnowledgeContext(query)"],

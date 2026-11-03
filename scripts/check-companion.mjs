@@ -26,7 +26,7 @@ assert.ok(windowsWorkflow.includes('width="42" height="64" rx="21"'), "Windows f
 assert.ok(!windowsWorkflow.includes('id="nose-line"'), "Windows floating character must remain nose-free");
 assert.ok(windowsWorkflow.includes('id="mouth-line"')&&windowsWorkflow.includes('id="mouth-open"'), "Windows floating character must switch from a line mouth to an animated speaking mouth");
 assert.ok(windowsWorkflow.includes('translate(36 35) scale(.86 .80)'), "Windows floating character hat must be visibly smaller");
-assert.ok(windowsWorkflow.includes("open_floating_view")&&windowsWorkflow.includes("new BrowserWindow({ x, y, width, height"), "Windows side-panel icons must create native floating page windows");
+assert.ok(windowsWorkflow.includes("open_floating_view")&&windowsWorkflow.includes("const win = new BrowserWindow({")&&windowsWorkflow.includes("bosleyFloat: viewId"), "Windows side-panel icons must create native floating page windows");
 assert.ok(html.includes('get("bosleyFloat")')&&html.includes('desktop-floating-view'), "Detached windows must load the selected interactive page independently");
 assert.ok(html.includes('action:"close_floating_view"'), "Detached side views must have a working close control");
 

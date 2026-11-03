@@ -537,6 +537,12 @@ assert.ok(appScript.includes('db.from("bosley_planner_tasks").select("task_id,ti
 assert.ok(appScript.includes('db.from("eng_projects").select("name,description,discipline,status,updated_at")'), "AI context must retrieve engineering projects");
 assert.ok(appScript.includes('db.from("eng_tasks").select("title,done,project_id,created_at")'), "AI context must retrieve open engineering tasks");
 assert.ok(appScript.includes("RELEVANT BOSLEY WORKSPACE CONTEXT"), "Retrieved cross-module data must be clearly identified as workspace context");
+assert.ok(appScript.includes("const requestHistory=history.slice(-8)"), "Chat requests must keep a bounded rolling conversation window");
+assert.ok(appScript.includes("String(knowledgeContext||\"\").slice(0,4200)"), "Second Brain context must be bounded before sending to the provider");
+assert.ok(appScript.includes("historyText.slice(0,9000)"), "Rolling chat history must store compact text rather than repeated large context");
+assert.ok(appScript.includes("Temporary response issue · message kept"), "Provider failures must preserve the user's message for retry");
+assert.ok(appScript.includes("requestHistory[requestHistory.length-1]={role:\"user\",content:userContent}"), "The latest request must retain its full current context while earlier turns remain compact");
+
 
 const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");
 assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automation_instruction(text, uuid) SET search_path = ''"), "Automation instruction SQL function must pin its search_path");

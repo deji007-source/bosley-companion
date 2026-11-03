@@ -498,3 +498,6 @@ assert.ok(osAgentPoll.includes('status: "processing", claimed_at: claimedAt, cla
 assert.ok(osAgentPoll.includes('.eq("status", "pending").in("id", ids)'), "OS command claims must be conditional so concurrent pollers cannot claim the same pending row");
 assert.ok(osAgentPoll.includes('status: "pending", claimed_at: null, claim_token: null') && osAgentPoll.includes('.lt("claimed_at", staleBefore)'), "Abandoned OS claims must become eligible for retry after the lease expires");
 assert.ok(osAgentPoll.includes('commands: (claimed ?? []).map((command) => ({ ...command, claim_token: claimToken }))'), "The OS agent must receive claim tokens for later acknowledgement");
+
+const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");
+assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automation_instruction(text, uuid) SET search_path = ''"), "Automation instruction SQL function must pin its search_path");

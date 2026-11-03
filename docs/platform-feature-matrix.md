@@ -15,6 +15,7 @@ The root `index.html` is the shared companion experience. The website serves it 
 | Selected AI provider | Yes | Yes | Yes | `user_companion_sync.selected_ai_provider` + native Android bridge |
 | Imported skills | Yes | Yes | Yes | `user_companion_sync.skills` + deletion markers; local offline cache |\n| Automation skill selection | Yes | Yes | Yes | `user_companion_sync.automation_skill_settings` |
 | Recent automation activity | Yes | Yes | Yes | `user_companion_sync.automation_history` + cross-device clear timestamp |
+| Second Brain knowledge vault | Yes | Yes | Yes | `user_second_brain_entries` with per-user RLS and Realtime updates |
 | Phone automation via Telegram/MacroDroid | Web request | Web request | Native overlay routes through the same authenticated endpoint | Shared remote-action backend |
 
 ## Native capabilities (not expected to be identical)

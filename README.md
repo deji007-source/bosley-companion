@@ -12,6 +12,8 @@ The currently maintained companion experience is the root `index.html`, which co
 
 ## Current capabilities
 
+- **Second Brain:** a private, searchable account-backed knowledge vault for project overviews, repository/CI links, code snippets, design decisions, bugs, sprint tasks, references, private contacts, command shortcuts, and meeting notes. Entries support tags, category filters, pinning, edit/delete, JSON export, and Supabase Realtime updates across signed-in devices. The Second Brain includes an optional verified Bosley starter pack; unrelated project details should be added only when confirmed.
+
 - Dark companion interface and floating Windows widget.
 - Supabase authentication and a chat Edge Function that streams AI responses.
 - Per-user conversation/message persistence in Supabase.
@@ -38,6 +40,10 @@ Some of these integrations have been implemented in code but still require end-t
 - The Android **Plugins** toolbox shortcut currently opens Agents & Connections; a separate plugin marketplace/registry is not implemented yet.
 - Imported skills, automation skill filters, recent automation history, and selected AI provider now use account-backed cross-device sync. Saved workflows, planner tasks, appearance/voice preferences, conversations, and provider connections also use account-backed storage. See [the platform feature matrix](docs/platform-feature-matrix.md) for current cross-platform boundaries.
 - Do not add API keys, passwords, Supabase service-role keys, or other secrets to this public repository or to frontend code.
+
+## Second Brain
+
+Open **Second Brain** from the workspace dock. Sign in to create and sync private notes across devices. Use the category filter and search field to find entries, pin important notes, and export your vault as JSON. The optional starter pack adds verified Bosley project architecture, repository/branch context, CI workflow names, and local development commands. Contact entries are private account data; add only information you are authorized to store.
 
 ## Run locally
 

@@ -16,7 +16,7 @@ The currently maintained companion experience is the root `index.html`, which co
 - Supabase authentication and a chat Edge Function that streams AI responses.
 - Per-user conversation/message persistence in Supabase.
 - Per-user workflow storage using `automation_workflows`.
-- Imported skills, selected AI provider, and the 12 most recent automation status entries sync to the signed-in user's private `user_companion_sync` row. Sync merges skill edits by timestamp, carries deletion markers and history-clear timestamps across devices, and refreshes on realtime updates, app focus, and reconnect. Local copies remain available when offline; cloud errors do not erase them.
+- Imported skills, automation skill filters, selected AI provider, and the 12 most recent automation status entries sync to the signed-in user's private `user_companion_sync` row. Sync merges skill edits by timestamp, carries deletion markers and history-clear timestamps across devices, and refreshes on realtime updates, app focus, and reconnect. Local copies remain available when offline; cloud errors do not erase them.
 - Saved-workflow command dispatch: chat messages such as `Open Spotify`, `run Open Spotify`, `please run my Morning Research automation`, and `could you start Morning Research for me` are matched to the signed-in user's saved workflow names before AI chat fallback. Matching ignores case and punctuation and tolerates common polite prefixes/suffixes; the existing workflow runner executes configured steps and records step-level results.
 - Voice profiles: Jarvis-style, natural assistant, and system default. Voice selection prioritizes available English voices, reports the actual selected device voice when available, follows the selected voice's language, and falls back to browser/device defaults when voice metadata is unavailable. The Jarvis-style profile uses slower, lower-pitch speech settings; exact timbre depends on the browser and operating system.
 - Browser-safe workflow actions such as opening URLs, web search, creating a text file, and preparing a message draft.
@@ -36,7 +36,7 @@ Some of these integrations have been implemented in code but still require end-t
 - Voice support depends on browser/device capabilities and permissions; speech recognition may rely on the browser vendor's service.
 - The Windows wrapper loads the hosted site. It is not a standalone offline AI model.
 - The Android **Plugins** toolbox shortcut currently opens Agents & Connections; a separate plugin marketplace/registry is not implemented yet.
-- Imported skills, recent automation history, and selected AI provider now use account-backed cross-device sync. Saved workflows, planner tasks, appearance/voice preferences, conversations, and provider connections also use account-backed storage. See [the platform feature matrix](docs/platform-feature-matrix.md) for current cross-platform boundaries.
+- Imported skills, automation skill filters, recent automation history, and selected AI provider now use account-backed cross-device sync. Saved workflows, planner tasks, appearance/voice preferences, conversations, and provider connections also use account-backed storage. See [the platform feature matrix](docs/platform-feature-matrix.md) for current cross-platform boundaries.
 - Do not add API keys, passwords, Supabase service-role keys, or other secrets to this public repository or to frontend code.
 
 ## Run locally

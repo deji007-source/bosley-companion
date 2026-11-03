@@ -498,7 +498,7 @@ assert.ok(html.includes('action:"providers"'), "AI Provider Manager must load co
 assert.ok(html.includes('action:"connect"'), "AI Provider Manager must securely connect a provider");
 assert.ok(html.includes('action:"test"'), "AI Provider Manager must test provider connections");
 assert.ok(html.includes('action:"disconnect"'), "AI Provider Manager must disconnect providers");
-assert.ok(html.includes('localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value)'), "Selected provider preference must persist on the device");
+assert.ok(html.includes('localStorage.setItem(providerPreferenceStorageKey(),select.value)'), "Selected provider preference must persist per signed-in account");
 assert.ok(html.includes("AGENT_GATEWAY_URL"), "Provider requests must use the authenticated gateway");
 assert.ok(html.includes('action:"chat",provider:chosenProvider'), "Selected provider must handle new text chats");
 assert.ok(html.includes("if(chosenProvider&&!imageData)"), "Image requests must continue using the existing image-capable Companion route");

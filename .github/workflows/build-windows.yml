@@ -919,12 +919,12 @@ jobs:
             const area = display.workArea;
             const width = Math.min(460, Math.max(340, area.width - 24));
             const height = Math.min(620, Math.max(400, area.height - 48));
-            const column = index % 2;
-            const row = Math.floor(index / 2) % 3;
+            const column = index % 3;
+            const row = Math.floor(index / 3);
             const maxX = Math.max(area.x + 8, area.x + area.width - width - 8);
             const maxY = Math.max(area.y + 8, area.y + area.height - height - 8);
-            const x = Math.max(area.x + 8, Math.min(maxX, area.x + 18 + column * (width + 18)));
-            const y = Math.max(area.y + 8, Math.min(maxY, area.y + 42 + row * 88));
+            const x = Math.max(area.x + 8, Math.min(maxX, area.x + 12 + column * (width + 14)));
+            const y = Math.max(area.y + 8, Math.min(maxY, area.y + 42 + row * 84));
             const win = new BrowserWindow({
               x, y, width, height, minWidth: 320, minHeight: 360,
               frame: false, show: false, resizable: true, movable: true,

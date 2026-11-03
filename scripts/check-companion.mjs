@@ -533,6 +533,9 @@ assert.ok(appScript.includes('db.from("memories").select("content,kind,importanc
 assert.ok(appScript.includes('db.from("tasks").select("title,notes,due_at,priority,status,updated_at")'), "AI context must retrieve open tasks");
 assert.ok(appScript.includes('db.from("reminders").select("title,body,fires_at,recurrence,is_active")'), "AI context must retrieve active reminders");
 assert.ok(appScript.includes('db.from("schedules").select("title,notes,location,starts_at,ends_at,kind")'), "AI context must retrieve upcoming schedules");
+assert.ok(appScript.includes('db.from("bosley_planner_tasks").select("task_id,title,kind,priority,project,due,status,updated_at")'), "AI context must retrieve planner tasks");
+assert.ok(appScript.includes('db.from("eng_projects").select("name,description,discipline,status,updated_at")'), "AI context must retrieve engineering projects");
+assert.ok(appScript.includes('db.from("eng_tasks").select("title,done,project_id,created_at")'), "AI context must retrieve open engineering tasks");
 assert.ok(appScript.includes("RELEVANT BOSLEY WORKSPACE CONTEXT"), "Retrieved cross-module data must be clearly identified as workspace context");
 
 const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");

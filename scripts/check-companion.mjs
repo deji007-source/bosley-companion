@@ -542,6 +542,15 @@ assert.ok(appScript.includes("String(knowledgeContext||\"\").slice(0,4200)"), "S
 assert.ok(appScript.includes("historyText.slice(0,9000)"), "Rolling chat history must store compact text rather than repeated large context");
 assert.ok(appScript.includes("Could not complete · message kept"), "Provider failures must preserve the user's message for retry");
 assert.ok(appScript.includes("requestHistory[requestHistory.length-1]={role:\"user\",content:userContent}"), "The latest request must retain its full current context while earlier turns remain compact");
+assert.ok(appScript.includes('panel:"bosley-search"'), "Bosley Search must be registered as a cross-platform dock view");
+assert.ok(appScript.includes('panel:"control-centre"'), "The live Control Centre must be registered as a dock view");
+assert.ok(appScript.includes('panel:"universal-input"'), "Universal Input must be registered as a dock view");
+assert.ok(appScript.includes('db.functions.invoke("bosley-search"'), "Search must invoke the authenticated Bosley search service");
+assert.ok(appScript.includes('db.from("agent_devices").select("id,platform,device_label,app_version,capabilities,status,last_seen")'), "Control Centre must show account-scoped device status");
+assert.ok(appScript.includes('db.from("ai_gateway_usage").select("requested_provider,model_id,status,http_status,latency_ms,created_at")'), "Control Centre must display recent AI gateway health without exposing credentials");
+assert.ok(appScript.includes("insertDictationAtFocus"), "Universal Input must insert dictated text into the focused editable field");
+assert.ok(appScript.includes('window.__bosleyDictationTarget=target'), "Universal Input must preserve the last focused text field when its dock opens");
+
 
 
 const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");

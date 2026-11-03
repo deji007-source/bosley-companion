@@ -1533,16 +1533,27 @@ async function syncPersonalWorkspace(){
   const selectedProviderAt=Math.max(localProviderAt,remoteProviderAt);
   const {data:check,error:checkError}=await db.auth.getSession();
   if(checkError||check?.session?.user?.id!==uid||user?.id!==uid)throw Error("Account changed during sync. Sign in again and retry.");
-  const {error:writeError}=await db.from("user_companion_sync").upsert({
-   user_id:uid,skills:mergedSkills,deleted_skill_ids:[...deletedMap].map(([id,deletedAt])=>({id,deletedAt})).slice(-100),
-   automation_history:mergedHistory,automation_history_cleared_at:new Date(clearAt||0).toISOString(),
-   selected_ai_provider:selectedProvider,selected_ai_provider_updated_at:new Date(selectedProviderAt||0).toISOString(),updated_at:new Date().toISOString()
-  },{onConflict:"user_id"});
-  if(writeError)throw writeError;
+  const mergedDeleted=[...deletedMap].map(([id,deletedAt])=>({id,deletedAt})).sort((a,b)=>a.id.localeCompare(b.id)).slice(-100);
+  const remoteDeletedStable=[...remoteDeleted].filter(x=>x&&typeof x.id==="string").sort((a,b)=>a.id.localeCompare(b.id)).slice(-100);
+  const syncNeedsWrite=!remote||
+   JSON.stringify(remote.skills||[])!==JSON.stringify(mergedSkills)||
+   JSON.stringify(remoteDeletedStable)!==JSON.stringify(mergedDeleted)||
+   JSON.stringify(remote.automation_history||[])!==JSON.stringify(mergedHistory)||
+   (Date.parse(remote.automation_history_cleared_at||"1970-01-01T00:00:00Z")||0)!==clearAt||
+   (remote.selected_ai_provider||"")!==selectedProvider||
+   (Date.parse(remote.selected_ai_provider_updated_at||"1970-01-01T00:00:00Z")||0)!==selectedProviderAt;
+  if(syncNeedsWrite){
+   const {error:writeError}=await db.from("user_companion_sync").upsert({
+    user_id:uid,skills:mergedSkills,deleted_skill_ids:mergedDeleted,
+    automation_history:mergedHistory,automation_history_cleared_at:new Date(clearAt||0).toISOString(),
+    selected_ai_provider:selectedProvider,selected_ai_provider_updated_at:new Date(selectedProviderAt||0).toISOString(),updated_at:new Date().toISOString()
+   },{onConflict:"user_id"});
+   if(writeError)throw writeError;
+  }
   personalWorkspaceSyncApplying=true;
   try{
    localStorage.setItem(bosleySkillsStorageKey(),JSON.stringify(mergedSkills));
-   localStorage.setItem(bosleySkillsDeletedStorageKey(),JSON.stringify([...deletedMap].map(([id,deletedAt])=>({id,deletedAt})).slice(-100)));
+   localStorage.setItem(bosleySkillsDeletedStorageKey(),JSON.stringify(mergedDeleted));
    localStorage.setItem(automationHistoryKey(),JSON.stringify(mergedHistory));
    localStorage.setItem(automationHistoryClearedKey(),String(clearAt));
    if(selectedProvider)localStorage.setItem(BOSLEY_PROVIDER_PREF,selectedProvider);else localStorage.removeItem(BOSLEY_PROVIDER_PREF);

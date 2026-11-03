@@ -898,9 +898,58 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide', 'open_floating_view', 'close_floating_view']
             };
           });
+
+          const floatingViewWindows = new Map();
+          const FLOATING_VIEW_IDS = ['lovable-bosley','ws','facepanel','agents-panel','automation','activity','skills-panel'];
+          function openFloatingView(viewId) {
+            if (!FLOATING_VIEW_IDS.includes(viewId)) throw new Error('Unknown Bosley side view.');
+            const existing = floatingViewWindows.get(viewId);
+            if (existing && !existing.isDestroyed()) {
+              if (existing.isMinimized()) existing.restore();
+              existing.show();
+              existing.focus();
+              return { ok: true, reused: true, view: viewId };
+            }
+            const index = FLOATING_VIEW_IDS.indexOf(viewId);
+            const displays = screen.getAllDisplays();
+            const display = displays[index % displays.length] || screen.getPrimaryDisplay();
+            const area = display.workArea;
+            const width = Math.min(460, Math.max(340, area.width - 24));
+            const height = Math.min(620, Math.max(400, area.height - 48));
+            const column = index % 2;
+            const row = Math.floor(index / 2) % 3;
+            const maxX = Math.max(area.x + 8, area.x + area.width - width - 8);
+            const maxY = Math.max(area.y + 8, area.y + area.height - height - 8);
+            const x = Math.max(area.x + 8, Math.min(maxX, area.x + 18 + column * (width + 18)));
+            const y = Math.max(area.y + 8, Math.min(maxY, area.y + 42 + row * 88));
+            const win = new BrowserWindow({
+              x, y, width, height, minWidth: 320, minHeight: 360,
+              frame: false, show: false, resizable: true, movable: true,
+              alwaysOnTop: false, skipTaskbar: false, backgroundColor: '#050505',
+              title: 'Bosley — ' + viewId,
+              webPreferences: {
+                preload: path.join(__dirname, 'preload.cjs'),
+                contextIsolation: true, nodeIntegration: false, sandbox: true
+              }
+            });
+            floatingViewWindows.set(viewId, win);
+            win.on('closed', () => {
+              if (floatingViewWindows.get(viewId) === win) floatingViewWindows.delete(viewId);
+            });
+            win.webContents.on('console-message', (_event, level, message) => {
+              if (level >= 2) logStartup('FLOATING VIEW ERROR', viewId, message);
+            });
+            win.loadFile(path.join(__dirname, 'index.html'), { query: { bosleyFloat: viewId } })
+              .then(() => { if (!win.isDestroyed()) { win.show(); win.focus(); } })
+              .catch(error => {
+                logStartup('FLOATING VIEW LOAD FAILED', viewId, error.message);
+                if (!win.isDestroyed()) win.close();
+              });
+            return { ok: true, opened: true, view: viewId, position: { x, y } };
+          }
 
           ipcMain.handle('bosley:request', async (event, request) => {
             if (!isTrustedPanelSender(event)) {
@@ -908,6 +957,16 @@ jobs:
             }
             if (!request || typeof request.action !== 'string') {
               throw new Error('Invalid desktop request');
+            }
+            if (request.action === 'open_floating_view') {
+              const viewId = String(request.payload?.view || '');
+              return openFloatingView(viewId);
+            }
+            if (request.action === 'close_floating_view') {
+              const senderWindow = BrowserWindow.fromWebContents(event.sender);
+              const ownedWindow = [...floatingViewWindows.values()].includes(senderWindow);
+              if (ownedWindow && !senderWindow.isDestroyed()) senderWindow.close();
+              return { ok: ownedWindow };
             }
             if (request.action === 'open_visual_guide') {
               const payload = request.payload || {};

@@ -523,6 +523,7 @@ assert.ok(overlayInstaller.includes('bosley_overlay_position'), "Floating widget
 const personalSyncMigration = readText(new URL("../supabase/migrations/20261103103000_user_companion_cross_device_sync.sql", import.meta.url), "utf8");
 const providerSyncMigration = readText(new URL("../supabase/migrations/20261103104500_sync_selected_ai_provider.sql", import.meta.url), "utf8");
 const realtimeSyncMigration = readText(new URL("../supabase/migrations/20261103105500_enable_realtime_for_companion_sync.sql", import.meta.url), "utf8");
+const automationSkillSyncMigration = readText(new URL("../supabase/migrations/20261103111500_sync_automation_skill_settings.sql", import.meta.url), "utf8");
 assert.ok(html.includes("async function syncPersonalWorkspace()"), "Skills and automation history must have an account-backed sync engine");
 assert.ok(html.includes('from("user_companion_sync")'), "Personal workspace sync must use the dedicated account storage table");
 assert.ok(html.includes("deleted_skill_ids") && html.includes("automation_history_cleared_at"), "Sync must preserve skill deletions and history clear operations across devices");
@@ -545,6 +546,7 @@ assert.ok(html.includes("LOCAL COPY KEPT"), "Cloud sync failures must preserve l
 assert.ok(personalSyncMigration.includes("enable row level security") && personalSyncMigration.includes("(select auth.uid()) = user_id"), "Personal workspace table must be protected by per-user RLS");
 assert.ok(personalSyncMigration.includes("revoke all on public.user_companion_sync from anon"), "Anonymous users must not access personal sync storage");
 assert.ok(providerSyncMigration.includes("selected_ai_provider") && providerSyncMigration.includes("openrouter"), "Provider sync migration must constrain the allowed provider values");
+assert.ok(automationSkillSyncMigration.includes("automation_skill_settings") && automationSkillSyncMigration.includes("jsonb_typeof(automation_skill_settings) = 'object'"), "Automation skill filter preferences must have a validated account sync column");
 assert.ok(realtimeSyncMigration.includes("alter publication supabase_realtime add table public.user_companion_sync"), "Personal workspace changes must be published to Supabase Realtime");
 
 

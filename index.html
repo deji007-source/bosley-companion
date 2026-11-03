@@ -2581,6 +2581,9 @@ async function addBosleyStarterNotes(){
 function exportSecondBrain(){
  const data=JSON.stringify({exportedAt:new Date().toISOString(),entries:secondBrainRows},null,2),blob=new Blob([data],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="bosley-second-brain.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
 }
+window.addEventListener("online",()=>{if(!document.getElementById("second-brain-panel")?.hidden)refreshSecondBrain(true)});
+window.addEventListener("focus",()=>{if(!document.getElementById("second-brain-panel")?.hidden)refreshSecondBrain(true)});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!document.getElementById("second-brain-panel")?.hidden)refreshSecondBrain(true)});
 
 window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills(),providers:()=>renderBosleyProviderManager(),secondBrain:()=>loadSecondBrain()});
 renderBosleyKnowledgeGraph();

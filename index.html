@@ -1567,6 +1567,7 @@ async function syncPersonalWorkspace(){
   }finally{personalWorkspaceSyncApplying=false}
   if(skillStatus)skillStatus.textContent=mergedSkills.length+" skill entries · synced to your account across devices.";
   const count=document.querySelector("#bosley-skill-count");if(count)count.textContent="CLOUD";
+  const skillsPanel=document.querySelector("#skills-panel");if(skillsPanel&&!skillsPanel.hidden)renderBosleySkills();
   const providerSelect=document.querySelector("#bosley-provider-select");if(providerSelect&&providerSelect.value!==selectedProvider)providerSelect.value=selectedProvider
   try{window.Capacitor?.Plugins?.BosleyOverlay?.syncAgentPreference?.({provider:selectedProvider}).catch(error=>console.warn("Could not sync Android agent provider",error))}catch(error){console.warn("Android agent preference bridge unavailable",error)}
   renderAutomationHistory();

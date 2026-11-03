@@ -12,9 +12,9 @@ The root `index.html` is the shared companion experience. The website serves it 
 | Planner tasks | Yes | Yes | Yes | `bosley_planner_tasks` |
 | Appearance and voice profile | Yes | Yes | Yes | `user_widget_layouts` |
 | Agent/provider connections | Yes | Yes | Yes | Server-side provider connections |
-| Selected AI provider | Yes | Yes | Yes | Device preference; Android overlay receives a native sync |
-| Imported skills | Yes | Yes | Yes | Local device storage; import/export is the portable transfer path |
-| Recent automation activity | Yes | Yes | Yes | Local device history |
+| Selected AI provider | Yes | Yes | Yes | `user_companion_sync.selected_ai_provider` + native Android bridge |
+| Imported skills | Yes | Yes | Yes | `user_companion_sync.skills` + deletion markers; local offline cache |
+| Recent automation activity | Yes | Yes | Yes | `user_companion_sync.automation_history` + cross-device clear timestamp |
 | Phone automation via Telegram/MacroDroid | Web request | Web request | Native overlay routes through the same authenticated endpoint | Shared remote-action backend |
 
 ## Native capabilities (not expected to be identical)
@@ -31,5 +31,7 @@ The root `index.html` is the shared companion experience. The website serves it 
 4. Native-only capabilities must be clearly labeled and must fail closed when the platform bridge or permission is unavailable.
 5. A green CI build verifies compilation and packaging, not physical-device behavior or live provider credentials.
 6. Do not report a queued automation as executed. Require a listener/device acknowledgement for completion.
+7. Personal skills, selected AI provider, and recent automation history are account-scoped and protected by RLS. Realtime updates are supplemented by foreground/reconnect sync; local copies are retained if cloud sync is unavailable.
+8. Skill deletions and history clears use sync markers so older device copies do not silently restore removed data.
 
 The `scripts/check-platform-parity.mjs` test enforces the shared-source and packaging contracts. Feature-level tests remain in `scripts/check-companion.mjs` and `scripts/check-agent-gateway.mjs`.

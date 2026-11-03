@@ -859,7 +859,7 @@ let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null,automationHistoryClearedAt=0;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
 function automationHistoryClearedKey(){return automationHistoryKey()+":cleared_at"}
-function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").map(x=>({...x,id:String(x.id||("legacy:"+x.status+"|"+x.time+"|"+x.message)),createdAt:Number(x.createdAt)||Date.now()})).slice(0,12):[]}catch{automationRuns=[]}try{automationHistoryClearedAt=Number(localStorage.getItem(automationHistoryClearedKey()))||0}catch{automationHistoryClearedAt=0}}
+function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").map(x=>({...x,id:String(x.id||("legacy:"+x.status+"|"+x.time+"|"+x.message)),createdAt:Number(x.createdAt)||0})).slice(0,12):[]}catch{automationRuns=[]}try{automationHistoryClearedAt=Number(localStorage.getItem(automationHistoryClearedKey()))||0}catch{automationHistoryClearedAt=0}}
 function renderAutomationHistory(){const el=$("#auto-log");if(!el)return;el.innerHTML=automationRuns.map(r=>{const cls=r.status==="success"?"ok":["error","warning","queued"].includes(r.status)?"warn":r.status==="delivered"?"delivered":"";return `<article class="item"><main><strong class="${cls}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`}).join("")||'<p class="mute">No automation runs yet.</p>'}
 let speechOn=true;try{speechOn=JSON.parse(localStorage.getItem("bosley_prefs")||"{}").speechOn!==false}catch{}
 let voiceProfile="jarvis";try{voiceProfile=localStorage.getItem("bosley_voice_profile")||"jarvis"}catch{}
@@ -1510,7 +1510,7 @@ async function syncPersonalWorkspace(){
   const skillMap=new Map();
   for(const item of [...remoteSkills,...localSkills]){
    if(!item||typeof item.id!=="string"||typeof item.title!=="string"||typeof item.content!=="string")continue;
-   const old=skillMap.get(item.id);if(!old||(Number(item.updatedAt)||0)>=(Number(old.updatedAt)||0))skillMap.set(item.id,{...item,updatedAt:Number(item.updatedAt)||Date.now()});
+   const old=skillMap.get(item.id);if(!old||(Number(item.updatedAt)||0)>=(Number(old.updatedAt)||0))skillMap.set(item.id,{...item,updatedAt:Number(item.updatedAt)||(deletedMap.has(item.id)?0:Date.now())});
   }
   const mergedSkills=[...skillMap.values()].filter(item=>(deletedMap.get(item.id)||0)<(Number(item.updatedAt)||0)).sort((a,b)=>(Number(a.updatedAt)||0)-(Number(b.updatedAt)||0)).slice(-30);
   const clearRemote=remote?.automation_history_cleared_at?Date.parse(remote.automation_history_cleared_at)||0:0;
@@ -1519,7 +1519,7 @@ async function syncPersonalWorkspace(){
   for(const item of [...(Array.isArray(remote?.automation_history)?remote.automation_history:[]),...automationRuns]){
    if(!item||typeof item.status!=="string"||typeof item.message!=="string")continue;
    const id=String(item.id||("legacy:"+item.status+"|"+item.time+"|"+item.message));
-   const createdAt=Number(item.createdAt)||Date.now();
+   const createdAt=Number(item.createdAt)||(clearAt>0?0:Date.now());
    if(createdAt<=clearAt)continue;
    const previous=historyMap.get(id);if(!previous||(Number(previous.createdAt)||0)<=createdAt)historyMap.set(id,{...item,id,createdAt});
   }

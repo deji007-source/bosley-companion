@@ -556,3 +556,14 @@ assert.ok(osAgentPoll.includes('.eq("status", "processing")') && osAgentPoll.inc
 assert.ok(osAgentPoll.includes('status: "processing", claimed_at: claimedAt, claim_token: claimToken'), "Polling must claim pending commands without marking them complete");
 assert.ok(osAgentPoll.includes('.eq("status", "pending").in("id", ids)'), "Command claims must be conditional to prevent duplicate concurrent claims");
 assert.ok(osAgentPoll.includes('status: "pending", claimed_at: null, claim_token: null') && osAgentPoll.includes('.lt("claimed_at", staleBefore)'), "Abandoned command claims must be requeued after their lease expires");
+
+
+const secondBrainMigration = readText(new URL("../supabase/migrations/20261103113000_second_brain_knowledge_vault.sql", import.meta.url), "utf8");
+assert.ok(html.includes('id="second-brain-panel"') && html.includes('data-open-view="second-brain-panel"'), "Second Brain must be reachable through the shared workspace dock");
+assert.ok(html.includes("function loadSecondBrain()") && html.includes("function saveSecondBrainEntry()"), "Second Brain must provide account-backed create and read operations");
+assert.ok(html.includes("function updateSecondBrainEntry") && html.includes("function deleteSecondBrainEntry"), "Second Brain must support editing, pinning and deletion");
+assert.ok(html.includes("function exportSecondBrain()") && html.includes("function addBosleyStarterNotes()"), "Second Brain must support export and verified project starter notes");
+assert.ok(secondBrainMigration.includes("enable row level security") && secondBrainMigration.includes("(select auth.uid()) = user_id"), "Second Brain records must be isolated by per-user RLS");
+assert.ok(secondBrainMigration.includes("revoke all on public.user_second_brain_entries from anon"), "Anonymous users must not access Second Brain records");
+assert.ok(secondBrainMigration.includes("alter publication supabase_realtime add table public.user_second_brain_entries"), "Second Brain changes must publish realtime updates");
+assert.ok(secondBrainMigration.includes("user_second_brain_entries_owner_updated_idx"), "Second Brain must index per-user sorted reads");

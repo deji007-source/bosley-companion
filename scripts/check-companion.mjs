@@ -518,3 +518,19 @@ assert.ok(overlayInstaller.includes('android.speech.RecognitionService'), "Andro
 assert.ok(overlayInstaller.includes('if(chatPanel==null)expandPanel(false);'), "Long-press voice must create the native panel before using its composer");
 
 assert.ok(overlayInstaller.includes('bosley_overlay_position'), "Floating widget position must persist across service restarts");
+
+
+const personalSyncMigration = readText("../supabase/migrations/20261103103000_user_companion_cross_device_sync.sql", "utf8");
+const providerSyncMigration = readText("../supabase/migrations/20261103104500_sync_selected_ai_provider.sql", "utf8");
+const realtimeSyncMigration = readText("../supabase/migrations/20261103105500_enable_realtime_for_companion_sync.sql", "utf8");
+assert.ok(html.includes("async function syncPersonalWorkspace()"), "Skills and automation history must have an account-backed sync engine");
+assert.ok(html.includes('from("user_companion_sync")'), "Personal workspace sync must use the dedicated account storage table");
+assert.ok(html.includes("deleted_skill_ids") && html.includes("automation_history_cleared_at"), "Sync must preserve skill deletions and history clear operations across devices");
+assert.ok(html.includes("selected_ai_provider_updated_at") && html.includes("BOSLEY_PROVIDER_PREF"), "Selected AI provider preference must sync across signed-in devices");
+assert.ok(html.includes("startPersonalWorkspaceRealtime") && html.includes("postgres_changes"), "Personal workspace should refresh from remote changes in realtime");
+assert.ok(html.includes('window.addEventListener("focus"') && html.includes('window.addEventListener("online"'), "Personal workspace must refresh when a device returns online or to the foreground");
+assert.ok(html.includes("LOCAL COPY KEPT"), "Cloud sync failures must preserve local data and report the fallback");
+assert.ok(personalSyncMigration.includes("enable row level security") && personalSyncMigration.includes("(select auth.uid()) = user_id"), "Personal workspace table must be protected by per-user RLS");
+assert.ok(personalSyncMigration.includes("revoke all on public.user_companion_sync from anon"), "Anonymous users must not access personal sync storage");
+assert.ok(providerSyncMigration.includes("selected_ai_provider") && providerSyncMigration.includes("openrouter"), "Provider sync migration must constrain the allowed provider values");
+assert.ok(realtimeSyncMigration.includes("alter publication supabase_realtime add table public.user_companion_sync"), "Personal workspace changes must be published to Supabase Realtime");

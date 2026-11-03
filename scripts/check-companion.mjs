@@ -554,5 +554,13 @@ assert.ok(appScript.includes('window.__bosleyDictationTarget=target'), "Universa
 
 
 
+
+const bosleySearchFunction = readText(new URL("../supabase/functions/bosley-search/index.ts", import.meta.url), "utf8");
+assert.ok(bosleySearchFunction.includes("admin.auth.getUser(token)"), "Bosley Search must validate the caller's Supabase access token");
+assert.ok(bosleySearchFunction.includes('.eq("user_id", userId)'), "Every personal search source must be scoped to the authenticated user");
+assert.ok(!bosleySearchFunction.includes("api_key_ciphertext") && !bosleySearchFunction.includes("api_key_iv"), "Search must never retrieve encrypted provider credentials");
+assert.ok(bosleySearchFunction.includes("html.duckduckgo.com"), "Bosley Search must attempt public web discovery");
+assert.ok(bosleySearchFunction.includes("recentCalls.length >= 12"), "Bosley Search must enforce a per-user request limit");
+
 const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");
 assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automation_instruction(text, uuid) SET search_path = ''"), "Automation instruction SQL function must pin its search_path");

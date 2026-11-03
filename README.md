@@ -30,7 +30,7 @@ Some of these integrations have been implemented in code but still require end-t
 ## Important limitations
 
 - **Native desktop automation remains limited.** The Electron wrapper now has a restricted native bridge for specific actions, including opening/stopping the system visual guide and allowlisted app launches. This is not general-purpose remote control of arbitrary apps.
-- **The OS command queue needs a lifecycle correction before it can be trusted.** The current `os-agent-poll` endpoint marks commands as `done` when it returns them, before any desktop agent confirms execution. Do not use this status as proof that an OS action ran.
+- **OS command lifecycle:** `os-agent-poll` claims commands as `processing`; it does not mark them `done` when delivered. The desktop agent must acknowledge a claimed command with its claim token before the row becomes `done` or `failed`. Claims abandoned for two minutes are returned to `pending` so a disconnected agent does not leave work stuck. The deployed function source is tracked at `supabase/functions/os-agent-poll/index.ts` and covered by `npm run test:companion`.
 - Browser-safe workflow actions are not the same as controlling Windows applications. Desktop actions must remain unavailable unless a secure, allowlisted native bridge is installed and confirms the result.
 - Message actions that lack a verified send integration should be treated as drafts, not as sent messages.
 - Voice support depends on browser/device capabilities and permissions; speech recognition may rely on the browser vendor's service.

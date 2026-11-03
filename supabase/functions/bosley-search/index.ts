@@ -10,15 +10,31 @@ const clean = (value: unknown, max = 700) => String(value ?? "").replace(/[\u000
 const html = (value: string) => value.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
 function publicResults(page: string) {
   const results: any[] = [];
-  const blocks = page.split(/class=["']result results_links[^"']*["']/i).slice(1);
-  for (const block of blocks.slice(0, 8)) {
-    const a = block.match(/<a[^>]*class=["'][^"']*result__a[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
-    if (!a) continue;
-    let href = html(a[1]);
-    try { const parsed = new URL(href, "https://html.duckduckgo.com"); const redirect = parsed.searchParams.get("uddg"); href = redirect ? decodeURIComponent(redirect) : parsed.href; } catch { continue; }
-    try { const u = new URL(href); if (!["https:","http:"].includes(u.protocol)) continue; } catch { continue; }
-    const snippet = block.match(/class=["'][^"']*result__snippet[^"']*["'][^>]*>([\s\S]*?)<\/[^>]+>/i);
-    results.push({ title: clean(html(a[2].replace(/<[^>]+>/g, " ")), 180), url: href, snippet: clean(html((snippet?.[1] ?? "").replace(/<[^>]+>/g, " ")), 420), source: "web" });
+  const blocks = page.split(/<div\\b[^>]*class=["'][^"']*\\bresult\\b[^"']*["'][^>]*>/i).slice(1);
+  const candidates = blocks.length ? blocks : [page];
+  for (const block of candidates) {
+    const anchors = block.matchAll(/<a\\b([^>]*)>([\\s\\S]*?)<\\/a>/gi);
+    for (const match of anchors) {
+      const attrs = match[1] ?? "";
+      const className = attrs.match(/class=["']([^"']*)["']/i)?.[1] ?? "";
+      if (!/(^|\\s)result__a(\\s|$)/i.test(className)) continue;
+      const rawHref = attrs.match(/href=["']([^"']+)["']/i)?.[1];
+      if (!rawHref) continue;
+      let href = html(rawHref);
+      try {
+        const parsed = new URL(href, "https://html.duckduckgo.com");
+        const redirect = parsed.searchParams.get("uddg");
+        href = redirect ? decodeURIComponent(redirect) : parsed.href;
+        const target = new URL(href);
+        if (!["https:", "http:"].includes(target.protocol)) continue;
+      } catch { continue; }
+      const title = clean(html(match[2].replace(/<[^>]+>/g, " ")), 180);
+      if (!title || results.some(x => x.url === href)) continue;
+      const snippetMatch = block.match(/class=["'][^"']*result__snippet[^"']*["'][^>]*>([\\s\\S]*?)<\\/[^>]+>/i);
+      results.push({ title, url: href, snippet: clean(html((snippetMatch?.[1] ?? "").replace(/<[^>]+>/g, " ")), 420), source: "web" });
+      break;
+    }
+    if (results.length >= 8) break;
   }
   return results;
 }

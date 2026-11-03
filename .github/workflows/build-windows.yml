@@ -187,16 +187,17 @@ jobs:
               <path id="head" d="M164 220 C164 145 199 91 256 91 C313 91 348 145 348 220 C348 309 315 372 256 378 C197 372 164 309 164 220Z" fill="#f5f5f5" class="outline"/>
               <path id="faceplate" d="M181 212 Q256 191 331 212 L326 303 Q256 330 186 303Z" fill="#0b0b0b"/>
               <g class="eyes">
-                <rect id="eye-L" x="207" y="235" width="32" height="68" rx="16" class="white"/>
-                <rect id="eye-R" x="273" y="235" width="32" height="68" rx="16" class="white"/>
+                <rect id="eye-L" x="198" y="235" width="42" height="64" rx="21" class="white"/>
+                <rect id="eye-R" x="272" y="235" width="42" height="64" rx="21" class="white"/>
               </g>
-              <path id="lid-L" d="M203 237 Q223 222 243 237 L240 265 Q223 251 205 265Z" fill="#0b0b0b"/>
-              <path id="lid-R" d="M269 237 Q289 222 309 237 L306 265 Q289 251 271 265Z" fill="#0b0b0b"/>
-              <path id="mouth-line" d="M242 342 H270" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round"/>
-              <path id="mouth-open" d="M241 339 Q256 344 271 339 Q270 358 256 360 Q242 358 241 339Z" fill="#0b0b0b" stroke="#0b0b0b" stroke-width="5" stroke-linejoin="round"/>
-              <path id="mouth-inner" d="M247 352 Q256 347 265 352" fill="none" stroke="#0b0b0b" stroke-width="3" stroke-linecap="round"/>
+              <path id="lid-L" d="M194 237 Q219 218 244 237 L241 264 Q219 248 197 264Z" fill="#0b0b0b"/>
+              <path id="lid-R" d="M268 237 Q293 218 318 237 L315 264 Q293 248 271 264Z" fill="#0b0b0b"/>
+              <path id="nose-line" d="M256 315 Q252 321 256 326" fill="none" stroke="#0b0b0b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path id="mouth-line" d="M243 354 Q256 358 269 354" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round"/>
+              <path id="mouth-open" d="M242 351 Q256 356 270 351 Q270 371 256 373 Q242 371 242 351Z" fill="#0b0b0b" stroke="#0b0b0b" stroke-width="5" stroke-linejoin="round"/>
+              <path id="mouth-inner" d="M247 364 Q256 359 265 364" fill="none" stroke="#f5f5f5" stroke-width="3" stroke-linecap="round"/>
             </g>
-            <g id="hat-group" class="outline" transform="translate(0 26) scale(.94 .88)">
+            <g id="hat-group" class="outline" transform="translate(36 35) scale(.86 .80)">
               <path id="hat-crown" d="M190 157 L198 68 Q202 43 224 40 L285 40 Q308 44 314 68 L322 157 Q256 140 190 157Z" fill="#f5f5f5"/>
               <path id="hat-band" d="M195 124 Q256 113 317 124 L320 143 Q256 133 192 143Z" fill="#0b0b0b"/>
               <path id="hat-brim" d="M126 164 Q256 133 386 164 Q393 178 375 187 Q256 166 137 187 Q119 178 126 164Z" fill="#f5f5f5"/>

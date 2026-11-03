@@ -22,6 +22,10 @@ for (const [index, source] of inlineScripts.entries()) {
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
+assert.ok(windowsWorkflow.includes('width="42" height="64" rx="21"'), "Windows floating character must have large, wider rounded eyes");
+assert.ok(windowsWorkflow.includes('id="nose-line"'), "Windows floating character must have a simple anime-style line nose");
+assert.ok(windowsWorkflow.includes('id="mouth-line"')&&windowsWorkflow.includes('id="mouth-open"'), "Windows floating character must switch from a line mouth to an animated speaking mouth");
+assert.ok(windowsWorkflow.includes('translate(36 35) scale(.86 .80)'), "Windows floating character hat must be visibly smaller");
 
 
 assert.ok(html.includes('data-open-view="agents-panel"'), "Dedicated AI Agents side-panel launcher must be visible");

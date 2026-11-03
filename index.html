@@ -1349,21 +1349,27 @@ async function buildBosleyAgentContext(){
 async function buildBosleyKnowledgeContext(query){
  const uid=user?.id;if(!db||!uid||!String(query||"").trim())return "";
  try{
-  const [vault,memories,taskRows,reminderRows,scheduleRows]=await Promise.all([
+  const [vault,memories,taskRows,reminderRows,scheduleRows,plannerRows,projectRows,engineeringTaskRows]=await Promise.all([
    db.from("user_second_brain_entries").select("category,title,content,url,tags,updated_at").eq("user_id",uid).order("updated_at",{ascending:false}).limit(80),
    db.from("memories").select("content,kind,importance,updated_at,last_used_at").eq("user_id",uid).order("importance",{ascending:false}).limit(40),
    db.from("tasks").select("title,notes,due_at,priority,status,updated_at").eq("user_id",uid).neq("status","completed").order("updated_at",{ascending:false}).limit(30),
    db.from("reminders").select("title,body,fires_at,recurrence,is_active").eq("user_id",uid).eq("is_active",true).limit(20),
-   db.from("schedules").select("title,notes,location,starts_at,ends_at,kind").eq("user_id",uid).gte("ends_at",new Date().toISOString()).order("starts_at",{ascending:true}).limit(20)
+   db.from("schedules").select("title,notes,location,starts_at,ends_at,kind").eq("user_id",uid).gte("ends_at",new Date().toISOString()).order("starts_at",{ascending:true}).limit(20),
+   db.from("bosley_planner_tasks").select("task_id,title,kind,priority,project,due,status,updated_at").eq("user_id",uid).eq("status","active").order("updated_at",{ascending:false}).limit(25),
+   db.from("eng_projects").select("name,description,discipline,status,updated_at").eq("user_id",uid).order("updated_at",{ascending:false}).limit(15),
+   db.from("eng_tasks").select("title,done,project_id,created_at").eq("user_id",uid).eq("done",false).order("created_at",{ascending:false}).limit(25)
   ]);
   if(user?.id!==uid)return "";
-  for(const result of [vault,memories,taskRows,reminderRows,scheduleRows])if(result.error)throw result.error;
+  for(const result of [vault,memories,taskRows,reminderRows,scheduleRows,plannerRows,projectRows,engineeringTaskRows])if(result.error)throw result.error;
   const records=[
    ...(vault.data||[]).map(x=>({kind:"Second Brain",title:x.title,body:x.content,category:x.category,url:x.url,tags:x.tags,updated_at:x.updated_at})),
    ...(memories.data||[]).map(x=>({kind:"Saved memory",title:x.kind||"Memory",body:x.content,category:"memory",tags:[],updated_at:x.updated_at,importance:x.importance})),
    ...(taskRows.data||[]).map(x=>({kind:"Open task",title:x.title,body:x.notes,category:"task",tags:[x.priority,x.status],updated_at:x.updated_at,due_at:x.due_at})),
    ...(reminderRows.data||[]).map(x=>({kind:"Active reminder",title:x.title,body:x.body,category:"reminder",tags:[x.recurrence].filter(Boolean),due_at:x.fires_at})),
-   ...(scheduleRows.data||[]).map(x=>({kind:"Upcoming schedule",title:x.title,body:[x.notes,x.location].filter(Boolean).join(" · "),category:x.kind,tags:[],due_at:x.starts_at}))
+   ...(scheduleRows.data||[]).map(x=>({kind:"Upcoming schedule",title:x.title,body:[x.notes,x.location].filter(Boolean).join(" · "),category:x.kind,tags:[],due_at:x.starts_at})),
+   ...(plannerRows.data||[]).map(x=>({kind:"Planner task",title:x.title,body:[x.kind,x.project].filter(Boolean).join(" · "),category:"planner",tags:[x.priority,x.status],due_at:x.due})),
+   ...(projectRows.data||[]).map(x=>({kind:"Engineering project",title:x.name,body:[x.description,x.discipline,x.status].filter(Boolean).join(" · "),category:"project",tags:[],updated_at:x.updated_at})),
+   ...(engineeringTaskRows.data||[]).map(x=>({kind:"Engineering task",title:x.title,body:"Open engineering task",category:"engineering",tags:[],updated_at:x.created_at}))
   ];
   const stop=new Set(["the","and","for","with","from","this","that","then","when","where","what","how","why","you","your","our","are","was","were","will","would","could","should","have","has","had","into","about","after","before","over","under","use","using","used","make","made","get","new","all","any","not","but","can","its","their","them","they","one","two","task","tasks","bosley"]);
   const terms=String(query).toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>2&&!stop.has(x));if(!terms.length)return "";

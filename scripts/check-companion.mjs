@@ -526,6 +526,10 @@ const realtimeSyncMigration = readText(new URL("../supabase/migrations/202611031
 assert.ok(html.includes("async function syncPersonalWorkspace()"), "Skills and automation history must have an account-backed sync engine");
 assert.ok(html.includes('from("user_companion_sync")'), "Personal workspace sync must use the dedicated account storage table");
 assert.ok(html.includes("deleted_skill_ids") && html.includes("automation_history_cleared_at"), "Sync must preserve skill deletions and history clear operations across devices");
+assert.ok(html.includes('(deletedMap.has(item.id)?0:Date.now())'), "Unversioned legacy skills must not override a newer cross-device deletion marker");
+assert.ok(html.includes('(clearAt>0?0:Date.now())'), "Legacy history entries must not reappear after a history clear has synced");
+assert.ok(html.includes('if(skillsPanel&&!skillsPanel.hidden)renderBosleySkills()'), "An open Skills panel must refresh after remote changes arrive");
+
 assert.ok(html.includes("selected_ai_provider_updated_at") && html.includes("BOSLEY_PROVIDER_PREF"), "Selected AI provider preference must sync across signed-in devices");
 assert.ok(html.includes('function providerPreferenceStorageKey(){return BOSLEY_PROVIDER_PREF+(user?.id?":"+user.id:"")}'), "Selected AI provider preference must be isolated per signed-in account");
 assert.ok(html.includes('localStorage.removeItem(BOSLEY_PROVIDER_PREF)'), "Legacy global provider preference must be migrated and cleared after account sync");

@@ -181,6 +181,8 @@ const contracts = [
   ["Start.me HTML bookmarks can be imported", "function parseStartMeHtml(text)"],
   ["Start.me CSV bookmarks can be imported", "function parseStartMeCsv(text)"],
   ["Start.me import suppresses duplicate URLs", "const existing=new Set(notes.map(n=>safeNoteUrl(n.url)).filter(Boolean))"],
+  ["Start.me import deduplicates repeated links inside the same file", "existing.add(x.url);return true"],
+  ["Start.me import limits file size before parsing", "file.size>10*1024*1024"],
   ["Start.me import enforces per-user ownership", "user_id:user.id,category:\"reference\""],
   ["Research resources retain import provenance", "source:start.me"],
   ["Research Library only opens validated HTTP(S) links", "safeNoteUrl(x.url)"],

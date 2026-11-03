@@ -13,7 +13,7 @@ The root `index.html` is the shared companion experience. The website serves it 
 | Appearance and voice profile | Yes | Yes | Yes | `user_widget_layouts` |
 | Agent/provider connections | Yes | Yes | Yes | Server-side provider connections |
 | Selected AI provider | Yes | Yes | Yes | `user_companion_sync.selected_ai_provider` + native Android bridge |
-| Imported skills | Yes | Yes | Yes | `user_companion_sync.skills` + deletion markers; local offline cache |
+| Imported skills | Yes | Yes | Yes | `user_companion_sync.skills` + deletion markers; local offline cache |\n| Automation skill selection | Yes | Yes | Yes | `user_companion_sync.automation_skill_settings` |
 | Recent automation activity | Yes | Yes | Yes | `user_companion_sync.automation_history` + cross-device clear timestamp |
 | Phone automation via Telegram/MacroDroid | Web request | Web request | Native overlay routes through the same authenticated endpoint | Shared remote-action backend |
 

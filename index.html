@@ -854,6 +854,7 @@ if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not init
 
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
+function providerPreferenceStorageKey(){return BOSLEY_PROVIDER_PREF+(user?.id?":"+user.id:"")}
 let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null,automationHistoryClearedAt=0;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
@@ -1418,7 +1419,7 @@ function buildActiveSkillContext(){
 }
 async function renderBosleyProviderManager(){
  const panel=document.getElementById("provider-panel");if(!panel)return;
- const selected=()=>{try{return localStorage.getItem(BOSLEY_PROVIDER_PREF)||""}catch{return ""}};
+ const selected=()=>{try{return localStorage.getItem(providerPreferenceStorageKey())||""}catch{return ""}};
  const escapeValue=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  panel.innerHTML='<header class="skills-hero"><div class="skills-mark" aria-hidden="true">✦</div><div class="skills-hero-copy"><span class="skills-kicker">AGENT CONTROL CENTRE</span><h3>Agents & Connections</h3><p>Connect and test AI providers, choose the model Bosley uses for new text chats, and manage your agent connections. Credentials are encrypted on the server.</p></div><span class="skills-count">API</span></header>'+
  '<div class="form" style="display:grid;gap:14px;padding:16px">'+
@@ -1439,7 +1440,7 @@ async function renderBosleyProviderManager(){
    status.textContent=rows.some(x=>x.connected)?"Provider connections loaded. Select one to use it for new text chats.":"No API providers connected yet.";
   }catch(error){status.textContent=String(error?.message||error)+" Make sure the provider gateway migration and Edge Function have been deployed."}
  };
- select.addEventListener("change",()=>{try{if(select.value)localStorage.setItem(BOSLEY_PROVIDER_PREF,select.value);else localStorage.removeItem(BOSLEY_PROVIDER_PREF);localStorage.setItem(BOSLEY_PROVIDER_PREF+"_updated_at",String(Date.now()))}catch{}status.textContent=select.value?names[select.value]+" selected for new text chats.":"Using the existing Bosley chat provider.";schedulePersonalWorkspaceSync()});
+ select.addEventListener("change",()=>{try{if(select.value)localStorage.setItem(providerPreferenceStorageKey(),select.value);else localStorage.removeItem(providerPreferenceStorageKey());localStorage.setItem(providerPreferenceStorageKey()+"_updated_at",String(Date.now()))}catch{}status.textContent=select.value?names[select.value]+" selected for new text chats.":"Using the existing Bosley chat provider.";schedulePersonalWorkspaceSync()});
   const syncNativeProvider=()=>{try{window.Capacitor?.Plugins?.BosleyOverlay?.syncAgentPreference?.({provider:select.value||""}).catch(error=>console.warn("Could not sync Android agent provider",error))}catch(error){console.warn("Android agent preference bridge unavailable",error)}};
   syncNativeProvider();
   select.addEventListener("change",syncNativeProvider);
@@ -1462,7 +1463,7 @@ async function renderBosleyProviderManager(){
  panel.querySelector("#bosley-provider-disconnect").onclick=async()=>{
   if(!select.value){status.textContent="Choose a provider to disconnect.";return}
   const provider=select.value;const button=panel.querySelector("#bosley-provider-disconnect");button.disabled=true;
-  try{await request({action:"disconnect",provider});if(selected()===provider){try{localStorage.removeItem(BOSLEY_PROVIDER_PREF)}catch{}select.value=""}status.textContent=(names[provider]||provider)+" disconnected.";await refresh()}
+  try{await request({action:"disconnect",provider});if(selected()===provider){try{localStorage.removeItem(providerPreferenceStorageKey());localStorage.setItem(providerPreferenceStorageKey()+"_updated_at",String(Date.now()))}catch{}select.value="";schedulePersonalWorkspaceSync()}status.textContent=(names[provider]||provider)+" disconnected.";await refresh()}
   catch(error){status.textContent=String(error?.message||error)}
   finally{button.disabled=false}
  };
@@ -1524,10 +1525,12 @@ async function syncPersonalWorkspace(){
   }
   const mergedHistory=[...historyMap.values()].sort((a,b)=>b.createdAt-a.createdAt).slice(0,12);
   let localProvider="",localProviderAt=0;
-  try{localProvider=localStorage.getItem(BOSLEY_PROVIDER_PREF)||"";localProviderAt=Number(localStorage.getItem(BOSLEY_PROVIDER_PREF+"_updated_at"))||0}catch{}
+  const providerKey=providerPreferenceStorageKey();
+  try{localProvider=localStorage.getItem(providerKey)||"";localProviderAt=Number(localStorage.getItem(providerKey+"_updated_at"))||0}catch{}
   const allowedProviders=["","openai","anthropic","gemini","groq","openrouter","mistral"];
-  if(localProvider&&!localProviderAt)localProviderAt=Date.now();
   const remoteProvider=allowedProviders.includes(remote?.selected_ai_provider)?remote.selected_ai_provider:"";
+  if(!localProvider&&!remoteProvider){try{const legacyProvider=localStorage.getItem(BOSLEY_PROVIDER_PREF)||"";if(allowedProviders.includes(legacyProvider)&&legacyProvider){localProvider=legacyProvider;localProviderAt=Date.now()}}catch{}}
+  if(localProvider&&!localProviderAt)localProviderAt=Date.now();
   const remoteProviderAt=remote?.selected_ai_provider_updated_at?Date.parse(remote.selected_ai_provider_updated_at)||0:0;
   const selectedProvider=localProviderAt>remoteProviderAt?localProvider:remoteProvider;
   const selectedProviderAt=Math.max(localProviderAt,remoteProviderAt);
@@ -1556,8 +1559,9 @@ async function syncPersonalWorkspace(){
    localStorage.setItem(bosleySkillsDeletedStorageKey(),JSON.stringify(mergedDeleted));
    localStorage.setItem(automationHistoryKey(),JSON.stringify(mergedHistory));
    localStorage.setItem(automationHistoryClearedKey(),String(clearAt));
-   if(selectedProvider)localStorage.setItem(BOSLEY_PROVIDER_PREF,selectedProvider);else localStorage.removeItem(BOSLEY_PROVIDER_PREF);
-   localStorage.setItem(BOSLEY_PROVIDER_PREF+"_updated_at",String(selectedProviderAt));
+   if(selectedProvider)localStorage.setItem(providerPreferenceStorageKey(),selectedProvider);else localStorage.removeItem(providerPreferenceStorageKey());
+   localStorage.setItem(providerPreferenceStorageKey()+"_updated_at",String(selectedProviderAt));
+   localStorage.removeItem(BOSLEY_PROVIDER_PREF);localStorage.removeItem(BOSLEY_PROVIDER_PREF+"_updated_at");
    if(legacySkills.length)localStorage.removeItem(BOSLEY_SKILLS_KEY);
    automationRuns=mergedHistory;automationHistoryOwner=uid;automationHistoryClearedAt=clearAt;
   }finally{personalWorkspaceSyncApplying=false}
@@ -1639,7 +1643,7 @@ async function send(text,imageData=null){
  const p=addMsg("bosley","");const agentCard=p.parentElement;const phase=document.createElement("div");phase.className="agent-response-phase";phase.innerHTML='<span class="agent-phase-orb"></span><span class="agent-phase-label">Reviewing your request</span><span class="agent-phase-track"><i></i></span>';agentCard?.appendChild(phase);const phaseLabel=phase.querySelector(".agent-phase-label");const setPhase=(label,state)=>{if(phaseLabel)phaseLabel.textContent=label;phase.dataset.phase=state||"active"};setPhase("Checking skills and available actions","active");const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),30000);
  try{
   let out="",streamError="";
-  let chosenProvider="";try{chosenProvider=localStorage.getItem(BOSLEY_PROVIDER_PREF)||""}catch{}
+  let chosenProvider="";try{chosenProvider=localStorage.getItem(providerPreferenceStorageKey())||""}catch{}
   if(chosenProvider&&!imageData){
    setPhase("Connecting to "+chosenProvider,"active");
    const providerMessages=history.slice(-16).filter(m=>typeof m.content==="string"&&["system","user","assistant"].includes(m.role));

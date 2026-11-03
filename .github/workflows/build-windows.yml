@@ -903,7 +903,7 @@ jobs:
           });
 
           const floatingViewWindows = new Map();
-          const FLOATING_VIEW_IDS = ['lovable-bosley','ws','facepanel','agents-panel','automation','activity','skills-panel','bosley-search','control-centre','universal-input'];
+          const FLOATING_VIEW_IDS = ['lovable-bosley','ws','facepanel','agents-panel','automation','activity','skills-panel','bosley-search','control-centre','universal-input','writing-assist'];
           function openFloatingView(viewId) {
             if (!FLOATING_VIEW_IDS.includes(viewId)) throw new Error('Unknown Bosley side view.');
             const existing = floatingViewWindows.get(viewId);

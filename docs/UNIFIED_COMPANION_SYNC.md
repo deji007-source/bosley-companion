@@ -7,7 +7,7 @@ The Bosley website and installed Companion builds use the same authenticated Sup
 ## Shared data
 
 - Second Brain resources and notes: `user_second_brain_entries`, legacy `eng_notes`
-- Tasks: `tasks`, `bosley_planner_tasks`, `eng_tasks`
+- Tasks and engineering projects: `tasks`, `bosley_planner_tasks`, `eng_projects`, `eng_tasks`
 - Saved memories: `memories`
 - Reminders and schedules: `reminders`, `schedules`
 - Automation: `automation_workflows`, `agent_devices`
@@ -22,7 +22,7 @@ The publication migration is `20261103222717_unified_companion_realtime_sync.sql
 
 ## AI context retrieval
 
-Before a chat request, Bosley retrieves bounded, account-scoped records from the Second Brain, saved memories, open tasks, active reminders and upcoming schedules. It ranks matches against the user's current message and includes a small number of relevant records in the AI context. Source URLs are retained. Retrieved record text is untrusted reference data, not instructions.
+Before a chat request, Bosley retrieves bounded, account-scoped records from the Second Brain, saved memories, open tasks, active reminders and upcoming schedules, planner tasks, engineering projects and open engineering tasks. It ranks matches against the user's current message and includes a small number of relevant records in the AI context. Source URLs are retained. Retrieved record text is untrusted reference data, not instructions.
 
 The retrieval path is best-effort: if one of the supporting queries fails, Bosley logs the issue and continues without adding private workspace context. It does not expose one account's records to another account.
 

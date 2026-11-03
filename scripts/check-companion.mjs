@@ -522,5 +522,18 @@ assert.ok(osAgentPoll.includes('.eq("status", "pending").in("id", ids)'), "OS co
 assert.ok(osAgentPoll.includes('status: "pending", claimed_at: null, claim_token: null') && osAgentPoll.includes('.lt("claimed_at", staleBefore)'), "Abandoned OS claims must become eligible for retry after the lease expires");
 assert.ok(osAgentPoll.includes('commands: (claimed ?? []).map((command) => ({ ...command, claim_token: claimToken }))'), "The OS agent must receive claim tokens for later acknowledgement");
 
+const unifiedSyncMigration = readText(new URL("../supabase/migrations/20261103222717_unified_companion_realtime_sync.sql", import.meta.url), "utf8");
+assert.ok(unifiedSyncMigration.includes("ALTER PUBLICATION supabase_realtime"), "Unified sync tables must be enabled for Supabase Realtime");
+for (const table of ["agent_devices","automation_workflows","bosley_planner_tasks","eng_notes","eng_projects","eng_tasks","user_widget_layouts"]) assert.ok(unifiedSyncMigration.includes("public."+table), "Realtime migration must include "+table);
+assert.ok(appScript.includes('db.channel("bosley-unified-sync-"+uid)'), "Companion must create one account-scoped unified realtime channel");
+assert.ok(appScript.includes('filter:"user_id=eq."+uid'), "Realtime subscriptions must be filtered to the signed-in account");
+assert.ok(appScript.includes("function startUnifiedDataSync(activeUser)"), "Unified realtime sync must be started on authentication");
+assert.ok(appScript.includes("startUnifiedDataSync(user)"), "Auth changes must connect or disconnect the unified data channel");
+assert.ok(appScript.includes('db.from("memories").select("content,kind,importance,updated_at,last_used_at")'), "AI context must retrieve saved memories");
+assert.ok(appScript.includes('db.from("tasks").select("title,notes,due_at,priority,status,updated_at")'), "AI context must retrieve open tasks");
+assert.ok(appScript.includes('db.from("reminders").select("title,body,fires_at,recurrence,is_active")'), "AI context must retrieve active reminders");
+assert.ok(appScript.includes('db.from("schedules").select("title,notes,location,starts_at,ends_at,kind")'), "AI context must retrieve upcoming schedules");
+assert.ok(appScript.includes("RELEVANT BOSLEY WORKSPACE CONTEXT"), "Retrieved cross-module data must be clearly identified as workspace context");
+
 const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");
 assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automation_instruction(text, uuid) SET search_path = ''"), "Automation instruction SQL function must pin its search_path");

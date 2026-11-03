@@ -544,3 +544,11 @@ assert.ok(personalSyncMigration.includes("enable row level security") && persona
 assert.ok(personalSyncMigration.includes("revoke all on public.user_companion_sync from anon"), "Anonymous users must not access personal sync storage");
 assert.ok(providerSyncMigration.includes("selected_ai_provider") && providerSyncMigration.includes("openrouter"), "Provider sync migration must constrain the allowed provider values");
 assert.ok(realtimeSyncMigration.includes("alter publication supabase_realtime add table public.user_companion_sync"), "Personal workspace changes must be published to Supabase Realtime");
+
+
+const osAgentPoll = readText(new URL("../supabase/functions/os-agent-poll/index.ts", import.meta.url), "utf8");
+assert.ok(osAgentPoll.includes('if (body.action === "ack")'), "OS commands must be completed only through explicit desktop-agent acknowledgement");
+assert.ok(osAgentPoll.includes('.eq("status", "processing")') && osAgentPoll.includes('.eq("claim_token", claimToken)'), "OS acknowledgements must match the active claim and claim token");
+assert.ok(osAgentPoll.includes('status: "processing", claimed_at: claimedAt, claim_token: claimToken'), "Polling must claim pending commands without marking them complete");
+assert.ok(osAgentPoll.includes('.eq("status", "pending").in("id", ids)'), "Command claims must be conditional to prevent duplicate concurrent claims");
+assert.ok(osAgentPoll.includes('status: "pending", claimed_at: null, claim_token: null') && osAgentPoll.includes('.lt("claimed_at", staleBefore)'), "Abandoned command claims must be requeued after their lease expires");

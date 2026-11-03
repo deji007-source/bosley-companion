@@ -49,9 +49,12 @@ Deno.serve(async (req: Request) => {
     admin.from("memories").select("id,content,kind,importance,updated_at").eq("user_id", userId).order("importance", { ascending: false }).limit(60),
     admin.from("eng_projects").select("id,name,description,discipline,status,updated_at").eq("user_id", userId).order("updated_at", { ascending: false }).limit(40),
     admin.from("eng_tasks").select("id,title,done,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(60),
+    admin.from("reminders").select("id,title,body,fires_at,recurrence,is_active,updated_at").eq("user_id", userId).eq("is_active", true).order("fires_at", { ascending: true }).limit(40),
+    admin.from("schedules").select("id,title,notes,location,starts_at,kind,updated_at").eq("user_id", userId).order("starts_at", { ascending: true }).limit(40),
+    admin.from("bosley_planner_tasks").select("task_id,title,kind,priority,project,due,status,updated_at").eq("user_id", userId).order("updated_at", { ascending: false }).limit(60),
   ]);
-  const [brain, tasks, memories, projects, engTasks] = jobs.map(x => x.status === "fulfilled" ? x.value : { data: [], error: x.reason });
-  for (const [label, result] of [["Second Brain", brain], ["Tasks", tasks], ["Memories", memories], ["Projects", projects], ["Project tasks", engTasks]] as any[]) {
+  const [brain, tasks, memories, projects, engTasks, reminders, schedules, planner] = jobs.map(x => x.status === "fulfilled" ? x.value : { data: [], error: x.reason });
+  for (const [label, result] of [["Second Brain", brain], ["Tasks", tasks], ["Memories", memories], ["Projects", projects], ["Project tasks", engTasks], ["Reminders", reminders], ["Schedules", schedules], ["Planner tasks", planner]] as any[]) {
     if (result.error) console.warn("Bosley search source unavailable:", label, String(result.error).slice(0, 140));
   }
   for (const x of brain.data ?? []) internal.push({ title: clean(x.title, 180), body: clean(x.content, 700), url: clean(x.url, 1200), kind: "Second Brain", category: clean(x.category, 60), updatedAt: x.updated_at });
@@ -59,6 +62,9 @@ Deno.serve(async (req: Request) => {
   for (const x of memories.data ?? []) internal.push({ title: clean(x.kind || "Memory", 80), body: clean(x.content, 700), kind: "Memory", updatedAt: x.updated_at });
   for (const x of projects.data ?? []) internal.push({ title: clean(x.name, 180), body: clean([x.description, x.discipline, x.status].filter(Boolean).join(" · "), 700), kind: "Project", updatedAt: x.updated_at });
   for (const x of engTasks.data ?? []) internal.push({ title: clean(x.title, 180), body: x.done ? "Completed project task" : "Open project task", kind: "Project task", updatedAt: x.created_at });
+  for (const x of reminders.data ?? []) internal.push({ title: clean(x.title, 180), body: clean([x.body, x.recurrence, x.fires_at].filter(Boolean).join(" · "), 700), kind: "Reminder", category: "active", updatedAt: x.updated_at });
+  for (const x of schedules.data ?? []) internal.push({ title: clean(x.title, 180), body: clean([x.notes, x.location, x.kind, x.starts_at].filter(Boolean).join(" · "), 700), kind: "Schedule", updatedAt: x.updated_at });
+  for (const x of planner.data ?? []) internal.push({ title: clean(x.title, 180), body: clean([x.kind, x.project, x.priority, x.status, x.due].filter(Boolean).join(" · "), 700), kind: "Planner task", updatedAt: x.updated_at });
   const brainResults = internal.map(x => ({ ...x, score: score(x, terms) })).filter(x => x.score > 0).sort((a,b) => b.score-a.score).slice(0, 12).map(({score: _score, ...x}) => ({...x, source:"brain"}));
   let web: any[] = [], webError = "";
   if (body?.web !== false) {

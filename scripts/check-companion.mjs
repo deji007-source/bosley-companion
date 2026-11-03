@@ -527,6 +527,9 @@ assert.ok(html.includes("async function syncPersonalWorkspace()"), "Skills and a
 assert.ok(html.includes('from("user_companion_sync")'), "Personal workspace sync must use the dedicated account storage table");
 assert.ok(html.includes("deleted_skill_ids") && html.includes("automation_history_cleared_at"), "Sync must preserve skill deletions and history clear operations across devices");
 assert.ok(html.includes("selected_ai_provider_updated_at") && html.includes("BOSLEY_PROVIDER_PREF"), "Selected AI provider preference must sync across signed-in devices");
+assert.ok(html.includes('function providerPreferenceStorageKey(){return BOSLEY_PROVIDER_PREF+(user?.id?":"+user.id:"")}'), "Selected AI provider preference must be isolated per signed-in account");
+assert.ok(html.includes('localStorage.removeItem(BOSLEY_PROVIDER_PREF)'), "Legacy global provider preference must be migrated and cleared after account sync");
+
 assert.ok(html.includes("startPersonalWorkspaceRealtime") && html.includes("postgres_changes"), "Personal workspace should refresh from remote changes in realtime");
 assert.ok(html.includes("const syncNeedsWrite=!remote||") && html.includes("if(syncNeedsWrite){"), "Realtime notifications must not cause endless no-op database upserts");
 assert.ok(html.includes("sort((a,b)=>a.id.localeCompare(b.id))"), "Skill deletion markers must be serialized in a stable order for idempotent sync");

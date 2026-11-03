@@ -1778,6 +1778,20 @@ async function startMic(){
   }
   return;
  }
+ // Prefer browser speech recognition when available so words appear while you speak.
+ // The authenticated recording/transcription path below remains the compatibility fallback.
+ const LiveSpeech=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(LiveSpeech){
+  if(rec){try{rec.stop()}catch{};rec=null;return}
+  stopSpeak();const live=new LiveSpeech();live.lang=navigator.language||"en-US";live.interimResults=true;live.continuous=true;
+  let finalText="";
+  live.onstart=()=>{S.listening=true;$("#mic").textContent="■";$("#mic").setAttribute("aria-label","Stop voice input");note("Listening… your words will appear as you speak.");look(0,0);eyes()};
+  live.onresult=event=>{let interim="";for(let i=event.resultIndex;i<event.results.length;i++){const phrase=String(event.results[i][0]?.transcript||"");if(event.results[i].isFinal)finalText+=(finalText?" ":"")+phrase.trim();else interim+=phrase}$("#in").value=(finalText+(interim?" "+interim:"")).trim();$("#in").dispatchEvent(new Event("input",{bubbles:true}));if(interim)note("Listening: "+interim.slice(0,100));};
+  live.onerror=event=>{if(event.error!=="no-speech"&&event.error!=="aborted")note(event.error==="not-allowed"?"Microphone permission denied. Allow microphone access in app settings.":"Live speech recognition paused. You can continue by typing.")};
+  live.onend=()=>{S.listening=false;rec=null;$("#mic").textContent="🎙";$("#mic").setAttribute("aria-label","Start voice input");eyes();const spoken=finalText.trim();if(!spoken)return;$("#in").value=spoken;if(handleVoiceModeCommand(spoken))return;if(voiceMode==="agent"){$("#in").value="";send(spoken)}else{$("#in").focus();note(voiceMode==="dictate"?"Dictation ready. Review the text before sending.":"Voice text ready. Review it before sending.")}setVoiceMode(voiceMode)};
+  try{live.start();rec=live}catch(error){note("Live speech recognition could not start. Trying recorded transcription instead.");rec=null}
+  if(rec)return;
+ }
  // Windows Electron and some Chromium builds ship without a working Web Speech
  // recognition service. Prefer authenticated server transcription when audio capture is available.
  if(navigator.mediaDevices?.getUserMedia&&window.MediaRecorder){

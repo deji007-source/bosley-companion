@@ -2504,7 +2504,7 @@ async function renderBosleyControlCentre(){
  $("#control-refresh").onclick=refresh;
  await refresh();
  if(window.__bosleyControlChannel){try{db.removeChannel(window.__bosleyControlChannel)}catch{}}
- if(user&&db){window.__bosleyControlChannel=db.channel("bosley-control:"+user.id).on("postgres_changes",{event:"*",schema:"public",table:"agent_devices",filter:"user_id=eq."+user.id},refresh).on("postgres_changes",{event:"*",schema:"public",table:"agent_provider_connections",filter:"user_id=eq."+user.id},refresh).on("postgres_changes",{event:"*",schema:"public",table:"automation_workflows",filter:"user_id=eq."+user.id},refresh).subscribe()}
+ if(user&&db){window.__bosleyControlChannel=db.channel("bosley-control:"+user.id).on("postgres_changes",{event:"*",schema:"public",table:"agent_devices",filter:"user_id=eq."+user.id},refresh).on("postgres_changes",{event:"*",schema:"public",table:"ai_gateway_preferences",filter:"user_id=eq."+user.id},refresh).on("postgres_changes",{event:"*",schema:"public",table:"automation_workflows",filter:"user_id=eq."+user.id},refresh).subscribe()}
 }
 function insertDictationAtFocus(value){
  const target=window.__bosleyDictationTarget||document.activeElement,text=String(value||"");if(!text)return false;

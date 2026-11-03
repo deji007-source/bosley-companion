@@ -855,9 +855,10 @@ if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not init
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
 let voiceMode="agent";
-let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
+let automationRuns=[],automationBusy=false,automationHistoryOwner=null,automationHistoryClearedAt=0;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
-function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").slice(0,12):[]}catch{automationRuns=[]}}
+function automationHistoryClearedKey(){return automationHistoryKey()+":cleared_at"}
+function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").map(x=>({...x,id:String(x.id||("legacy:"+x.status+"|"+x.time+"|"+x.message)),createdAt:Number(x.createdAt)||Date.now()})).slice(0,12):[]}catch{automationRuns=[]}try{automationHistoryClearedAt=Number(localStorage.getItem(automationHistoryClearedKey()))||0}catch{automationHistoryClearedAt=0}}
 function renderAutomationHistory(){const el=$("#auto-log");if(!el)return;el.innerHTML=automationRuns.map(r=>{const cls=r.status==="success"?"ok":["error","warning","queued"].includes(r.status)?"warn":r.status==="delivered"?"delivered":"";return `<article class="item"><main><strong class="${cls}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`}).join("")||'<p class="mute">No automation runs yet.</p>'}
 let speechOn=true;try{speechOn=JSON.parse(localStorage.getItem("bosley_prefs")||"{}").speechOn!==false}catch{}
 let voiceProfile="jarvis";try{voiceProfile=localStorage.getItem("bosley_voice_profile")||"jarvis"}catch{}
@@ -1275,9 +1276,21 @@ function createPlannerTaskFromCommand(raw){
  addMsg("bosley","Added to your planner as a draft: "+title+"\nCategory: "+kind+" · Priority: "+priority+(due?" · Due: "+due:"")+"\nOpen Activity to review it, then tap Guide when you’re ready. I haven’t started the guide yet.");
  return true;
 }
-const BOSLEY_SKILLS_KEY="bosley_skills_v1";
-function readBosleySkills(){try{const value=JSON.parse(localStorage.getItem(BOSLEY_SKILLS_KEY)||"[]");return Array.isArray(value)?value.filter(x=>x&&typeof x.id==="string"&&typeof x.title==="string"&&typeof x.content==="string").slice(0,30):[]}catch{return []}}
-function saveBosleySkills(items){localStorage.setItem(BOSLEY_SKILLS_KEY,JSON.stringify(items.slice(0,30)))}
+const BOSLEY_SKILLS_KEY="bosley_skills_v1",BOSLEY_SKILLS_DELETED_KEY="bosley_skills_deleted_v1";
+function bosleySkillsStorageKey(){return BOSLEY_SKILLS_KEY+(user?.id?":"+user.id:"")}
+function bosleySkillsDeletedStorageKey(){return BOSLEY_SKILLS_DELETED_KEY+(user?.id?":"+user.id:"")}
+function readBosleySkills(){try{const value=JSON.parse(localStorage.getItem(bosleySkillsStorageKey())||"[]");return Array.isArray(value)?value.filter(x=>x&&typeof x.id==="string"&&typeof x.title==="string"&&typeof x.content==="string").slice(0,30):[]}catch{return []}}
+function readDeletedBosleySkillIds(){try{const value=JSON.parse(localStorage.getItem(bosleySkillsDeletedStorageKey())||"[]");return Array.isArray(value)?value.filter(x=>x&&typeof x.id==="string"&&Number(x.deletedAt)>0).slice(-100):[]}catch{return []}}
+function saveBosleySkills(items){
+ const previous=readBosleySkills(),before=new Map(previous.map(x=>[x.id,x])),now=Date.now();
+ const next=items.slice(0,30).map(item=>{const old=before.get(item.id),changed=!old||old.title!==item.title||old.content!==item.content||old.enabled!==item.enabled||old.source!==item.source;return {...item,updatedAt:changed?now:(Number(item.updatedAt)||now)}});
+ const ids=new Set(next.map(x=>x.id)),deleted=[...readDeletedBosleySkillIds()];
+ for(const old of previous)if(!ids.has(old.id))deleted.push({id:old.id,deletedAt:now});
+ const tombstones=new Map();for(const item of deleted)tombstones.set(item.id,Math.max(tombstones.get(item.id)||0,item.deletedAt));
+ localStorage.setItem(bosleySkillsStorageKey(),JSON.stringify(next));
+ localStorage.setItem(bosleySkillsDeletedStorageKey(),JSON.stringify([...tombstones].map(([id,deletedAt])=>({id,deletedAt})).slice(-100)));
+ if(!personalWorkspaceSyncApplying)schedulePersonalWorkspaceSync();
+}
 function escapeSkillText(value){return String(value??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 function normalizeSkillImport(parsed,name,raw){
  const input=parsed&&typeof parsed==="object"?parsed:null;
@@ -1456,11 +1469,86 @@ async function renderBosleyProviderManager(){
  if(!db){status.textContent="Account service is unavailable. Reload Bosley and sign in.";return}
  await refresh();
 }
+
+/* ---------- account-scoped cross-device personal workspace sync ---------- */
+let personalWorkspaceSyncBusy=false,personalWorkspaceSyncQueued=false,personalWorkspaceSyncTimer=null,personalWorkspaceSyncApplying=false;
+function schedulePersonalWorkspaceSync(){
+ if(!user||!db||personalWorkspaceSyncApplying)return;
+ clearTimeout(personalWorkspaceSyncTimer);
+ personalWorkspaceSyncTimer=setTimeout(()=>syncPersonalWorkspace().catch(error=>console.warn("Personal workspace sync deferred:",error)),650);
+}
+function legacySkillSnapshot(){
+ try{const rows=JSON.parse(localStorage.getItem(BOSLEY_SKILLS_KEY)||"[]");return Array.isArray(rows)?rows.filter(x=>x&&typeof x.id==="string"&&typeof x.title==="string"&&typeof x.content==="string").slice(0,30):[]}catch{return []}
+}
+async function syncPersonalWorkspace(){
+ if(!db||!user)return false;
+ if(personalWorkspaceSyncBusy){personalWorkspaceSyncQueued=true;return false}
+ const uid=user.id;personalWorkspaceSyncBusy=true;
+ const skillStatus=document.querySelector("#bosley-skill-status");
+ try{
+  const {data:session,error:sessionError}=await db.auth.getSession();
+  if(sessionError||session?.session?.user?.id!==uid)throw Error("Sign in again to sync your personal workspace.");
+  loadAutomationHistory();
+  let localSkills=readBosleySkills(),localDeleted=readDeletedBosleySkillIds();
+  const legacySkills=localSkills.length?[]:legacySkillSnapshot();
+  if(legacySkills.length)localSkills=legacySkills.map(x=>({...x,updatedAt:Number(x.updatedAt)||Date.now()}));
+  const {data:remote,error}=await db.from("user_companion_sync").select("skills,deleted_skill_ids,automation_history,automation_history_cleared_at").eq("user_id",uid).maybeSingle();
+  if(error)throw error;
+  const remoteSkills=Array.isArray(remote?.skills)?remote.skills:[],remoteDeleted=Array.isArray(remote?.deleted_skill_ids)?remote.deleted_skill_ids:[];
+  const deletedMap=new Map();
+  for(const item of [...remoteDeleted,...localDeleted])if(item&&typeof item.id==="string"&&Number(item.deletedAt)>0)deletedMap.set(item.id,Math.max(deletedMap.get(item.id)||0,Number(item.deletedAt)));
+  const skillMap=new Map();
+  for(const item of [...remoteSkills,...localSkills]){
+   if(!item||typeof item.id!=="string"||typeof item.title!=="string"||typeof item.content!=="string")continue;
+   const old=skillMap.get(item.id);if(!old||(Number(item.updatedAt)||0)>=(Number(old.updatedAt)||0))skillMap.set(item.id,{...item,updatedAt:Number(item.updatedAt)||Date.now()});
+  }
+  const mergedSkills=[...skillMap.values()].filter(item=>(deletedMap.get(item.id)||0)<(Number(item.updatedAt)||0)).sort((a,b)=>(Number(a.updatedAt)||0)-(Number(b.updatedAt)||0)).slice(-30);
+  const clearRemote=remote?.automation_history_cleared_at?Date.parse(remote.automation_history_cleared_at)||0:0;
+  const clearAt=Math.max(automationHistoryClearedAt,clearRemote);
+  const historyMap=new Map();
+  for(const item of [...(Array.isArray(remote?.automation_history)?remote.automation_history:[]),...automationRuns]){
+   if(!item||typeof item.status!=="string"||typeof item.message!=="string")continue;
+   const id=String(item.id||("legacy:"+item.status+"|"+item.time+"|"+item.message));
+   const createdAt=Number(item.createdAt)||Date.now();
+   if(createdAt<=clearAt)continue;
+   const previous=historyMap.get(id);if(!previous||(Number(previous.createdAt)||0)<=createdAt)historyMap.set(id,{...item,id,createdAt});
+  }
+  const mergedHistory=[...historyMap.values()].sort((a,b)=>b.createdAt-a.createdAt).slice(0,12);
+  const {data:check,error:checkError}=await db.auth.getSession();
+  if(checkError||check?.session?.user?.id!==uid||user?.id!==uid)throw Error("Account changed during sync. Sign in again and retry.");
+  const {error:writeError}=await db.from("user_companion_sync").upsert({
+   user_id:uid,skills:mergedSkills,deleted_skill_ids:[...deletedMap].map(([id,deletedAt])=>({id,deletedAt})).slice(-100),
+   automation_history:mergedHistory,automation_history_cleared_at:new Date(clearAt||0).toISOString(),updated_at:new Date().toISOString()
+  },{onConflict:"user_id"});
+  if(writeError)throw writeError;
+  personalWorkspaceSyncApplying=true;
+  try{
+   localStorage.setItem(bosleySkillsStorageKey(),JSON.stringify(mergedSkills));
+   localStorage.setItem(bosleySkillsDeletedStorageKey(),JSON.stringify([...deletedMap].map(([id,deletedAt])=>({id,deletedAt})).slice(-100)));
+   localStorage.setItem(automationHistoryKey(),JSON.stringify(mergedHistory));
+   localStorage.setItem(automationHistoryClearedKey(),String(clearAt));
+   if(legacySkills.length)localStorage.removeItem(BOSLEY_SKILLS_KEY);
+   automationRuns=mergedHistory;automationHistoryOwner=uid;automationHistoryClearedAt=clearAt;
+  }finally{personalWorkspaceSyncApplying=false}
+  if(skillStatus)skillStatus.textContent=mergedSkills.length+" skill entries · synced to your account across devices.";
+  const count=document.querySelector("#bosley-skill-count");if(count)count.textContent="CLOUD";
+  renderAutomationHistory();
+  return true;
+ }catch(error){
+  console.warn("Personal workspace cloud sync failed:",error);
+  if(skillStatus)skillStatus.textContent="LOCAL COPY KEPT · Cloud sync unavailable: "+String(error?.message||"retry later").slice(0,100);
+  return false;
+ }finally{
+  personalWorkspaceSyncBusy=false;
+  if(personalWorkspaceSyncQueued){personalWorkspaceSyncQueued=false;schedulePersonalWorkspaceSync()}
+ }
+}
+
 async function renderBosleySkills(){
  const panel=document.getElementById("skills-panel");if(!panel)return;
  const skills=readBosleySkills();
- panel.innerHTML='<header class="skills-hero"><div class="skills-mark" aria-hidden="true">✳</div><div class="skills-hero-copy"><span class="skills-kicker">PERSONAL TOOLKIT</span><h3>Bosley Skills</h3><p>Choose the reusable guidance Bosley can draw on while chatting. Skills stay on this device and never grant extra permissions.</p></div><span class="skills-count" id="bosley-skill-count">LOCAL</span></header>'+
- '<div class="form"><div class="skills-dropzone" id="bosley-skill-drop" role="button" tabindex="0" aria-label="Choose or drop a skills file"><span class="skills-drop-icon" aria-hidden="true">＋</span><strong>Add skills to your workspace</strong><span>Drop a file here or select one from your device</span><small>Accepted: .json, .md, .markdown, .txt · Maximum 100 KB</small></div><input id="bosley-skill-file" type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" aria-label="Choose a skill file"><div class="skills-tools"><button type="button" class="primary" id="bosley-skill-import">Process & add skill</button><button type="button" id="bosley-skill-export">Export skills</button><button type="button" id="bosley-skill-pack">Load official skill pack</button></div><input id="bosley-skill-search" type="search" placeholder="⌕  Search skills…" aria-label="Search imported skills"><p class="status" id="bosley-skill-status" aria-live="polite">'+skills.length+' skill entries stored on this device.</p></div>'+
+ panel.innerHTML='<header class="skills-hero"><div class="skills-mark" aria-hidden="true">✳</div><div class="skills-hero-copy"><span class="skills-kicker">PERSONAL TOOLKIT</span><h3>Bosley Skills</h3><p>Choose reusable guidance for Bosley. When signed in, your skills sync privately to your account across devices; otherwise they stay on this device.</p></div><span class="skills-count" id="bosley-skill-count">'+(user?'CLOUD':'LOCAL')+'</span></header>'+
+ '<div class="form"><div class="skills-dropzone" id="bosley-skill-drop" role="button" tabindex="0" aria-label="Choose or drop a skills file"><span class="skills-drop-icon" aria-hidden="true">＋</span><strong>Add skills to your workspace</strong><span>Drop a file here or select one from your device</span><small>Accepted: .json, .md, .markdown, .txt · Maximum 100 KB</small></div><input id="bosley-skill-file" type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" aria-label="Choose a skill file"><div class="skills-tools"><button type="button" class="primary" id="bosley-skill-import">Process & add skill</button><button type="button" id="bosley-skill-export">Export skills</button><button type="button" id="bosley-skill-pack">Load official skill pack</button></div><input id="bosley-skill-search" type="search" placeholder="⌕  Search skills…" aria-label="Search imported skills"><p class="status" id="bosley-skill-status" aria-live="polite">'+skills.length+' skill entries · '+(user?'account sync enabled':'device only')+'.</p></div>'+
  '<div class="items" id="bosley-skill-list"></div>'+
  '<div class="item skills-help"><main><strong>Quick start</strong><p class="mute">Import a pack, enable only the guidance you need, then ask Bosley normally. Search to find a skill, switch it off when it is not relevant, or export a backup. Imported text is guidance only and cannot unlock app control or bypass confirmation.</p></main></div>'+
  '<div class="actions"><a class="link" href="https://github.com/deji007-source/bosley-companion/tree/main/agent-pack" target="_blank" rel="noopener noreferrer">Browse source pack</a><button type="button" id="bosley-skill-clear">Clear imported skills</button></div>';
@@ -1496,7 +1584,7 @@ async function renderBosleySkills(){
   const status=panel.querySelector("#bosley-skill-status");status.textContent="Loading the official pack…";
   try{const response=await fetch("https://raw.githubusercontent.com/deji007-source/bosley-companion/main/agent-pack/skills.json",{cache:"no-store"});if(!response.ok)throw Error("HTTP "+response.status);const parsed=await response.json();if(!Array.isArray(parsed.skills))throw Error("Pack format is missing its skills array.");const imported=normalizeSkillImport(parsed,"Bosley official skills.json","");const existing=readBosleySkills();const byId=new Map(existing.map(s=>[s.id,s]));for(const item of imported)byId.set(item.id,item);const merged=[...byId.values()].slice(-30);saveBosleySkills(merged);renderBosleySkills();const msg=document.getElementById("bosley-skill-status");if(msg)msg.textContent="Loaded "+imported.length+" official skills. Review and enable the ones you want."}catch(e){status.textContent="Could not load the pack: "+String(e?.message||e).slice(0,180)+". You can download agent-pack/skills.json from GitHub and import it instead."}
  };
- panel.querySelector("#bosley-skill-clear").onclick=()=>{if(confirm("Clear all imported Bosley skills stored on this device?")){saveBosleySkills([]);renderBosleySkills()}};
+ panel.querySelector("#bosley-skill-clear").onclick=()=>{if(confirm("Clear all imported Bosley skills from your signed-in account and this device?")){saveBosleySkills([]);renderBosleySkills()}};
 }
 
 async function send(text,imageData=null){
@@ -1880,8 +1968,8 @@ async function load(){
 }
 $("#wstoggle").onclick=()=>{ws.hidden=!ws.hidden;$("#wstoggle").setAttribute("aria-expanded",!ws.hidden);if(!ws.hidden){drawWs();if(user)load()}};
 if(db){
- db.auth.getSession().then(({data,error})=>{if(error)throw error;user=data.session?.user||null;authResolved=true;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);drawWs();if(user){restoreLatestConversation();load()}const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()}).catch(error=>{authResolved=true;renderAuthGate();drawWs();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session: "+String(error?.message||error)});
- db.auth.onAuthStateChange((_e,s)=>{try{const native=window.Capacitor?.Plugins?.BosleyOverlay;if(native?.syncChatSession)native.syncChatSession({accessToken:s?.access_token||"",anonKey:SUPABASE_PUBLIC_KEY,supabaseUrl:SUPABASE_URL,userId:s?.user?.id||""}).catch(e=>console.warn("Could not sync Android overlay session",e))}catch(e){console.warn("Android overlay session sync unavailable",e)}const previousUserId=user?.id||null;user=s?.user||null;if(previousUserId!==(user?.id||null)){workspaceLoadToken++;workflowSyncUser=null;workflowSyncPromise=null;notes=[];tasks=[]}renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);drawWs();if(user){setTimeout(()=>{syncPlannerTasks();syncCompanionSettings()},500)}if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden&&user)load();else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()});
+ db.auth.getSession().then(({data,error})=>{if(error)throw error;user=data.session?.user||null;authResolved=true;$("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);drawWs();if(user){restoreLatestConversation();load();setTimeout(()=>syncPersonalWorkspace(),500)}const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()}).catch(error=>{authResolved=true;renderAuthGate();drawWs();if(gateFeedback)gateFeedback.textContent="Could not check your sign-in session: "+String(error?.message||error)});
+ db.auth.onAuthStateChange((_e,s)=>{try{const native=window.Capacitor?.Plugins?.BosleyOverlay;if(native?.syncChatSession)native.syncChatSession({accessToken:s?.access_token||"",anonKey:SUPABASE_PUBLIC_KEY,supabaseUrl:SUPABASE_URL,userId:s?.user?.id||""}).catch(e=>console.warn("Could not sync Android overlay session",e))}catch(e){console.warn("Android overlay session sync unavailable",e)}const previousUserId=user?.id||null;user=s?.user||null;if(previousUserId!==(user?.id||null)){workspaceLoadToken++;workflowSyncUser=null;workflowSyncPromise=null;notes=[];tasks=[]}renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user);drawWs();if(user){setTimeout(()=>{syncPlannerTasks();syncCompanionSettings();syncPersonalWorkspace()},500)}if(!user){notes=[];tasks=[];history=[];conversationId=null;chat.innerHTML="";addMsg("bosley","Hey, I'm Bosley. Sign in under Jarvis Workspace to restore your saved chat and use the AI backend.")}else{setTimeout(()=>restoreLatestConversation(),0)}if(!ws.hidden&&user)load();else $("#wsmeta").textContent=user?"SIGNED IN":"SIGN IN";const automation=$("#automation");if(automation&&!automation.hidden)drawAutomation()});
 }
 
 /* ---------- permissioned automation layer ----------
@@ -1933,7 +2021,7 @@ async function persistWorkflow(wf,expectedUid=user?.id){
  return true;
 }
 function bridge(){return window.BosleyDesktop&&typeof window.BosleyDesktop.request==="function"?window.BosleyDesktop:null}
-function autoLog(status,message){loadAutomationHistory();automationRuns.unshift({time:new Date().toLocaleTimeString(),status,message:String(message)});automationRuns=automationRuns.slice(0,12);try{localStorage.setItem(automationHistoryKey(),JSON.stringify(automationRuns))}catch(e){console.warn("Bosley automation history could not be saved:",e)}renderAutomationHistory()}
+function autoLog(status,message){loadAutomationHistory();automationRuns.unshift({id:(crypto.randomUUID?.()||("run-"+Date.now()+"-"+Math.random().toString(36).slice(2))),createdAt:Date.now(),time:new Date().toLocaleTimeString(),status,message:String(message)});automationRuns=automationRuns.slice(0,12);try{localStorage.setItem(automationHistoryKey(),JSON.stringify(automationRuns))}catch(e){console.warn("Bosley automation history could not be saved:",e)}renderAutomationHistory();schedulePersonalWorkspaceSync()}
 function normalizeUrl(raw){let u;try{u=new URL(raw.trim())}catch{throw Error("Enter a complete website URL, e.g. https://example.com")};if(!["http:","https:"].includes(u.protocol))throw Error("Only http and https URLs are allowed.");return u.href}
 async function getDesktopBridgeStatus(){
  const b=bridge();
@@ -2093,7 +2181,7 @@ function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge
  const saveSkillChoices=()=>{const ids=[...skillOptions.querySelectorAll("[data-automation-skill]:checked")].map(x=>x.dataset.automationSkill);saveAutomationSkillSettings({enabled:!!skillToggle?.checked,ids});if(skillStatus)skillStatus.textContent=!skillToggle?.checked?"Skill guidance is off for chat and automation.":ids.length?ids.length+" skill(s) selected for Bosley guidance.":"No skills selected. Imported skills will not be used for automation guidance.";};
  skillToggle?.addEventListener("change",saveSkillChoices);skillOptions?.querySelectorAll("[data-automation-skill]").forEach(x=>x.addEventListener("change",saveSkillChoices));
  if(skillStatus)skillStatus.textContent=!skillSettings.enabled?"Skill guidance is currently off.":skillSettings.ids===null?"All enabled skills can guide Bosley when preparing automation requests.":skillSettings.ids.length?skillSettings.ids.length+" selected skill(s) can guide Bosley when preparing automation requests.":"No skills selected. Imported skills will not be used for automation guidance.";
- loadAutomationHistory();renderAutomationHistory();$("#clear-auto-log").onclick=()=>{automationRuns=[];try{localStorage.removeItem(automationHistoryKey())}catch{}renderAutomationHistory()};
+ loadAutomationHistory();renderAutomationHistory();$("#clear-auto-log").onclick=()=>{automationRuns=[];automationHistoryClearedAt=Date.now();try{localStorage.setItem(automationHistoryKey(),"[]");localStorage.setItem(automationHistoryClearedKey(),String(automationHistoryClearedAt))}catch{}renderAutomationHistory();schedulePersonalWorkspaceSync()};
  const agentProvider=$("#agent-provider"),agentMode=$("#agent-chat-mode"),agentUrl=$("#agent-chat-url"),agentTask=$("#agent-task"),agentSend=$("#agent-handoff-send"),agentStatus=$("#agent-handoff-status");
  if(agentMode&&agentUrl){agentMode.onchange=()=>{agentUrl.hidden=agentMode.value!=="same";agentUrl.required=agentMode.value==="same"}}
  if(agentSend)agentSend.onclick=async()=>{try{const provider=agentProvider.value,mode=agentMode.value,task=String(agentTask.value||"").trim();if(!task)throw Error("Describe the task before sending it.");if(task.length>8000)throw Error("Keep the task under 8,000 characters.");const urls={chatgpt:"https://chatgpt.com/",claude:"https://claude.ai/new",gemini:"https://gemini.google.com/app"};let target=urls[provider];if(mode==="same"){const raw=String(agentUrl.value||"").trim();if(!raw)throw Error("Paste the existing conversation link to continue that exact chat.");let parsed;try{parsed=new URL(raw)}catch{throw Error("Enter a valid conversation URL.")}const allowed={chatgpt:["chatgpt.com"],claude:["claude.ai"],gemini:["gemini.google.com"]};if(parsed.protocol!=="https:"||!allowed[provider].some(host=>parsed.hostname===host||parsed.hostname.endsWith("."+host)))throw Error("That link does not belong to the selected provider.");target=parsed.href}

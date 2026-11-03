@@ -1495,7 +1495,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   S.busy=false;S.backend=null;setBosleyCompanionState("error");
   const failure=String(e?.message||"");
   const friendly=e.name==="AbortError"?"I took too long to answer. Your message is still here; try again in a moment.":e.status===413||/413|too large|request entity/i.test(failure)?"That request is too large for the current AI route. I kept your message and reduced the conversation context; try sending it again.":e.status===429?"I’m receiving too many requests right now. Give it a short moment, then try again.":/not configured|provider.*key/i.test(failure)?"The AI service needs its provider configuration checked. Your message is still here.":"I couldn’t reach the AI service just now. Your message is still here; try again in a moment.";
-  p.className="err";p.textContent=friendly;setPhase("Temporary response issue · message kept","error");phase.dataset.phase="error";activityEvent("Bosley response failed: "+failure.slice(0,150),"error");
+  p.className="err";p.textContent=friendly;setPhase("Could not complete · message kept","error");phase.dataset.phase="error";activityEvent("Bosley response failed: "+failure.slice(0,150),"error");
   flash();
  }finally{clearTimeout(to);setTimeout(()=>{if(!S.busy){setBosleyCompanionState("idle");eyes()}},650)}
 }

@@ -666,10 +666,11 @@ html.widget-mode body.desktop-panel #side-dock:not([hidden]){left:12px!important
 </section>
 
 
-<nav id="dock-launcher" aria-label="Open Bosley side views"><button type="button" data-open-view="lovable-bosley" aria-label="Open hosted Lovable Bosley" title="Lovable Bosley">✦</button><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button><button type="button" data-open-view="provider-panel" aria-label="Open Agents and AI connections" title="Agents & Connections">✦</button></nav>
+<nav id="dock-launcher" aria-label="Open Bosley side views"><button type="button" data-open-view="lovable-bosley" aria-label="Open hosted Lovable Bosley" title="Lovable Bosley">✦</button><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button><button type="button" data-open-view="provider-panel" aria-label="Open Agents and AI connections" title="Agents & Connections">✦</button><button type="button" data-open-view="second-brain-panel" aria-label="Open Second Brain" title="Second Brain">⌘</button></nav>
 <aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
 <section class="workspace" id="skills-panel" hidden></section>
 <section class="workspace" id="provider-panel" hidden></section>
+<section class="workspace" id="second-brain-panel" hidden></section>
 <section class="workspace" id="lovable-bosley" hidden></section>
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
@@ -721,6 +722,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   {button:"activitytoggle",panel:"activity",label:"Activity",init:()=>{const r=window.BosleyPanelRenderers?.activity;if(typeof r!=="function")throw Error("Activity renderer is not connected to the dock.");return r()}},
   {button:"",panel:"skills-panel",label:"Skills",init:()=>{const r=window.BosleyPanelRenderers?.skills;if(typeof r!=="function")throw Error("Skills renderer is not connected to the dock.");return r()}},
   {button:"",panel:"provider-panel",label:"AI Providers",init:()=>{const r=window.BosleyPanelRenderers?.providers;if(typeof r!=="function")throw Error("AI provider manager is not connected.");return r()}},
+  {button:"",panel:"second-brain-panel",label:"Second Brain",init:()=>{const r=window.BosleyPanelRenderers?.secondBrain;if(typeof r!=="function")throw Error("Second Brain is not connected.");return r()}},
   {button:"",panel:"lovable-bosley",label:"Lovable Bosley",init:initLovableBosleyViewer}
  ];
  let active="";
@@ -2494,7 +2496,77 @@ function startLaptopCommandListener(activeUser){
   });
 }
 
-window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills(),providers:()=>renderBosleyProviderManager()});
+
+const SECOND_BRAIN_CATEGORIES=[
+ ["project","Project overview"],["repository","Repository & CI/CD"],["snippet","Code snippet"],["decision","Design decision"],["bug","Bug / issue"],["task","To-do / sprint"],["reference","Reference / research"],["contact","Contact (private)"],["command","Command / script"],["meeting","Meeting notes"],["note","General note"]
+];
+let secondBrainRows=[],secondBrainChannel=null,secondBrainBusy=false,secondBrainFilter="all",secondBrainQuery="",secondBrainEditing=null;
+const secondBrainEsc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function loadSecondBrain(){
+ const panel=document.getElementById("second-brain-panel");if(!panel)return;
+ if(!user||!db){panel.innerHTML='<header class="skills-hero"><div class="skills-mark">⌘</div><div class="skills-hero-copy"><span class="skills-kicker">PERSONAL KNOWLEDGE VAULT</span><h3>Second Brain</h3><p>Sign in to create a private, searchable knowledge library that follows your devices.</p></div></header><p class="status">Your notes are private to your signed-in account.</p>';return}
+ const uid=user.id;
+ panel.innerHTML='<header class="skills-hero"><div class="skills-mark">⌘</div><div class="skills-hero-copy"><span class="skills-kicker">PERSONAL KNOWLEDGE VAULT</span><h3>Second Brain</h3><p>Save project context, repositories, code, decisions, issues, tasks, references, commands and meeting notes. Your entries sync privately across signed-in devices.</p></div><span class="skills-count">CLOUD</span></header><div class="form" style="display:grid;gap:10px"><input id="brain-search" type="search" placeholder="Search titles, notes and tags…" aria-label="Search second brain"><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="brain-filter" aria-label="Filter by category"><option value="all">All categories</option>'+SECOND_BRAIN_CATEGORIES.map(x=>'<option value="'+x[0]+'">'+x[1]+'</option>').join("")+'</select><button type="button" class="primary" id="brain-new">＋ Add knowledge</button><button type="button" id="brain-export">Export JSON</button></div><p class="status" id="brain-status" aria-live="polite">Loading your knowledge…</p></div><div id="brain-editor" class="form" hidden></div><div id="brain-list" class="items"></div>';
+ const search=panel.querySelector("#brain-search"),filter=panel.querySelector("#brain-filter");
+ search.value=secondBrainQuery;filter.value=secondBrainFilter;
+ search.addEventListener("input",()=>{secondBrainQuery=search.value;drawSecondBrainRows()});
+ filter.addEventListener("change",()=>{secondBrainFilter=filter.value;drawSecondBrainRows()});
+ panel.querySelector("#brain-new").addEventListener("click",()=>editSecondBrainEntry());
+ panel.querySelector("#brain-export").addEventListener("click",exportSecondBrain);
+ await refreshSecondBrain();
+ if(secondBrainChannel){try{db.removeChannel(secondBrainChannel)}catch{}}
+ secondBrainChannel=db.channel("second-brain-"+uid).on("postgres_changes",{event:"*",schema:"public",table:"user_second_brain_entries",filter:"user_id=eq."+uid},()=>refreshSecondBrain(true)).subscribe();
+}
+async function refreshSecondBrain(silent=false){
+ if(!db||!user||secondBrainBusy)return;
+ secondBrainBusy=true;const uid=user.id;
+ try{
+  const {data,error}=await db.from("user_second_brain_entries").select("id,user_id,category,title,content,url,tags,pinned,created_at,updated_at").eq("user_id",uid).order("pinned",{ascending:false}).order("updated_at",{ascending:false}).limit(300);
+  if(error)throw error;if(user?.id!==uid)return;
+  secondBrainRows=Array.isArray(data)?data:[];
+  const status=document.getElementById("brain-status");if(status)status.textContent=secondBrainRows.length+" saved entries · private account sync active.";
+  drawSecondBrainRows();
+ }catch(error){const status=document.getElementById("brain-status");if(status)status.textContent="Could not load cloud notes: "+String(error?.message||error).slice(0,150)}
+ finally{secondBrainBusy=false}
+}
+function drawSecondBrainRows(){
+ const list=document.getElementById("brain-list");if(!list)return;
+ const q=secondBrainQuery.trim().toLowerCase();
+ const rows=secondBrainRows.filter(x=>(secondBrainFilter==="all"||x.category===secondBrainFilter)&&(!q||[x.title,x.content,x.url,(x.tags||[]).join(" ")].join(" ").toLowerCase().includes(q)));
+ list.innerHTML=rows.map(x=>'<article class="item" data-brain-id="'+secondBrainEsc(x.id)+'" style="display:grid;gap:7px"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap"><strong>'+secondBrainEsc(x.title)+'</strong><span class="skills-count">'+secondBrainEsc(SECOND_BRAIN_CATEGORIES.find(c=>c[0]===x.category)?.[1]||x.category)+'</span></div><p style="white-space:pre-wrap;overflow-wrap:anywhere;margin:0">'+secondBrainEsc(x.content.slice(0,900))+(x.content.length>900?"…":"")+'</p>'+(x.url?'<a href="'+secondBrainEsc(x.url)+'" target="_blank" rel="noopener noreferrer">'+secondBrainEsc(x.url)+'</a>':"")+'<small class="mute">'+secondBrainEsc((x.tags||[]).join(" · "))+' · Updated '+secondBrainEsc(new Date(x.updated_at).toLocaleString())+'</small><div class="skills-tools"><button type="button" data-brain-edit="'+secondBrainEsc(x.id)+'">Edit</button><button type="button" data-brain-pin="'+secondBrainEsc(x.id)+'">'+(x.pinned?"Unpin":"Pin")+'</button><button type="button" data-brain-delete="'+secondBrainEsc(x.id)+'">Delete</button></div></article>').join("")||'<p class="mute">No matching entries yet. Add a project overview, a decision, or a useful reference to get started.</p>';
+ list.querySelectorAll("[data-brain-edit]").forEach(b=>b.addEventListener("click",()=>{const row=secondBrainRows.find(x=>x.id===b.dataset.brainEdit);if(row)editSecondBrainEntry(row)}));
+ list.querySelectorAll("[data-brain-pin]").forEach(b=>b.addEventListener("click",()=>updateSecondBrainEntry(b.dataset.brainPin,{pinned:!secondBrainRows.find(x=>x.id===b.dataset.brainPin)?.pinned})));
+ list.querySelectorAll("[data-brain-delete]").forEach(b=>b.addEventListener("click",()=>deleteSecondBrainEntry(b.dataset.brainDelete)));
+}
+function editSecondBrainEntry(row=null){
+ const editor=document.getElementById("brain-editor");if(!editor)return;secondBrainEditing=row?.id||null;
+ const value=row||{category:"note",title:"",content:"",url:"",tags:[],pinned:false};
+ editor.hidden=false;
+ editor.innerHTML='<h3>'+(row?"Edit knowledge":"Add to your Second Brain")+'</h3><label class="mute">Category<select id="brain-category">'+SECOND_BRAIN_CATEGORIES.map(x=>'<option value="'+x[0]+'" '+(value.category===x[0]?"selected":"")+'>'+x[1]+'</option>').join("")+'</select></label><label class="mute">Title<input id="brain-title" maxlength="180" required value="'+secondBrainEsc(value.title)+'" placeholder="e.g. Bosley cross-platform architecture"></label><label class="mute">Details<textarea id="brain-content" maxlength="30000" rows="7" placeholder="Write the useful details, context, reproduction steps, code or meeting decisions…">'+secondBrainEsc(value.content)+'</textarea></label><label class="mute">URL (optional)<input id="brain-url" type="url" maxlength="2048" value="'+secondBrainEsc(value.url||"")+'" placeholder="https://…"></label><label class="mute">Tags (comma separated)<input id="brain-tags" maxlength="500" value="'+secondBrainEsc((value.tags||[]).join(", "))+'" placeholder="jarvis, windows, architecture"></label><label class="mute"><input id="brain-pinned" type="checkbox" '+(value.pinned?"checked":"")+'> Pin this entry</label><div class="skills-tools"><button type="button" class="primary" id="brain-save">Save entry</button><button type="button" id="brain-cancel">Cancel</button></div><p class="status" id="brain-editor-status" aria-live="polite"></p>';
+ editor.querySelector("#brain-cancel").addEventListener("click",()=>{editor.hidden=true;secondBrainEditing=null});
+ editor.querySelector("#brain-save").addEventListener("click",saveSecondBrainEntry);
+}
+async function saveSecondBrainEntry(){
+ if(!db||!user)return;const editor=document.getElementById("brain-editor"),status=editor?.querySelector("#brain-editor-status");if(!editor)return;
+ const title=editor.querySelector("#brain-title").value.trim(),category=editor.querySelector("#brain-category").value,content=editor.querySelector("#brain-content").value,url=editor.querySelector("#brain-url").value.trim(),tags=editor.querySelector("#brain-tags").value.split(",").map(x=>x.trim()).filter(Boolean).slice(0,20),pinned=editor.querySelector("#brain-pinned").checked;
+ if(!title){if(status)status.textContent="A title is required.";return}
+ if(url){try{const parsed=new URL(url);if(!["http:","https:"].includes(parsed.protocol))throw Error();}catch{if(status)status.textContent="Enter a valid http or https URL.";return}}
+ const payload={user_id:user.id,category,title,content,url:url||null,tags,pinned,updated_at:new Date().toISOString()};
+ const button=editor.querySelector("#brain-save");button.disabled=true;if(status)status.textContent="Saving…";
+ try{let result;if(secondBrainEditing)result=await db.from("user_second_brain_entries").update(payload).eq("id",secondBrainEditing).eq("user_id",user.id);else result=await db.from("user_second_brain_entries").insert(payload);if(result.error)throw result.error;editor.hidden=true;secondBrainEditing=null;await refreshSecondBrain(true)}
+ catch(error){if(status)status.textContent="Save failed: "+String(error?.message||error).slice(0,180);button.disabled=false}
+}
+async function updateSecondBrainEntry(id,patch){
+ if(!db||!user)return;const {error}=await db.from("user_second_brain_entries").update({...patch,updated_at:new Date().toISOString()}).eq("id",id).eq("user_id",user.id);if(error){const status=document.getElementById("brain-status");if(status)status.textContent="Update failed: "+error.message;return}await refreshSecondBrain(true)
+}
+async function deleteSecondBrainEntry(id){
+ if(!db||!user)return;const {error}=await db.from("user_second_brain_entries").delete().eq("id",id).eq("user_id",user.id);if(error){const status=document.getElementById("brain-status");if(status)status.textContent="Delete failed: "+error.message;return}await refreshSecondBrain(true)
+}
+function exportSecondBrain(){
+ const data=JSON.stringify({exportedAt:new Date().toISOString(),entries:secondBrainRows},null,2),blob=new Blob([data],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="bosley-second-brain.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+}
+
+window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills(),providers:()=>renderBosleyProviderManager(),secondBrain:()=>loadSecondBrain()});
 renderBosleyKnowledgeGraph();
 renderOfflineCommandQueue();
 initializeContextEngine();

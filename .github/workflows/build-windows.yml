@@ -271,7 +271,7 @@ jobs:
           const band=mesh(new THREE.TorusGeometry(.44,.035,6,24),ivory,hat,0,.02,0); band.scale.set(1,.9,.83);
           // Shadowed face and large, clean white eyes.
           const head=mesh(new THREE.SphereGeometry(.43,20,16),faceMat,group,0,1.93,.18); head.scale.set(.94,.88,.76); outline(head,0x9c9c9c);
-          const pupils=[];for(const x of [-.17,.17]){const eye=mesh(new THREE.SphereGeometry(.105,16,12),ivory,group,x,1.98,.585);eye.scale.set(.88,1.2,.58);const pupil=mesh(new THREE.SphereGeometry(.043,12,10),black,group,x,1.98,.648);pupil.scale.set(.9,1.1,.6);pupils.push(pupil);}
+          const pupils=[];for(const x of [-.17,.17]){const eye=mesh(new THREE.SphereGeometry(.112,20,16),new THREE.MeshBasicMaterial({color:0xffffff}),group,x,1.98,.69);eye.scale.set(.92,1.22,.62);eye.renderOrder=5;const pupil=mesh(new THREE.SphereGeometry(.046,16,12),new THREE.MeshBasicMaterial({color:0x111111}),group,x,1.98,.765);pupil.scale.set(.92,1.12,.62);pupil.renderOrder=6;pupils.push(pupil);}
           // Articulated arms with shoulder, elbow and gloved hand pivots.
           function makeArm(side){const shoulder=new THREE.Group();shoulder.position.set(side*.48,1.62,0);group.add(shoulder);const upper=capsule(shoulder,side*.16,-.23,0,.13,.31,black);upper.rotation.z=side*-.18;const elbow=new THREE.Group();elbow.position.set(side*.29,-.42,0);shoulder.add(elbow);const fore=capsule(elbow,side*.04,-.22,.02,.105,.29,charcoal);const hand=mesh(new THREE.SphereGeometry(.13,12,10),ivory,elbow,side*.05,-.43,.07);hand.scale.set(.8,.9,.7);return {shoulder,elbow};}
           const armL=makeArm(-1),armR=makeArm(1);
@@ -287,7 +287,7 @@ jobs:
             if(state==='idle'&&t-lastGlance>4300){lastGlance=t;glanceTarget=(Math.random()-.5)*.22;}
             if(state==='thinking')glanceTarget=.13;else if(state==='working')glanceTarget=.04;else if(state==='waiting')glanceTarget=-.12;else if(state==='success'||state==='error')glanceTarget=0;
             glance+=(glanceTarget-glance)*.055;head.rotation.y=glance+Math.sin(sec*.7)*.025;head.rotation.x+=( (state==='thinking'?.16:state==='waiting'?.035:state==='error'?-.08:0)-head.rotation.x)*.07;
-            hat.rotation.z+=( (state==='thinking'?.045:state==='success'?-.035:0)-hat.rotation.z)*.08;
+            hat.rotation.set(0,0,0);
             for(const [i,pupil] of pupils.entries()){pupil.position.x=[-.17,.17][i]+glance*.22;pupil.position.y=1.98+(state==='thinking'?.018:0);}
             const idleGesture=state==='idle'&&t-lastGesture>6200;if(idleGesture){lastGesture=t;armL.shoulder.rotation.z=-.12;armR.shoulder.rotation.z=.12;}
             const armTargets={working:[-.42,.42],success:[.62,-.62],waiting:[-.16,.16],error:[-.28,.28],thinking:[-.12,.1],walk:[-.2,.2],idle:[0,0]};

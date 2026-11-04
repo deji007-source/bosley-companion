@@ -96,7 +96,7 @@ public class BosleyOverlayService extends Service {
     final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
     final Path ghost=new Path();
     final Path accent=new Path();
-    GhostMascotView(Context context){super(context);setContentDescription("Bosley floating ghost companion. Tap to open, hold to talk, or drag to move.");setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
+    GhostMascotView(Context context){super(context);setContentDescription("Bosley floating ghost companion. Tap to open, hold to talk, and reposition with a touch gesture.");setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
     @Override protected void onDraw(Canvas canvas){
       super.onDraw(canvas);
       float sx=getWidth()/120f,sy=getHeight()/112f;

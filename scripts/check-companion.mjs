@@ -215,7 +215,8 @@ const contracts = [
   ["Windows listener uses authenticated polling instead of fragile Realtime joins", "setInterval(()=>pollLaptopCommands(activeUser),4000)"],
   ["Phone-to-laptop wake action", 'action:"wake_companion"'],
   ["Laptop listener reports status", 'id="laptop-listener-status"'],
-  ["Unsupported remote commands fail closed", "unsupported remote command and safely did not execute it"],
+  ["General remote instructions are forwarded to Windows chat", "Forwarded to Bosley chat on Windows"],
+  ["Remote chat never executes arbitrary shell commands", "No arbitrary shell command is run"],
   ["Chrome search does not open duplicate browser", "No extra Chrome window was opened."],
 ];
 for (const [label, token] of contracts) {

@@ -538,8 +538,8 @@ assert.ok(androidInstaller.includes("ACTION_CALL_RING_START")&&androidInstaller.
 assert.ok(androidInstaller.includes("bosley_incoming_calls_v2")&&androidInstaller.includes("keeping the incoming-call notification"), "Native ringtone failures must not prevent the incoming-call notification from appearing");
 assert.ok(androidInstaller.includes("ACTION_CALL_RING_STOP")&&androidInstaller.includes("stopCallRingtone()"), "Android call audio must stop when the call is dismissed or the service is destroyed");
 assert.ok(androidInstaller.includes("startForegroundService(ring)")&&androidInstaller.includes("c.setSound(null,null)"), "Scheduled call alarms must start native ringing without layering a second notification sound");
-assert.ok(androidInstaller.includes('("wide".equals(size)?112:104)'), "Android floating widget default width must be compact");
-assert.ok(androidInstaller.includes('("wide".equals(size)?36:34)'), "Android floating widget default height must be compact");
+assert.ok(androidInstaller.includes("int w=44,h=44;"), "Android floating ghost width must stay tiny on every saved size preset");
+assert.ok(androidInstaller.includes("int w=44,h=44;"), "Android floating ghost height must stay tiny on every saved size preset");
 
 assert.ok(androidInstaller.includes("widgetWidth=44,widgetHeight=44"), "Android overlay service fallback dimensions must stay tiny and ghost-sized");
 assert.ok(html.includes('aria-label="Open AI Agents"')&&html.includes('data-open-view="agents-panel"'), "AI agents must remain directly accessible from the side rail");

@@ -1515,7 +1515,8 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   await routeRemoteVoiceToLaptop(remoteText);return;
  }
  let alreadyDisplayed=false;
- const automationIntent=/\b(?:automate|automation|workflow|run|execute|trigger|open|launch|wake up|switch to desktop|move .* to desktop|focus |minimize |maximize |click |tap |type |send |text |call |turn on|turn off|bluetooth|spotify|whatsapp|chrome|youtube|laptop|windows|android|phone|device|listener)\b/i.test(String(text||""));\n if(user&&automationIntent){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
+ const automationIntent=/\b(?:automate|automation|workflow|run|execute|trigger|open|launch|wake up|switch to desktop|move .* to desktop|focus |minimize |maximize |click |tap |type |send |text |call |turn on|turn off|bluetooth|spotify|whatsapp|chrome|youtube|laptop|windows|android|phone|device|listener)\b/i.test(String(text||""));
+ if(user&&automationIntent){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
  if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}
  const explicitNoSearch=/\b(?:don't|do not|without|skip)\s+(?:the\s+)?(?:web\s+)?search\b/i.test(String(text||""));
  const searchIntent=!explicitNoSearch&&!imageData&&!fileContext&&user&&/\b(?:look\s*up|search(?:\s+(?:the\s+)?(?:web|internet)|\s+for)?|google|find\s+online|research)\b/i.test(String(text||""));

@@ -68,6 +68,13 @@ html[data-agent-state=working] .launch .mascot-eye{filter:drop-shadow(0 0 5px #f
 @keyframes bosley-lock-focus{from{transform:translateY(1px) scale(.985)}to{transform:translateY(-1px) scale(1.025)}}
 @media(prefers-reduced-motion:reduce){html.bosley-arrive .stage,html[data-agent-state=thinking] .launch #bosley-mascot,html[data-agent-state=working] .launch #bosley-mascot{animation:none!important}}
 .launch .eyes{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
+.launch .eyes{display:none!important}
+.launch{height:30px!important;width:96px!important;border:0!important;border-radius:0 0 17px 17px!important;background:#050505!important;box-shadow:0 4px 12px #0009,inset 0 -1px #ffffff0a!important;clip-path:inset(0 round 0 0 17px 17px)!important}
+.launch::after{display:none!important}
+.launch:hover{background:#111!important;box-shadow:0 5px 15px #000b!important}
+.launch:active{background:#000!important;box-shadow:inset 0 2px 5px #000!important}
+html[data-widget-size=compact] .launch,html[data-widget-size=default] .launch,html[data-widget-size=wide] .launch{width:96px!important;height:30px!important}
+html[data-widget-edge=soft] .launch,html[data-widget-edge=balanced] .launch,html[data-widget-edge=sharp] .launch{border-radius:0 0 17px 17px!important}
 
 /* ---- panel ---- */
 .panel{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:min(900px,calc(100vw - 24px));height:min(820px,calc(100dvh - 24px));min-height:420px;display:flex;flex-direction:column;border:1px solid #263744;border-radius:24px;overflow:hidden;background:#05080c;box-shadow:0 24px 90px #000d,0 0 70px #1a6b8a12;animation:in .22s ease-out}
@@ -2615,7 +2622,7 @@ async function drawAgents(){
   {id:"anthropic",name:"Anthropic",model:"claude-3-5-haiku-latest",hint:"Claude models"},
   {id:"gemini",name:"Google Gemini",model:"gemini-2.0-flash",hint:"Gemini models"},
   {id:"groq",name:"Groq",model:"llama-3.3-70b-versatile",hint:"Fast hosted open models"},
-  {id:"grok",name:"Grok · xAI",model:"grok-4.7",hint:"xAI Grok models"},
+  {id:"grok",name:"Grok · xAI",model:"grok-4.1-fast",hint:"xAI Grok models"},
   {id:"openrouter",name:"OpenRouter",model:"openai/gpt-4.1-mini",hint:"Multiple model providers"},
   {id:"mistral",name:"Mistral",model:"mistral-small-latest",hint:"Mistral models"}
  ];
@@ -2681,9 +2688,12 @@ async function renderBosleySearch(){
  const button=$("#bosley-search-submit");button.disabled=true;status.textContent="Searching your account and public sources…";results.innerHTML="";
  try{const {data,error}=await db.functions.invoke("bosley-search",{body:{query,web:web.checked}});if(error)throw error;if(!data)throw Error("No search response.");
  const groups=[{title:"YOUR BOSLEY BRAIN",items:data.internal||[],kind:"brain"},{title:"PUBLIC WEB",items:data.web||[],kind:"web"}];
- results.innerHTML=groups.map(group=>'<section><h3>'+group.title+'</h3>'+ (group.items.length?group.items.map(x=>'<article class="item"><main><strong>'+esc(x.title||"Untitled result")+'</strong><p>'+esc(x.body||x.snippet||"")+'</p><small>'+esc(x.kind||x.category||group.kind)+(x.updatedAt?" · "+esc(new Date(x.updatedAt).toLocaleString()):"")+'</small></main>'+(x.url?'<a class="link" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Open ↗</a>':"")+'</article>').join(""):'<p class="mute">No matches found.</p>')+'</section>').join("");
+ results.innerHTML=groups.map(group=>'<section><h3>'+group.title+'</h3>'+ (group.items.length?group.items.map(x=>'<article class="item"><main><strong>'+esc(x.title||"Untitled result")+'</strong><p>'+esc(x.body||x.snippet||"")+'</p><small>'+esc(x.kind||x.category||group.kind)+(x.updatedAt?" · "+esc(new Date(x.updatedAt).toLocaleString()):"")+'</small></main>'+(x.url?'<a class="link" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Open ↗</a>':"")+'</article>').join(""):group.kind==="brain"?'<p class="mute">No exact Brain match yet. Try related searches below, or add useful notes to your Second Brain.</p>':'<p class="mute">No direct web results returned. Try a related query or open the broader search link below.</p>')+'</section>').join("");
  status.textContent=(data.internal?.length||0)+" personal matches · "+(data.web?.length||0)+" public results"+(data.webError?" · "+data.webError:"");
  external.href=data.externalSearchUrl||("https://duckduckgo.com/?q="+encodeURIComponent(query));external.hidden=false;
+ const suggestions=[query+" overview",query+" latest updates",query+" related resources"];
+ const suggestionBlock=document.createElement("section");suggestionBlock.innerHTML='<h3>RELATED SEARCHES</h3><div class="actions">'+suggestions.map(q=>'<button type="button" class="link" data-related-search="'+esc(q)+'">'+esc(q)+'</button>').join("")+'</div>';results.appendChild(suggestionBlock);
+ suggestionBlock.querySelectorAll("[data-related-search]").forEach(el=>el.addEventListener("click",()=>{input.value=el.dataset.relatedSearch;form.requestSubmit()}));
  }catch(error){status.textContent="Search could not complete: "+String(error?.message||error).slice(0,180);external.href="https://duckduckgo.com/?q="+encodeURIComponent(query);external.hidden=false}
  finally{button.disabled=false}
  };

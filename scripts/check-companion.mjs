@@ -517,6 +517,14 @@ assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "W
 assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
 assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");
 
+assert.ok(windowsWorkflow.includes("TOP WIDGET VISIBLE") && windowsWorkflow.includes("COMPANION VISIBLE"), "Windows must explicitly reveal both floating widgets after loading");
+assert.ok(windowsWorkflow.includes("version: 2") && windowsWorkflow.includes("saved.version === 2"), "Windows must migrate older companion visibility preferences to visible by default");
+assert.ok(windowsWorkflow.includes("widget-eyes") && windowsWorkflow.includes("background:rgba(5,5,5,.96)"), "Top widget must remain visibly rendered without any text plaque");
+assert.ok(windowsWorkflow.includes("C75 12C42 12 18 39 18 76v43c0 5 2 8 6 8"), "Windows ghost silhouette must use rounded lower outer edges and smooth scallops");
+assert.ok(windowsWorkflow.includes("FLOATING VIEW SHOWN") && windowsWorkflow.includes("FLOATING VIEW NAVIGATION FAILED"), "Detached Windows views must report visible state and navigation failures");
+assert.ok(html.includes("#dock-launcher>#dock-menu-toggle{display:grid!important") && html.includes("#dock-launcher-menu[hidden]{display:none!important}"), "The cross-platform launcher must restore the single-icon dropdown menu");
+assert.ok(html.includes("body.desktop-floating-view #side-dock{position:relative!important") && html.includes("flex:1 1 auto!important"), "Detached Windows side views must fill their own window");
+assert.ok(html.includes('const tested=await gateway("test",{provider})'), "Newly connected AI providers must be tested immediately");
 assert.ok(html.includes('data-open-view="agents-panel" aria-label="Open AI Agents" title="AI Agents"'), "Side rail must expose a dedicated AI Agents entry");
 assert.ok(html.includes('label:"AI Agents"')&&html.includes('label:"Automation"'), "AI Agents and Automation must have separate dock tabs");
 assert.ok(html.includes('id="attach-automation" role="menuitem"'), "Plus menu must expose the AI agents and automation entry");

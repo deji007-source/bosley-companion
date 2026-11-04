@@ -1238,14 +1238,16 @@ document.addEventListener("DOMContentLoaded",()=>{
  setTimeout(retry,150);
 },{once:true});
 window.addEventListener("pageshow",()=>setTimeout(handleNativeQuickAction,150));
-let dragState=null,dragged=false;
-$("#launch").addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="touch")return;dragState={x:e.screenX,y:e.screenY,cx:e.clientX,cy:e.clientY};dragged=false;try{$("#launch").setPointerCapture(e.pointerId)}catch{}},{passive:true});
-$("#launch").addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.screenX-dragState.x,dy=e.screenY-dragState.y;if(Math.abs(dx)+Math.abs(dy)<5)return;dragged=true;
+let dragState=null,dragged=false,suppressLaunchClick=false;
+const launcher=$("#launch");
+launcher.addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="touch")return;dragState={x:e.screenX,y:e.screenY,cx:e.clientX,cy:e.clientY};dragged=false;try{launcher.setPointerCapture(e.pointerId)}catch{}},{passive:true});
+launcher.addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.screenX-dragState.x,dy=e.screenY-dragState.y;if(Math.abs(dx)+Math.abs(dy)<5)return;dragged=true;
  try{if(window.BosleyDesktop&&typeof window.BosleyDesktop.moveWindowBy==="function")window.BosleyDesktop.moveWindowBy(dx,dy);else if(window.BosleyAndroidWidget&&typeof window.BosleyAndroidWidget.moveBy==="function")window.BosleyAndroidWidget.moveBy(dx,dy);else{const st=$(".stage"),r=st.getBoundingClientRect();st.style.right="auto";st.style.bottom="auto";st.style.left=Math.max(0,Math.min(innerWidth-108,r.left+dx)) + "px";st.style.top=Math.max(0,Math.min(innerHeight-64,r.top+dy)) + "px"}}catch(err){console.warn("Bosley drag failed",err)}
  dragState.x=e.screenX;dragState.y=e.screenY;},{passive:true});
-function finishDrag(){dragState=null}
-$("#launch").addEventListener("pointerup",finishDrag);$("#launch").addEventListener("pointercancel",finishDrag);
-$("#launch").onclick=e=>{if(dragged){e.preventDefault();e.stopPropagation();dragged=false;return}toggle()};$("#maximize").onclick=()=>{const p=$("#panel"),max=p.classList.toggle("maximized");$("#maximize").textContent=max?"❐":"□";$("#maximize").setAttribute("aria-label",max?"Restore panel":"Maximize panel");$("#maximize").title=max?"Restore panel":"Maximize panel"};
+function finishDrag(e){const activate=e.type==="pointerup"&&!!dragState&&!dragged;dragState=null;if(activate){e.preventDefault();suppressLaunchClick=true;toggle();requestAnimationFrame(()=>{suppressLaunchClick=false})}}
+launcher.addEventListener("pointerup",finishDrag);launcher.addEventListener("pointercancel",()=>{dragState=null;dragged=false});
+launcher.addEventListener("click",e=>{if(suppressLaunchClick){e.preventDefault();return}if(e.detail!==0)return;if(dragged){dragged=false;return}toggle()});
+$("#maximize").onclick=()=>{const p=$("#panel"),max=p.classList.toggle("maximized");$("#maximize").textContent=max?"❐":"□";$("#maximize").setAttribute("aria-label",max?"Restore panel":"Maximize panel");$("#maximize").title=max?"Restore panel":"Maximize panel"};
 $("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
 
 /* ---------- chat ---------- */

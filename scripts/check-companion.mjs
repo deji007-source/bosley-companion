@@ -481,8 +481,8 @@ assert.ok(html.includes('id="remote-mode-card" hidden'), "Remote Mode control mu
 assert.ok(html.includes('window.BosleyAndroidBridge||window.AndroidBridge'), "Remote Mode must detect supported native Android bridge runtimes");
 assert.ok(html.includes('id="remote-mode-toggle"'), "Android first page must expose a readily accessible Remote Mode toggle");
 assert.ok(html.includes('REMOTE_MODE_KEY="bosley_android_remote_mode_v1"'), "Remote Mode preference must persist on Android");
-assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"listener_status"}})'), "Android Remote Mode must verify Windows listener status through the authenticated endpoint");
-assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automation",instruction}})'), "Remote Mode must use the authenticated automation gateway");
+assert.ok(html.includes('remoteActionRequest({type:"listener_status"})') && html.includes('remoteActionRequest({type:"automation",instruction})'), "Android Remote Mode must use the authenticated remote-action transport for status and command queue requests");
+assert.ok(html.includes('"/functions/v1/remote-action"') && html.includes('"Authorization":"Bearer "+token'), "Android Remote Mode must send authenticated requests directly to the remote-action endpoint");
 assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
 assert.ok(html.includes('data.queued!==true'), "Remote Mode must not report success unless the command is durably queued");
 

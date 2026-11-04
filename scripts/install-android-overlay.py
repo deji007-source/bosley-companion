@@ -115,12 +115,16 @@ public class BosleyOverlayService extends Service {
   void showBar(){if(bar!=null)return;
     GhostMascotView mascot=new GhostMascotView(this);bar=mascot;
     lp=new WindowManager.LayoutParams(dp(44),dp(44),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
-    // Default anchor: right edge, slightly above vertical centre.
-    lp.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;lp.x=dp(10);lp.y=-dp(55);
-    mascot.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;openCompanion("voice");};
+    // Use absolute screen coordinates so the mascot can be placed anywhere.
+    // Initial position: right edge, slightly above vertical centre.
+    lp.gravity=Gravity.TOP|Gravity.START;
+    DisplayMetrics screen=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(screen);
+    int screenWidth=screen.widthPixels,screenHeight=screen.heightPixels,widgetSize=dp(44);
+    lp.x=Math.max(0,screenWidth-widgetSize-dp(10));lp.y=Math.max(0,(int)(screenHeight*.38f));
+    mascot.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{if(!moved){longPressed=true;openCompanion("voice");}};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
-        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>10||Math.abs(e.getRawY()-sy)>10){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
+        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>8||Math.abs(e.getRawY()-sy)>8){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(0,Math.min(screenHeight-widgetSize,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
         case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)openCompanion("panel");return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});

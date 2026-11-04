@@ -213,8 +213,6 @@ const contracts = [
   ["Account sign-in restores companion preferences", "syncPlannerTasks();syncCompanionSettings()"],
   ["Authenticated laptop listener", "function startLaptopCommandListener(activeUser)"],
   ["Windows listener uses authenticated polling instead of fragile Realtime joins", "setInterval(()=>pollLaptopCommands(activeUser),4000)"],
-  ["Remote-action phone requests are supported through the authenticated Telegram trigger", 'body.type === "phone"'],
-  ["Phone automation reports Telegram delivery only after push-automation accepts it", 'telegramNotified ? "Telegram trigger accepted."'],
   ["Windows automation status distinguishes an online queue from confirmed execution", 'data.listenerOnline===true'],
 
   ["Windows Wake Up command is handled locally before cross-device routing", "wake_companion"],
@@ -485,6 +483,9 @@ assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "N
 assert.ok(html.includes('data.queued!==true'), "Remote Mode must not report success unless the command is durably queued");
 
 const remoteActionFunction = readText(new URL("../supabase/functions/remote-action/index.ts", import.meta.url), "utf8");
+assert.ok(remoteActionFunction.includes('body.type === "phone"'), "Remote-action phone requests must be supported through the authenticated Telegram trigger");
+assert.ok(remoteActionFunction.includes('telegramNotified ? "Telegram trigger accepted."'), "Phone automation must report Telegram delivery only after push-automation accepts it");
+
 assert.ok(remoteActionFunction.includes('body.type === "listener_heartbeat"'), "Windows listener heartbeat must be authenticated and supported by the remote-action function");
 assert.ok(remoteActionFunction.includes('body.type === "listener_poll"') && remoteActionFunction.includes('body.type === "listener_ack"'), "Remote command delivery must use authenticated durable polling and acknowledgements");
 assert.ok(html.includes("async function pollLaptopCommands(activeUser)"), "Windows must poll the authenticated remote command queue");

@@ -490,17 +490,18 @@ assert.ok(html.includes('id="remote-mode-card" hidden'), "Remote Mode control mu
 assert.ok(html.includes('window.BosleyAndroidBridge||window.AndroidBridge'), "Remote Mode must detect supported native Android bridge runtimes");
 assert.ok(html.includes('id="remote-mode-toggle"'), "Android first page must expose a readily accessible Remote Mode toggle");
 assert.ok(html.includes('REMOTE_MODE_KEY="bosley_android_remote_mode_v1"'), "Remote Mode preference must persist on Android");
-assert.ok(html.includes('db.from("device_status").select("last_seen")'), "Remote Mode must verify the Windows listener heartbeat");
+assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"listener_status"}})'), "Android Remote Mode must verify Windows listener status through the authenticated endpoint");
 assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automation",instruction}})'), "Remote Mode must use the authenticated automation gateway");
 assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
 assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not claim delivery without listener confirmation");
 
 const remoteActionFunction = readText(new URL("../supabase/functions/remote-action/index.ts", import.meta.url), "utf8");
 assert.ok(remoteActionFunction.includes('body.type === "listener_heartbeat"'), "Windows listener heartbeat must be authenticated and supported by the remote-action function");
+assert.ok(remoteActionFunction.includes('body.type === "listener_status"'), "Android Remote Mode must have an authenticated Windows listener status endpoint");
 assert.ok(remoteActionFunction.includes('onConflict: "user_id,device"'), "Windows listener heartbeat must update one account/device row instead of creating duplicates");
 assert.ok(windowsWorkflow.includes("eye.position") === false, "Mascot eyes must be positioned with visible front-face geometry");
-assert.ok(windowsWorkflow.includes("group,x,1.98,.585") && windowsWorkflow.includes("group,x,1.98,.648"), "Windows 3D mascot eye meshes must sit in front of the face surface");
-assert.ok(windowsWorkflow.includes("hat.position.set(0,2.34,.12)") && windowsWorkflow.includes("hat.rotation.set(0,0,0)"), "Windows mascot fedora must be centered and start level");
+assert.ok(windowsWorkflow.includes("group,x,1.98,.69") && windowsWorkflow.includes("group,x,1.98,.765"), "Windows 3D mascot eyes and pupils must sit clearly in front of the face surface");
+assert.ok(windowsWorkflow.includes("hat.position.set(0,2.34,.12)") && windowsWorkflow.includes("hat.rotation.set(0,0,0)") && windowsWorkflow.includes("hat.rotation.set(0,0,0);"), "Windows mascot fedora must remain centered and level during animation");
 
 
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");

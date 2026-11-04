@@ -1734,8 +1734,12 @@ function renderRemoteMode(){const card=$("#remote-mode-card"),button=$("#remote-
 function setRemoteModeStatus(message,state="idle"){const el=$("#remote-mode-status");if(el){el.textContent=message;el.dataset.state=state}}
 async function getRemoteLaptopStatus(){
  if(!db||!user)return {online:false,detail:"Sign in to check the laptop"};
- try{const {data,error}=await db.from("device_status").select("last_seen").eq("user_id",user.id).eq("device","bosley-laptop-listener").maybeSingle();if(error)throw error;const seen=data?.last_seen?new Date(data.last_seen).getTime():0;const online=!!seen&&Number.isFinite(seen)&&Date.now()-seen<90000;return {online,detail:online?"Windows laptop connected":"Windows laptop not connected"}}
- catch{return {online:false,detail:"Could not verify laptop connection"}}
+ try{
+  const {data,error}=await db.functions.invoke("remote-action",{body:{type:"listener_status"}});
+  if(error)throw error;
+  if(!data||data.ok!==true)throw Error(data?.error||"Could not verify Windows listener");
+  return {online:data.online===true,detail:data.online===true?"Windows laptop connected":"Windows laptop not connected"};
+ }catch(error){return {online:false,detail:String(error?.message||"Could not verify laptop connection").slice(0,180)}}
 }
 async function routeRemoteVoiceToLaptop(spoken){
  if(!remoteModeNativeAndroid||!remoteModeEnabled)return false;

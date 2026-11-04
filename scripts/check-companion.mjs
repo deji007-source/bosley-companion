@@ -534,6 +534,9 @@ assert.ok(html.includes("let nativeActionBusy=false"), "Android native launch ac
 assert.ok(html.includes('window.addEventListener("bosleyNativeAction"'), "Android existing-activity taps must be forwarded into the live WebView");
 assert.ok(html.includes("if(++attempts<12)setTimeout(retry,250)"), "Android cold-start launch action must retry until the Capacitor plugin is ready");
 assert.ok(androidInstaller.includes("String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)"), "Android MainActivity must dispatch overlay tap actions to JavaScript");
+assert.ok(androidInstaller.includes("ACTION_CALL_RING_START")&&androidInstaller.includes("player.setLooping(true)"), "Android incoming calls must use a looping native ringtone while the call is ringing");
+assert.ok(androidInstaller.includes("ACTION_CALL_RING_STOP")&&androidInstaller.includes("stopCallRingtone()"), "Android call audio must stop when the call is dismissed or the service is destroyed");
+assert.ok(androidInstaller.includes("startForegroundService(ring)")&&androidInstaller.includes("c.setSound(null,null)"), "Scheduled call alarms must start native ringing without layering a second notification sound");
 assert.ok(androidInstaller.includes('("wide".equals(size)?112:104)'), "Android floating widget default width must be compact");
 assert.ok(androidInstaller.includes('("wide".equals(size)?36:34)'), "Android floating widget default height must be compact");
 

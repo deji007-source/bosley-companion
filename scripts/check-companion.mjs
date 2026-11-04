@@ -53,7 +53,11 @@ assert.ok(html.includes("plusButton.setAttribute(\"aria-expanded\""), "Attachmen
 assert.ok(androidInstaller.includes("widgetWidth=44,widgetHeight=44,cornerDp=18"), "Android floating widget must use a very compact ghost-sized footprint");
 assert.ok(androidInstaller.includes("class GhostMascotView extends View"), "Android floating widget must draw the white ghost mascot, not a horizontal eye bar");
 assert.ok(!androidInstaller.includes("canvas.drawPath(accent,paint)"), "Android ghost face must not draw the small blue smile/accent line");
-assert.ok(androidInstaller.includes("lp.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;lp.x=dp(10);lp.y=-dp(55);"), "Android floating widget must start on the right edge slightly above vertical centre");
+assert.ok(androidInstaller.includes("lp.gravity=Gravity.TOP|Gravity.START;"), "Android floating widget must use absolute screen coordinates for free positioning");
+assert.ok(androidInstaller.includes("screenWidth-widgetSize-dp(10)"), "Android floating widget must initially appear near the right edge");
+assert.ok(androidInstaller.includes("Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx))"), "Android floating widget must clamp horizontal dragging within the full screen");
+assert.ok(androidInstaller.includes("Math.min(screenHeight-widgetSize,oy+(int)(e.getRawY()-sy))"), "Android floating widget must clamp vertical dragging within the full screen");
+assert.ok(androidInstaller.includes("if(!moved){longPressed=true;openCompanion(\"voice\");}"), "Android hold-to-talk must not trigger after a drag begins");
 
 const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],

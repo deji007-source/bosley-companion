@@ -840,14 +840,18 @@ jobs:
               return { ok: true, state: 'stopped' };
             }
             if (request.action === 'wake_companion') {
-              if (panel && !panel.isDestroyed()) {
-                if (panel.isMinimized()) panel.restore();
-                panel.show();
-                panel.focus();
-                if (bubble && !bubble.isDestroyed()) bubble.showInactive();
-                return { ok: true, state: 'awake' };
+              if (!panel || panel.isDestroyed()) throw new Error('Bosley desktop panel is not available.');
+              if (panel.isMinimized()) panel.restore();
+              panel.show();
+              panel.focus();
+              if (bubble && !bubble.isDestroyed()) bubble.showInactive();
+              if (!walkingCompanion || walkingCompanion.isDestroyed()) {
+                setWalkingCompanionEnabled(true);
+              } else {
+                walkingCompanion.showInactive();
+                walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
               }
-              throw new Error('Bosley desktop panel is not available.');
+              return { ok: true, state: 'awake', floatingCompanion: true };
             }
             if (request.action === 'get_desktop_info') {
               const display = screen.getPrimaryDisplay();

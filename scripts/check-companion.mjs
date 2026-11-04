@@ -23,7 +23,7 @@ for (const [index, source] of inlineScripts.entries()) {
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with large blinking black eyes"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating character must be the white Bosley ghost with visible black eyes");
-assert.ok(windowsWorkflow.includes('translate(36 35) scale(.86 .80)'), "Windows floating character hat must be visibly smaller");
+assert.ok(!windowsWorkflow.includes('id="hat-group"') && !windowsWorkflow.includes('id="hat-brim"'), "Windows ghost mascot must not include the previous fedora");
 assert.ok(windowsWorkflow.includes("open_floating_view")&&windowsWorkflow.includes("const win = new BrowserWindow({")&&windowsWorkflow.includes("bosleyFloat: viewId"), "Windows side-panel icons must create native floating page windows");
 assert.ok(windowsWorkflow.includes("const column = index % 3")&&windowsWorkflow.includes("row * 84"), "Each Windows side view must receive a distinct staggered desktop position");
 assert.ok(html.includes('get("bosleyFloat")')&&html.includes('desktop-floating-view'), "Detached windows must load the selected interactive page independently");

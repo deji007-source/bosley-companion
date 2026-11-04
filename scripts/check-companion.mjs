@@ -213,6 +213,10 @@ const contracts = [
   ["Account sign-in restores companion preferences", "syncPlannerTasks();syncCompanionSettings()"],
   ["Authenticated laptop listener", "function startLaptopCommandListener(activeUser)"],
   ["Windows listener uses authenticated polling instead of fragile Realtime joins", "setInterval(()=>pollLaptopCommands(activeUser),4000)"],
+  ["Remote-action phone requests are supported through the authenticated Telegram trigger", 'body.type === "phone"'],
+  ["Phone automation reports Telegram delivery only after push-automation accepts it", 'telegramNotified ? "Telegram trigger accepted."'],
+  ["Windows automation status distinguishes an online queue from confirmed execution", 'data.listenerOnline===true'],
+
   ["Windows Wake Up command is handled locally before cross-device routing", "wake_companion"],
   ["Windows Wake Up is acknowledged in the chat activity log", "Bosley floating companion is awake on Windows."],
   ["Opened useful websites are automatically saved to Second Brain", "async function rememberUsefulSite(raw,title,source="],

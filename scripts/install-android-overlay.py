@@ -416,6 +416,20 @@ public class BosleyOverlayPlugin extends Plugin {
     JSObject r=new JSObject();r.put("ok",true);r.put("state","native-overlay-requested");call.resolve(r);
   }
   @PluginMethod public void stopGuide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE_GUIDE);startOverlayService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);}
+  @PluginMethod public void openExternalUrl(PluginCall call){
+    String raw=call.getString("url","");
+    try{
+      if(raw==null||raw.trim().isEmpty()||raw.length()>2048)throw new IllegalArgumentException("A valid external URL is required.");
+      Uri uri=Uri.parse(raw.trim());
+      String scheme=uri.getScheme();
+      if(!"https".equalsIgnoreCase(scheme)&&!"http".equalsIgnoreCase(scheme))throw new IllegalArgumentException("Only HTTP and HTTPS links can be opened externally.");
+      if(uri.getHost()==null||uri.getHost().isEmpty())throw new IllegalArgumentException("The external URL must include a host.");
+      Intent intent=new Intent(Intent.ACTION_VIEW,uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      if(intent.resolveActivity(getContext().getPackageManager())==null)throw new IllegalStateException("No installed browser or app can open this link.");
+      getContext().startActivity(intent);
+      JSObject result=new JSObject();result.put("ok",true);result.put("url",uri.toString());call.resolve(result);
+    }catch(Exception e){call.reject("Could not open the external link: "+String.valueOf(e.getMessage()),e);}
+  }
   @PluginMethod public void setAppearance(PluginCall call){
     Intent i=styledIntent(call,BosleyOverlayService.ACTION_STYLE);startOverlayService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);
   }

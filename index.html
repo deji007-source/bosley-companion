@@ -2362,67 +2362,110 @@ addEventListener("keydown",e=>{
 /* ---------- Authenticated laptop command listener ----------
    Realtime broadcasts are user-scoped. Only a fixed, allowlisted set of actions
    can execute here; arbitrary shell commands and arbitrary paths are never accepted. */
-let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="offline",laptopHeartbeatTimer=null;
+let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="offline",laptopHeartbeatTimer=null,laptopPollTimer=null,laptopPollBusy=false;
 function setLaptopListenerState(state,detail){
  laptopListenerState=state;
  const status=$("#laptop-listener-status");
- if(status){status.textContent="Laptop listener: "+state.toUpperCase()+(detail?" · "+detail:"");status.dataset.state=state}
+ if(status){status.textContent="Laptop listener: "+state.toUpperCase()+(detail?" · "async function executeLaptopInstruction(instruction){
+ const b=bridge();
+ if(!b||typeof b.request!=="function")throw Error("Windows desktop bridge unavailable");
+ const normalized=String(instruction||"").toLowerCase().replace(/[.!?]+$/,"").trim();
+ if(/^(?:hey\s+)?(?:bosley[, ]+)?(?:wake up|wake bosley|show bosley|open bosley|bring bosley up)$/i.test(normalized)){
+  const result=await b.request({action:"wake_companion",payload:{}});
+  if(result?.ok!==true)throw Error(result?.error||"Wake action was not confirmed");
+  return "Bosley floating companion was shown on Windows.";
+ }
+ const launch=normalized.match(/^(?:please\s+)?(?:open|launch|start)\s+(chrome|google chrome|edge|microsoft edge|notepad|calculator|file explorer|windows explorer)$/i);
+ if(launch){
+  const aliases={"google chrome":"chrome","microsoft edge":"edge","file explorer":"explorer","windows explorer":"explorer"};
+  const app=aliases[launch[1]]||launch[1];
+  const result=await b.request({action:"launch_app",payload:{app}});
+  if(result?.ok!==true)throw Error(result?.error||"App launch was not confirmed");
+  return "Windows confirmed opening "+app+".";
+ }
+ const openSite=normalized.match(/^(?:please\s+)?open\s+(https?:\/\/\S+|[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/\S*)?)$/i);
+ if(openSite){
+  const raw=openSite[1].startsWith("http")?openSite[1]:"https://"+openSite[1];
+  const url=new URL(raw);if(!["https:","http:"].includes(url.protocol))throw Error("Only web links can be opened remotely.");
+  const result=await b.request({action:"open_external_url",payload:{url:url.href}});
+  if(result?.ok!==true)throw Error(result?.error||"Windows did not confirm opening the website.");
+  return "Windows confirmed opening "+url.href+".";
+ }
+ const search=normalized.match(/^(?:please\s+)?(?:search(?: the web)? for|look up|google)\s+(.+)$/i);
+ if(search){
+  const url="https://www.google.com/search?q="+encodeURIComponent(search[1].trim());
+  const result=await b.request({action:"open_external_url",payload:{url}});
+  if(result?.ok!==true)throw Error(result?.error||"Windows did not confirm opening the search.");
+  return "Windows opened a web search for "+search[1]+".";
+ }
+ if(/^(?:show|get|check) (?:my )?(?:windows )?desktop info$/i.test(normalized)){
+  const result=await b.request({action:"get_desktop_info",payload:{}});
+  if(result?.ok!==true)throw Error(result?.error||"Windows desktop status was not confirmed.");
+  return "Windows desktop information was retrieved.";
+ }
+ // General chat is forwarded to the Windows Bosley session, where the existing
+ // authenticated companion-chat flow answers it. No arbitrary shell command is run.
+ if(typeof send==="function"){
+  await send(instruction);
+  return "Forwarded to Bosley chat on Windows. Check the Windows conversation for its reply.";
+ }
+ throw Error("No supported Windows command handler is available.");
+}
+async function acknowledgeLaptopCommand(activeUser,id,status,summary){
+ const {data,error}=await db.auth.getSession();
+ const token=data?.session?.access_token;
+ if(error||!token)throw Error("Sign-in session unavailable for command acknowledgement.");
+ const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{
+  method:"POST",
+  headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+token},
+  body:JSON.stringify({type:"listener_ack",id,status,summary}),
+  signal:AbortSignal.timeout(8000)
+ });
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok||result.ok!==true)throw Error(result.error||"Command acknowledgement failed.");
+ return true;
 }
 async function handleLaptopBroadcast(payload){
  const instruction=String(payload?.instruction||"").trim();
  if(!instruction)return;
- const b=bridge();
- if(!b||typeof b.request!=="function"){setLaptopListenerState("error","Desktop bridge unavailable");return}
- const normalized=instruction.toLowerCase().replace(/[.!?]+$/,"").trim();
  try{
-  if(/^(?:hey\s+)?(?:bosley[, ]+)?(?:wake up|wake bosley|show bosley|open bosley|bring bosley up)$/i.test(normalized)){
-   const result=await b.request({action:"wake_companion",payload:{}});
-   if(result?.ok!==true)throw Error(result?.error||"Wake action was not confirmed");
-   setLaptopListenerState("online","wake request executed");
-   autoLog("success","Phone-to-laptop command executed: wake Bosley");
-   return;
-  }
-  const launch=normalized.match(/^(?:please\s+)?(?:open|launch|start)\s+(chrome|google chrome|edge|microsoft edge|notepad|calculator|file explorer|windows explorer)$/i);
-  if(launch){
-   const aliases={"google chrome":"chrome","microsoft edge":"edge","file explorer":"explorer","windows explorer":"explorer"};
-   const app=aliases[launch[1]]||launch[1];
-   const result=await b.request({action:"launch_app",payload:{app}});
-   if(result?.ok!==true)throw Error(result?.error||"App launch was not confirmed");
-   setLaptopListenerState("online","app launch confirmed");
-   autoLog("success","Phone-to-laptop command executed: launch "+app);
-   return;
-  }
-  const openSite=normalized.match(/^(?:please\s+)?open\s+(https?:\/\/\S+|[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/\S*)?)$/i);
-  if(openSite){
-   const raw=openSite[1].startsWith("http")?openSite[1]:"https://"+openSite[1];
-   const url=new URL(raw);if(url.protocol!=="https:"&&url.protocol!=="http:")throw Error("Only web links can be opened remotely.");
-   const result=await b.request({action:"open_external_url",payload:{url:url.href}});
-   if(result?.ok!==true)throw Error(result?.error||"Windows did not confirm opening the website.");
-   setLaptopListenerState("online","website opened on Windows");autoLog("success","Phone-to-laptop opened website: "+url.href);return;
-  }
-  const search=normalized.match(/^(?:please\s+)?(?:search(?: the web)? for|look up|google)\s+(.+)$/i);
-  if(search){
-   const url="https://www.google.com/search?q="+encodeURIComponent(search[1].trim());
-   const result=await b.request({action:"open_external_url",payload:{url}});
-   if(result?.ok!==true)throw Error(result?.error||"Windows did not confirm opening the search.");
-   setLaptopListenerState("online","search opened on Windows");autoLog("success","Phone-to-laptop web search: "+search[1]);return;
-  }
-  if(/^(?:show|get|check) (?:my )?(?:windows )?desktop info$/i.test(normalized)){
-   const result=await b.request({action:"get_desktop_info",payload:{}});
-   if(result?.ok!==true)throw Error(result?.error||"Windows desktop status was not confirmed.");
-   setLaptopListenerState("online","Windows desktop status received");autoLog("success","Phone requested Windows desktop information");return;
-  }
-  if(/\bsearch\b/.test(normalized)&&/\bchrome\b/.test(normalized)){
-   setLaptopListenerState("online","Chrome search needs the companion browser connector");
-   autoLog("warning","Laptop received a Chrome search request, but no active-tab connector is installed. No extra Chrome window was opened.");
-   return;
-  }
-  setLaptopListenerState("online","command received; unsupported action was not executed");
-  autoLog("warning","Laptop listener received an unsupported remote command and safely did not execute it: "+instruction.slice(0,180));
+  const summary=await executeLaptopInstruction(instruction);
+  setLaptopListenerState("online",summary);
+  autoLog("success","Windows listener: "+summary);
  }catch(error){
-  setLaptopListenerState("error",String(error?.message||error).slice(0,120));
-  autoLog("error","Laptop listener action failed: "+String(error?.message||error).slice(0,180));
+  const message=String(error?.message||error).slice(0,180);
+  setLaptopListenerState("error",message);
+  autoLog("error","Windows listener command failed: "+message);
  }
+}
+async function pollLaptopCommands(activeUser){
+ if(!activeUser||laptopListenerOwner!==activeUser.id||!db||laptopPollBusy)return;
+ laptopPollBusy=true;
+ try{
+  const {data,error}=await db.auth.getSession();
+  const token=data?.session?.access_token;
+  if(error||!token)throw Error("Sign-in session unavailable.");
+  const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{
+   method:"POST",
+   headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+token},
+   body:JSON.stringify({type:"listener_poll"}),
+   signal:AbortSignal.timeout(8000)
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||result.ok!==true)throw Error(result.error||"Laptop command poll failed.");
+  for(const command of (Array.isArray(result.commands)?result.commands:[])){
+   if(laptopListenerOwner!==activeUser.id)break;
+   let status="done",summary="";
+   try{summary=await executeLaptopInstruction(command.instruction)}
+   catch(error){status="failed";summary=String(error?.message||error).slice(0,400)}
+   try{await acknowledgeLaptopCommand(activeUser,command.id,status,summary)}
+   catch(error){setLaptopListenerState("error","Command ran but acknowledgement failed: "+String(error?.message||error).slice(0,100));autoLog("error","Windows listener acknowledgement failed: "+String(error?.message||error));continue}
+   setLaptopListenerState(status==="done"?"online":"error",summary);
+   autoLog(status==="done"?"success":"error","Remote command "+status+": "+summary);
+  }
+ }catch(error){
+  setLaptopListenerState("error","Listener poll failed · "+String(error?.message||error).slice(0,100));
+ }finally{laptopPollBusy=false}
 }
 async function sendLaptopHeartbeat(activeUser){
  if(!activeUser||laptopListenerOwner!==activeUser.id||!db)return false;
@@ -2430,7 +2473,12 @@ async function sendLaptopHeartbeat(activeUser){
   const {data,error}=await db.auth.getSession();
   const token=data?.session?.access_token;
   if(error||!token)throw new Error("sign-in session unavailable");
-  const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+token},body:JSON.stringify({type:"listener_heartbeat"}),signal:AbortSignal.timeout(8000)});
+  const response=await fetch(SUPABASE_URL+"/functions/v1/remote-action",{
+   method:"POST",
+   headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+token},
+   body:JSON.stringify({type:"listener_heartbeat"}),
+   signal:AbortSignal.timeout(8000)
+  });
   const result=await response.json().catch(()=>({}));
   if(!response.ok||result.ok!==true)throw new Error(result.error||"heartbeat rejected");
   setLaptopListenerState("online","heartbeat confirmed · "+new Date().toLocaleTimeString());
@@ -2439,19 +2487,33 @@ async function sendLaptopHeartbeat(activeUser){
 }
 function startLaptopCommandListener(activeUser){
  if(laptopHeartbeatTimer){clearInterval(laptopHeartbeatTimer);laptopHeartbeatTimer=null}
+ if(laptopPollTimer){clearInterval(laptopPollTimer);laptopPollTimer=null}
  if(laptopListenerChannel){try{db?.removeChannel(laptopListenerChannel)}catch{};laptopListenerChannel=null}
  laptopListenerOwner=activeUser?.id||null;
  if(!activeUser||!db){setLaptopListenerState("offline","sign in to connect");return}
  const b=bridge();
  if(!b){setLaptopListenerState("unavailable","use the installed Windows companion");return}
- setLaptopListenerState("connecting","connecting to secure command channel");
+ setLaptopListenerState("connecting","starting authenticated laptop listener");
+ const connect=async()=>{
+  await sendLaptopHeartbeat(activeUser);
+  if(laptopListenerOwner!==activeUser.id)return;
+  await pollLaptopCommands(activeUser);
+  if(!laptopPollTimer)laptopPollTimer=setInterval(()=>pollLaptopCommands(activeUser),4000);
+  if(!laptopHeartbeatTimer)laptopHeartbeatTimer=setInterval(()=>sendLaptopHeartbeat(activeUser),30000);
+ };
+ connect().catch(error=>setLaptopListenerState("error",String(error?.message||error).slice(0,120)));
+ // Realtime is a low-latency hint; authenticated queue polling is the durable path.
  laptopListenerChannel=db.channel("bosley-laptop-"+activeUser.id)
   .on("broadcast",{event:"automation"},({payload})=>{handleLaptopBroadcast(payload)})
   .subscribe(status=>{
    if(laptopListenerOwner!==activeUser.id)return;
-   if(status==="SUBSCRIBED"){setLaptopListenerState("connecting","channel connected; checking heartbeat");sendLaptopHeartbeat(activeUser);laptopHeartbeatTimer=setInterval(()=>sendLaptopHeartbeat(activeUser),30000)}
-   else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setLaptopListenerState("error",status);
-   else if(status==="CLOSED")setLaptopListenerState("offline","channel closed");
+   if(status==="SUBSCRIBED"){setLaptopListenerState("online","secure channel connected; durable queue polling active");}
+   else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setLaptopListenerState("connecting",status+" · durable queue polling remains active");
+   else if(status==="CLOSED")setLaptopListenerState("connecting","Realtime closed · durable queue polling remains active");
+  });
+}
+
+te("offline","channel closed");
   });
 }
 

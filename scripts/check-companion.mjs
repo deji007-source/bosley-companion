@@ -507,7 +507,7 @@ assert.ok(!windowsWorkflow.includes("hat-group") && !windowsWorkflow.includes("T
 assert.ok(windowsWorkflow.includes("const width = 112, height = 138;"), "Windows floating ghost must use the smaller compact footprint");
 assert.ok(windowsWorkflow.includes("title: ' '") && windowsWorkflow.includes("walkingCompanion.setTitle('')") && windowsWorkflow.includes("<title></title>"), "Windows floating ghost must not expose a desktop filename/title label");
 assert.ok(windowsWorkflow.includes('rx="10.5" ry="14.5"'), "Windows ghost must use larger oval eyes");
-assert.ok(windowsWorkflow.includes("C28 118 38 118 48 132C58 146 68 146 78 132C88 118 98 118 108 132C118 146 126 146 132 132"), "Windows ghost must restore four inward scalloped base curves");
+assert.ok(windowsWorkflow.includes("C18 126 20 122 24 122 4 0 8-4 12-9 4-5 8-7 12-7 5 0 8 4 12 9"), "Windows ghost must restore four inward scalloped base curves");
 assert.ok(windowsWorkflow.includes("button::before { display:none!important; content:none!important; }"), "Windows widget must not render a backing plaque");
 assert.ok(windowsWorkflow.includes("setWalkingCompanionEnabled(true)") && windowsWorkflow.includes("floatingCompanion: true"), "Wake Up must restore the Windows floating ghost");
 
@@ -520,7 +520,7 @@ assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listen
 assert.ok(windowsWorkflow.includes("TOP WIDGET VISIBLE") && windowsWorkflow.includes("COMPANION VISIBLE"), "Windows must explicitly reveal both floating widgets after loading");
 assert.ok(windowsWorkflow.includes("version: 2") && windowsWorkflow.includes("saved.version === 2"), "Windows must migrate older companion visibility preferences to visible by default");
 assert.ok(windowsWorkflow.includes("widget-eyes") && windowsWorkflow.includes("background:rgba(5,5,5,.96)"), "Top widget must remain visibly rendered without any text plaque");
-assert.ok(windowsWorkflow.includes("C75 12C42 12 18 39 18 76v43c0 5 2 8 6 8"), "Windows ghost silhouette must use rounded lower outer edges and smooth scallops");
+assert.ok(windowsWorkflow.includes("M75 12C42 12 18 39 18 76v43c0 5 2 8 6 8"), "Windows ghost silhouette must use rounded lower outer edges and smooth scallops");
 assert.ok(windowsWorkflow.includes("FLOATING VIEW SHOWN") && windowsWorkflow.includes("FLOATING VIEW NAVIGATION FAILED"), "Detached Windows views must report visible state and navigation failures");
 assert.ok(html.includes("#dock-launcher>#dock-menu-toggle{display:grid!important") && html.includes("#dock-launcher-menu[hidden]{display:none!important}"), "The cross-platform launcher must restore the single-icon dropdown menu");
 assert.ok(html.includes("body.desktop-floating-view #side-dock{position:relative!important") && html.includes("flex:1 1 auto!important"), "Detached Windows side views must fill their own window");

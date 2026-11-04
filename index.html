@@ -717,7 +717,7 @@ window.addEventListener("unhandledrejection", event => {
 window.addEventListener("error", event => {
   const message = String(event.message || "Unknown JavaScript error");
   const source = String(event.filename || "");
-  if (source && !/index\\.html|file:\\/\\//i.test(source) && message !== "Script error.") return;
+  if (source && !/index\.html|file:\/\//i.test(source) && message !== "Script error.") return;
   console.error("[Bosley] Runtime error:", message, source, event.lineno || "");
 });
 

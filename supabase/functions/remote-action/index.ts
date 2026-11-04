@@ -135,8 +135,8 @@ Deno.serve(async (req: Request) => {
     if (!instruction || instruction.length > 2000) return new Response(JSON.stringify({ ok: false, error: "Instruction must be 1–2000 characters." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     const { data: queued, error } = await sb.from("automation_runs").insert({ user_id: user.id, instruction, status: "pending", summary: "remote_listener_queue:v1" }).select("id").single();
     if (error || !queued?.id) return new Response(JSON.stringify({ ok: false, error: "Could not queue automation." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
-    // Attempt both connected execution paths. Telegram delivery is optional and never
-    // blocks the durable laptop queue if the trigger bot isn't configured/linked.
+    // The durable Windows queue is authoritative. Telegram delivery remains optional
+    // and never blocks command pickup if the trigger bot is not configured or linked.
     const { data: heartbeat } = await sb.from("device_status").select("last_seen")
       .eq("user_id", user.id).eq("device", "bosley-laptop-listener").maybeSingle();
     const lastSeen = heartbeat?.last_seen ? new Date(heartbeat.last_seen).getTime() : 0;
@@ -163,7 +163,7 @@ Deno.serve(async (req: Request) => {
     }
     return new Response(JSON.stringify({
       ok: true, queued: true, id: queued.id,
-      listenerNotified, listenerOnline, queued: true, telegramNotified, telegramDetail,
+      listenerNotified, listenerOnline, telegramNotified, telegramDetail,
       delivery: listenerOnline ? "queued_for_laptop_poll" : "queued_laptop_offline",
     }), { headers: { ...cors, "Content-Type": "application/json" } });
   } else if (body.type === "os") {

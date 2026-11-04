@@ -1,4 +1,5 @@
 name: Build Bosley Android APK
+run-name: Bosley Android Build (${{ github.sha }})
 
 on:
   workflow_dispatch:
@@ -151,7 +152,7 @@ jobs:
         if: steps.signing.outputs.configured != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: Bosley-Android-Debug-APK-Development-Only
+          name: Bosley-Android-Debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14

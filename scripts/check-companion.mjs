@@ -623,3 +623,7 @@ assert.ok(html.includes("bosley-search-hero") && html.includes("bosley-search-re
 assert.ok(androidInstaller.includes("GhostMascotView") && androidInstaller.includes("dp(44),dp(44)"), "Android overlay must be a compact ghost character, not a wide eye bar");
 assert.ok(androidInstaller.includes("openExternalUrl(PluginCall call)") && androidInstaller.includes("Intent.ACTION_VIEW") && androidInstaller.includes("Only HTTP and HTTPS links"), "Android must open approved web and WhatsApp chat links through native app routing");
 assert.ok(html.includes("native?.openExternalUrl){const opened=await native.openExternalUrl({url})") && html.includes("wa.me/234"), "Android automation must route external links natively and document the WhatsApp chat-link format");
+
+assert.ok(html.includes('let voiceProfile="warm"') && html.includes('value="warm">Warm &amp; welcoming</option>'), "Bosley must default to a warm and welcoming voice profile");
+assert.ok(html.includes('voiceProfile==="warm"?0.96:1') && html.includes('voiceProfile==="warm"?1.04:1'), "Browser speech must use a relaxed, natural warm voice cadence");
+assert.ok(androidInstaller.includes('call.getString("profile","warm")') && androidInstaller.includes('"warm".equals(profile)?1.04f'), "Android native speech must support the warm welcoming profile too");

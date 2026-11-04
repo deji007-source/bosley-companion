@@ -201,7 +201,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
-@CapacitorPlugin(name="BosleyOverlay", permissions={@Permission(alias="microphone", strings={android.Manifest.permission.RECORD_AUDIO})})
+@CapacitorPlugin(name="BosleyOverlay", permissions={@Permission(alias="microphone", strings={android.Manifest.permission.RECORD_AUDIO}), @Permission(alias="notifications", strings={android.Manifest.permission.POST_NOTIFICATIONS})})
 public class BosleyOverlayPlugin extends Plugin {
   private android.speech.tts.TextToSpeech bosleyTts;
   private boolean bosleyTtsReady=false;
@@ -319,6 +319,14 @@ public class BosleyOverlayPlugin extends Plugin {
   }
   @ActivityCallback private void overlayPermissionResult(PluginCall call,ActivityResult result){
     JSObject r=new JSObject();r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);
+  }
+  @PluginMethod public void requestCallNotificationPermission(PluginCall call){
+    if(Build.VERSION.SDK_INT>=33 && getPermissionState("notifications")!=PermissionState.GRANTED){requestPermissionForAlias("notifications",call,"callNotificationPermissionCallback");return;}
+    JSObject r=new JSObject();r.put("granted",true);call.resolve(r);
+  }
+  @PermissionCallback private void callNotificationPermissionCallback(PluginCall call){
+    boolean granted=Build.VERSION.SDK_INT<33||getPermissionState("notifications")==PermissionState.GRANTED;
+    JSObject r=new JSObject();r.put("granted",granted);if(granted)call.resolve(r);else call.reject("Notification permission is required for incoming Bosley calls.");
   }
   @PluginMethod public void showIncomingCall(PluginCall call){
     try{

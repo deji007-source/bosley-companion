@@ -212,7 +212,7 @@ const contracts = [
   ["Voice profile changes schedule cloud sync", 'localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};scheduleCompanionSettingsSync()'],
   ["Account sign-in restores companion preferences", "syncPlannerTasks();syncCompanionSettings()"],
   ["Authenticated laptop listener", "function startLaptopCommandListener(activeUser)"],
-  ["User-scoped laptop realtime channel", 'db.channel("bosley-laptop-"+activeUser.id)'],
+  ["Windows listener uses authenticated polling instead of fragile Realtime joins", "setInterval(()=>pollLaptopCommands(activeUser),4000)"],
   ["Phone-to-laptop wake action", 'action:"wake_companion"'],
   ["Laptop listener reports status", 'id="laptop-listener-status"'],
   ["Unsupported remote commands fail closed", "unsupported remote command and safely did not execute it"],

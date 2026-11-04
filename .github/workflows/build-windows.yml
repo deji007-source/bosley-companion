@@ -1,5 +1,6 @@
 
 name: Build Bosley Windows App
+run-name: Bosley Windows Build (${{ github.sha }})
 
 on:
   workflow_dispatch:

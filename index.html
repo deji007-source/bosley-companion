@@ -296,6 +296,14 @@ html.widget-mode #dock-launcher{right:6px;top:40%}
 @media(max-width:520px){#dock-launcher{right:6px;top:38%;padding:5px;gap:5px}#dock-launcher button{width:32px;height:32px}}
 html.widget-mode #dock-launcher{right:6px;top:40%}
 
+/* The pop-out launcher is deliberately icon-only: never render title text beside icons. */
+#dock-launcher-menu{width:min(184px,calc(100vw - 76px))!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;padding:9px!important}
+#dock-launcher-menu button{display:grid!important;place-items:center!important;justify-content:center!important;align-content:center!important;width:100%!important;min-width:0!important;height:42px!important;min-height:42px!important;padding:0!important;font-size:19px!important;text-align:center!important;white-space:nowrap!important}
+#dock-launcher-menu button::after{content:none!important;display:none!important}
+#dock-launcher-menu button[title]::after{content:none!important}
+#dock-launcher-menu button.on{border-color:#d8d8d8!important;background:#eaeaea!important;color:#080808!important}
+@media(max-width:520px){#dock-launcher-menu{width:min(168px,calc(100vw - 72px))!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}#dock-launcher-menu button{height:39px!important;min-height:39px!important}}
+
 /* In transparent desktop-widget mode, explicitly re-enable interaction on the side dock. */
 html.widget-mode #dock-launcher,html.widget-mode #side-dock{pointer-events:auto!important}
 html.widget-mode #dock-launcher button,html.widget-mode #side-dock button,html.widget-mode #side-dock input,html.widget-mode #side-dock textarea,html.widget-mode #side-dock select{pointer-events:auto!important}
@@ -2509,17 +2517,19 @@ function startLaptopCommandListener(activeUser){
  if(!activeUser||!db){setLaptopListenerState("offline","sign in to connect");return}
  const b=bridge();
  if(!b){setLaptopListenerState("unavailable","use the installed Windows companion");return}
- setLaptopListenerState("connecting","starting authenticated polling listener");
+ setLaptopListenerState("connecting","starting authenticated polling listener; automatic reconnect enabled");
+ // Start retry timers before the first network request. A transient startup failure
+ // must not permanently strand the listener until the desktop app is reopened.
+ laptopPollTimer=setInterval(()=>pollLaptopCommands(activeUser),4000);
+ laptopHeartbeatTimer=setInterval(()=>sendLaptopHeartbeat(activeUser),30000);
  const connect=async()=>{
   const heartbeatOk=await sendLaptopHeartbeat(activeUser);
   if(laptopListenerOwner!==activeUser.id)return;
-  if(!heartbeatOk)throw Error("Windows listener heartbeat was not accepted.");
+  if(!heartbeatOk)throw Error("Windows listener heartbeat was not accepted; automatic retry remains active.");
   await pollLaptopCommands(activeUser);
-  if(!laptopPollTimer)laptopPollTimer=setInterval(()=>pollLaptopCommands(activeUser),4000);
-  if(!laptopHeartbeatTimer)laptopHeartbeatTimer=setInterval(()=>sendLaptopHeartbeat(activeUser),30000);
-  setLaptopListenerState("online","authenticated durable queue polling active");
+  if(laptopListenerOwner===activeUser.id)setLaptopListenerState("online","authenticated durable queue polling active · auto-reconnect enabled");
  };
- connect().catch(error=>setLaptopListenerState("error",String(error?.message||error).slice(0,120)));
+ connect().catch(error=>setLaptopListenerState("error",String(error?.message||error).slice(0,140)+" · retrying"));
 }
 
 function installInlineWritingSuggestions(){
@@ -2599,8 +2609,15 @@ async function drawAgents(){
 
 async function renderBosleySearch(){
  const panel=$("#bosley-search");if(!panel)return;
- panel.innerHTML='<h3>Bosley Search</h3><p class="mute">Search your Second Brain, memories, tasks and project notes alongside public web results. Search is separate from Automation; it does not run device commands.</p><form id="bosley-search-form" class="form"><input id="bosley-search-query" type="search" maxlength="180" placeholder="Search anything… e.g. project notes, AI agents, public datasets" required><div class="row"><label class="mute"><input id="bosley-search-web" type="checkbox" checked> Include public web</label><button class="primary" type="submit" id="bosley-search-submit">Search</button></div></form><p class="status" id="bosley-search-status" role="status" aria-live="polite">Sign in to search your personal Brain. Public search can be opened separately.</p><div id="bosley-search-results" class="items"></div><div class="actions"><a class="link" id="bosley-search-external" target="_blank" rel="noopener noreferrer" hidden>Open public search ↗</a></div>';
+ panel.innerHTML='<h3>Bosley Search</h3><p class="mute">Search your Second Brain, memories, tasks and project notes alongside public web results. Search is separate from Automation; it does not run device commands.</p><form id="bosley-search-form" class="form"><div class="row bosley-search-entry"><input id="bosley-search-query" type="search" maxlength="180" placeholder="Search anything… e.g. project notes, AI agents, public datasets" required aria-label="Search query"><button type="button" id="bosley-search-voice" aria-label="Dictate search query" title="Voice typing">🎙</button></div><div class="row"><label class="mute"><input id="bosley-search-web" type="checkbox" checked> Include public web</label><button class="primary" type="submit" id="bosley-search-submit">Search</button><button type="button" id="bosley-search-polish" title="Improve grammar and clarity">✦ Improve</button></div><p class="mute" id="bosley-search-writing-status" role="status" aria-live="polite">Voice typing and optional writing suggestions are available.</p></form><p class="status" id="bosley-search-status" role="status" aria-live="polite">Sign in to search your personal Brain. Public search can be opened separately.</p><div id="bosley-search-results" class="items"></div><div class="actions"><a class="link" id="bosley-search-external" target="_blank" rel="noopener noreferrer" hidden>Open public search ↗</a></div>';
  const form=$("#bosley-search-form"),input=$("#bosley-search-query"),status=$("#bosley-search-status"),results=$("#bosley-search-results"),web=$("#bosley-search-web"),external=$("#bosley-search-external");
+ const voice=$("#bosley-search-voice"),polish=$("#bosley-search-polish"),writingStatus=$("#bosley-search-writing-status");
+ voice.onclick=async()=>{voice.disabled=true;writingStatus.textContent="Listening for your search…";try{
+  const plugin=window.Capacitor?.Plugins?.BosleyOverlay;
+  if(plugin?.startNativeSpeechRecognition){const permission=await plugin.requestMicrophonePermission();if(!permission?.granted)throw Error("Allow microphone permission in Android settings, then try again.");const result=await plugin.startNativeSpeechRecognition();const spoken=String(result?.text||"").trim();if(spoken){input.value=(input.value+" "+spoken).trim();input.dispatchEvent(new Event("input",{bubbles:true}));input.focus();writingStatus.textContent="Voice query captured. Review it, then search."; }else writingStatus.textContent="No speech captured. Try again or type your query.";}
+  else {const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Speech)throw Error("Live speech recognition is not available in this browser.");const recognition=new Speech();recognition.lang=navigator.language||"en-US";recognition.interimResults=true;recognition.onresult=event=>{let phrase="";for(let n=event.resultIndex;n<event.results.length;n++)phrase+=event.results[n][0]?.transcript||"";input.value=phrase.trim();input.dispatchEvent(new Event("input",{bubbles:true}))};recognition.onerror=event=>{writingStatus.textContent="Voice typing error: "+event.error};recognition.onend=()=>{voice.disabled=false;writingStatus.textContent=input.value?"Voice query captured. Review it, then search.":"Voice typing stopped."};recognition.start();return;}
+ }catch(error){writingStatus.textContent=String(error?.message||error).slice(0,180)}finally{voice.disabled=false}};
+ polish.onclick=async()=>{const query=input.value.trim();if(query.length<4){writingStatus.textContent="Enter a longer query first so Bosley can suggest a clearer version.";return}polish.disabled=true;writingStatus.textContent="Checking grammar and clarity…";try{const {data,error}=await db.functions.invoke("bosley-writing-assist",{body:{text:query,mode:"polish"}});if(error)throw error;const revised=String(data?.revised||"").trim();if(revised&&revised!==query){input.value=revised;input.dispatchEvent(new Event("input",{bubbles:true}));writingStatus.textContent="Suggested wording applied. Review the query before searching."}else writingStatus.textContent="Your query already looks clear."}catch(error){writingStatus.textContent="Writing suggestion unavailable: "+String(error?.message||error).slice(0,140)}finally{polish.disabled=false}};
  form.onsubmit=async e=>{e.preventDefault();const query=input.value.trim();if(query.length<2)return;const session=db?(await db.auth.getSession()).data.session:null;if(!session||!user){status.textContent="Sign in to search your personal Brain. You can still use the public search link.";external.href="https://duckduckgo.com/?q="+encodeURIComponent(query);external.hidden=false;return}
  const button=$("#bosley-search-submit");button.disabled=true;status.textContent="Searching your account and public sources…";results.innerHTML="";
  try{const {data,error}=await db.functions.invoke("bosley-search",{body:{query,web:web.checked}});if(error)throw error;if(!data)throw Error("No search response.");

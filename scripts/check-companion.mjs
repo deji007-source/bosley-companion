@@ -231,11 +231,11 @@ for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);
 }
 assert.ok(windowsWorkflow.includes("function openVisualGuide(payload = {})"), "Missing Windows system-level guide overlay");
-assert.ok(windowsWorkflow.includes("border-radius:0 0 15px 15px"), "Windows floating widget must have softly rounded lower edges");
-assert.ok(windowsWorkflow.includes("button { width: 260px; height: 24px;"), "Rendered widget height must match its visible native window bounds");
-assert.ok(windowsWorkflow.includes("compact: { width: 220, height: 22 }"), "Compact rendered widget height must match its native window");
-assert.ok(windowsWorkflow.includes("default: { width: 260, height: 24 }"), "Default rendered widget height must match its native window");
-assert.ok(windowsWorkflow.includes("wide: { width: 300, height: 28 }"), "Wide rendered widget height must match its native window");
+assert.ok(windowsWorkflow.includes("border-radius:0 0 11px 11px"), "Windows floating widget must have softly rounded lower edges");
+assert.ok(windowsWorkflow.includes("button { width: 260px; height: 17px;"), "Rendered widget height must match its visible native window bounds");
+assert.ok(windowsWorkflow.includes("compact: { width: 220, height: 15 }"), "Compact rendered widget height must match its native window");
+assert.ok(windowsWorkflow.includes("default: { width: 260, height: 17 }"), "Default rendered widget height must match its native window");
+assert.ok(windowsWorkflow.includes("wide: { width: 300, height: 19 }"), "Wide rendered widget height must match its native window");
 assert.ok(windowsWorkflow.includes("raw.split(/\\r?\\n/)"), "Find-target must split SSE responses on actual newline characters");
 assert.ok(windowsWorkflow.includes("Some gateway configurations return a single JSON response instead of SSE."), "Find-target must support non-streaming JSON responses too");
 assert.ok(windowsWorkflow.includes("packet.choices?.[0]?.message?.content"), "Find-target must parse ordinary chat-completion JSON payloads");
@@ -519,7 +519,7 @@ assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listen
 
 assert.ok(windowsWorkflow.includes("TOP WIDGET VISIBLE") && windowsWorkflow.includes("COMPANION VISIBLE"), "Windows must explicitly reveal both floating widgets after loading");
 assert.ok(windowsWorkflow.includes("version: 2") && windowsWorkflow.includes("saved.version === 2"), "Windows must migrate older companion visibility preferences to visible by default");
-assert.ok(windowsWorkflow.includes("widget-eyes") && windowsWorkflow.includes("background:rgba(5,5,5,.96)"), "Top widget must remain visibly rendered without any text plaque");
+assert.ok(windowsWorkflow.includes(".widget-eyes{display:none!important}") && windowsWorkflow.includes("background:#050505") && windowsWorkflow.includes("height: 17px"), "Normal Windows bezel widget must be solid black, eye-free and slim");
 assert.ok(windowsWorkflow.includes("M75 12C42 12 18 39 18 76v43c0 5 2 8 6 8"), "Windows ghost silhouette must use rounded lower outer edges and smooth scallops");
 assert.ok(windowsWorkflow.includes("FLOATING VIEW SHOWN") && windowsWorkflow.includes("FLOATING VIEW NAVIGATION FAILED"), "Detached Windows views must report visible state and navigation failures");
 assert.ok(html.includes("#dock-launcher>#dock-menu-toggle{display:grid!important") && html.includes("#dock-launcher-menu[hidden]{display:none!important}"), "The cross-platform launcher must restore the single-icon dropdown menu");

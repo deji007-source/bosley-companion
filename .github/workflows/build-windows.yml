@@ -113,117 +113,52 @@ jobs:
 
           cat > desktop/companion.html <<'COMPANION_HTML_EOF'
           <!doctype html>
-          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-          <style>
-          :root{color-scheme:dark;--ink:#0b0b0b;--coat:#f5f5f5}
-          *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
-          body{-webkit-app-region:drag;user-select:none}svg{width:100%;height:100%;display:block;overflow:visible}
-          #bosley{transform-origin:50% 50%;animation:float 3.8s ease-in-out infinite}
-          #body-group{transform-origin:50% 50%;animation:breathe 2.9s ease-in-out infinite}
-          #arm-L{transform-origin:100% 8%;animation:idle-arm-left 5.2s ease-in-out infinite}
-          #arm-R{transform-origin:0% 8%;animation:idle-arm-right 5.2s ease-in-out infinite}
-          #hat-group{transform-origin:50% 100%;animation:hat-settle 7s ease-in-out infinite}
-          .outline{stroke:var(--ink);stroke-width:10;stroke-linecap:round;stroke-linejoin:round}
-          .coat{fill:var(--coat)}.white{fill:var(--ink)}
-          #head-group,#hat-group,#body-group,#arm-L,#arm-R,#leg-L,#leg-R{transform-box:fill-box;transform-origin:center}
-          #eye-L,#eye-R{transform-box:fill-box;transform-origin:center}
-          #lid-L,#lid-R{opacity:0;transform-box:fill-box;transform-origin:top center}
-          #magnifier{opacity:0;transform-box:fill-box;transform-origin:80% 80%}
-          #shadow{opacity:.38}
-          body[data-state="listening"] #head-group{transform:rotate(-5deg) translateY(-5px)}
-          body[data-state="listening"] #hat-group{transform:rotate(-3deg) translateY(-4px)}
-          body[data-state="listening"] #eye-L,body[data-state="listening"] #eye-R{transform:scaleY(1.08)}
-          body[data-state="thinking"] #head-group{transform:rotate(-8deg)}
-          body[data-state="thinking"] #lid-R{opacity:1;transform:scaleY(.28)}
-          body[data-state="speaking"] #eye-L,body[data-state="speaking"] #eye-R{animation:speak 555ms ease-in-out infinite alternate}
-          body[data-state="speaking"] #mouth-line{opacity:0}
-          body[data-state="speaking"] #mouth-open{opacity:1;transform-box:fill-box;transform-origin:center;animation:mouth-talk 190ms ease-in-out infinite alternate}
-          body[data-state="speaking"] #mouth-inner{opacity:1;animation:mouth-talk 190ms ease-in-out infinite alternate}
-          #mouth-open,#mouth-inner{opacity:0;transition:opacity 90ms ease}
-          #mouth-inner{transform-box:fill-box;transform-origin:center}
-          body[data-state="error"] #head-group{transform:rotate(-5deg) translateY(8px)}
-          body[data-state="error"] #lid-L,body[data-state="error"] #lid-R{opacity:1;transform:scaleY(.5)}
-          body[data-state="error"] .eyes{opacity:.55}
-          body[data-state="success"] #arm-R{transform:rotate(-48deg) translate(-5px,-16px)}
-          body[data-state="success"] #thumb{opacity:1}
-          body[data-state="walk"] #leg-L{animation:step 380ms ease-in-out infinite alternate}
-          body[data-state="walk"] #leg-R{animation:step 380ms ease-in-out infinite alternate-reverse}
-          body[data-state="working"] #head-group{animation:work 1.2s ease-in-out infinite}
-          @keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-.6deg)}}
-          @keyframes breathe{0%,100%{transform:translate(0 75px) scale(1 .82)}50%{transform:translate(0 73px) scale(1 .835)}}
-          @keyframes idle-arm-left{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-3deg)}}
-          @keyframes idle-arm-right{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(3deg)}}
-          @keyframes hat-settle{0%,85%,100%{transform:translate(0 26px) scale(1 .88) rotate(0)}90%{transform:translate(0 26px) scale(1 .88) rotate(2deg)}}
-          @keyframes speak{from{transform:scaleY(1)}to{transform:scaleY(.88)}}
-          @keyframes mouth-talk{from{transform:scaleY(.62)}to{transform:scaleY(1.12)}}
-          @keyframes step{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
-          @keyframes work{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
-          @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-          </style></head><body data-state="idle">
-          <svg id="bosley" viewBox="0 0 512 768" role="img" aria-label="Bosley, a small monochrome noir companion">
-            <defs><filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="10"/></filter></defs>
-            <ellipse id="shadow" cx="256" cy="696" rx="104" ry="15" fill="#000000" filter="url(#soft-shadow)"/>
-            <g id="leg-L" class="outline" transform="translate(-15 0)"><path d="M213 602 Q204 633 207 672 Q210 692 231 692 Q251 692 251 672 L250 610Z" class="coat"/></g>
-            <g id="leg-R" class="outline" transform="translate(15 0)"><path d="M262 610 L261 672 Q261 692 282 692 Q303 692 306 672 L299 602Z" class="coat"/></g>
-            <g id="body-group" transform="translate(0 75) scale(1 .82)">
-              <g id="arm-L" class="outline"><path d="M151 391 Q126 410 119 456 Q116 481 135 486 Q153 489 160 465 L181 423Z" class="coat"/></g>
-              <g id="arm-R" class="outline"><path d="M361 391 Q386 410 393 456 Q396 481 377 486 Q359 489 352 465 L331 423Z" class="coat"/>
-                <path id="thumb" d="M378 461 Q395 446 390 430 Q387 421 379 428 L367 449Z" fill="#f5f5f5" stroke="#0b0b0b" stroke-width="8" opacity="0"/>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <style>
+              *{box-sizing:border-box}
+              html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
+              body{display:grid;place-items:center;-webkit-app-region:drag;user-select:none}
+              svg{width:100%;height:100%;display:block;overflow:visible}
+              #ghost{transform-origin:50% 50%;animation:ghost-float 3.6s ease-in-out infinite}
+              .ghost-shape{fill:#fff;stroke:#101820;stroke-width:4.2;stroke-linejoin:round;stroke-linecap:round}
+              .ghost-edge{fill:none;stroke:#55c6e8;stroke-width:2;opacity:.72}
+              .ghost-eye{fill:#050505;transform-box:fill-box;transform-origin:center;animation:ghost-blink 5.1s ease-in-out infinite}
+              #eye-R{animation-delay:.035s}
+              body[data-state="listening"] #ghost{animation:ghost-listen .7s ease-in-out infinite alternate}
+              body[data-state="thinking"] #ghost,body[data-state="working"] #ghost{animation:ghost-think .8s ease-in-out infinite alternate}
+              body[data-state="success"] .ghost-edge{opacity:1}
+              body[data-state="error"] .ghost-edge{stroke:#9aa4ad;opacity:1}
+              @keyframes ghost-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+              @keyframes ghost-listen{from{transform:translateY(0) scale(1)}to{transform:translateY(-3px) scale(1.035)}}
+              @keyframes ghost-think{from{transform:translateY(1px) scale(.985)}to{transform:translateY(-3px) scale(1.035)}}
+              @keyframes ghost-blink{0%,45%,48%,100%{transform:scaleY(1)}46.5%,47.5%{transform:scaleY(.08)}}
+              @media(prefers-reduced-motion:reduce){#ghost,.ghost-eye{animation:none!important}}
+            </style>
+          </head>
+          <body data-state="idle">
+            <svg viewBox="0 0 150 180" role="img" aria-label="Bosley white ghost with large blinking black eyes" xmlns="http://www.w3.org/2000/svg">
+              <defs><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter></defs>
+              <g id="ghost">
+                <path d="M75 12C42 12 18 39 18 76v67c0 8 7 11 13 6l14-11 14 12c5 4 10 4 15-1l10-10 13 11c5 4 11 3 15-2l9-11 10 9c7 6 14 2 14-6V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
+                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v67c0 8 7 11 13 6l14-11 14 12c5 4 10 4 15-1l10-10 13 11c5 4 11 3 15-2l9-11 10 9c7 6 14 2 14-6V76c0-37-26-64-60-64Z"/>
+                <path class="ghost-edge" d="M22 111V76c0-34 22-60 53-60"/>
+                <ellipse id="eye-L" class="ghost-eye" cx="56" cy="78" rx="8.5" ry="12"/>
+                <ellipse id="eye-R" class="ghost-eye" cx="94" cy="78" rx="8.5" ry="12"/>
               </g>
-              <path id="coat" d="M165 335 Q174 291 215 279 Q256 265 297 279 Q338 291 347 335 Q377 390 366 496 L349 608 Q256 648 163 608 L146 496 Q135 390 165 335Z" fill="#f5f5f5" class="outline"/>
-              <path id="shirt-placket" d="M256 286 L256 534" fill="none" stroke="#0b0b0b" stroke-width="6" stroke-linecap="round"/>
-              <path id="shirt-collar-L" d="M211 282 L256 315 L239 369 L204 319Z" fill="#fff" stroke="#0b0b0b" stroke-width="7" stroke-linejoin="round"/>
-              <path id="shirt-collar-R" d="M301 282 L256 315 L273 369 L308 319Z" fill="#fff" stroke="#0b0b0b" stroke-width="7" stroke-linejoin="round"/>
-              <path id="shirt-open-neck" d="M239 369 L256 315 L273 369" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="256" cy="397" r="5" fill="#0b0b0b"/>
-              <circle cx="256" cy="429" r="5" fill="#0b0b0b"/>
-              <path d="M173 376 Q190 389 204 376 M308 376 Q322 389 339 376" fill="none" stroke="#0b0b0b" stroke-width="4" stroke-linecap="round"/>
-              <path id="top-hem" d="M164 520 Q256 540 348 520" fill="none" stroke="#0b0b0b" stroke-width="7" stroke-linecap="round"/>
-              <path id="trousers-L" d="M171 535 Q211 546 251 538 L248 640 Q222 650 188 638Z" fill="#f5f5f5" class="outline"/>
-              <path id="trousers-R" d="M261 538 Q301 546 341 535 L324 638 Q290 650 264 640Z" fill="#f5f5f5" class="outline"/>
-              <path id="trouser-seam" d="M256 545 L256 632" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round"/>
-              <path id="waistband" d="M174 535 Q256 552 338 535" fill="none" stroke="#888" stroke-width="6" stroke-linecap="round"/>
-            </g>
-            <g id="head-group" transform="translate(0 26) scale(1 .88)">
-              <path id="head" d="M164 220 C164 145 199 91 256 91 C313 91 348 145 348 220 C348 309 315 372 256 378 C197 372 164 309 164 220Z" fill="#f5f5f5" class="outline"/>
-              <path id="faceplate" d="M181 212 Q256 191 331 212 L326 303 Q256 330 186 303Z" fill="#0b0b0b"/>
-              <g class="eyes">
-                <rect id="eye-L" x="198" y="235" width="42" height="64" rx="21" class="white"/>
-                <rect id="eye-R" x="272" y="235" width="42" height="64" rx="21" class="white"/>
-              </g>
-              <path id="lid-L" d="M194 237 Q219 218 244 237 L241 264 Q219 248 197 264Z" fill="#0b0b0b"/>
-              <path id="lid-R" d="M268 237 Q293 218 318 237 L315 264 Q293 248 271 264Z" fill="#0b0b0b"/>
-              <path id="mouth-line" d="M243 354 Q256 358 269 354" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round"/>
-              <path id="mouth-open" d="M242 351 Q256 356 270 351 Q270 371 256 373 Q242 371 242 351Z" fill="#0b0b0b" stroke="#0b0b0b" stroke-width="5" stroke-linejoin="round"/>
-              <path id="mouth-inner" d="M247 364 Q256 359 265 364" fill="none" stroke="#f5f5f5" stroke-width="3" stroke-linecap="round"/>
-            </g>
-            <g id="hat-group" class="outline" transform="translate(36 35) scale(.86 .80)">
-              <path id="hat-crown" d="M190 157 L198 68 Q202 43 224 40 L285 40 Q308 44 314 68 L322 157 Q256 140 190 157Z" fill="#f5f5f5"/>
-              <path id="hat-band" d="M195 124 Q256 113 317 124 L320 143 Q256 133 192 143Z" fill="#0b0b0b"/>
-              <path id="hat-brim" d="M126 164 Q256 133 386 164 Q393 178 375 187 Q256 166 137 187 Q119 178 126 164Z" fill="#f5f5f5"/>
-              <path d="M224 43 Q256 56 290 43" fill="none" stroke="#0b0b0b" stroke-width="5" stroke-linecap="round"/>
-            </g>
-          </svg>
-          <script>
-            (function(){
-              const allowed=['idle','listening','thinking','speaking','working','waiting','success','error','walk'];
-              const apply=s=>{document.body.dataset.state=allowed.includes(s)?s:'idle';};
-              if(window.BosleyDesktop?.onCompanionState) window.BosleyDesktop.onCompanionState(apply);
-              let blinkTimer;
-              const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-              function blink(){
-                if(reduced||document.hidden)return;
-                const eyes=document.querySelector('.eyes');
-                if(!eyes)return;
-                eyes.style.transform='scaleY(.08)';
-                setTimeout(()=>{eyes.style.transform='';},100);
-                if(Math.random()<.16)setTimeout(()=>{eyes.style.transform='scaleY(.08)';setTimeout(()=>eyes.style.transform='',90);},180);
-                blinkTimer=setTimeout(blink,2500+Math.random()*4000);
-              }
-              if(!reduced)blink();
-              window.addEventListener('beforeunload',()=>clearTimeout(blinkTimer));
-            })();
-          </script></body></html>
+            </svg>
+            <script>
+              (function(){
+                const allowed=['idle','listening','thinking','speaking','working','waiting','success','error','walk'];
+                const apply=s=>{document.body.dataset.state=allowed.includes(s)?s:'idle';};
+                if(window.BosleyDesktop?.onCompanionState)window.BosleyDesktop.onCompanionState(apply);
+                document.addEventListener('visibilitychange',()=>{if(document.hidden)document.body.dataset.state='idle';});
+              })();
+            </script>
+          </body>
+          </html>
           COMPANION_HTML_EOF
 
           cat > desktop/assets/companion.js <<'COMPANION_JS_EOF'

@@ -541,7 +541,7 @@ assert.ok(androidInstaller.includes("startForegroundService(ring)")&&androidInst
 assert.ok(androidInstaller.includes('("wide".equals(size)?112:104)'), "Android floating widget default width must be compact");
 assert.ok(androidInstaller.includes('("wide".equals(size)?36:34)'), "Android floating widget default height must be compact");
 
-assert.ok(androidInstaller.includes("widgetWidth=104,widgetHeight=34"), "Android overlay service fallback dimensions must stay compact");
+assert.ok(androidInstaller.includes("widgetWidth=44,widgetHeight=44"), "Android overlay service fallback dimensions must stay tiny and ghost-sized");
 assert.ok(html.includes('aria-label="Open AI Agents"')&&html.includes('data-open-view="agents-panel"'), "AI agents must remain directly accessible from the side rail");
 assert.ok(html.includes('aria-label="Open attachments and tools"'), "The main composer plus button must remain available");
 

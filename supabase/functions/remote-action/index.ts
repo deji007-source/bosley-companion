@@ -181,6 +181,27 @@ Deno.serve(async (req: Request) => {
       listenerNotified, listenerOnline, telegramNotified, telegramDetail,
       delivery: listenerOnline ? "queued_for_laptop_poll" : "queued_laptop_offline",
     }), { headers: { ...cors, "Content-Type": "application/json" } });
+  } else if (body.type === "phone") {
+    const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
+    if (!instruction || instruction.length > 2000) return new Response(JSON.stringify({ ok: false, error: "Instruction must be 1–2000 characters." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+    if (!INTERNAL_PUSH_SECRET) return new Response(JSON.stringify({ ok: false, telegramNotified: false, telegramDetail: "The Telegram-to-phone trigger is not configured on the server." }), { status: 503, headers: { ...cors, "Content-Type": "application/json" } });
+    try {
+      const pushed = await fetch(SUPABASE_URL + "/functions/v1/push-automation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-internal-secret": INTERNAL_PUSH_SECRET },
+        body: JSON.stringify({ user_id: user.id, instruction }),
+        signal: AbortSignal.timeout(8000),
+      });
+      const detail = (await pushed.text()).trim();
+      const telegramNotified = pushed.ok && detail === "ok";
+      return new Response(JSON.stringify({
+        ok: telegramNotified, telegramNotified,
+        telegramDetail: telegramNotified ? "Telegram trigger accepted." : detail.slice(0, 160) || "Telegram trigger rejected.",
+      }), { status: telegramNotified ? 200 : 502, headers: { ...cors, "Content-Type": "application/json" } });
+    } catch (error) {
+      console.error("Phone automation push failed:", error);
+      return new Response(JSON.stringify({ ok: false, telegramNotified: false, telegramDetail: "Phone trigger request failed." }), { status: 502, headers: { ...cors, "Content-Type": "application/json" } });
+    }
   } else if (body.type === "os") {
     const action = typeof body.action === "string" ? body.action : "";
     const allowed = new Set(["move_window", "switch_desktop", "focus_window", "minimize_window", "maximize_window", "click_text", "type_text"]);

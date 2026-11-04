@@ -123,7 +123,7 @@ jobs:
               body{display:grid;place-items:center;-webkit-app-region:drag;user-select:none}
               svg{width:100%;height:100%;display:block;overflow:visible}
               #ghost{transform-origin:50% 50%;animation:ghost-float 3.6s ease-in-out infinite}
-              .ghost-shape{fill:#fff;stroke:#101820;stroke-width:4.2;stroke-linejoin:round;stroke-linecap:round}
+              .ghost-shape{fill:#fff;stroke:#101820;stroke-width:4;stroke-linejoin:round;stroke-linecap:round}
               .ghost-edge{fill:none;stroke:#55c6e8;stroke-width:2;opacity:.72}
               .ghost-eye{fill:#050505;transform-box:fill-box;transform-origin:center;animation:ghost-blink 5.1s ease-in-out infinite}
               #eye-R{animation-delay:.035s}
@@ -142,8 +142,8 @@ jobs:
             <svg viewBox="0 0 150 180" role="img" aria-label="Bosley white ghost with large blinking black eyes" xmlns="http://www.w3.org/2000/svg">
               <defs><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter></defs>
               <g id="ghost">
-                <path d="M75 12C42 12 18 39 18 76v56C28 118 38 118 48 132C58 146 68 146 78 132C88 118 98 118 108 132C118 146 126 146 132 132V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
-                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v56C28 118 38 118 48 132C58 146 68 146 78 132C88 118 98 118 108 132C118 146 126 146 132 132V76c0-37-26-64-60-64Z"/>
+                <path d="M75 12C42 12 18 39 18 76v43c0 5 2 8 6 8 4 0 8-4 12-9 4-5 8-7 12-7 5 0 8 4 12 9 4 5 8 8 13 8s9-3 13-8c4-5 7-9 12-9 4 0 8 2 12 7 4 5 8 9 12 9 4 0 6-3 6-8V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
+                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v43c0 5 2 8 6 8 4 0 8-4 12-9 4-5 8-7 12-7 5 0 8 4 12 9 4 5 8 8 13 8s9-3 13-8c4-5 7-9 12-9 4 0 8 2 12 7 4 5 8 9 12 9 4 0 6-3 6-8V76c0-37-26-64-60-64Z"/>
                 <path class="ghost-edge" d="M22 111V76c0-34 22-60 53-60"/>
                 <ellipse id="eye-L" class="ghost-eye" cx="56" cy="78" rx="10.5" ry="14.5"/>
                 <ellipse id="eye-R" class="ghost-eye" cx="94" cy="78" rx="10.5" ry="14.5"/>
@@ -197,9 +197,9 @@ jobs:
           let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
           // Slim bezel-connected Dynamic Island sizes; keep the island centered on the physical display edge.
           const WIDGET_SIZES = {
-            compact: { width: 220, height: 16 },
-            default: { width: 260, height: 18 },
-            wide: { width: 300, height: 20 }
+            compact: { width: 220, height: 22 },
+            default: { width: 260, height: 24 },
+            wide: { width: 300, height: 28 }
           };
 
           function escapeHtml(value) {
@@ -347,8 +347,17 @@ jobs:
             });
 
             bubble.setAlwaysOnTop(true, 'screen-saver');
+            bubble.once('ready-to-show', () => {
+              if (!bubble || bubble.isDestroyed()) return;
+              bubble.setAlwaysOnTop(true, 'screen-saver');
+              bubble.showInactive();
+            });
             bubble.loadFile(path.join(__dirname, 'bubble.html')).then(() => {
+              if (!bubble || bubble.isDestroyed()) return;
               bubble.webContents.send('bosley:widget-appearance', widgetAppearance);
+              if (!bubble.isVisible()) bubble.showInactive();
+              bubble.setAlwaysOnTop(true, 'screen-saver');
+              logStartup('TOP WIDGET VISIBLE', bubble.getBounds());
             }).catch(error => logStartup('BUBBLE LOAD FAILED', error.message));
             bubble.on('closed', () => {
               bubble = null;
@@ -357,16 +366,19 @@ jobs:
 
           // Persist the walking companion preference locally; never sync desktop visibility to the cloud.
           const companionPreferenceFile = path.join(app.getPath('userData'), 'walking-companion.json');
-          let walkingCompanionPreference = { enabled: true, x: null, y: null };
+          let walkingCompanionPreference = { version: 2, enabled: true, x: null, y: null };
           function readWalkingCompanionPreference() {
             try {
               const saved = JSON.parse(fs.readFileSync(companionPreferenceFile, 'utf8'));
               return {
-                enabled: typeof saved.enabled === 'boolean' ? saved.enabled : true,
+                // Version 1 stored an accidental disabled state during earlier widget experiments.
+                // Migrate it once to the expected visible-by-default companion state.
+                version: 2,
+                enabled: saved.version === 2 && typeof saved.enabled === 'boolean' ? saved.enabled : true,
                 x: Number.isFinite(saved.x) ? saved.x : null,
                 y: Number.isFinite(saved.y) ? saved.y : null
               };
-            } catch { return { enabled: true, x: null, y: null }; }
+            } catch { return { version: 2, enabled: true, x: null, y: null }; }
           }
           walkingCompanionPreference = readWalkingCompanionPreference();
           let walkingCompanionEnabled = walkingCompanionPreference.enabled;
@@ -374,6 +386,7 @@ jobs:
             try {
               fs.mkdirSync(path.dirname(companionPreferenceFile), { recursive: true });
               fs.writeFileSync(companionPreferenceFile, JSON.stringify({
+                version: 2,
                 enabled: walkingCompanionEnabled,
                 x: walkingCompanionPreference.x,
                 y: walkingCompanionPreference.y
@@ -403,13 +416,21 @@ jobs:
             walkingCompanion.setTitle('');
             walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
             walkingCompanion.setIgnoreMouseEvents(false);
-            walkingCompanion.once('ready-to-show', () => {
+            const revealCompanion = () => {
               if (!walkingCompanion || walkingCompanion.isDestroyed() || !walkingCompanionEnabled) return;
+              const currentDisplay = screen.getDisplayMatching(walkingCompanion.getBounds());
+              const visibleArea = currentDisplay.workArea;
+              const current = walkingCompanion.getBounds();
+              const x = Math.max(visibleArea.x, Math.min(current.x, visibleArea.x + visibleArea.width - current.width));
+              const y = Math.max(visibleArea.y, Math.min(current.y, visibleArea.y + visibleArea.height - current.height));
+              walkingCompanion.setBounds({ x, y, width: current.width, height: current.height });
               walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
-              walkingCompanion.showInactive();
+              if (!walkingCompanion.isVisible()) walkingCompanion.showInactive();
               walkingCompanion.moveTop();
               logStartup('COMPANION VISIBLE', walkingCompanion.getBounds());
-            });
+            };
+            walkingCompanion.once('ready-to-show', revealCompanion);
+            walkingCompanion.webContents.once('did-finish-load', revealCompanion);
             walkingCompanion.webContents.on('did-fail-load', (_event, code, description, url, isMainFrame) => {
               if (isMainFrame) logStartup('COMPANION PAGE LOAD FAILED', { code, description, url });
             });
@@ -420,10 +441,7 @@ jobs:
               if (level >= 2) logStartup('COMPANION RENDERER ERROR', { message, line, sourceId });
             });
             walkingCompanion.loadFile(path.join(__dirname, 'companion.html')).then(() => {
-              if (walkingCompanion && !walkingCompanion.isDestroyed() && walkingCompanionEnabled && !walkingCompanion.isVisible()) {
-                walkingCompanion.showInactive();
-                walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
-              }
+              if (walkingCompanion && !walkingCompanion.isDestroyed() && walkingCompanionEnabled) revealCompanion();
             }).catch(error => logStartup('COMPANION LOAD FAILED', error.message));
             walkingCompanion.on('moved', () => {
               if (!walkingCompanion || walkingCompanion.isDestroyed()) return;
@@ -803,8 +821,12 @@ jobs:
             win.webContents.on('console-message', (_event, level, message) => {
               if (level >= 2) logStartup('FLOATING VIEW ERROR', viewId, message);
             });
+            win.webContents.on('did-fail-load', (_event, code, description, url, isMainFrame) => {
+              if (isMainFrame) logStartup('FLOATING VIEW NAVIGATION FAILED', viewId, { code, description, url });
+            });
+            win.webContents.on('render-process-gone', (_event, details) => logStartup('FLOATING VIEW RENDERER STOPPED', viewId, details));
             win.loadFile(path.join(__dirname, 'index.html'), { query: { bosleyFloat: viewId } })
-              .then(() => { if (!win.isDestroyed()) { win.show(); win.focus(); } })
+              .then(() => { if (!win.isDestroyed()) { win.show(); win.focus(); logStartup('FLOATING VIEW SHOWN', viewId, win.getBounds()); } })
               .catch(error => {
                 logStartup('FLOATING VIEW LOAD FAILED', viewId, error.message);
                 if (!win.isDestroyed()) win.close();
@@ -1137,11 +1159,15 @@ jobs:
               }
 
               .wordmark { display: none; }
-              /* The launcher remains clickable but has no backing plaque, bar, or text. */
-              button { width: 260px; height: 18px; padding: 0; border: 0!important; border-radius: 0; gap: 0; background: transparent!important; box-shadow: none!important; color: transparent; }
+              /* Minimal visible, text-free launcher: curved capsule with a small Bosley face. */
+              button { width: 260px; height: 24px; padding: 0; border: 1px solid rgba(255,255,255,.48); border-top:0; border-radius:0 0 15px 15px; gap:0; background:rgba(5,5,5,.96); box-shadow:0 4px 14px rgba(0,0,0,.34),inset 0 -1px rgba(255,255,255,.12); color:transparent; }
               button::before { display:none!important; content:none!important; }
-              button:hover,button:focus-visible { border:0!important; background:transparent!important; box-shadow:none!important; }
-              svg,.wordmark { display:none!important; }
+              button:hover,button:focus-visible { border-color:rgba(255,255,255,.8); background:#080808; box-shadow:0 5px 18px rgba(0,0,0,.4); }
+              .widget-eyes{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:100%}
+              .widget-eyes i{display:block;width:5px;height:9px;border-radius:50%;background:#fff;animation:widget-blink 5.2s ease-in-out infinite}
+              .widget-eyes i:last-child{animation-delay:.04s}
+              @keyframes widget-blink{0%,45%,48%,100%{transform:scaleY(1)}46.5%,47.5%{transform:scaleY(.08)}}
+              svg,.wordmark{display:none!important;}
 
               button:hover {
                 border-color: #fff;
@@ -1161,30 +1187,16 @@ jobs:
               aria-label="Open Bosley Companion"
               title="Open Bosley Companion"
             >
-              <svg
-                viewBox="0 0 108 64"
-                role="img"
-                aria-label="Bosley incognito fedora with two white vertical eyes"
-              >
-                <path d="M31 28 L42 7 Q44 4 48 7 L54 11 L61 7 Q65 4 67 8 L78 28 Z"
-                  fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
-                <path d="M36 21 Q54 23 73 21 L78 28 L31 28 Z"
-                  fill="#171717" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
-                <path d="M8 34 Q19 27 40 27 L68 27 Q89 27 100 34 Q79 40 54 40 Q29 40 8 34 Z"
-                  fill="#050505" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
-                <path d="M39 30 Q54 32 69 30" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
-                <rect x="35" y="29" width="13" height="30" rx="6.5" fill="#fff"/>
-                <rect x="60" y="29" width="13" height="30" rx="6.5" fill="#fff"/>
-              </svg>
+              <span class="widget-eyes" aria-hidden="true"><i></i><i></i></span>
               <span class="wordmark">BOSLEY</span>
             </button>
 
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 220, height: 16 },
-                default: { width: 260, height: 18 },
-                wide: { width: 300, height: 20 }
+                compact: { width: 220, height: 22 },
+                default: { width: 260, height: 24 },
+                wide: { width: 300, height: 28 }
               };
               function applyAppearance(value) {
                 if (!value) return;
@@ -1195,8 +1207,8 @@ jobs:
                   ({ thin: '1px', medium: '2px', bold: '3px' })[value.border] || '1px');
                 button.style.width = size.width + 'px';
                 button.style.height = size.height + 'px';
-                document.querySelector('svg').style.width = Math.max(38, Math.min(52, Math.round(size.width * 0.27))) + 'px';
-                document.querySelector('svg').style.height = Math.max(24, Math.min(30, size.height - 10)) + 'px';
+                const eyes=document.querySelector('.widget-eyes');
+                if(eyes)eyes.style.transform='scale('+(size.width/260)+')';
               }
               if (window.bosleyDesktop.onWidgetAppearance) {
                 window.bosleyDesktop.onWidgetAppearance(applyAppearance);

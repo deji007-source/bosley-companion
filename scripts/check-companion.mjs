@@ -565,6 +565,9 @@ assert.ok(appScript.includes('db.from("bosley_planner_tasks").select("task_id,ti
 assert.ok(appScript.includes('db.from("eng_projects").select("name,description,discipline,status,updated_at")'), "AI context must retrieve engineering projects");
 assert.ok(appScript.includes('db.from("eng_tasks").select("title,done,project_id,created_at")'), "AI context must retrieve open engineering tasks");
 assert.ok(appScript.includes("RELEVANT BOSLEY WORKSPACE CONTEXT"), "Retrieved cross-module data must be clearly identified as workspace context");
+assert.ok(html.includes('function finishDrag(e){const activate=e.type==="pointerup"&&!!dragState&&!dragged;dragState=null;if(activate){e.preventDefault();suppressLaunchClick=true;toggle();requestAnimationFrame(()=>{suppressLaunchClick=false})}}'), "The main panel must open directly on a clean touch or mouse pointer-up");
+assert.ok(html.includes('launcher.addEventListener("click",e=>{if(suppressLaunchClick)'), "The main panel launcher must suppress duplicate pointer clicks while preserving keyboard activation");
+assert.ok(html.includes('function toggle(open){') && html.includes('p.hidden=!open;document.body.classList.toggle("panel-open",!!open)'), "The main panel must have one shared visibility state for launcher and native actions");
 assert.ok(appScript.includes("const requestHistory=history.slice(-8)"), "Chat requests must keep a bounded rolling conversation window");
 assert.ok(appScript.includes("String(knowledgeContext||\"\").slice(0,4200)"), "Second Brain context must be bounded before sending to the provider");
 assert.ok(appScript.includes("historyText.slice(0,9000)"), "Rolling chat history must store compact text rather than repeated large context");

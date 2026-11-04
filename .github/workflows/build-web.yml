@@ -1,4 +1,5 @@
 name: Build Bosley Web
+run-name: Bosley Web Build (${{ github.sha }})
 on:
   pull_request:
     branches: [main]
@@ -11,10 +12,43 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
-      - run: npm run build
-      - run: npm run test:companion
+      - name: Install dependencies
+        run: npm install
+      - name: Build and type-check companion
+        run: npm run build
+      - name: Run companion regression checks
+        run: npm run test:companion
+      - name: Stage the production companion website
+        run: |
+          test -s index.html
+          mkdir -p dist
+          cp index.html dist/index.html
+          grep -q 'id="side-dock"' dist/index.html
+          grep -q 'id="launch"' dist/index.html
+      - name: Check production website JavaScript syntax
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const html = fs.readFileSync('dist/index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+            .filter(([, attrs, body]) => !/\bsrc\s*=/.test(attrs) && body.trim());
+          if (!scripts.length) throw new Error('No inline application script found.');
+          scripts.forEach(([, , body], index) => fs.writeFileSync(`.bosley-web-check-${index}.cjs`, body));
+          console.log(`Extracted ${scripts.length} inline script(s) for syntax checks.`);
+          NODE
+          for file in .bosley-web-check-*.cjs; do node --check "$file"; done
+          rm -f .bosley-web-check-*.cjs
+      - name: Upload website test bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bosley-Web-Test-Bundle-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14

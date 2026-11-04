@@ -38,6 +38,24 @@ Deno.serve(async (req: Request) => {
   if (!user) return new Response(JSON.stringify({ ok: false, error: "Sign-in required." }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return new Response(JSON.stringify({ ok: false, error: "Invalid JSON body." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } }); }
+  if (body.type === "listener_status") {
+    const { data, error } = await sb.from("device_status")
+      .select("last_seen")
+      .eq("user_id", user.id)
+      .eq("device", "bosley-laptop-listener")
+      .maybeSingle();
+    if (error) {
+      console.error("Laptop listener status check failed:", error);
+      return new Response(JSON.stringify({ ok: false, error: "Could not verify the Windows listener." }), {
+        status: 500, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    const seen = data?.last_seen ? new Date(data.last_seen).getTime() : 0;
+    const online = Number.isFinite(seen) && seen > 0 && Date.now() - seen < 90000;
+    return new Response(JSON.stringify({ ok: true, online, last_seen: data?.last_seen ?? null }), {
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
   if (body.type === "listener_heartbeat") {
     const { error } = await sb.from("device_status").upsert({
       user_id: user.id,

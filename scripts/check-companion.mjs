@@ -507,7 +507,8 @@ assert.ok(!windowsWorkflow.includes("hat-group") && !windowsWorkflow.includes("T
 assert.ok(windowsWorkflow.includes("const width = 112, height = 138;"), "Windows floating ghost must use the smaller compact footprint");
 assert.ok(windowsWorkflow.includes("title: ' '") && windowsWorkflow.includes("walkingCompanion.setTitle('')") && windowsWorkflow.includes("<title></title>"), "Windows floating ghost must not expose a desktop filename/title label");
 assert.ok(windowsWorkflow.includes('rx="10.5" ry="14.5"'), "Windows ghost must use larger oval eyes");
-assert.ok(windowsWorkflow.includes('Q75 159 132 143'), "Windows ghost silhouette must use one subtle bottom curve");
+assert.ok(windowsWorkflow.includes("C28 118 38 118 48 132C58 146 68 146 78 132C88 118 98 118 108 132C118 146 126 146 132 132"), "Windows ghost must restore four inward scalloped base curves");
+assert.ok(windowsWorkflow.includes("button::before { display:none!important; content:none!important; }"), "Windows widget must not render a backing plaque");
 assert.ok(windowsWorkflow.includes("setWalkingCompanionEnabled(true)") && windowsWorkflow.includes("floatingCompanion: true"), "Wake Up must restore the Windows floating ghost");
 
 

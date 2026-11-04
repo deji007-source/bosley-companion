@@ -14,14 +14,14 @@ if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
 for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"):
     if permission not in text:
-        text = text.replace("<application", f'<uses-permission android:name="{permission}" />\\n    <application', 1)
+        text = text.replace("<application", f'<uses-permission android:name="{permission}" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
     text = text.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1) if 'xmlns:tools=' not in text else text
     text = text.replace("<application", '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <application', 1)
 if "BosleyOverlayService" not in text:
     text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion widget displayed over other apps" /></service>\n    </application>')
 else:
-    text = re.sub(r'<service([^>]*android:name="\\.BosleyOverlayService"[^>]*)/>', r'<service\\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion widget displayed over other apps" /></service>', text)
+    text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion widget displayed over other apps" /></service>', text)
 manifest.write_text(text)
 # The Android guide is intentionally stationary. Do not register an accessibility
 # service to inspect other apps or automatically reposition the guide target.
@@ -107,7 +107,7 @@ public class BosleyOverlayService extends Service {
     LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(10),dp(8),dp(10),dp(8));card.setElevation(dp(12));
     GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(8,8,8));bg.setCornerRadius(dp(12));bg.setStroke(dp(1),Color.LTGRAY);card.setBackground(bg);
     TextView title=new TextView(this);title.setText("BOSLEY GUIDE");title.setTextColor(Color.WHITE);title.setTextSize(11);title.setTypeface(null,android.graphics.Typeface.BOLD);title.setPadding(0,0,0,dp(2));card.addView(title);
-    TextView body=new TextView(this);body.setText(guideInstruction+"\\nUse Find target to locate a matching visible control. Bosley does not click or type.");body.setTextColor(Color.LTGRAY);body.setTextSize(11);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(4);card.addView(body,bp);guideStatusView=body;
+    TextView body=new TextView(this);body.setText(guideInstruction+"\nUse Find target to locate a matching visible control. Bosley does not click or type.");body.setTextColor(Color.LTGRAY);body.setTextSize(11);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,-2);bp.topMargin=dp(4);card.addView(body,bp);guideStatusView=body;
     Button find=new Button(this);find.setText("Find target");find.setTextColor(Color.WHITE);find.setOnClickListener(v->{String enabled=android.provider.Settings.Secure.getString(getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);if(enabled==null||!enabled.contains(getPackageName()+"/"+BosleyTargetAccessibilityService.class.getName())){Intent settings=new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(settings);body.setText("Enable Bosley visual target finder in Accessibility settings, then return and tap Find target.");return;}Intent request=new Intent(BosleyTargetAccessibilityService.FIND);request.setPackage(getPackageName());request.putExtra("task",guideInstruction);sendBroadcast(request);body.setText("Searching visible controls…");});LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,dp(36));fp.topMargin=dp(3);card.addView(find,fp);
     Button stop=new Button(this);stop.setText("Stop");stop.setTextColor(Color.WHITE);stop.setOnClickListener(v->removeGuide());LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(36));sp.topMargin=dp(2);card.addView(stop,sp);
     guideCard=card;guideCardLp=new WindowManager.LayoutParams(dp(250),WindowManager.LayoutParams.WRAP_CONTENT,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);guideCardLp.gravity=Gravity.TOP|Gravity.START;guideCardLp.x=dp(12);guideCardLp.y=dp(64);

@@ -52,7 +52,8 @@ public class BosleyOverlayService extends Service {
     }
     Intent open=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
     PendingIntent pending=PendingIntent.getActivity(this,701,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-    Notification notification=new Notification.Builder(this,Build.VERSION.SDK_INT>=26?CHANNEL_ID:"")
+    Notification.Builder builder=Build.VERSION.SDK_INT>=26?new Notification.Builder(this,CHANNEL_ID):new Notification.Builder(this);
+    Notification notification=builder
       .setSmallIcon(android.R.drawable.ic_dialog_info)
       .setContentTitle("Bosley floating companion is active")
       .setContentText("The floating widget can stay visible while you use other apps.")
@@ -328,12 +329,12 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void showGuide(PluginCall call){
     if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(getContext())){call.reject("Enable Android display-over-other-apps permission first.");return;}
     JSObject p=call.getObject("payload",new JSObject());String instruction=p.getString("instruction","Follow the tether to the next step.");
-    Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_GUIDE);i.putExtra("instruction",instruction);getContext().startService(i);
+    Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_GUIDE);i.putExtra("instruction",instruction);startOverlayService(i);
     JSObject r=new JSObject();r.put("ok",true);r.put("state","native-overlay-requested");call.resolve(r);
   }
-  @PluginMethod public void stopGuide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE_GUIDE);getContext().startService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);}
+  @PluginMethod public void stopGuide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE_GUIDE);startOverlayService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);}
   @PluginMethod public void setAppearance(PluginCall call){
-    Intent i=styledIntent(call,BosleyOverlayService.ACTION_STYLE);getContext().startService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);
+    Intent i=styledIntent(call,BosleyOverlayService.ACTION_STYLE);startOverlayService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);
   }
   private void startOverlayService(Intent intent){
     if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(intent);
@@ -345,7 +346,7 @@ public class BosleyOverlayPlugin extends Plugin {
     int w="compact".equals(size)?96:("wide".equals(size)?112:104),h="compact".equals(size)?32:("wide".equals(size)?36:34);int c="sharp".equals(edge)?18:("balanced".equals(edge)?20:22);int b="thin".equals(border)?1:("bold".equals(border)?3:2);int ew="compact".equals(faceSize)?8:("default".equals(faceSize)?9:11),eh="compact".equals(faceSize)?15:("default".equals(faceSize)?17:20);int gap="close".equals(eyeGap)?8:("wide".equals(eyeGap)?16:12);
     i.putExtra("widgetWidth",w);i.putExtra("widgetHeight",h);i.putExtra("cornerDp",c);i.putExtra("borderDp",b);i.putExtra("eyeWidth",ew);i.putExtra("eyeHeight",eh);i.putExtra("eyeGapDp",gap);i.putExtra("eyeShape",eyeShape);return i;
   }
-  @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);getContext().startService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}
+  @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);startOverlayService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}
   @PluginMethod public void consumeLaunchAction(PluginCall call){
     String action=getActivity().getIntent().getStringExtra("bosley_quick_action");
     getActivity().getIntent().removeExtra("bosley_quick_action");

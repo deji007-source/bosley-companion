@@ -108,7 +108,6 @@ public class BosleyOverlayService extends Service {
       float phase=android.os.SystemClock.uptimeMillis()%5100;float blink=(phase>2350&&phase<2490)?.12f:1f;
       canvas.save();canvas.translate(45,51);canvas.scale(1,blink);canvas.drawOval(-7.2f,-10.2f,7.2f,10.2f,paint);canvas.restore();
       canvas.save();canvas.translate(75,51);canvas.scale(1,blink);canvas.drawOval(-7.2f,-10.2f,7.2f,10.2f,paint);canvas.restore();
-      paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.4f);paint.setStrokeCap(Paint.Cap.ROUND);paint.setColor(Color.rgb(77,159,202));accent.reset();accent.moveTo(44,83);accent.quadTo(60,89,76,83);canvas.drawPath(accent,paint);
       canvas.restore();
       if(blink<1f)postInvalidateDelayed(35);else postInvalidateDelayed(Math.max(40,(long)(5100-phase)));
     }
@@ -116,7 +115,8 @@ public class BosleyOverlayService extends Service {
   void showBar(){if(bar!=null)return;
     GhostMascotView mascot=new GhostMascotView(this);bar=mascot;
     lp=new WindowManager.LayoutParams(dp(44),dp(44),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
-    lp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;lp.y=dp(7);
+    // Default anchor: right edge, slightly above vertical centre.
+    lp.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;lp.x=dp(10);lp.y=-dp(55);
     mascot.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;openCompanion("voice");};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;

@@ -495,6 +495,16 @@ assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automa
 assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
 assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not claim delivery without listener confirmation");
 
+const remoteActionFunction = readText(new URL("../supabase/functions/remote-action/index.ts", import.meta.url), "utf8");
+assert.ok(remoteActionFunction.includes('body.type === "listener_heartbeat"'), "Windows listener heartbeat must be authenticated and supported by the remote-action function");
+assert.ok(remoteActionFunction.includes('onConflict: "user_id,device"'), "Windows listener heartbeat must update one account/device row instead of creating duplicates");
+const deviceStatusMigration = readText(new URL("../supabase/migrations/20261104011500_add_windows_listener_device_status.sql", import.meta.url), "utf8");
+assert.ok(deviceStatusMigration.includes("ENABLE ROW LEVEL SECURITY") && deviceStatusMigration.includes("auth.uid() = user_id"), "Device heartbeat reads must be restricted to the signed-in account");
+assert.ok(windowsWorkflow.includes("eye.position") === false, "Mascot eyes must be positioned with visible front-face geometry");
+assert.ok(windowsWorkflow.includes("group,x,1.98,.585") && windowsWorkflow.includes("group,x,1.98,.648"), "Windows 3D mascot eye meshes must sit in front of the face surface");
+assert.ok(windowsWorkflow.includes("hat.position.set(0,2.34,.12)") && windowsWorkflow.includes("hat.rotation.set(0,0,0)"), "Windows mascot fedora must be centered and start level");
+
+
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");
 assert.ok(html.includes('https://www.google.com/search?q="+encodeURIComponent(search[1].trim())'), "Windows listener must support remote web searches");
 assert.ok(html.includes('action:"get_desktop_info",payload:{}'), "Windows listener must support remote desktop status queries");

@@ -38,6 +38,22 @@ Deno.serve(async (req: Request) => {
   if (!user) return new Response(JSON.stringify({ ok: false, error: "Sign-in required." }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return new Response(JSON.stringify({ ok: false, error: "Invalid JSON body." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } }); }
+  if (body.type === "listener_heartbeat") {
+    const { error } = await sb.from("device_status").upsert({
+      user_id: user.id,
+      device: "bosley-laptop-listener",
+      last_seen: new Date().toISOString(),
+    }, { onConflict: "user_id,device" });
+    if (error) {
+      console.error("Laptop listener heartbeat failed:", error);
+      return new Response(JSON.stringify({ ok: false, error: "Could not register the Windows listener." }), {
+        status: 500, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ ok: true, last_seen: new Date().toISOString() }), {
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
   if (body.type === "automation") {
     const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
     if (!instruction || instruction.length > 2000) return new Response(JSON.stringify({ ok: false, error: "Instruction must be 1–2000 characters." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });

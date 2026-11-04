@@ -216,7 +216,7 @@ const contracts = [
   ["Phone-to-laptop wake action", 'action:"wake_companion"'],
   ["Laptop listener reports status", 'id="laptop-listener-status"'],
   ["General remote instructions are forwarded to Windows chat", "Forwarded to Bosley chat on Windows"],
-  ["Remote chat never executes arbitrary shell commands", "No arbitrary shell command is run"],
+  ["Remote listener rejects unsupported actions when no chat handler is available", "No supported Windows command handler is available"],
   ["Chrome search does not open duplicate browser", "No extra Chrome window was opened."],
 ];
 for (const [label, token] of contracts) {

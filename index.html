@@ -662,6 +662,52 @@ body.desktop-floating-view #side-dock .dock-body{display:flex!important;flex:1 1
 body.desktop-floating-view #side-dock .dock-body>*{width:100%!important;max-width:none!important;min-width:0!important;margin-left:0!important;margin-right:0!important}
 /* Preserve the separate-page behaviour only in Windows; browser and Android stay in-app. */
 body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop-floating-view #dock-launcher{display:none!important}
+</style><style>
+#bosley-search{background:radial-gradient(ellipse at 10% 0%,#14202a 0%,#090d12 34%,#050607 75%);border:1px solid #263746;border-radius:18px;padding:clamp(12px,2.4vw,22px);color:#eef5fa}
+#bosley-search .bosley-search-hero{display:flex;align-items:center;gap:13px;padding:4px 0 16px;border-bottom:1px solid #26323d}
+#bosley-search .bosley-search-mark{display:grid;place-items:center;width:46px;height:46px;flex:0 0 46px;border:1px solid #5b879e;border-radius:15px;background:linear-gradient(145deg,#183448,#0b141d);color:#c7edff;font-size:30px;box-shadow:0 0 24px #69caff16}
+#bosley-search .bosley-search-kicker{margin:0 0 4px;color:#86b9d1;font:9px 'DM Mono',monospace;letter-spacing:.18em}
+#bosley-search h3{margin:0;color:#f4f8fb;font-size:18px;letter-spacing:-.025em}
+#bosley-search .bosley-search-hero .mute{margin:4px 0 0;color:#8d9eab;font-size:11px}
+#bosley-search .bosley-search-form{margin:16px 0 0;padding:0;border:0;background:none}
+#bosley-search .bosley-search-entry{display:flex;align-items:center;gap:8px;padding:5px 7px 5px 13px;border:1px solid #466074;border-radius:13px;background:#070c11;box-shadow:inset 0 1px #ffffff08,0 8px 28px #0005}
+#bosley-search .bosley-search-entry>span{color:#8dc8e5;font-size:22px}
+#bosley-search .bosley-search-entry input{min-width:0;flex:1;border:0!important;outline:0!important;background:transparent!important;padding:10px 2px!important;font-size:13px}
+#bosley-search .bosley-search-entry button{width:38px;height:38px;border:1px solid #2c3e4d;border-radius:10px;background:#101d28}
+#bosley-search .bosley-search-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px}
+#bosley-search .bosley-search-controls label{display:flex;align-items:center;gap:6px;font-size:10px}
+#bosley-search .bosley-search-controls button{min-height:35px;padding:8px 12px;border:1px solid #344958;border-radius:9px;background:#101a23;font-size:10px}
+#bosley-search .bosley-search-controls button.primary{background:#e8f5fb;color:#071018;border-color:#e8f5fb;font-weight:800}
+#bosley-search .bosley-search-controls button:disabled{opacity:.5}
+#bosley-search .bosley-search-statusline{display:flex;align-items:center;gap:8px;margin:13px 0 8px;padding:9px 10px;border:1px solid #253746;border-radius:9px;background:#0b1219}
+#bosley-search .bosley-search-statusline p{margin:0;color:#b6c7d2;font-size:10px}
+#bosley-search .bosley-search-live-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#78c6e8;box-shadow:0 0 10px #78c6e866}
+#bosley-search .bosley-search-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:13px 0 8px;color:#9db9c9;font:9px 'DM Mono',monospace;letter-spacing:.12em}
+#bosley-search .bosley-search-section-head span{color:#708392;letter-spacing:0}
+#bosley-search .bosley-search-section-head button{border:0;background:none;color:#9db9c9;font-size:9px}
+#bosley-search .bosley-search-chips{display:flex;gap:7px;flex-wrap:wrap}
+#bosley-search .bosley-search-chips button{max-width:100%;padding:7px 10px;border:1px solid #293d4c;border-radius:999px;background:#0a131b;color:#c2d8e5;font-size:10px;text-align:left;overflow-wrap:anywhere}
+#bosley-search .bosley-search-results{display:grid;gap:13px;margin-top:12px}
+#bosley-search .bosley-search-group{min-width:0;padding:12px;border:1px solid #263746;border-radius:13px;background:linear-gradient(145deg,#0c141c,#080c11)}
+#bosley-search .bosley-search-group .item{margin:7px 0 0;padding:10px;border-color:#273744;background:#080e14}
+#bosley-search .bosley-search-result{align-items:flex-start;gap:10px}
+#bosley-search .bosley-search-result main{min-width:0}
+#bosley-search .bosley-search-result strong{color:#e9f5fb;font-size:11px;overflow-wrap:anywhere}
+#bosley-search .bosley-search-result p{margin:5px 0;color:#9eafba;font-size:10px;line-height:1.55}
+#bosley-search .bosley-search-result small{color:#688194;font:9px 'DM Mono',monospace}
+#bosley-search .bosley-search-result .link{flex:0 0 auto;white-space:nowrap}
+#bosley-search .bosley-search-empty{padding:15px;border:1px dashed #3a5262;border-radius:12px;background:#0a131a}
+#bosley-search .bosley-search-empty strong{font-size:12px;color:#e5f2f8}
+#bosley-search .bosley-search-empty p,#bosley-search .bosley-search-empty-note{font-size:10px;line-height:1.55;color:#94a7b4}
+#bosley-search .bosley-search-loading{display:flex;align-items:center;gap:6px;padding:18px;color:#a9c4d3;font-size:10px}
+#bosley-search .bosley-search-loading span{width:6px;height:6px;border-radius:50%;background:#8bd4f5;animation:bosleySearchPulse .8s ease-in-out infinite alternate}
+#bosley-search .bosley-search-loading span:nth-child(2){animation-delay:.18s}#bosley-search .bosley-search-loading span:nth-child(3){animation-delay:.36s}
+#bosley-search .bosley-search-loading p{margin-left:5px}
+#bosley-search .bosley-search-external-wrap{margin:12px 0 2px}
+#bosley-search .bosley-search-external-wrap .link{color:#9bdcff;font-size:10px}
+@keyframes bosleySearchPulse{to{opacity:.3;transform:translateY(-3px)}}
+@media(max-width:520px){#bosley-search{padding:12px;border-radius:14px}#bosley-search .bosley-search-mark{width:40px;height:40px;flex-basis:40px}#bosley-search .bosley-search-controls{justify-content:flex-start}#bosley-search .bosley-search-controls label{flex:1 1 100%}#bosley-search .bosley-search-result{flex-direction:column}#bosley-search .bosley-search-result .link{align-self:flex-start}}
+@media(prefers-reduced-motion:reduce){#bosley-search .bosley-search-loading span{animation:none}}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley white ghost companion with blinking black eyes" xmlns="http://www.w3.org/2000/svg">
@@ -694,7 +740,7 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
   <p class="mute">Choose a face preset. Changes are saved on this device and can be updated anytime.</p>
   <div class="widget-native-controls" style="border:1px solid #303030;border-radius:12px;padding:12px;margin:12px 0">
    <h3 style="margin:0 0 6px">Android floating widget</h3>
-   <p class="mute">Keep Bosley's slim, double-outlined rounded bar visible above other apps. Android will ask you to grant display-over-other-apps permission.</p>
+   <p class="mute">Keep a tiny white Bosley ghost above other apps. Tap it to open the companion; drag it to reposition. Android will ask for display-over-other-apps permission.</p>
    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="primary" id="android-overlay-enable">Enable floating widget</button><button type="button" id="android-overlay-hide">Hide floating widget</button></div>
    <p class="fb" id="android-overlay-feedback" role="status" aria-live="polite"></p>
   </div>
@@ -1157,7 +1203,7 @@ async function setupAndroidOverlayControls(){
  if(!native||!plugin){enable.disabled=true;hide.disabled=true;feedback.textContent="Floating overlay is available in the Android APK build; it is not supported in the website.";return}
  enable.disabled=false;hide.disabled=false;
  try{const st=await plugin.status();feedback.textContent=st.granted?"Android overlay permission is granted.":"Tap Enable floating widget and allow Bosley to display over other apps."}catch{feedback.textContent="Android overlay controls are ready. Enable the widget to continue."}
- enable.onclick=async()=>{enable.disabled=true;feedback.textContent="Opening Android overlay permission…";try{let p=await plugin.requestPermission();if(!p.granted){feedback.textContent="Permission not granted. Allow Bosley in Android Settings, then tap Enable again.";return}await plugin.show();feedback.textContent="Floating widget enabled. The rounded bar stays above other apps; tap it to reopen Bosley."}catch(e){feedback.textContent=String(e?.message||"Could not enable floating widget.")}finally{enable.disabled=false}};
+ enable.onclick=async()=>{enable.disabled=true;feedback.textContent="Opening Android overlay permission…";try{let p=await plugin.requestPermission();if(!p.granted){feedback.textContent="Permission not granted. Allow Bosley in Android Settings, then tap Enable again.";return}await plugin.show();feedback.textContent="Floating ghost enabled. Tap the small Bosley character to reopen the companion."}catch(e){feedback.textContent=String(e?.message||"Could not enable floating widget.")}finally{enable.disabled=false}};
  hide.onclick=async()=>{hide.disabled=true;try{await plugin.hide();feedback.textContent="Floating widget hidden. You can enable it again here."}catch(e){feedback.textContent=String(e?.message||"Could not hide floating widget.")}finally{hide.disabled=false}};
 }
 function initFaceSettings(){
@@ -2694,27 +2740,34 @@ async function drawAgents(){
 
 async function renderBosleySearch(){
  const panel=$("#bosley-search");if(!panel)return;
- panel.innerHTML='<h3>Bosley Search</h3><p class="mute">Search your Second Brain, memories, tasks and project notes alongside public web results. Search is separate from Automation; it does not run device commands.</p><form id="bosley-search-form" class="form"><div class="row bosley-search-entry"><input id="bosley-search-query" type="search" maxlength="180" placeholder="Search anything… e.g. project notes, AI agents, public datasets" required aria-label="Search query"><button type="button" id="bosley-search-voice" aria-label="Dictate search query" title="Voice typing">🎙</button></div><div class="row"><label class="mute"><input id="bosley-search-web" type="checkbox" checked> Include public web</label><button class="primary" type="submit" id="bosley-search-submit">Search</button><button type="button" id="bosley-search-polish" title="Improve grammar and clarity">✦ Improve</button></div><p class="mute" id="bosley-search-writing-status" role="status" aria-live="polite">Voice typing and optional writing suggestions are available.</p></form><p class="status" id="bosley-search-status" role="status" aria-live="polite">Sign in to search your personal Brain. Public search can be opened separately.</p><div id="bosley-search-results" class="items"></div><div class="actions"><a class="link" id="bosley-search-external" target="_blank" rel="noopener noreferrer" hidden>Open public search ↗</a></div>';
+ const historyKey="bosley.search.history.v1";
+ const readHistory=()=>{try{const rows=JSON.parse(localStorage.getItem(historyKey)||"[]");return Array.isArray(rows)?rows.filter(x=>typeof x==="string").slice(0,8):[]}catch{return []}};
+ const saveHistory=query=>{const rows=[query,...readHistory().filter(x=>x.toLowerCase()!==query.toLowerCase())].slice(0,8);try{localStorage.setItem(historyKey,JSON.stringify(rows))}catch{}return rows};
+ panel.innerHTML='<div class="bosley-search-hero"><div class="bosley-search-mark" aria-hidden="true">⌕</div><div><p class="bosley-search-kicker">BOSLEY INTELLIGENCE</p><h3>Bosley Search</h3><p class="mute">One search across your Second Brain and the public web.</p></div></div><form id="bosley-search-form" class="form bosley-search-form"><div class="bosley-search-entry"><span aria-hidden="true">⌕</span><input id="bosley-search-query" type="search" maxlength="180" placeholder="What are you looking for?" required aria-label="Search query"><button type="button" id="bosley-search-voice" aria-label="Dictate search query" title="Voice typing">🎙</button></div><div class="bosley-search-controls"><label class="mute"><input id="bosley-search-web" type="checkbox" checked> Search public web too</label><button class="primary" type="submit" id="bosley-search-submit">Search <span aria-hidden="true">↗</span></button><button type="button" id="bosley-search-polish" title="Improve grammar and clarity">✦</button></div><p class="mute" id="bosley-search-writing-status" role="status" aria-live="polite">Type, dictate, or choose a recent search.</p></form><div class="bosley-search-statusline"><span class="bosley-search-live-dot"></span><p class="status" id="bosley-search-status" role="status" aria-live="polite">Ready · Search your Brain and public sources.</p></div><section class="bosley-search-history" id="bosley-search-history" aria-label="Recent searches"></section><div id="bosley-search-results" class="items bosley-search-results"></div><div class="bosley-search-external-wrap"><a class="link" id="bosley-search-external" target="_blank" rel="noopener noreferrer" hidden>Open full Google results ↗</a></div>';
  const form=$("#bosley-search-form"),input=$("#bosley-search-query"),status=$("#bosley-search-status"),results=$("#bosley-search-results"),web=$("#bosley-search-web"),external=$("#bosley-search-external");
- const voice=$("#bosley-search-voice"),polish=$("#bosley-search-polish"),writingStatus=$("#bosley-search-writing-status");
+ const voice=$("#bosley-search-voice"),polish=$("#bosley-search-polish"),writingStatus=$("#bosley-search-writing-status"),history=$("#bosley-search-history");
+ const publicUrl=query=>"https://www.google.com/search?q="+encodeURIComponent(query);
+ const renderHistory=()=>{const rows=readHistory();history.innerHTML=rows.length?'<div class="bosley-search-section-head"><strong>RECENT SEARCHES</strong><button type="button" id="bosley-search-clear-history">Clear</button></div><div class="bosley-search-chips">'+rows.map(q=>'<button type="button" data-search-history="'+esc(q)+'">'+esc(q)+'</button>').join("")+'</div>':'<div class="bosley-search-section-head"><strong>RECENT SEARCHES</strong><span>No recent searches yet</span></div>';history.querySelectorAll("[data-search-history]").forEach(button=>button.addEventListener("click",()=>{input.value=button.dataset.searchHistory;form.requestSubmit()}));$("#bosley-search-clear-history")?.addEventListener("click",()=>{try{localStorage.removeItem(historyKey)}catch{}renderHistory()})};
+ renderHistory();
  voice.onclick=async()=>{voice.disabled=true;writingStatus.textContent="Listening for your search…";try{
   const plugin=window.Capacitor?.Plugins?.BosleyOverlay;
-  if(plugin?.startNativeSpeechRecognition){const permission=await plugin.requestMicrophonePermission();if(!permission?.granted)throw Error("Allow microphone permission in Android settings, then try again.");const result=await plugin.startNativeSpeechRecognition();const spoken=String(result?.text||"").trim();if(spoken){input.value=(input.value+" "+spoken).trim();input.dispatchEvent(new Event("input",{bubbles:true}));input.focus();writingStatus.textContent="Voice query captured. Review it, then search."; }else writingStatus.textContent="No speech captured. Try again or type your query.";}
+  if(plugin?.startNativeSpeechRecognition){const permission=await plugin.requestMicrophonePermission();if(!permission?.granted)throw Error("Allow microphone permission in Android settings, then try again.");const result=await plugin.startNativeSpeechRecognition();const spoken=String(result?.text||"").trim();if(spoken){input.value=(input.value+" "+spoken).trim();input.dispatchEvent(new Event("input",{bubbles:true}));input.focus();writingStatus.textContent="Voice query captured. Review it, then search.";}else writingStatus.textContent="No speech captured. Try again or type your query.";}
   else {const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Speech)throw Error("Live speech recognition is not available in this browser.");const recognition=new Speech();recognition.lang=navigator.language||"en-US";recognition.interimResults=true;recognition.onresult=event=>{let phrase="";for(let n=event.resultIndex;n<event.results.length;n++)phrase+=event.results[n][0]?.transcript||"";input.value=phrase.trim();input.dispatchEvent(new Event("input",{bubbles:true}))};recognition.onerror=event=>{writingStatus.textContent="Voice typing error: "+event.error};recognition.onend=()=>{voice.disabled=false;writingStatus.textContent=input.value?"Voice query captured. Review it, then search.":"Voice typing stopped."};recognition.start();return;}
  }catch(error){writingStatus.textContent=String(error?.message||error).slice(0,180)}finally{voice.disabled=false}};
  polish.onclick=async()=>{const query=input.value.trim();if(query.length<4){writingStatus.textContent="Enter a longer query first so Bosley can suggest a clearer version.";return}polish.disabled=true;writingStatus.textContent="Checking grammar and clarity…";try{const {data,error}=await db.functions.invoke("bosley-writing-assist",{body:{text:query,mode:"polish"}});if(error)throw error;const revised=String(data?.revised||"").trim();if(revised&&revised!==query){input.value=revised;input.dispatchEvent(new Event("input",{bubbles:true}));writingStatus.textContent="Suggested wording applied. Review the query before searching."}else writingStatus.textContent="Your query already looks clear."}catch(error){writingStatus.textContent="Writing suggestion unavailable: "+String(error?.message||error).slice(0,140)}finally{polish.disabled=false}};
- form.onsubmit=async e=>{e.preventDefault();const query=input.value.trim();if(query.length<2)return;const session=db?(await db.auth.getSession()).data.session:null;if(!session||!user){status.textContent="Sign in to search your personal Brain. You can still use the public search link.";external.href="https://duckduckgo.com/?q="+encodeURIComponent(query);external.hidden=false;return}
- const button=$("#bosley-search-submit");button.disabled=true;status.textContent="Searching your account and public sources…";results.innerHTML="";
- try{const {data,error}=await db.functions.invoke("bosley-search",{body:{query,web:web.checked}});if(error)throw error;if(!data)throw Error("No search response.");
- const groups=[{title:"YOUR BOSLEY BRAIN",items:data.internal||[],kind:"brain"},{title:"PUBLIC WEB",items:data.web||[],kind:"web"}];
- results.innerHTML=groups.map(group=>'<section><h3>'+group.title+'</h3>'+ (group.items.length?group.items.map(x=>'<article class="item"><main><strong>'+esc(x.title||"Untitled result")+'</strong><p>'+esc(x.body||x.snippet||"")+'</p><small>'+esc(x.kind||x.category||group.kind)+(x.updatedAt?" · "+esc(new Date(x.updatedAt).toLocaleString()):"")+'</small></main>'+(x.url?'<a class="link" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Open ↗</a>':"")+'</article>').join(""):group.kind==="brain"?'<p class="mute">No exact Brain match yet. Try related searches below, or add useful notes to your Second Brain.</p>':'<p class="mute">No direct web results returned. Try a related query or open the broader search link below.</p>')+'</section>').join("");
- status.textContent=(data.internal?.length||0)+" personal matches · "+(data.web?.length||0)+" public results"+(data.webError?" · "+data.webError:"");
- external.href=data.externalSearchUrl||("https://duckduckgo.com/?q="+encodeURIComponent(query));external.hidden=false;
- const suggestions=[query+" overview",query+" latest updates",query+" related resources"];
- const suggestionBlock=document.createElement("section");suggestionBlock.innerHTML='<h3>RELATED SEARCHES</h3><div class="actions">'+suggestions.map(q=>'<button type="button" class="link" data-related-search="'+esc(q)+'">'+esc(q)+'</button>').join("")+'</div>';results.appendChild(suggestionBlock);
- suggestionBlock.querySelectorAll("[data-related-search]").forEach(el=>el.addEventListener("click",()=>{input.value=el.dataset.relatedSearch;form.requestSubmit()}));
- }catch(error){status.textContent="Search could not complete: "+String(error?.message||error).slice(0,180);external.href="https://duckduckgo.com/?q="+encodeURIComponent(query);external.hidden=false}
- finally{button.disabled=false}
+ form.onsubmit=async e=>{e.preventDefault();const query=input.value.trim();if(query.length<2)return;saveHistory(query);renderHistory();external.href=publicUrl(query);external.hidden=false;results.innerHTML='<div class="bosley-search-loading"><span></span><span></span><span></span><p>Searching your Bosley Brain and public sources…</p></div>';
+  const session=db?(await db.auth.getSession()).data.session:null;
+  if(!session||!user){status.textContent="Public search is ready. Sign in to include your personal Bosley Brain.";results.innerHTML='<section class="bosley-search-empty"><strong>Search the open web</strong><p>Open the full Google results for this query. Sign in to add your private notes, projects and saved memories to the same search.</p><a class="link" href="'+esc(publicUrl(query))+'" target="_blank" rel="noopener noreferrer">Search Google for “'+esc(query)+'” ↗</a></section>';return}
+  const button=$("#bosley-search-submit");button.disabled=true;status.textContent="Searching your account and public sources…";
+  try{const {data,error}=await db.functions.invoke("bosley-search",{body:{query,web:web.checked}});if(error)throw error;if(!data)throw Error("No search response.");
+   const groups=[{title:"YOUR BOSLEY BRAIN",items:data.internal||[],kind:"brain"},{title:"PUBLIC WEB",items:data.web||[],kind:"web"}];
+   results.innerHTML=groups.map(group=>'<section class="bosley-search-group"><div class="bosley-search-section-head"><strong>'+group.title+'</strong><span>'+group.items.length+' RESULTS</span></div>'+(group.items.length?group.items.map(x=>'<article class="item bosley-search-result"><main><strong>'+esc(x.title||"Untitled result")+'</strong><p>'+esc(x.body||x.snippet||"")+'</p><small>'+esc(x.kind||x.category||group.kind)+(x.updatedAt?" · "+esc(new Date(x.updatedAt).toLocaleString()):"")+'</small></main>'+(x.url?'<a class="link" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Open ↗</a>':"")+'</article>').join(""):group.kind==="brain"?'<p class="mute bosley-search-empty-note">No matching Brain notes yet. Try another phrase or save useful information to your Second Brain.</p>':'<p class="mute bosley-search-empty-note">No public results returned for this query. Open Google for broader results.</p>')+'</section>').join("");
+   status.textContent=(data.internal?.length||0)+" Brain matches · "+(data.web?.length||0)+" public results"+(data.webError?" · "+data.webError:"");
+   const suggestions=[query+" overview",query+" latest updates",query+" related resources"];
+   const suggestionBlock=document.createElement("section");suggestionBlock.className="bosley-search-group";suggestionBlock.innerHTML='<div class="bosley-search-section-head"><strong>EXPLORE FURTHER</strong></div><div class="bosley-search-chips">'+suggestions.map(q=>'<button type="button" data-related-search="'+esc(q)+'">'+esc(q)+'</button>').join("")+'</div>';results.appendChild(suggestionBlock);
+   suggestionBlock.querySelectorAll("[data-related-search]").forEach(el=>el.addEventListener("click",()=>{input.value=el.dataset.relatedSearch;form.requestSubmit()}));
+  }catch(error){status.textContent="Bosley Search could not complete: "+String(error?.message||error).slice(0,180);results.innerHTML='<section class="bosley-search-empty"><strong>Your public search is still available</strong><p>The Brain/web search service returned an error. You can open the query directly in Google.</p><a class="link" href="'+esc(publicUrl(query))+'" target="_blank" rel="noopener noreferrer">Open Google results ↗</a></section>'}
+  finally{button.disabled=false}
  };
 }
 async function renderBosleyWritingAssist(){

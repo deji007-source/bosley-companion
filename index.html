@@ -594,26 +594,27 @@ body.desktop-floating-view #side-dock{position:fixed!important;inset:0!important
 body.desktop-floating-view #side-dock .dock-head{-webkit-app-region:drag;cursor:move}
 body.desktop-floating-view #side-dock .dock-head button,body.desktop-floating-view #side-dock .dock-tabs,body.desktop-floating-view #side-dock .dock-body{-webkit-app-region:no-drag}
 body.desktop-floating-view #side-dock .dock-body{height:calc(100% - 48px);overflow:auto}
+
+/* Bosley ghost mascot: white silhouette, black eyes, subtle blue signature edge. */
+#launch{width:62px!important;height:64px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+#launch::after{display:none!important}
+#launch:hover,#launch:active{background:transparent!important;box-shadow:none!important}
+#bosley-mascot{display:block;width:62px;height:62px;overflow:visible;filter:drop-shadow(0 5px 9px #0009)}
+#bosley-mascot .mascot-eye{transform-box:fill-box;transform-origin:center;transition:transform .09s ease}
+html.blink #bosley-mascot .mascot-eye{transform:scaleY(.08)}
+#launch[data-state=thinking] #bosley-mascot{animation:ghost-focus .8s ease-in-out infinite alternate}
+#launch[data-state=working] #bosley-mascot{animation:ghost-focus .55s ease-in-out infinite alternate}
+@keyframes ghost-focus{from{transform:translateY(1px) scale(.98)}to{transform:translateY(-2px) scale(1.035)}}
+@media(prefers-reduced-motion:reduce){#launch[data-state=thinking] #bosley-mascot,#launch[data-state=working] #bosley-mascot{animation:none!important}}
 </style></head>
 <body><div id="root">
-<main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley, an incognito detective companion with a magnifying glass" xmlns="http://www.w3.org/2000/svg">
- <defs><linearGradient id="bosley-coat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#252b38"/><stop offset="1" stop-color="#090c13"/></linearGradient></defs>
- <g class="mascot-body">
-  <path class="mascot-arm mascot-arm-left" d="M31 65Q18 67 15 82L10 94Q9 100 16 101L27 94 39 77Z"/>
-  <path class="mascot-coat" d="M29 54Q34 46 47 45H74Q87 47 91 59L101 99Q102 105 94 106H25Q17 105 20 97Z"/>
-  <path class="mascot-lapel" d="M43 51 57 68 48 91 35 60Z M77 51 61 68 72 91 85 60Z"/>
-  <path class="mascot-shirt" d="M53 56 60 68 67 56 64 93H56Z"/>
-  <path class="mascot-arm mascot-arm-right" d="M85 63Q99 61 103 74L108 84Q111 90 105 94L98 91 88 80Z"/>
-  <path class="mascot-glove" d="M99 88Q104 82 110 87L114 94Q115 100 108 102L100 98Z"/>
-  <path class="mascot-face" d="M32 41Q31 17 60 17 89 17 88 41L84 61Q78 77 60 77 42 77 36 61Z"/>
-  <g class="mascot-eyes"><circle class="mascot-eye" cx="49" cy="46" r="9"/><circle class="mascot-eye" cx="71" cy="46" r="9"/></g>
-  <path class="mascot-brow" d="M41 34Q48 30 55 34M65 34Q72 30 79 34"/>
-  <path class="mascot-mouth-closed" d="M54 64Q60 66 66 64"/>
-  <g class="mascot-mouth-open"><ellipse cx="60" cy="65" rx="5.5" ry="4.5"/><path class="mascot-mouth-inner" d="M56 65Q60 67 64 65Q60 69 56 65Z"/></g>
-  <path class="mascot-buzzcut" d="M33 43Q30 29 38 21Q46 14 60 14Q74 14 82 21Q90 29 87 43L82 40Q78 35 71 33Q60 30 49 33Q41 35 38 42Z"/>
-  <path class="mascot-hairline" d="M38 41Q43 34 51 33M69 33Q78 35 82 41"/>
-  <g class="mascot-magnifier"><circle class="magnifier-glass" cx="17" cy="79" r="10"/><path class="magnifier-handle" d="M24 87 33 99"/></g>
- </g>
+<main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley white ghost companion with blinking black eyes" xmlns="http://www.w3.org/2000/svg">
+ <defs><linearGradient id="bosley-ghost-edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ee8ff"/><stop offset="1" stop-color="#477cbb"/></linearGradient><filter id="bosley-ghost-glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter></defs>
+ <path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="url(#bosley-ghost-edge)" opacity=".28" filter="url(#bosley-ghost-glow)"/>
+ <path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#101820" stroke-width="3.4" stroke-linejoin="round"/>
+ <ellipse class="mascot-eye" cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/>
+ <ellipse class="mascot-eye" cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/>
+ <path d="M44 83Q60 89 76 83" fill="none" stroke="#4d9fca" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
 </svg></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="signin-open" class="signin-shortcut" type="button" aria-label="Open account sign-in" title="Account and sync">Sign in</button><button id="dock-open" aria-label="Open side views" title="Open Workspace, Automation, Appearance and Activity">▤</button><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
@@ -1459,6 +1460,10 @@ async function renderBosleySkills(){
 
 async function send(text,imageData=null,fileContext="",fileNames=[]){
  if(S.busy||(!text&&!imageData&&!fileContext))return;
+ const remoteText=String(text||"").trim();
+ if(remoteModeNativeAndroid&&remoteModeEnabled&&!imageData&&!fileContext&&/^(?:(?:hey|okay|ok)\\s+)?(?:bosley[, ]+\\s*)?(?:wake up|wake bosley|show bosley|open bosley|bring bosley up|(?:open|launch|start)\\s+(?:chrome|google chrome|edge|microsoft edge|notepad|calculator|file explorer|windows explorer)|(?:search(?: the web)? for|look up|google)\\s+.+|(?:show|get|check) (?:my )?(?:windows )?desktop info)$/i.test(remoteText)){
+  await routeRemoteVoiceToLaptop(remoteText);return;
+ }
  let alreadyDisplayed=false;
  if(user){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
  if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}
@@ -1766,9 +1771,15 @@ function initAndroidRemoteMode(){
   const next=!remoteModeEnabled;
   if(next){button.disabled=true;const status=await getRemoteLaptopStatus();button.disabled=false;if(!status.online){setRemoteModeStatus(status.detail+". Open Bosley Companion on Windows first.","offline");note("Remote Mode needs your Windows Companion to be online.");return}}
   remoteModeEnabled=next;try{localStorage.setItem(REMOTE_MODE_KEY,remoteModeEnabled?"1":"0")}catch{}renderRemoteMode();
-  if(remoteModeEnabled){setRemoteModeStatus("Windows laptop connected · voice commands route to Windows","online");note("Remote Mode ON. Your Android voice requests will be sent to Windows.")}
-  else{setRemoteModeStatus("Remote routing is off","idle");note("Remote Mode OFF. Voice requests stay on this device.")}
+  if(remoteModeEnabled){setRemoteModeStatus("Windows laptop connected · voice and supported typed commands route to Windows","online");note("Remote Mode ON. Supported commands will be sent to Windows. Ordinary chat stays on this device.")}
+  else{setRemoteModeStatus("Remote routing is off","idle");note("Remote Mode OFF. Voice and chat stay on this device.")}
  });
+ if(window.__bosleyRemoteStatusTimer)clearInterval(window.__bosleyRemoteStatusTimer);
+ window.__bosleyRemoteStatusTimer=setInterval(async()=>{
+  if(!remoteModeEnabled||document.hidden)return;
+  const status=await getRemoteLaptopStatus();
+  setRemoteModeStatus(status.detail,status.online?"online":"offline");
+ },15000);
 }
 // Initialize the native-only toggle after its markup and handlers exist.
 initAndroidRemoteMode();

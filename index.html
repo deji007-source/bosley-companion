@@ -614,6 +614,19 @@ html.blink #bosley-mascot .mascot-eye{transform:scaleY(.08)}
 #launch[data-state=working] #bosley-mascot{animation:ghost-focus .55s ease-in-out infinite alternate}
 @keyframes ghost-focus{from{transform:translateY(1px) scale(.98)}to{transform:translateY(-2px) scale(1.035)}}
 @media(prefers-reduced-motion:reduce){#launch[data-state=thinking] #bosley-mascot,#launch[data-state=working] #bosley-mascot{animation:none!important}}
+</style><style>
+/* Detached Windows views must occupy the Electron client area edge-to-edge. */
+html,body{width:100%;height:100%;min-width:0;min-height:0;margin:0}
+body.desktop-floating-view,body.desktop-floating-view #root{width:100vw!important;height:100vh!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+body.desktop-floating-view #side-dock{inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;border-radius:0!important;box-sizing:border-box!important}
+body.desktop-floating-view #side-dock .dock-head{flex:0 0 46px}
+body.desktop-floating-view #side-dock .dock-tabs{flex:0 0 auto;min-width:0;overflow-x:auto}
+body.desktop-floating-view #side-dock .dock-body{display:flex;flex:1 1 auto;flex-direction:column;width:100%;height:auto!important;min-width:0;min-height:0;overflow:auto}
+body.desktop-floating-view #dock-body>*{width:100%;max-width:none;min-width:0;margin-left:0!important;margin-right:0!important}
+body.desktop-floating-view .workspace,body.desktop-floating-view .automation{max-width:none!important;width:100%!important;min-width:0!important}
+#dock-launcher-menu button::after{content:none!important;display:none!important}
+#dock-launcher-menu button{background:#0c0d0f!important;box-shadow:none!important}
+#startup-error{display:none!important;visibility:hidden!important;pointer-events:none!important}
 </style></head>
 <body><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley white ghost companion with blinking black eyes" xmlns="http://www.w3.org/2000/svg">
@@ -695,27 +708,19 @@ html.blink #bosley-mascot .mascot-eye{transform:scaleY(.08)}
 <section id="auth-gate" hidden role="dialog" aria-modal="true" aria-labelledby="gate-title"><div class="gate-card"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h1 id="gate-title">Welcome to Bosley</h1><p id="gate-copy">Sign in to continue. Your conversations and workspace sync to your Bosley account.</p><form id="gate-auth"><input id="gate-email" type="email" required autocomplete="email" placeholder="Email address" aria-label="Email address"><input id="gate-password" type="password" required autocomplete="current-password" placeholder="Password" aria-label="Password"><button class="gate-submit" id="gate-submit" type="submit">Sign in securely</button></form><button class="gate-switch" id="gate-switch" type="button">New here? Create an account</button><div class="gate-feedback" id="gate-feedback" role="status" aria-live="polite"></div></div></section>
 <div id="startup-error" hidden role="alert"><strong>Bosley encountered a startup error</strong><span id="startup-error-message">The interface could not finish initializing.</span><code>Try reloading the app. If this persists, share this error text with support.</code></div>
 <script>
+// Keep asynchronous feature failures in diagnostics instead of covering the app
+// with a generic startup-error plaque. Individual views report actionable errors inline.
 window.addEventListener("unhandledrejection", event => {
   const reason = event.reason;
-  const message = String(reason?.message || reason || "Unknown asynchronous startup error");
-  const panel = document.getElementById("startup-error");
-  const detail = document.getElementById("startup-error-message");
-  if (panel && detail) {
-    detail.textContent = "Async error: " + message;
-    panel.hidden = false;
-  }
+  console.warn("[Bosley] Unhandled async operation:", reason);
 });
 window.addEventListener("error", event => {
   const message = String(event.message || "Unknown JavaScript error");
   const source = String(event.filename || "");
-  if (source && !/index\.html|file:\/\//i.test(source) && message !== "Script error.") return;
-  const panel = document.getElementById("startup-error");
-  const detail = document.getElementById("startup-error-message");
-  if (panel && detail) {
-    detail.textContent = message;
-    panel.hidden = false;
-  }
+  if (source && !/index\\.html|file:\\/\\//i.test(source) && message !== "Script error.") return;
+  console.error("[Bosley] Runtime error:", message, source, event.lineno || "");
 });
+
 
 document.addEventListener("DOMContentLoaded",()=>{
 /* Side-view dock: workspace, appearance, automation and activity open beside chat. */

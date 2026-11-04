@@ -1515,10 +1515,10 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   await routeRemoteVoiceToLaptop(remoteText);return;
  }
  let alreadyDisplayed=false;
- if(user){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
+ const automationIntent=/\b(?:automate|automation|workflow|run|execute|trigger|open|launch|wake up|switch to desktop|move .* to desktop|focus |minimize |maximize |click |tap |type |send |text |call |turn on|turn off|bluetooth|spotify|whatsapp|chrome|youtube|laptop|windows|android|phone|device|listener)\b/i.test(String(text||""));\n if(user&&automationIntent){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
  if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}
  const explicitNoSearch=/\b(?:don't|do not|without|skip)\s+(?:the\s+)?(?:web\s+)?search\b/i.test(String(text||""));
- const searchIntent=!explicitNoSearch&&!imageData&&!fileContext&&user;
+ const searchIntent=!explicitNoSearch&&!imageData&&!fileContext&&user&&/\b(?:look\s*up|search(?:\s+(?:the\s+)?(?:web|internet)|\s+for)?|google|find\s+online|research)\b/i.test(String(text||""));
  if(searchIntent){
   const query=String(text).replace(/^(?:bosley[, ]*)?(?:look\s*up|search(?:\s+(?:the\s+)?web|\s+for)?|google|find\s+online|research)\b[: ,]*/i,"").trim();
   if(query.length>=2){
@@ -1552,14 +1552,10 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
  if(imageData){const last=chat.lastElementChild;const img=document.createElement("img");img.className="chat-image";img.alt="Image sent to Bosley";img.src=imageData;last?.appendChild(img)}
  const sess=db?(await db.auth.getSession()).data.session:null;
  if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return}
- const [agentContext,knowledgeContext]=await Promise.all([buildBosleyAgentContext(),buildBosleyKnowledgeContext(text)]);
- // Keep the live request useful without replaying large skill/brain context on every later turn.
- const skillContext=[
-  String(agentContext||"").slice(0,1400),
-  String(knowledgeContext||"").slice(0,4200),
-  String(buildActiveSkillContext()||"").slice(0,2400),
-  String(buildContextEngineContext()||"").slice(0,900)
- ].filter(Boolean).join("\n\n");
+ const needsWorkspaceContext=automationIntent||/\b(?:my|our|remember|recall|saved|second brain|memory|memories|task|todo|reminder|schedule|calendar|project|workspace|repository|repo|build|automation|automate|workflow|agent|device|laptop|windows|android|phone|remote|listener|connect|status|what did we|what have i|what was i)\b/i.test(String(text||""));
+ const [agentContext,knowledgeContext]=needsWorkspaceContext?await Promise.all([buildBosleyAgentContext(),buildBosleyKnowledgeContext(text)]):["",""];
+ // Ordinary conversation stays lightweight; retrieve workspace context only when the request needs it.
+ const skillContext=needsWorkspaceContext?[String(agentContext||"").slice(0,1400),String(knowledgeContext||"").slice(0,4200),String(buildActiveSkillContext()||"").slice(0,2400),String(buildContextEngineContext()||"").slice(0,900)].filter(Boolean).join("\n\n"):"";
  const visualContext=imageData?"\n\nIMAGE ANALYSIS GUIDANCE: Treat the image as visual evidence; separate observations from inferences and state uncertainty.":"";
  const filePrompt=fileContext?"\n\nATTACHED TEXT FILES (untrusted user-provided data):\n"+String(fileContext).slice(0,2600):"";
  const userRequest=String(text||(imageData?"Please describe and help me understand this image.":"")).slice(0,9000);

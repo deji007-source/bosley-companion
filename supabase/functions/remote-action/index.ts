@@ -72,14 +72,78 @@ Deno.serve(async (req: Request) => {
       headers: { ...cors, "Content-Type": "application/json" },
     });
   }
+  if (body.type === "listener_poll") {
+    const { data: pending, error: pendingError } = await sb.from("automation_runs")
+      .select("id, instruction")
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .eq("summary", "remote_listener_queue:v1")
+      .order("created_at", { ascending: true })
+      .limit(5);
+    if (pendingError) {
+      console.error("Laptop command queue read failed:", pendingError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not read the laptop command queue." }), {
+        status: 500, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    if (!pending?.length) return new Response(JSON.stringify({ ok: true, commands: [] }), {
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+    const ids = pending.map((command) => command.id);
+    const now = new Date().toISOString();
+    const { data: claimed, error: claimError } = await sb.from("automation_runs")
+      .update({ status: "processing", updated_at: now })
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .eq("summary", "remote_listener_queue:v1")
+      .in("id", ids)
+      .select("id, instruction");
+    if (claimError) {
+      console.error("Laptop command claim failed:", claimError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not claim laptop commands." }), {
+        status: 500, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ ok: true, commands: claimed ?? [] }), {
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+  if (body.type === "listener_ack") {
+    const id = typeof body.id === "string" ? body.id : "";
+    const status = body.status === "done" ? "completed" : body.status === "failed" ? "failed" : "";
+    const summary = typeof body.summary === "string" ? body.summary.trim().slice(0, 500) : "";
+    if (!id || !status) return new Response(JSON.stringify({ ok: false, error: "A command id and terminal status are required." }), {
+      status: 400, headers: { ...cors, "Content-Type": "application/json" },
+    });
+    const now = new Date().toISOString();
+    const { data: acknowledged, error: ackError } = await sb.from("automation_runs")
+      .update({ status, summary: summary || (status === "completed" ? "Windows listener completed the command." : "Windows listener could not complete the command."), finished_at: now, updated_at: now })
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .eq("status", "processing")
+      .select("id, status")
+      .maybeSingle();
+    if (ackError || !acknowledged) return new Response(JSON.stringify({ ok: false, error: "The command could not be acknowledged." }), {
+      status: 409, headers: { ...cors, "Content-Type": "application/json" },
+    });
+    return new Response(JSON.stringify({ ok: true, command: acknowledged }), {
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
   if (body.type === "automation") {
     const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
     if (!instruction || instruction.length > 2000) return new Response(JSON.stringify({ ok: false, error: "Instruction must be 1–2000 characters." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
-    const { data: queued, error } = await sb.from("automation_runs").insert({ user_id: user.id, instruction, status: "pending" }).select("id").single();
+    const { data: queued, error } = await sb.from("automation_runs").insert({ user_id: user.id, instruction, status: "pending", summary: "remote_listener_queue:v1" }).select("id").single();
     if (error || !queued?.id) return new Response(JSON.stringify({ ok: false, error: "Could not queue automation." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     // Attempt both connected execution paths. Telegram delivery is optional and never
     // blocks the durable laptop queue if the trigger bot isn't configured/linked.
-    const listenerNotified = await notifyLaptopListener(user.id, instruction);
+    const { data: heartbeat } = await sb.from("device_status").select("last_seen")
+      .eq("user_id", user.id).eq("device", "bosley-laptop-listener").maybeSingle();
+    const lastSeen = heartbeat?.last_seen ? new Date(heartbeat.last_seen).getTime() : 0;
+    const listenerOnline = Number.isFinite(lastSeen) && lastSeen > 0 && Date.now() - lastSeen < 90000;
+    // Durable queue polling is authoritative; Realtime broadcasts are intentionally
+    // not treated as delivery because a successful broadcast can have zero recipients.
+    const listenerNotified = false;
     let telegramNotified = false;
     let telegramDetail = "Telegram trigger not configured on the server.";
     if (INTERNAL_PUSH_SECRET) {
@@ -99,8 +163,8 @@ Deno.serve(async (req: Request) => {
     }
     return new Response(JSON.stringify({
       ok: true, queued: true, id: queued.id,
-      listenerNotified, telegramNotified, telegramDetail,
-      delivery: listenerNotified ? "broadcast_sent" : "queued_listener_not_notified",
+      listenerNotified, listenerOnline, queued: true, telegramNotified, telegramDetail,
+      delivery: listenerOnline ? "queued_for_laptop_poll" : "queued_laptop_offline",
     }), { headers: { ...cors, "Content-Type": "application/json" } });
   } else if (body.type === "os") {
     const action = typeof body.action === "string" ? body.action : "";

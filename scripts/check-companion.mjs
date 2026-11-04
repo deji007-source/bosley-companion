@@ -22,9 +22,7 @@ for (const [index, source] of inlineScripts.entries()) {
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
-assert.ok(windowsWorkflow.includes('width="42" height="64" rx="21"'), "Windows floating character must have large, wider rounded eyes");
-assert.ok(!windowsWorkflow.includes('id="nose-line"'), "Windows floating character must remain nose-free");
-assert.ok(windowsWorkflow.includes('id="mouth-line"')&&windowsWorkflow.includes('id="mouth-open"'), "Windows floating character must switch from a line mouth to an animated speaking mouth");
+assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with large blinking black eyes"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating character must be the white Bosley ghost with visible black eyes");
 assert.ok(windowsWorkflow.includes('translate(36 35) scale(.86 .80)'), "Windows floating character hat must be visibly smaller");
 assert.ok(windowsWorkflow.includes("open_floating_view")&&windowsWorkflow.includes("const win = new BrowserWindow({")&&windowsWorkflow.includes("bosleyFloat: viewId"), "Windows side-panel icons must create native floating page windows");
 assert.ok(windowsWorkflow.includes("const column = index % 3")&&windowsWorkflow.includes("row * 84"), "Each Windows side view must receive a distinct staggered desktop position");
@@ -140,13 +138,10 @@ const contracts = [
   ["Guide permission is not silently bypassed", "Allow Bosley to open a system-level visual guide over other apps"],
   ["Activity event history", 'id="activityevents"'],
   ["Windows-only incognito mascot is scoped to the native widget", 'html.widget-mode body.desktop-panel #bosley-mascot{display:block'],
-  ["Detective mascot has a wide-eyed crewmate face", 'class="mascot-eyes"'],
-  ["Detective mascot has a clean close-cropped buzz cut", 'class="mascot-buzzcut"'],
-  ["Detective mascot wears a jacket with lapels", 'class="mascot-lapel"'],
-  ["Detective mascot carries a magnifying glass", 'class="mascot-magnifier"'],
-  ["Detective mascot has an idle inspection gesture", "bosley-magnifier-search"],
-  ["Detective mascot waves on hover", "bosley-detective-wave"],
-  ["Detective mascot inspects with its magnifier while thinking", "bosley-magnifier-inspect"],
+  ["Bosley launcher uses a white ghost silhouette", 'aria-label="Bosley white ghost companion with blinking black eyes"'],
+  ["Bosley launcher has two large black eyes", 'class="mascot-eye" cx="45" cy="51"'],
+  ["Bosley launcher uses the Bosley blue accent", 'stop-color="#8ee8ff"'],
+  ["Bosley launcher supports blinking", 'html.blink #bosley-mascot .mascot-eye'],
   ["Detachable side-view dock", 'id="side-dock"'],
   ["Visible side-view launcher", 'id="dock-launcher"'],
   ["Workspace launcher action", 'data-open-view="ws"'],
@@ -402,32 +397,12 @@ assert.ok(html.includes('Phone notifications are limited to 160 characters'), "P
 assert.ok(html.includes('Desktop bridge unavailable'), "Windows-only desktop steps must fail clearly on platforms without the native bridge");
 
 
-assert.ok(html.includes("mascot-buzzcut"), "Bosley must have a neat close-cropped buzz cut instead of a hat");
-assert.ok(html.includes("M32 41Q31 17 60 17 89 17 88 41"), "Bosley face silhouette must use a rounder head shape");
-assert.ok(!html.includes("mascot-hat"), "The Windows mascot must not render a hat");
-assert.ok(!html.includes('class="hat"'), "The collapsed launcher must not render a hat");
-assert.ok(!html.includes('id="hatstyle"'), "Appearance settings must no longer expose a hat control");
-
-assert.ok(html.includes("mascot-mouth-closed"), "Bosley must retain a clean neutral mouth line");
-assert.ok(html.includes("mascot-mouth-open"), "Bosley must have a separate open-mouth speaking shape");
-assert.ok(html.includes("bosley-mouth-talk"), "Bosley mouth must animate while speaking");
-assert.ok(html.includes("data-state=speaking]:not([data-mouth-sync=true])"), "Native speech must retain a speaking-mouth fallback");
-assert.ok(html.includes("data-mouth=open"), "Speech boundary events must drive the mouth shape");
-assert.ok(html.includes("u.onboundary="), "Browser speech must synchronize mouth movement to utterance boundaries");
-assert.ok(html.includes("function finishBosleySpeech()"), "Speech completion must always reset Bosley's speaking state");
-assert.ok(html.includes("Promise.resolve(nativeVoice.speakText"), "Native Android speech must share the speaking lifecycle");
-assert.ok(html.includes("data-state=listening] #bosley-mascot .mascot-eye"), "Listening state must visibly change Bosley's eyes");
-assert.ok(html.includes("mascot-brow"), "Bosley must have expressive eyebrows");
-assert.ok(html.includes("bosley-eye-blink"), "Bosley must blink naturally");
-assert.ok(html.includes("data-state=waiting] #bosley-mascot .mascot-eyes"), "Waiting state must visibly shift Bosley's gaze");
-assert.ok(html.includes("data-state=working] #bosley-mascot .mascot-eye"), "Working state must use a focused eye expression");
-assert.ok(html.includes("data-state=success] #bosley-mascot .mascot-mouth-closed"), "Success state must use a distinct positive mouth expression");
-assert.ok(html.includes("data-state=error] #bosley-mascot .mascot-eyes"), "Error state must visibly alter Bosley's expression");
-assert.ok(html.includes("data-state=walk] #bosley-mascot"), "Walk state must animate Bosley's movement");
-assert.ok(html.includes("bosley-mascot-success"), "Success state must provide a short completion animation");
-assert.ok(html.includes("bosley-mascot-error"), "Error state must provide a restrained error cue");
-assert.ok(html.includes("bosley-magnifier-wait"), "Waiting state must animate the magnifier subtly");
-assert.ok(html.includes("launch[data-state=walk] #bosley-mascot,html.widget-mode"), "Walk animation must respect reduced-motion settings");
+assert.ok(html.includes('aria-label="Bosley white ghost companion with blinking black eyes"'), "Bosley launcher must render the white ghost silhouette");
+assert.ok(html.includes('class="mascot-eye" cx="45" cy="51"') && html.includes('class="mascot-eye" cx="75" cy="51"'), "Bosley ghost must render two large black eyes");
+assert.ok(html.includes('fill="#fff"') && html.includes('fill="#050505"'), "Bosley ghost must use a white body and black eyes");
+assert.ok(html.includes("html.blink #bosley-mascot .mascot-eye"), "Bosley ghost eyes must support blinking");
+assert.ok(html.includes("@keyframes ghost-focus"), "Bosley ghost must animate subtly while thinking or working");
+assert.ok(html.includes("prefers-reduced-motion:reduce"), "Ghost animation must respect reduced-motion settings");
 
 assert.ok(html.includes("function executeDirectChatAction(step,label)"), "Everyday actions must be executable directly from the chat command router");
 assert.ok(html.includes('type:"open_url",input:m[1]'), "Chat must open explicit website URLs without visiting Automation");
@@ -493,15 +468,18 @@ assert.ok(html.includes('REMOTE_MODE_KEY="bosley_android_remote_mode_v1"'), "Rem
 assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"listener_status"}})'), "Android Remote Mode must verify Windows listener status through the authenticated endpoint");
 assert.ok(html.includes('db.functions.invoke("remote-action",{body:{type:"automation",instruction}})'), "Remote Mode must use the authenticated automation gateway");
 assert.ok(html.includes('if(await routeRemoteVoiceToLaptop(spoken))return;'), "Native Android voice must respect Remote Mode before local execution");
-assert.ok(html.includes('data.listenerNotified!==true'), "Remote Mode must not claim delivery without listener confirmation");
+assert.ok(html.includes('data.queued!==true'), "Remote Mode must not report success unless the command is durably queued");
 
 const remoteActionFunction = readText(new URL("../supabase/functions/remote-action/index.ts", import.meta.url), "utf8");
 assert.ok(remoteActionFunction.includes('body.type === "listener_heartbeat"'), "Windows listener heartbeat must be authenticated and supported by the remote-action function");
+assert.ok(remoteActionFunction.includes('body.type === "listener_poll"') && remoteActionFunction.includes('body.type === "listener_ack"'), "Remote command delivery must use authenticated durable polling and acknowledgements");
+assert.ok(html.includes("async function pollLaptopCommands(activeUser)"), "Windows must poll the authenticated remote command queue");
+assert.ok(html.includes("async function acknowledgeLaptopCommand(activeUser,id,status,summary)"), "Windows must acknowledge command execution results");
 assert.ok(remoteActionFunction.includes('body.type === "listener_status"'), "Android Remote Mode must have an authenticated Windows listener status endpoint");
 assert.ok(remoteActionFunction.includes('onConflict: "user_id,device"'), "Windows listener heartbeat must update one account/device row instead of creating duplicates");
-assert.ok(windowsWorkflow.includes("eye.position") === false, "Mascot eyes must be positioned with visible front-face geometry");
-assert.ok(windowsWorkflow.includes("group,x,1.98,.69") && windowsWorkflow.includes("group,x,1.98,.765"), "Windows 3D mascot eyes and pupils must sit clearly in front of the face surface");
-assert.ok(windowsWorkflow.includes("hat.position.set(0,2.34,.12)") && windowsWorkflow.includes("hat.rotation.set(0,0,0)") && windowsWorkflow.includes("hat.rotation.set(0,0,0);"), "Windows mascot fedora must remain centered and level during animation");
+assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with large blinking black eyes"') && windowsWorkflow.includes("ghost-blink"), "Windows companion window must render the blinking ghost mascot");
+assert.ok(windowsWorkflow.includes('class="ghost-eye"') && windowsWorkflow.includes('fill="#050505"'), "Windows ghost must have two large black eyes");
+assert.ok(!windowsWorkflow.includes("hat-group") && !windowsWorkflow.includes("THREE.WebGLRenderer"), "Windows ghost replacement must remove the fedora and 3D character renderer");
 
 
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");

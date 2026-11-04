@@ -274,6 +274,10 @@ assert.ok(!androidInstaller.includes("drag to move"), "Android guide card must n
 assert.ok(androidInstaller.includes("void showGuide()"), "Missing Android system-level guide service");
 assert.ok(androidInstaller.includes("public void showGuide(PluginCall call)"), "Missing Android guide bridge method");
 assert.ok(androidInstaller.includes("TYPE_APPLICATION_OVERLAY"), "Android guide must use the system overlay window type");
+assert.ok(androidInstaller.includes("FOREGROUND_SERVICE_SPECIAL_USE") && androidInstaller.includes("FOREGROUND_SERVICE_TYPE_SPECIAL_USE"), "Android floating companion must run as a declared foreground service on Android 14+");
+assert.ok(androidInstaller.includes("startForegroundService(intent)") && androidInstaller.includes("promoteToForeground()"), "Android overlay startup must use a persistent foreground service notification");
+assert.ok(androidInstaller.includes('android:stopWithTask="false"'), "Android floating companion service must not stop when the app task is dismissed");
+
 assert.ok(androidInstaller.includes("public void speakText(PluginCall call)"), "Missing native Android text-to-speech bridge");
 assert.ok(androidInstaller.includes("public void stopSpeaking(PluginCall call)"), "Missing native Android speech cancellation bridge");
 assert.ok(androidInstaller.includes("TextToSpeech.QUEUE_FLUSH"), "Native Android speech should replace queued speech");
@@ -489,6 +493,11 @@ assert.ok(remoteActionFunction.includes('telegramNotified ? "Telegram trigger ac
 assert.ok(remoteActionFunction.includes('body.type === "listener_heartbeat"'), "Windows listener heartbeat must be authenticated and supported by the remote-action function");
 assert.ok(remoteActionFunction.includes('body.type === "listener_poll"') && remoteActionFunction.includes('body.type === "listener_ack"'), "Remote command delivery must use authenticated durable polling and acknowledgements");
 assert.ok(html.includes("async function pollLaptopCommands(activeUser)"), "Windows must poll the authenticated remote command queue");
+assert.ok(html.includes("automatic reconnect enabled") && html.includes("retrying"), "Windows listener must keep polling and retry after a transient startup failure");
+assert.ok(html.includes("#dock-launcher-menu button::after{content:none!important;display:none!important}"), "The workspace launcher must show icons only without partial title text");
+assert.ok(html.includes('id="bosley-search-voice"') && html.includes("startNativeSpeechRecognition"), "Bosley Search must support native Android voice typing");
+assert.ok(html.includes('id="bosley-search-polish"') && html.includes('db.functions.invoke("bosley-writing-assist"'), "Bosley Search must provide optional grammar and clarity suggestions");
+
 assert.ok(html.includes("async function acknowledgeLaptopCommand(activeUser,id,status,summary)"), "Windows must acknowledge command execution results");
 assert.ok(remoteActionFunction.includes('body.type === "listener_status"'), "Android Remote Mode must have an authenticated Windows listener status endpoint");
 assert.ok(remoteActionFunction.includes('onConflict: "user_id,device"'), "Windows listener heartbeat must update one account/device row instead of creating duplicates");

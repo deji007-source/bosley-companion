@@ -1461,7 +1461,7 @@ async function renderBosleySkills(){
 async function send(text,imageData=null,fileContext="",fileNames=[]){
  if(S.busy||(!text&&!imageData&&!fileContext))return;
  const remoteText=String(text||"").trim();
- if(remoteModeNativeAndroid&&remoteModeEnabled&&!imageData&&!fileContext&&/^(?:(?:hey|okay|ok)\s+)?(?:bosley[, ]+\s*)?(?:wake up|wake bosley|show bosley|open bosley|bring bosley up|(?:open|launch|start)\s+(?:chrome|google chrome|edge|microsoft edge|notepad|calculator|file explorer|windows explorer)|(?:search(?: the web)? for|look up|google)\s+.+|(?:show|get|check) (?:my )?(?:windows )?desktop info)$/i.test(remoteText)){
+ if(remoteModeNativeAndroid&&remoteModeEnabled&&!imageData&&!fileContext&&remoteText){
   await routeRemoteVoiceToLaptop(remoteText);return;
  }
  let alreadyDisplayed=false;

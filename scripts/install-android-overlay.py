@@ -12,11 +12,16 @@ if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
 if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
+for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"):
+    if permission not in text:
+        text = text.replace("<application", f'<uses-permission android:name="{permission}" />\\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
     text = text.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1) if 'xmlns:tools=' not in text else text
     text = text.replace("<application", '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <application', 1)
 if "BosleyOverlayService" not in text:
-    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" />\n    </application>')
+    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion widget displayed over other apps" /></service>\n    </application>')
+else:
+    text = re.sub(r'<service([^>]*android:name="\\.BosleyOverlayService"[^>]*)/>', r'<service\\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion widget displayed over other apps" /></service>', text)
 manifest.write_text(text)
 # The Android guide is intentionally stationary. Do not register an accessibility
 # service to inspect other apps or automatically reposition the guide target.
@@ -39,7 +44,23 @@ public class BosleyOverlayService extends Service {
   static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE";
   int widgetWidth=104,widgetHeight=34,cornerDp=18,borderDp=1,eyeWidth=9,eyeHeight=17,eyeGapDp=8; String eyeShape="soft-square";
   WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
-  @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);}
+  static final String CHANNEL_ID="bosley_floating_companion";
+  void promoteToForeground(){
+    if(Build.VERSION.SDK_INT>=26){
+      NotificationManager manager=(NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+      if(manager!=null)manager.createNotificationChannel(new NotificationChannel(CHANNEL_ID,"Bosley floating companion",NotificationManager.IMPORTANCE_LOW));
+    }
+    Intent open=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    PendingIntent pending=PendingIntent.getActivity(this,701,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+    Notification notification=new Notification.Builder(this,Build.VERSION.SDK_INT>=26?CHANNEL_ID:"")
+      .setSmallIcon(android.R.drawable.ic_dialog_info)
+      .setContentTitle("Bosley floating companion is active")
+      .setContentText("The floating widget can stay visible while you use other apps.")
+      .setContentIntent(pending).setOngoing(true).setCategory(Notification.CATEGORY_SERVICE).build();
+    if(Build.VERSION.SDK_INT>=34)startForeground(701,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+    else startForeground(701,notification);
+  }
+  @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);promoteToForeground();}
   @Override public int onStartCommand(Intent i,int flags,int id){
     if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
@@ -151,7 +172,7 @@ public class BosleyTargetAccessibilityService extends AccessibilityService {
     Intent result=new Intent(BosleyOverlayService.ACTION_TARGET);result.setPackage(getPackageName());
     if(bestBounds==null||bestScore<2){result.putExtra("found",false);}
     else {android.util.DisplayMetrics dm=getResources().getDisplayMetrics();result.putExtra("found",true);result.putExtra("label",bestLabel.length()>100?bestLabel.substring(0,100):bestLabel);result.putExtra("x",Math.max(0,Math.min(1f,((bestBounds.left+bestBounds.right)/2f)/dm.widthPixels)));result.putExtra("y",Math.max(0,Math.min(1f,((bestBounds.top+bestBounds.bottom)/2f)/dm.heightPixels)));}
-    startService(result);
+    if(Build.VERSION.SDK_INT>=26)getApplicationContext().startForegroundService(result);else startService(result);
   }
   @Override public void onDestroy(){if(receiver!=null){try{unregisterReceiver(receiver);}catch(Exception ignored){}}super.onDestroy();}
 }''')
@@ -301,7 +322,7 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void show(PluginCall call){
     if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(getContext())){call.reject("Overlay permission is required. Tap Enable floating widget and allow display over other apps.");return;}
     Intent i=styledIntent(call,BosleyOverlayService.ACTION_SHOW);
-    getContext().startService(i);
+    startOverlayService(i);
     JSObject r=new JSObject();r.put("visible",true);call.resolve(r);
   }
   @PluginMethod public void showGuide(PluginCall call){
@@ -313,6 +334,10 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void stopGuide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE_GUIDE);getContext().startService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);}
   @PluginMethod public void setAppearance(PluginCall call){
     Intent i=styledIntent(call,BosleyOverlayService.ACTION_STYLE);getContext().startService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);
+  }
+  private void startOverlayService(Intent intent){
+    if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(intent);
+    else getContext().startService(intent);
   }
   private Intent styledIntent(PluginCall call,String action){
     Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(action);

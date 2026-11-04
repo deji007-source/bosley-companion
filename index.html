@@ -1756,10 +1756,15 @@ async function routeRemoteVoiceToLaptop(spoken){
   setRemoteModeStatus("Sending to Windows…","checking");
   const {data,error}=await db.functions.invoke("remote-action",{body:{type:"automation",instruction}});if(error)throw error;
   if(!data||data.ok!==true)throw Error(data?.error||"Windows did not accept the command.");
-  if(data.listenerNotified!==true)throw Error("The command was queued, but the Windows listener did not confirm delivery. Check the laptop before retrying.");
-  addMsg("you",instruction);addMsg("sys","Remote Mode: command delivered to your Windows laptop listener. Laptop execution depends on the supported Windows action handler.");
-  activityEvent("Remote voice command sent to Windows: "+instruction.slice(0,140),"message");autoLog("delivered","Android Remote Mode delivered to Windows listener: "+instruction);
-  setRemoteModeStatus("Windows laptop connected · command delivered","online");
+  if(data.queued!==true)throw Error(data?.error||"Windows did not accept the command.");
+  addMsg("you",instruction);
+  const queuedMessage=data.listenerOnline===true
+   ?"Remote Mode: command securely queued for the connected Windows listener. Waiting for its acknowledgement."
+   :"Remote Mode: command securely queued. Windows is currently offline; it will be picked up when the laptop listener reconnects.";
+  addMsg("sys",queuedMessage);
+  activityEvent("Remote voice command queued for Windows: "+instruction.slice(0,140),"message");
+  autoLog("queued","Android Remote Mode queued command for Windows: "+instruction);
+  setRemoteModeStatus(data.listenerOnline===true?"Windows connected · command queued":"Windows offline · command queued",data.listenerOnline===true?"online":"offline");
  }catch(error){const message=String(error?.message||error);note("Remote Mode: "+message);setRemoteModeStatus(message,"error");autoLog("error","Android Remote Mode could not deliver command: "+message)}
  return true;
 }

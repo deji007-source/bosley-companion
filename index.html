@@ -2263,10 +2263,10 @@ async function queueAutomationInstruction(instruction,confirmation){
   if(error)throw error;
   if(!data||data.ok!==true)throw Error(data?.error||"The remote automation gateway did not accept the request.");
   addMsg("bosley",confirmation);
-  const delivered = data.listenerNotified===true;
-  const delivery = delivered ? "DELIVERED TO LISTENER: the laptop listener was notified. Execution is not yet confirmed." : "QUEUED — DELIVERY UNCONFIRMED: the request was accepted, but the laptop listener was not confirmed online.";
-  autoLog(delivered?"delivered":"queued",delivery+" Instruction: "+instruction);
-  if(data.listenerNotified!==true)addMsg("bosley","I queued the request, but I could not confirm delivery to the laptop listener. Check that it is connected before retrying.");
+  const listenerOnline = data.listenerOnline===true;
+  const delivery = listenerOnline ? "QUEUED FOR ONLINE WINDOWS LISTENER: heartbeat is current; command pickup and execution are still awaiting acknowledgement." : "QUEUED WHILE WINDOWS OFFLINE: command will remain queued until the laptop listener reconnects.";
+  autoLog("queued",delivery+" Instruction: "+instruction);
+  addMsg("bosley",delivery);
  }catch(error){const message=String(error?.message||error);if(!navigator.onLine||/network|fetch failed|failed to fetch|load failed|offline/i.test(message)){if(queueOfflineCommandDraft(instruction)){addMsg("bosley","You appear to be offline. I saved this as a draft; it will not run until you review and send it.");autoLog("queued","Offline draft saved for manual review: "+instruction);return}}addMsg("bosley","I could not queue that automation: "+message);autoLog("error","Automation queue failed: "+message)}
 }
 function normalizeWorkflowCommand(value){return String(value||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ").replace(/^(?:bosley\s+)?(?:(?:can|could|would)\s+you\s+)?(?:(?:please|kindly)\s+)?/,"").replace(/\s+(?:please|kindly|for me|now)$/,"").trim()}

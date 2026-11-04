@@ -405,6 +405,9 @@ assert.ok(html.includes('Windows desktop bridge unavailable'), "Windows-only des
 
 
 assert.ok(html.includes('aria-label="Bosley white ghost companion with blinking black eyes"'), "Bosley launcher must render the white ghost silhouette");
+assert.ok(html.includes('async function rememberUsefulSite(raw,title,source=') && html.includes('db.from("user_second_brain_entries").insert'), "Bosley must automatically save websites it opens to the cloud Second Brain");
+assert.ok(html.includes('if(/^(?:hey\\s+)?') && html.includes('action:"wake_companion",payload:{}'), "Windows Wake Up must match natural-language requests and invoke the native wake action");
+
 assert.ok(html.includes('class="mascot-eye" cx="45" cy="51"') && html.includes('class="mascot-eye" cx="75" cy="51"'), "Bosley ghost must render two large black eyes");
 assert.ok(html.includes('fill="#fff"') && html.includes('fill="#050505"'), "Bosley ghost must use a white body and black eyes");
 assert.ok(html.includes("html.blink #bosley-mascot .mascot-eye"), "Bosley ghost eyes must support blinking");

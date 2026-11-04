@@ -2498,24 +2498,19 @@ function startLaptopCommandListener(activeUser){
  if(!activeUser||!db){setLaptopListenerState("offline","sign in to connect");return}
  const b=bridge();
  if(!b){setLaptopListenerState("unavailable","use the installed Windows companion");return}
- setLaptopListenerState("connecting","starting authenticated laptop listener");
+ setLaptopListenerState("connecting","starting authenticated polling listener");
  const connect=async()=>{
-  await sendLaptopHeartbeat(activeUser);
+  const heartbeatOk=await sendLaptopHeartbeat(activeUser);
   if(laptopListenerOwner!==activeUser.id)return;
+  if(!heartbeatOk)throw Error("Windows listener heartbeat was not accepted.");
   await pollLaptopCommands(activeUser);
   if(!laptopPollTimer)laptopPollTimer=setInterval(()=>pollLaptopCommands(activeUser),4000);
   if(!laptopHeartbeatTimer)laptopHeartbeatTimer=setInterval(()=>sendLaptopHeartbeat(activeUser),30000);
+  setLaptopListenerState("online","authenticated durable queue polling active");
  };
  connect().catch(error=>setLaptopListenerState("error",String(error?.message||error).slice(0,120)));
- // Realtime is a low-latency hint; authenticated queue polling is the durable path.
- laptopListenerChannel=db.channel("bosley-laptop-"+activeUser.id)
-  .on("broadcast",{event:"automation"},({payload})=>{handleLaptopBroadcast(payload)})
-  .subscribe(status=>{
-   if(laptopListenerOwner!==activeUser.id)return;
-   if(status==="SUBSCRIBED"){setLaptopListenerState("online","secure channel connected; durable queue polling active");}
-   else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setLaptopListenerState("connecting",status+" · durable queue polling remains active");
-   else if(status==="CLOSED")setLaptopListenerState("connecting","Realtime closed · durable queue polling remains active");
-  });
+ // Do not require a Realtime WebSocket: the durable authenticated queue avoids
+ // Realtime join-rate limits and continues to work through transient socket outages.
 }
 
 te("offline","channel closed");

@@ -2411,6 +2411,8 @@ async function executeLaptopInstruction(instruction){
   return "Windows desktop information was retrieved.";
  }
  if(typeof send==="function"){
+  if(S.busy)throw Error("Bosley is already processing a message. Wait for the current reply, then retry.");
+  if(!user||!db)throw Error("Sign in to Bosley on Windows before sending remote chat messages.");
   await send(instruction);
   return "Forwarded to Bosley chat on Windows. Check the Windows conversation for its reply.";
  }

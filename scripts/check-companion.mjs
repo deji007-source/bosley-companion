@@ -217,7 +217,7 @@ const contracts = [
   ["Laptop listener reports status", 'id="laptop-listener-status"'],
   ["General remote instructions are forwarded to Windows chat", "Forwarded to Bosley chat on Windows"],
   ["Remote listener rejects unsupported actions when no chat handler is available", "No supported Windows command handler is available"],
-  ["Chrome search does not open duplicate browser", "No extra Chrome window was opened."],
+  ["Chrome search opens one browser search request", "Windows opened a web search for"],
 ];
 for (const [label, token] of contracts) {
   assert.ok(html.includes(token), "Missing required contract: " + label);

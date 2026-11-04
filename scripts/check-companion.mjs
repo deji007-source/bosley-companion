@@ -213,6 +213,12 @@ const contracts = [
   ["Account sign-in restores companion preferences", "syncPlannerTasks();syncCompanionSettings()"],
   ["Authenticated laptop listener", "function startLaptopCommandListener(activeUser)"],
   ["Windows listener uses authenticated polling instead of fragile Realtime joins", "setInterval(()=>pollLaptopCommands(activeUser),4000)"],
+  ["Windows Wake Up command is handled locally before cross-device routing", "wake_companion"],
+  ["Windows Wake Up is acknowledged in the chat activity log", "Bosley floating companion is awake on Windows."],
+  ["Opened useful websites are automatically saved to Second Brain", "async function rememberUsefulSite(raw,title,source="],
+  ["Useful website saves are deduplicated per account and URL", '.eq("user_id",uid).eq("url",url)'],
+  ["Useful website entries use the shared Second Brain vault", 'db.from("user_second_brain_entries").insert'],
+
   ["Phone-to-laptop wake action", 'action:"wake_companion"'],
   ["Laptop listener reports status", 'id="laptop-listener-status"'],
   ["General remote instructions are forwarded to Windows chat", "Forwarded to Bosley chat on Windows"],
@@ -481,6 +487,12 @@ assert.ok(remoteActionFunction.includes('onConflict: "user_id,device"'), "Window
 assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with large blinking black eyes"') && windowsWorkflow.includes("ghost-blink"), "Windows companion window must render the blinking ghost mascot");
 assert.ok(windowsWorkflow.includes('class="ghost-eye"') && windowsWorkflow.includes('fill="#050505"'), "Windows ghost must have two large black eyes");
 assert.ok(!windowsWorkflow.includes("hat-group") && !windowsWorkflow.includes("THREE.WebGLRenderer"), "Windows ghost replacement must remove the fedora and 3D character renderer");
+assert.ok(windowsWorkflow.includes("const width = 112, height = 138;"), "Windows floating ghost must use the smaller compact footprint");
+assert.ok(windowsWorkflow.includes("title: ' '") && windowsWorkflow.includes("walkingCompanion.setTitle('')") && windowsWorkflow.includes("<title></title>"), "Windows floating ghost must not expose a desktop filename/title label");
+assert.ok(windowsWorkflow.includes('rx="10.5" ry="14.5"'), "Windows ghost must use larger oval eyes");
+assert.ok(windowsWorkflow.includes('Q75 151 75 142'), "Windows ghost silhouette must use one subtle bottom curve");
+assert.ok(windowsWorkflow.includes("setWalkingCompanionEnabled(true)") && windowsWorkflow.includes("floatingCompanion: true"), "Wake Up must restore the Windows floating ghost");
+
 
 
 assert.ok(html.includes('action:"open_external_url",payload:{url:url.href}'), "Windows listener must support safe remote website opening");

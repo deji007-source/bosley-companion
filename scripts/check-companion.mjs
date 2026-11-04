@@ -395,7 +395,7 @@ assert.ok(html.includes('{value:"notify_phone",label:"Send phone notification (M
 assert.ok(html.includes('if(step.type==="notify_phone")'), "Phone notification workflow action must execute through the authenticated bridge");
 assert.ok(html.includes('functions/v1/macrodroid-bridge-'), "Phone notification action must use the shared authenticated MacroDroid bridge");
 assert.ok(html.includes('Phone notifications are limited to 160 characters'), "Phone notifications must enforce the bridge's input limit");
-assert.ok(html.includes('Desktop bridge unavailable'), "Windows-only desktop steps must fail clearly on platforms without the native bridge");
+assert.ok(html.includes('Windows desktop bridge unavailable'), "Windows-only desktop steps must fail clearly on platforms without the native bridge");
 
 
 assert.ok(html.includes('aria-label="Bosley white ghost companion with blinking black eyes"'), "Bosley launcher must render the white ghost silhouette");

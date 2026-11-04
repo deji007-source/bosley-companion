@@ -197,9 +197,9 @@ jobs:
           let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
           // Slim bezel-connected Dynamic Island sizes; keep the island centered on the physical display edge.
           const WIDGET_SIZES = {
-            compact: { width: 220, height: 22 },
-            default: { width: 260, height: 24 },
-            wide: { width: 300, height: 28 }
+            compact: { width: 220, height: 15 },
+            default: { width: 260, height: 17 },
+            wide: { width: 300, height: 19 }
           };
 
           function escapeHtml(value) {
@@ -1159,14 +1159,11 @@ jobs:
               }
 
               .wordmark { display: none; }
-              /* Minimal visible, text-free launcher: curved capsule with a small Bosley face. */
-              button { width: 260px; height: 24px; padding: 0; border: 1px solid rgba(255,255,255,.48); border-top:0; border-radius:0 0 15px 15px; gap:0; background:rgba(5,5,5,.96); box-shadow:0 4px 14px rgba(0,0,0,.34),inset 0 -1px rgba(255,255,255,.12); color:transparent; }
+              /* Normal Windows bezel widget: same width, slim solid-black capsule, no face or eyes. */
+              button { width: 260px; height: 17px; min-height:17px; padding:0; border:0; border-bottom:1px solid rgba(255,255,255,.12); border-radius:0 0 11px 11px; gap:0; background:#050505; box-shadow:0 3px 10px rgba(0,0,0,.32),inset 0 -1px rgba(255,255,255,.035); color:transparent; }
               button::before { display:none!important; content:none!important; }
-              button:hover,button:focus-visible { border-color:rgba(255,255,255,.8); background:#080808; box-shadow:0 5px 18px rgba(0,0,0,.4); }
-              .widget-eyes{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:100%}
-              .widget-eyes i{display:block;width:5px;height:9px;border-radius:50%;background:#fff;animation:widget-blink 5.2s ease-in-out infinite}
-              .widget-eyes i:last-child{animation-delay:.04s}
-              @keyframes widget-blink{0%,45%,48%,100%{transform:scaleY(1)}46.5%,47.5%{transform:scaleY(.08)}}
+              button:hover,button:focus-visible { border-color:rgba(255,255,255,.2); background:#080808; box-shadow:0 4px 12px rgba(0,0,0,.38); }
+              .widget-eyes{display:none!important}
               svg,.wordmark{display:none!important;}
 
               button:hover {
@@ -1194,9 +1191,9 @@ jobs:
             <script>
               const button = document.querySelector('button');
               const sizes = {
-                compact: { width: 220, height: 22 },
-                default: { width: 260, height: 24 },
-                wide: { width: 300, height: 28 }
+                compact: { width: 220, height: 15 },
+                default: { width: 260, height: 17 },
+                wide: { width: 300, height: 19 }
               };
               function applyAppearance(value) {
                 if (!value) return;
@@ -1208,7 +1205,7 @@ jobs:
                 button.style.width = size.width + 'px';
                 button.style.height = size.height + 'px';
                 const eyes=document.querySelector('.widget-eyes');
-                if(eyes)eyes.style.transform='scale('+(size.width/260)+')';
+                if(eyes)eyes.style.display='none';
               }
               if (window.bosleyDesktop.onWidgetAppearance) {
                 window.bosleyDesktop.onWidgetAppearance(applyAppearance);

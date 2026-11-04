@@ -45,7 +45,7 @@ import android.util.DisplayMetrics;
 
 public class BosleyOverlayService extends Service {
   static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE", ACTION_CALL_RING_START="com.bosley.companion.CALL_RING_START", ACTION_CALL_RING_STOP="com.bosley.companion.CALL_RING_STOP";
-  int widgetWidth=104,widgetHeight=34,cornerDp=18,borderDp=1,eyeWidth=9,eyeHeight=17,eyeGapDp=8; String eyeShape="soft-square";
+  int widgetWidth=44,widgetHeight=44,cornerDp=18,borderDp=1,eyeWidth=9,eyeHeight=17,eyeGapDp=8; String eyeShape="soft-square";
   MediaPlayer callRingtone; WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
   static final String CHANNEL_ID="bosley_floating_companion";
   void promoteToForeground(){
@@ -92,20 +92,35 @@ public class BosleyOverlayService extends Service {
     if(!Settings.canDrawOverlays(this)){Intent p=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(p);return START_NOT_STICKY;}
     showBar();return START_STICKY;
   }
+  static class GhostMascotView extends View {
+    final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+    final Path ghost=new Path();
+    final Path accent=new Path();
+    GhostMascotView(Context context){super(context);setContentDescription("Bosley floating ghost companion. Tap to open, hold to talk, or drag to move.");setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
+    @Override protected void onDraw(Canvas canvas){
+      super.onDraw(canvas);
+      float sx=getWidth()/120f,sy=getHeight()/112f;
+      canvas.save();canvas.scale(sx,sy);
+      paint.setStyle(Paint.Style.FILL);paint.setColor(Color.WHITE);paint.setShadowLayer(5,0,4,0x88000000);
+      ghost.reset();ghost.moveTo(60,8);ghost.cubicTo(34,8,18,27,18,52);ghost.lineTo(18,92);ghost.cubicTo(18,97,22,99,26,96);ghost.lineTo(37,87);ghost.lineTo(49,97);ghost.cubicTo(52,99,55,99,58,96);ghost.lineTo(60,94);ghost.lineTo(72,102);ghost.cubicTo(75,104,78,103,80,100);ghost.lineTo(89,88);ghost.lineTo(97,95);ghost.cubicTo(101,98,105,96,105,91);ghost.lineTo(102,52);ghost.cubicTo(102,27,86,8,60,8);ghost.close();canvas.drawPath(ghost,paint);paint.clearShadowLayer();
+      paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(3.4f);paint.setStrokeJoin(Paint.Join.ROUND);paint.setColor(Color.rgb(16,24,32));canvas.drawPath(ghost,paint);
+      paint.setStyle(Paint.Style.FILL);paint.setColor(Color.rgb(5,5,5));
+      float phase=android.os.SystemClock.uptimeMillis()%5100;float blink=(phase>2350&&phase<2490)?.12f:1f;
+      canvas.save();canvas.translate(45,51);canvas.scale(1,blink);canvas.drawOval(-7.2f,-10.2f,7.2f,10.2f,paint);canvas.restore();
+      canvas.save();canvas.translate(75,51);canvas.scale(1,blink);canvas.drawOval(-7.2f,-10.2f,7.2f,10.2f,paint);canvas.restore();
+      paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.4f);paint.setStrokeCap(Paint.Cap.ROUND);paint.setColor(Color.rgb(77,159,202));accent.reset();accent.moveTo(44,83);accent.quadTo(60,89,76,83);canvas.drawPath(accent,paint);
+      canvas.restore();
+      if(blink<1f)postInvalidateDelayed(35);else postInvalidateDelayed(Math.max(40,(long)(5100-phase)));
+    }
+  }
   void showBar(){if(bar!=null)return;
-    LinearLayout frame=new LinearLayout(this);frame.setGravity(Gravity.CENTER);frame.setOrientation(LinearLayout.HORIZONTAL);
-    GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(5,8,12));bg.setCornerRadius(dp(cornerDp));bg.setStroke(dp(borderDp),Color.rgb(225,238,244));frame.setBackground(bg);frame.setElevation(dp(8));frame.setPadding(dp(3),dp(3),dp(3),dp(3));
-    LinearLayout inner=new LinearLayout(this);inner.setGravity(Gravity.CENTER);inner.setOrientation(LinearLayout.HORIZONTAL);
-    GradientDrawable edge=new GradientDrawable();edge.setColor(Color.TRANSPARENT);edge.setCornerRadius(dp(Math.max(1,cornerDp-borderDp)));edge.setStroke(dp(1),0x664B91A6);inner.setBackground(edge);
-    inner.setPadding(dp(3),dp(3),dp(3),dp(3));
-    for(int n=0;n<2;n++){View eye=new View(this);GradientDrawable e=new GradientDrawable();e.setColor(Color.WHITE);e.setCornerRadius(dp("soft-square".equals(eyeShape)?6:Math.max(1,eyeWidth)));eye.setBackground(e);LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(dp(eyeWidth),dp(eyeHeight));if(n==1)ep.leftMargin=dp(eyeGapDp);inner.addView(eye,ep);}
-    frame.addView(inner,new LinearLayout.LayoutParams(-1,-2));bar=frame;
-    lp=new WindowManager.LayoutParams(dp(widgetWidth),dp(widgetHeight),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+    GhostMascotView mascot=new GhostMascotView(this);bar=mascot;
+    lp=new WindowManager.LayoutParams(dp(44),dp(44),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     lp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;lp.y=dp(7);
-    frame.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;openCompanion("voice");};
+    mascot.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{longPressed=true;openCompanion("voice");};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
-        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>12||Math.abs(e.getRawY()-sy)>12){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
+        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>10||Math.abs(e.getRawY()-sy)>10){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=ox+(int)(e.getRawX()-sx);lp.y=Math.max(0,oy+(int)(e.getRawY()-sy));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
         case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480)openCompanion("panel");return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
@@ -411,7 +426,7 @@ public class BosleyOverlayPlugin extends Plugin {
   private Intent styledIntent(PluginCall call,String action){
     Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(action);
     JSObject p=call.getObject("payload",new JSObject());String size=p.getString("widgetSize","default"),edge=p.getString("widgetEdge","soft"),border=p.getString("widgetBorder","medium"),eyeShape=p.getString("eyeShape","pill"),eyeGap=p.getString("eyeGap","normal"),faceSize=p.getString("size","default");
-    int w="compact".equals(size)?96:("wide".equals(size)?112:104),h="compact".equals(size)?32:("wide".equals(size)?36:34);int c="sharp".equals(edge)?18:("balanced".equals(edge)?20:22);int b="thin".equals(border)?1:("bold".equals(border)?3:2);int ew="compact".equals(faceSize)?8:("default".equals(faceSize)?9:11),eh="compact".equals(faceSize)?15:("default".equals(faceSize)?17:20);int gap="close".equals(eyeGap)?8:("wide".equals(eyeGap)?16:12);
+    int w=44,h=44;int c="sharp".equals(edge)?18:("balanced".equals(edge)?20:22);int b="thin".equals(border)?1:("bold".equals(border)?3:2);int ew="compact".equals(faceSize)?8:("default".equals(faceSize)?9:11),eh="compact".equals(faceSize)?15:("default".equals(faceSize)?17:20);int gap="close".equals(eyeGap)?8:("wide".equals(eyeGap)?16:12);
     i.putExtra("widgetWidth",w);i.putExtra("widgetHeight",h);i.putExtra("cornerDp",c);i.putExtra("borderDp",b);i.putExtra("eyeWidth",ew);i.putExtra("eyeHeight",eh);i.putExtra("eyeGapDp",gap);i.putExtra("eyeShape",eyeShape);return i;
   }
   @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);startOverlayService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}

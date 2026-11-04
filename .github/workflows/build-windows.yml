@@ -116,6 +116,7 @@ jobs:
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title></title>
             <style>
               *{box-sizing:border-box}
               html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
@@ -141,11 +142,11 @@ jobs:
             <svg viewBox="0 0 150 180" role="img" aria-label="Bosley white ghost with large blinking black eyes" xmlns="http://www.w3.org/2000/svg">
               <defs><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter></defs>
               <g id="ghost">
-                <path d="M75 12C42 12 18 39 18 76v67c0 8 7 11 13 6l14-11 14 12c5 4 10 4 15-1l10-10 13 11c5 4 11 3 15-2l9-11 10 9c7 6 14 2 14-6V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
-                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v67c0 8 7 11 13 6l14-11 14 12c5 4 10 4 15-1l10-10 13 11c5 4 11 3 15-2l9-11 10 9c7 6 14 2 14-6V76c0-37-26-64-60-64Z"/>
+                <path d="M75 12C42 12 18 39 18 76v67q0 9 9 6l48-5q48 5 48 5 9 3 9-6V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
+                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v67q0 9 9 6l48-5q48 5 48 5 9 3 9-6V76c0-37-26-64-60-64Z"/>
                 <path class="ghost-edge" d="M22 111V76c0-34 22-60 53-60"/>
-                <ellipse id="eye-L" class="ghost-eye" cx="56" cy="78" rx="8.5" ry="12"/>
-                <ellipse id="eye-R" class="ghost-eye" cx="94" cy="78" rx="8.5" ry="12"/>
+                <ellipse id="eye-L" class="ghost-eye" cx="56" cy="78" rx="10.5" ry="14.5"/>
+                <ellipse id="eye-R" class="ghost-eye" cx="94" cy="78" rx="10.5" ry="14.5"/>
               </g>
             </svg>
             <script src="./assets/companion.js"></script>
@@ -386,20 +387,20 @@ jobs:
             if (process.platform !== 'win32' || (walkingCompanion && !walkingCompanion.isDestroyed())) return;
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            const width = 150, height = 195;
+            const width = 112, height = 138;
             const fallbackX = area.x + Math.round((area.width - width) / 2);
             const fallbackY = area.y + 8;
             const x = Math.max(area.x, Math.min(walkingCompanionPreference.x ?? fallbackX, area.x + area.width - width));
             const y = Math.max(area.y, Math.min(walkingCompanionPreference.y ?? fallbackY, area.y + area.height - height));
             walkingCompanion = new BrowserWindow({
-              x, y, width, height,
+              x, y, width, height, title: ' ',
               frame: false, transparent: true, resizable: false, movable: true,
               show: false, alwaysOnTop: true, skipTaskbar: true, hasShadow: false, focusable: false,
               backgroundColor: '#00000000',
               webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }
             });
-            // Keep the mascot above normal app windows and explicitly reveal it only
-            // after its transparent Three.js page has finished its first paint.
+            // Keep the compact, title-free ghost above normal app windows.
+            walkingCompanion.setTitle('');
             walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
             walkingCompanion.setIgnoreMouseEvents(false);
             walkingCompanion.once('ready-to-show', () => {

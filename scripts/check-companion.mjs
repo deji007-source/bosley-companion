@@ -50,9 +50,9 @@ assert.ok(html.includes('id="file-input"'), "Composer must provide a file picker
 assert.ok(html.includes("function clearFileAttachments()"), "Text attachments must be removable before sending");
 assert.ok(html.includes("ATTACHED TEXT FILES"), "Selected text files must be included in the AI request as untrusted user data");
 assert.ok(html.includes("plusButton.setAttribute(\"aria-expanded\""), "Attachment menu must expose its expanded state accessibly");
-assert.ok(androidInstaller.includes("widgetWidth=104,widgetHeight=34,cornerDp=18"), "Android floating widget must use the compact Bosley companion dimensions");
-assert.ok(androidInstaller.includes("frame.setElevation(dp(8))"), "Android floating widget must have subtle elevation");
-assert.ok(androidInstaller.includes("0x664B91A6"), "Android floating widget must use the muted Bosley accent outline");
+assert.ok(androidInstaller.includes("widgetWidth=44,widgetHeight=44,cornerDp=18"), "Android floating widget must use a very compact ghost-sized footprint");
+assert.ok(androidInstaller.includes("class GhostMascotView extends View"), "Android floating widget must draw the white ghost mascot, not a horizontal eye bar");
+assert.ok(androidInstaller.includes("Color.rgb(77,159,202)"), "Android ghost must retain the Bosley blue accent");
 
 const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],
@@ -616,3 +616,8 @@ for (const table of ["reminders", "schedules", "bosley_planner_tasks"]) assert.o
 
 const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");
 assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automation_instruction(text, uuid) SET search_path = ''"), "Automation instruction SQL function must pin its search_path");
+
+assert.ok(html.includes("bosley.search.history.v1") && html.includes("bosley-search-history"), "Bosley Search must keep and display recent searches on each device");
+assert.ok(html.includes("Search the open web") && html.includes("google.com/search?q="), "Bosley Search must remain useful without a signed-in Brain session");
+assert.ok(html.includes("bosley-search-hero") && html.includes("bosley-search-result"), "Bosley Search must render its branded search console and result cards");
+assert.ok(androidInstaller.includes("GhostMascotView") && androidInstaller.includes("dp(44),dp(44)"), "Android overlay must be a compact ghost character, not a wide eye bar");

@@ -246,7 +246,7 @@ public class BosleyOverlayPlugin extends Plugin {
   private final Handler captureHandler=new Handler(Looper.getMainLooper());
   @PluginMethod public void speakText(PluginCall call){
     String text=call.getString("text","");
-    String profile=call.getString("profile","jarvis");
+    String profile=call.getString("profile","warm");
     if(text==null||text.trim().isEmpty()){call.resolve();return;}
     if(text.length()>5000)text=text.substring(0,5000);
     final String utterance=text;
@@ -257,16 +257,16 @@ public class BosleyOverlayPlugin extends Plugin {
           if(bosleyTtsReady){
             int lang=bosleyTts.setLanguage(java.util.Locale.UK);
             if(lang==android.speech.tts.TextToSpeech.LANG_MISSING_DATA||lang==android.speech.tts.TextToSpeech.LANG_NOT_SUPPORTED)bosleyTts.setLanguage(java.util.Locale.getDefault());
-            bosleyTts.setSpeechRate("jarvis".equals(profile)?0.9f:1.0f);
-            bosleyTts.setPitch("jarvis".equals(profile)?0.78f:1.0f);
+            bosleyTts.setSpeechRate("jarvis".equals(profile)?0.9f:("warm".equals(profile)?0.96f:1.0f));
+            bosleyTts.setPitch("jarvis".equals(profile)?0.78f:("warm".equals(profile)?1.04f:1.0f));
             bosleyTts.speak(utterance,android.speech.tts.TextToSpeech.QUEUE_FLUSH,null,"bosley-"+System.currentTimeMillis());
           }
         });
         JSObject r=new JSObject();r.put("queued",true);call.resolve(r);return;
       }
       if(!bosleyTtsReady){JSObject r=new JSObject();r.put("queued",false);r.put("reason","Android speech engine is still starting");call.resolve(r);return;}
-      bosleyTts.setSpeechRate("jarvis".equals(profile)?0.9f:1.0f);
-      bosleyTts.setPitch("jarvis".equals(profile)?0.78f:1.0f);
+      bosleyTts.setSpeechRate("jarvis".equals(profile)?0.9f:("warm".equals(profile)?0.96f:1.0f));
+      bosleyTts.setPitch("jarvis".equals(profile)?0.78f:("warm".equals(profile)?1.04f:1.0f));
       bosleyTts.speak(utterance,android.speech.tts.TextToSpeech.QUEUE_FLUSH,null,"bosley-"+System.currentTimeMillis());
       JSObject r=new JSObject();r.put("queued",true);call.resolve(r);
     }catch(Exception e){call.reject("Android text-to-speech failed. Check that a text-to-speech engine is installed.",e);}

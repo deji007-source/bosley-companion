@@ -621,3 +621,5 @@ assert.ok(html.includes("bosley.search.history.v1") && html.includes("bosley-sea
 assert.ok(html.includes("Search the open web") && html.includes("google.com/search?q="), "Bosley Search must remain useful without a signed-in Brain session");
 assert.ok(html.includes("bosley-search-hero") && html.includes("bosley-search-result"), "Bosley Search must render its branded search console and result cards");
 assert.ok(androidInstaller.includes("GhostMascotView") && androidInstaller.includes("dp(44),dp(44)"), "Android overlay must be a compact ghost character, not a wide eye bar");
+assert.ok(androidInstaller.includes("openExternalUrl(PluginCall call)") && androidInstaller.includes("Intent.ACTION_VIEW") && androidInstaller.includes("Only HTTP and HTTPS links"), "Android must open approved web and WhatsApp chat links through native app routing");
+assert.ok(html.includes("native?.openExternalUrl({url})") && html.includes("wa.me/234"), "Android automation must route external links natively and document the WhatsApp chat-link format");

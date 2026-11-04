@@ -142,8 +142,8 @@ jobs:
             <svg viewBox="0 0 150 180" role="img" aria-label="Bosley white ghost with large blinking black eyes" xmlns="http://www.w3.org/2000/svg">
               <defs><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter></defs>
               <g id="ghost">
-                <path d="M75 12C42 12 18 39 18 76v67q0 9 9 6l48-5q48 5 48 5 9 3 9-6V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
-                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v67q0 9 9 6l48-5q48 5 48 5 9 3 9-6V76c0-37-26-64-60-64Z"/>
+                <path d="M75 12C42 12 18 39 18 76v67Q75 159 132 143V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
+                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v67Q75 159 132 143V76c0-37-26-64-60-64Z"/>
                 <path class="ghost-edge" d="M22 111V76c0-34 22-60 53-60"/>
                 <ellipse id="eye-L" class="ghost-eye" cx="56" cy="78" rx="10.5" ry="14.5"/>
                 <ellipse id="eye-R" class="ghost-eye" cx="94" cy="78" rx="10.5" ry="14.5"/>

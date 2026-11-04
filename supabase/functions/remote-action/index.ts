@@ -73,6 +73,21 @@ Deno.serve(async (req: Request) => {
     });
   }
   if (body.type === "listener_poll") {
+    // Recover a command whose Windows listener crashed or disconnected mid-run.
+    // The two-minute lease is longer than normal UI actions and short enough to retry.
+    const staleBefore = new Date(Date.now() - 120000).toISOString();
+    const { error: reclaimError } = await sb.from("automation_runs")
+      .update({ status: "pending", updated_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .eq("status", "processing")
+      .eq("summary", "remote_listener_queue:v1")
+      .lt("updated_at", staleBefore);
+    if (reclaimError) {
+      console.error("Stale laptop command recovery failed:", reclaimError);
+      return new Response(JSON.stringify({ ok: false, error: "Could not recover interrupted laptop commands." }), {
+        status: 500, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
     const { data: pending, error: pendingError } = await sb.from("automation_runs")
       .select("id, instruction")
       .eq("user_id", user.id)

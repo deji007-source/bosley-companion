@@ -3,8 +3,9 @@
 Bosley Companion is a browser-first AI companion with a Vite frontend, Supabase-backed services, and an optional Windows Electron wrapper.
 
 **Live app:** https://bosley-companion.vercel.app/  
-**Windows build:** GitHub Actions → **Build Bosley Windows App** workflow.  
-**Android build:** GitHub Actions → **Build Bosley Android APK** workflow.
+**Web test bundle:** GitHub Actions → [Build Bosley Web](https://github.com/deji007-source/bosley-companion/actions/workflows/build-web.yml) → download `Bosley-Web-Test-Bundle-*`.  
+**Windows installer:** GitHub Actions → [Build Bosley Windows App](https://github.com/deji007-source/bosley-companion/actions/workflows/build-windows.yml) → download `Bosley-Windows-Installer`.  
+**Android debug APK:** GitHub Actions → [Build Bosley Android APK](https://github.com/deji007-source/bosley-companion/actions/workflows/build-android.yml) → download `Bosley-Android-Debug-APK`.
 
 ## Source-of-truth note
 
@@ -84,8 +85,8 @@ The current Windows installer and Android debug APK include a native visual-guid
 
 ### Install and smoke-test the current builds
 
-1. Open the [Windows build workflow](https://github.com/deji007-source/bosley-companion/actions/workflows/build-windows.yml) or [Android build workflow](https://github.com/deji007-source/bosley-companion/actions/workflows/build-android.yml) while signed in to GitHub, then choose the latest successful run.
-2. In **Artifacts**, download `Bosley-Windows-Installer` or `Bosley-Android-Debug-APK`. Extract the downloaded ZIP to get the installer/APK.
+1. Open the [Web build](https://github.com/deji007-source/bosley-companion/actions/workflows/build-web.yml), [Windows build](https://github.com/deji007-source/bosley-companion/actions/workflows/build-windows.yml), or [Android build](https://github.com/deji007-source/bosley-companion/actions/workflows/build-android.yml) while signed in to GitHub, then choose the latest successful run.
+2. In **Artifacts**, download `Bosley-Web-Test-Bundle-*`, `Bosley-Windows-Installer`, or `Bosley-Android-Debug-APK`. Extract the downloaded ZIP. The web bundle contains the production `index.html`; the Windows artifact contains the installer; the Android artifact contains a development-only debug APK.
 3. Install and launch Bosley Companion, then sign in if prompted.
 4. Open the Activity/Daily Planner, create an active test task, and select **Guide**. Accept the in-app confirmation.
 5. On Android, if prompted, enable **Allow display over other apps** for Bosley Companion, return to the app, and try **Guide** again.

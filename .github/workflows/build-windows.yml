@@ -263,7 +263,7 @@ jobs:
           const lapelR=mesh(new THREE.ConeGeometry(.22,.76,4),charcoal,group,.22,1.36,.48); lapelR.rotation.z=.28; lapelR.rotation.x=-.16; outline(lapelR,0xe5e5e5);
           const shirt=mesh(new THREE.ConeGeometry(.22,.52,4),ivory,group,0,1.38,.47); shirt.rotation.z=Math.PI;
           // Fedora: pinched crown, indented front and broad, gently curved brim.
-          const hat=new THREE.Group(); hat.position.set(0,2.25,0); group.add(hat);
+          const hat=new THREE.Group(); hat.position.set(0,2.34,.12); hat.rotation.set(0,0,0); group.add(hat);
           const crown=mesh(new THREE.CylinderGeometry(.43,.49,.55,12,2),felt,hat,0,.22,0); crown.scale.set(1,.92,.83); outline(crown,0xe5e5e5);
           const crownPinchL=mesh(new THREE.SphereGeometry(.18,10,8),black,hat,-.22,.48,.13); crownPinchL.scale.set(.55,.55,.8);
           const crownPinchR=mesh(new THREE.SphereGeometry(.18,10,8),black,hat,.22,.48,.13); crownPinchR.scale.set(.55,.55,.8);
@@ -271,7 +271,7 @@ jobs:
           const band=mesh(new THREE.TorusGeometry(.44,.035,6,24),ivory,hat,0,.02,0); band.scale.set(1,.9,.83);
           // Shadowed face and large, clean white eyes.
           const head=mesh(new THREE.SphereGeometry(.43,20,16),faceMat,group,0,1.93,.18); head.scale.set(.94,.88,.76); outline(head,0x9c9c9c);
-          const pupils=[];for(const x of [-.17,.17]){const eye=mesh(new THREE.SphereGeometry(.105,16,12),ivory,group,x,1.98,.49);eye.scale.set(.82,1.18,.52);const pupil=mesh(new THREE.SphereGeometry(.043,12,10),black,group,x,1.98,.535);pupil.scale.set(.9,1.1,.55);pupils.push(pupil);}
+          const pupils=[];for(const x of [-.17,.17]){const eye=mesh(new THREE.SphereGeometry(.105,16,12),ivory,group,x,1.98,.585);eye.scale.set(.88,1.2,.58);const pupil=mesh(new THREE.SphereGeometry(.043,12,10),black,group,x,1.98,.648);pupil.scale.set(.9,1.1,.6);pupils.push(pupil);}
           // Articulated arms with shoulder, elbow and gloved hand pivots.
           function makeArm(side){const shoulder=new THREE.Group();shoulder.position.set(side*.48,1.62,0);group.add(shoulder);const upper=capsule(shoulder,side*.16,-.23,0,.13,.31,black);upper.rotation.z=side*-.18;const elbow=new THREE.Group();elbow.position.set(side*.29,-.42,0);shoulder.add(elbow);const fore=capsule(elbow,side*.04,-.22,.02,.105,.29,charcoal);const hand=mesh(new THREE.SphereGeometry(.13,12,10),ivory,elbow,side*.05,-.43,.07);hand.scale.set(.8,.9,.7);return {shoulder,elbow};}
           const armL=makeArm(-1),armR=makeArm(1);

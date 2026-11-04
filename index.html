@@ -2371,7 +2371,9 @@ let laptopListenerChannel=null,laptopListenerOwner=null,laptopListenerState="off
 function setLaptopListenerState(state,detail){
  laptopListenerState=state;
  const status=$("#laptop-listener-status");
- if(status){status.textContent="Laptop listener: "+state.toUpperCase()+(detail?" · "async function executeLaptopInstruction(instruction){
+ if(status){status.textContent="Laptop listener: "+state.toUpperCase()+(detail?" · "+detail:"");status.dataset.state=state}
+}
+async function executeLaptopInstruction(instruction){
  const b=bridge();
  if(!b||typeof b.request!=="function")throw Error("Windows desktop bridge unavailable");
  const normalized=String(instruction||"").toLowerCase().replace(/[.!?]+$/,"").trim();
@@ -2408,8 +2410,6 @@ function setLaptopListenerState(state,detail){
   if(result?.ok!==true)throw Error(result?.error||"Windows desktop status was not confirmed.");
   return "Windows desktop information was retrieved.";
  }
- // General chat is forwarded to the Windows Bosley session, where the existing
- // authenticated companion-chat flow answers it. No arbitrary shell command is run.
  if(typeof send==="function"){
   await send(instruction);
   return "Forwarded to Bosley chat on Windows. Check the Windows conversation for its reply.";
@@ -2429,19 +2429,6 @@ async function acknowledgeLaptopCommand(activeUser,id,status,summary){
  const result=await response.json().catch(()=>({}));
  if(!response.ok||result.ok!==true)throw Error(result.error||"Command acknowledgement failed.");
  return true;
-}
-async function handleLaptopBroadcast(payload){
- const instruction=String(payload?.instruction||"").trim();
- if(!instruction)return;
- try{
-  const summary=await executeLaptopInstruction(instruction);
-  setLaptopListenerState("online",summary);
-  autoLog("success","Windows listener: "+summary);
- }catch(error){
-  const message=String(error?.message||error).slice(0,180);
-  setLaptopListenerState("error",message);
-  autoLog("error","Windows listener command failed: "+message);
- }
 }
 async function pollLaptopCommands(activeUser){
  if(!activeUser||laptopListenerOwner!==activeUser.id||!db||laptopPollBusy)return;
@@ -2509,14 +2496,7 @@ function startLaptopCommandListener(activeUser){
   setLaptopListenerState("online","authenticated durable queue polling active");
  };
  connect().catch(error=>setLaptopListenerState("error",String(error?.message||error).slice(0,120)));
- // Do not require a Realtime WebSocket: the durable authenticated queue avoids
- // Realtime join-rate limits and continues to work through transient socket outages.
 }
-
-te("offline","channel closed");
-  });
-}
-
 
 function installInlineWritingSuggestions(){
  if(window.__bosleyInlineWritingInstalled)return;window.__bosleyInlineWritingInstalled=true;

@@ -520,7 +520,7 @@ html[data-agent-state=waiting] .bosley-hologram{animation:bosley-holo-phase 1.6s
 @media(prefers-reduced-motion:reduce){.holo-face,html.bosley-arrive .bosley-hologram,html[data-agent-state=thinking] .bosley-hologram .holo-face,html[data-agent-state=working] .bosley-hologram .holo-face,html[data-agent-state=waiting] .bosley-hologram{animation:none!important}}
 
 .remote-mode-card{margin:10px 14px 2px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #333;border-radius:13px;background:#080808;color:#fff}
-.remote-mode-card[hidden]{display:none}.remote-mode-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.remote-mode-copy strong{font-size:11px;letter-spacing:.14em}.remote-mode-copy span,.remote-mode-copy small{font-size:11px;color:#aaa;line-height:1.35}.remote-mode-copy small[data-state=online]{color:#fff}.remote-mode-toggle{min-width:58px;padding:8px 11px;border:1px solid #555;border-radius:999px;background:#111;color:#ddd;font-size:11px;font-weight:800;letter-spacing:.08em}.remote-mode-toggle[aria-pressed=true]{background:#fff;color:#050505;border-color:#fff}.remote-mode-toggle:disabled{opacity:.5}
+.remote-mode-card[hidden]{display:none}.remote-mode-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.remote-mode-copy strong{font-size:11px;letter-spacing:.14em}.remote-mode-copy span,.remote-mode-copy small{font-size:11px;color:#aaa;line-height:1.35}.remote-mode-copy small[data-state=online]{color:#fff}.remote-mode-toggle{min-width:58px;padding:8px 11px;border:1px solid #555;border-radius:999px;background:#111;color:#ddd;font-size:11px;font-weight:800;letter-spacing:.08em}.remote-mode-toggle[aria-pressed=true]{background:#fff;color:#050505;border-color:#fff}.remote-mode-toggle:disabled{opacity:.5}.remote-mode-actions{display:flex;align-items:center;gap:7px;flex:0 0 auto}.remote-mode-actions #remote-mode-refresh{width:34px;height:34px;border:1px solid #444;border-radius:9px;background:#101010;color:#eee;font-size:19px}.remote-mode-actions #remote-mode-refresh:disabled{opacity:.5}
 
 /* Final compact shell + mascot face correction */
 .panel{background:#050505;border-color:#292929}
@@ -627,8 +627,8 @@ html.blink #bosley-mascot .mascot-eye{transform:scaleY(.08)}
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="signin-open" class="signin-shortcut" type="button" aria-label="Open account sign-in" title="Account and sync">Sign in</button><button id="dock-open" aria-label="Open side views" title="Open Workspace, Automation, Appearance and Activity">▤</button><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
  <section class="remote-mode-card" id="remote-mode-card" hidden aria-label="Remote mode">
-  <div class="remote-mode-copy"><strong>REMOTE MODE</strong><span>Route voice commands to Windows</span><small id="remote-mode-status" role="status" aria-live="polite">Windows not connected</small></div>
-  <button type="button" id="remote-mode-toggle" class="remote-mode-toggle" aria-pressed="false">OFF</button>
+  <div class="remote-mode-copy"><strong>REMOTE MODE</strong><span>Route voice and typed commands to Windows</span><small id="remote-mode-status" role="status" aria-live="polite">Checking Windows connection…</small></div>
+  <div class="remote-mode-actions"><button type="button" id="remote-mode-refresh" aria-label="Check Windows connection" title="Check connection">↻</button><button type="button" id="remote-mode-toggle" class="remote-mode-toggle" aria-pressed="false">OFF</button></div>
  </section>
  <nav class="modebar" id="voicemodes" aria-label="Assistant mode">
   <button type="button" class="on" data-mode="agent" aria-pressed="true">◈ Agent</button>
@@ -1776,10 +1776,19 @@ async function routeRemoteVoiceToLaptop(spoken){
  }catch(error){const message=String(error?.message||error);note("Remote Mode: "+message);setRemoteModeStatus(message,"error");autoLog("error","Android Remote Mode could not deliver command: "+message)}
  return true;
 }
+async function refreshRemoteModeStatus(){
+ const refresh=$("#remote-mode-refresh");if(refresh)refresh.disabled=true;
+ setRemoteModeStatus("Checking Windows listener…","checking");
+ const status=await getRemoteLaptopStatus();
+ setRemoteModeStatus(status.detail,status.online?"online":"offline");
+ if(refresh)refresh.disabled=false;
+ return status;
+}
 function initAndroidRemoteMode(){
  if(!remoteModeNativeAndroid)return;
  try{remoteModeEnabled=localStorage.getItem(REMOTE_MODE_KEY)==="1"}catch{remoteModeEnabled=false}
- renderRemoteMode();const button=$("#remote-mode-toggle");if(!button)return;
+ renderRemoteMode();const button=$("#remote-mode-toggle"),refresh=$("#remote-mode-refresh");if(!button)return;
+ if(refresh)refresh.addEventListener("click",()=>refreshRemoteModeStatus());
  button.addEventListener("click",async()=>{
   const next=!remoteModeEnabled;
   if(next){button.disabled=true;const status=await getRemoteLaptopStatus();button.disabled=false;if(!status.online){setRemoteModeStatus(status.detail+". Open Bosley Companion on Windows first.","offline");note("Remote Mode needs your Windows Companion to be online.");return}}
@@ -1789,10 +1798,10 @@ function initAndroidRemoteMode(){
  });
  if(window.__bosleyRemoteStatusTimer)clearInterval(window.__bosleyRemoteStatusTimer);
  window.__bosleyRemoteStatusTimer=setInterval(async()=>{
-  if(!remoteModeEnabled||document.hidden)return;
-  const status=await getRemoteLaptopStatus();
-  setRemoteModeStatus(status.detail,status.online?"online":"offline");
+  if(document.hidden)return;
+  await refreshRemoteModeStatus();
  },15000);
+ refreshRemoteModeStatus();
 }
 // Initialize the native-only toggle after its markup and handlers exist.
 initAndroidRemoteMode();

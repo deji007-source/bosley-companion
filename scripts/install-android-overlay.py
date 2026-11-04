@@ -21,7 +21,7 @@ if "SYSTEM_ALERT_WINDOW" not in text:
 if "BosleyOverlayService" not in text:
     text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and scheduled incoming-call audio alerts" /></service>\n    </application>')
 else:
-    text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion widget displayed over other apps" /></service>', text)
+    text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and scheduled incoming-call audio alerts" /></service>', text)
 if "BosleyCallAlarmReceiver" not in text:
     text = text.replace("</application>", '        <receiver android:name=".BosleyCallAlarmReceiver" android:enabled="true" android:exported="false" />\n    </application>')
 manifest.write_text(text)
@@ -366,13 +366,13 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void showIncomingCall(PluginCall call){
     try{
       android.app.NotificationManager manager=(android.app.NotificationManager)getContext().getSystemService(android.content.Context.NOTIFICATION_SERVICE);
-      String channel="bosley_incoming_calls";
+      String channel="bosley_incoming_calls_v2";
       if(Build.VERSION.SDK_INT>=26){
         android.app.NotificationChannel c=new android.app.NotificationChannel(channel,"Bosley incoming calls",android.app.NotificationManager.IMPORTANCE_HIGH);
         c.setDescription("Incoming Bosley voice calls");c.enableVibration(true);c.setVibrationPattern(new long[]{0,400,300,400,1000});c.setSound(null,null);
         manager.createNotificationChannel(c);
       }
-      Intent ring=new Intent(getContext(),BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CALL_RING_START);startOverlayService(ring);
+      try{Intent ring=new Intent(getContext(),BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CALL_RING_START);startOverlayService(ring);}catch(Exception ringError){android.util.Log.w("BosleyCall","Native ringtone service unavailable; keeping the incoming-call notification",ringError);}
       Intent accept=new Intent(getContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_accept");
       Intent decline=new Intent(getContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_decline");
       android.app.PendingIntent answer=android.app.PendingIntent.getActivity(getContext(),702,accept,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
@@ -432,9 +432,8 @@ import android.media.*;
 public class BosleyCallAlarmReceiver extends BroadcastReceiver {
   @Override public void onReceive(Context context,Intent intent){
     try{
-      Intent ring=new Intent(context,BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CALL_RING_START);
-      if(Build.VERSION.SDK_INT>=26)context.startForegroundService(ring);else context.startService(ring);
-      String channel="bosley_incoming_calls";
+      try{Intent ring=new Intent(context,BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CALL_RING_START);if(Build.VERSION.SDK_INT>=26)context.startForegroundService(ring);else context.startService(ring);}catch(Exception ringError){android.util.Log.w("BosleyCallAlarm","Native ringtone service unavailable; keeping the incoming-call notification",ringError);}
+      String channel="bosley_incoming_calls_v2";
       NotificationManager manager=(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
       if(Build.VERSION.SDK_INT>=26){
         NotificationChannel c=new NotificationChannel(channel,"Bosley incoming calls",NotificationManager.IMPORTANCE_HIGH);

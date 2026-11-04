@@ -12,7 +12,7 @@ if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
 if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
-for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.POST_NOTIFICATIONS", "android.permission.USE_FULL_SCREEN_INTENT", "android.permission.VIBRATE"):
+for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.POST_NOTIFICATIONS", "android.permission.USE_FULL_SCREEN_INTENT", "android.permission.VIBRATE", "android.permission.SCHEDULE_EXACT_ALARM"):
     if permission not in text:
         text = text.replace("<application", f'<uses-permission android:name="{permission}" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
@@ -22,6 +22,8 @@ if "BosleyOverlayService" not in text:
     text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion widget displayed over other apps" /></service>\n    </application>')
 else:
     text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion widget displayed over other apps" /></service>', text)
+if "BosleyCallAlarmReceiver" not in text:
+    text = text.replace("</application>", '        <receiver android:name=".BosleyCallAlarmReceiver" android:enabled="true" android:exported="false" />\n    </application>')
 manifest.write_text(text)
 # The Android guide is intentionally stationary. Do not register an accessibility
 # service to inspect other apps or automatically reposition the guide target.
@@ -328,6 +330,21 @@ public class BosleyOverlayPlugin extends Plugin {
     boolean granted=Build.VERSION.SDK_INT<33||getPermissionState("notifications")==PermissionState.GRANTED;
     JSObject r=new JSObject();r.put("granted",granted);if(granted)call.resolve(r);else call.reject("Notification permission is required for incoming Bosley calls.");
   }
+  @PluginMethod public void scheduleCallAlarm(PluginCall call){
+    long at=call.getLong("at",0L);
+    if(at<=System.currentTimeMillis()){call.reject("Choose a future call time.");return;}
+    try{
+      Intent alarm=new Intent(getContext(),BosleyCallAlarmReceiver.class).putExtra("briefing",true);
+      int request=(int)(at&0x7fffffff);
+      android.app.PendingIntent pending=android.app.PendingIntent.getBroadcast(getContext(),request,alarm,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
+      android.app.AlarmManager manager=(android.app.AlarmManager)getContext().getSystemService(android.content.Context.ALARM_SERVICE);
+      boolean exact=false;
+      if(Build.VERSION.SDK_INT>=31 && manager.canScheduleExactAlarms()){manager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP,at,pending);exact=true;}
+      else if(Build.VERSION.SDK_INT>=23)manager.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP,at,pending);
+      else {manager.setExact(android.app.AlarmManager.RTC_WAKEUP,at,pending);exact=true;}
+      JSObject r=new JSObject();r.put("scheduled",true);r.put("exact",exact);call.resolve(r);
+    }catch(Exception e){call.reject("Could not schedule the Android Bosley call alarm.",e);}
+  }
   @PluginMethod public void showIncomingCall(PluginCall call){
     try{
       android.app.NotificationManager manager=(android.app.NotificationManager)getContext().getSystemService(android.content.Context.NOTIFICATION_SERVICE);
@@ -388,6 +405,34 @@ public class BosleyOverlayPlugin extends Plugin {
     JSObject r=new JSObject();r.put("action",action==null?"":action);r.put("callAction",callAction==null?"":callAction);call.resolve(r);
   }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}
+}''')
+(src / "BosleyCallAlarmReceiver.java").write_text(r'''package com.bosley.companion;
+import android.content.*;
+import android.app.*;
+import android.os.Build;
+import android.media.*;
+public class BosleyCallAlarmReceiver extends BroadcastReceiver {
+  @Override public void onReceive(Context context,Intent intent){
+    try{
+      String channel="bosley_incoming_calls";
+      NotificationManager manager=(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+      if(Build.VERSION.SDK_INT>=26){
+        NotificationChannel c=new NotificationChannel(channel,"Bosley incoming calls",NotificationManager.IMPORTANCE_HIGH);
+        c.setDescription("Incoming Bosley voice calls");c.enableVibration(true);c.setVibrationPattern(new long[]{0,400,300,400,1000});
+        c.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+        manager.createNotificationChannel(c);
+      }
+      Intent accept=new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_accept");
+      Intent decline=new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_decline");
+      PendingIntent answer=PendingIntent.getActivity(context,702,accept,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+      PendingIntent reject=PendingIntent.getActivity(context,703,decline,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+      PendingIntent full=PendingIntent.getActivity(context,704,accept,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+      Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(context,channel):new Notification.Builder(context);
+      b.setSmallIcon(android.R.drawable.sym_call_incoming).setContentTitle("BOSLEY").setContentText("Your scheduled briefing is ready").setCategory(Notification.CATEGORY_CALL).setPriority(Notification.PRIORITY_MAX).setOngoing(true).setAutoCancel(false).setVibrate(new long[]{0,400,300,400,1000}).setFullScreenIntent(full,true).addAction(android.R.drawable.ic_menu_close_clear_cancel,"Decline",reject).addAction(android.R.drawable.sym_action_call,"Answer",answer);
+      if(Build.VERSION.SDK_INT>=31)b.setStyle(Notification.CallStyle.forIncomingCall(new Person.Builder().setName("BOSLEY").build(),reject,answer));
+      manager.notify(702,b.build());
+    }catch(Exception e){android.util.Log.e("BosleyCallAlarm","Could not show scheduled call",e);}
+  }
 }''')
 activity = src / "MainActivity.java"
 if not activity.exists():

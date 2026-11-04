@@ -52,7 +52,8 @@ assert.ok(html.includes("ATTACHED TEXT FILES"), "Selected text files must be inc
 assert.ok(html.includes("plusButton.setAttribute(\"aria-expanded\""), "Attachment menu must expose its expanded state accessibly");
 assert.ok(androidInstaller.includes("widgetWidth=44,widgetHeight=44,cornerDp=18"), "Android floating widget must use a very compact ghost-sized footprint");
 assert.ok(androidInstaller.includes("class GhostMascotView extends View"), "Android floating widget must draw the white ghost mascot, not a horizontal eye bar");
-assert.ok(androidInstaller.includes("Color.rgb(77,159,202)"), "Android ghost must retain the Bosley blue accent");
+assert.ok(!androidInstaller.includes("canvas.drawPath(accent,paint)"), "Android ghost face must not draw the small blue smile/accent line");
+assert.ok(androidInstaller.includes("lp.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;lp.x=dp(10);lp.y=-dp(55);"), "Android floating widget must start on the right edge slightly above vertical centre");
 
 const contracts = [
   ["Enabled Skills can resolve only to existing saved workflows", "function resolveSkillWorkflowCommand(raw)"],

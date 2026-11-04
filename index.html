@@ -763,7 +763,7 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
    <button class="link" type="button" id="facereset">Reset appearance</button>
    <p class="fb" id="facefeedback" aria-live="polite"></p>
      <label class="mute" for="voiceprofile">Bosley voice</label>
-   <select id="voiceprofile"><option value="jarvis">Jarvis-style (deep, calm)</option><option value="natural">Natural assistant</option><option value="system">System default</option></select>
+   <select id="voiceprofile"><option value="warm">Warm &amp; welcoming</option><option value="natural">Natural assistant</option><option value="jarvis">Jarvis-style (deep, calm)</option><option value="system">System default</option></select>
    <button type="button" class="primary" id="voicepreview">▶ Preview voice</button>
 </form>
  </section>
@@ -930,7 +930,7 @@ function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"
 function loadAutomationHistory(){const owner=user?.id||"guest";if(automationHistoryOwner===owner)return;automationHistoryOwner=owner;try{const rows=JSON.parse(localStorage.getItem(automationHistoryKey())||"[]");automationRuns=Array.isArray(rows)?rows.filter(x=>x&&typeof x.status==="string"&&typeof x.message==="string").slice(0,12):[]}catch{automationRuns=[]}}
 function renderAutomationHistory(){const el=$("#auto-log");if(!el)return;el.innerHTML=automationRuns.map(r=>{const cls=r.status==="success"?"ok":["error","warning","queued"].includes(r.status)?"warn":r.status==="delivered"?"delivered":"";return `<article class="item"><main><strong class="${cls}">${esc(r.status.toUpperCase())} · ${esc(r.time)}</strong><p>${esc(r.message)}</p></main></article>`}).join("")||'<p class="mute">No automation runs yet.</p>'}
 let speechOn=true;try{speechOn=JSON.parse(localStorage.getItem("bosley_prefs")||"{}").speechOn!==false}catch{}
-let voiceProfile="jarvis";try{voiceProfile=localStorage.getItem("bosley_voice_profile")||"jarvis"}catch{}
+let voiceProfile="warm";try{voiceProfile=localStorage.getItem("bosley_voice_profile")||"warm"}catch{}
 function chooseBosleyVoice(){
  if(!("speechSynthesis"in window))return null;
  const voices=speechSynthesis.getVoices()||[];
@@ -1213,9 +1213,9 @@ function initFaceSettings(){
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;
  $("#voiceprofile").value=voiceProfile; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
  form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved locally. Syncing your account preferences…";scheduleCompanionSettingsSync()}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
- $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hello. I am Bosley, your personal assistant. How may I help you?");speechOn=old};
+ $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hey, it is lovely to have you here. I am Bosley. Take your time, tell me what is on your mind, and we will work through it together.");speechOn=old};
 $("#voiceprofile").value=voiceProfile;
-$("#voiceprofile").addEventListener("change",()=>{voiceProfile=$("#voiceprofile").value||"jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};scheduleCompanionSettingsSync();if("speechSynthesis"in window)speechSynthesis.cancel();const labels={jarvis:"Jarvis-style voice selected. "+getVoiceStatus(),natural:"Natural assistant voice selected. "+getVoiceStatus(),system:"System default voice selected. "+getVoiceStatus()};$("#facefeedback").textContent=labels[voiceProfile]||getVoiceStatus();});
+$("#voiceprofile").addEventListener("change",()=>{voiceProfile=$("#voiceprofile").value||"jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};scheduleCompanionSettingsSync();if("speechSynthesis"in window)speechSynthesis.cancel();const labels={warm:"Warm and welcoming voice selected. "+getVoiceStatus(),jarvis:"Jarvis-style voice selected. "+getVoiceStatus(),natural:"Natural assistant voice selected. "+getVoiceStatus(),system:"System default voice selected. "+getVoiceStatus()};$("#facefeedback").textContent=labels[voiceProfile]||getVoiceStatus();});
  $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#voiceprofile").value="jarvis";voiceProfile="jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};$("#facefeedback").textContent="Appearance and voice reset."};
 }
 $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};

@@ -142,8 +142,8 @@ jobs:
             <svg viewBox="0 0 150 180" role="img" aria-label="Bosley white ghost with large blinking black eyes" xmlns="http://www.w3.org/2000/svg">
               <defs><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter></defs>
               <g id="ghost">
-                <path d="M75 12C42 12 18 39 18 76v67Q75 159 132 143V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
-                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v67Q75 159 132 143V76c0-37-26-64-60-64Z"/>
+                <path d="M75 12C42 12 18 39 18 76v56C28 118 38 118 48 132C58 146 68 146 78 132C88 118 98 118 108 132C118 146 126 146 132 132V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
+                <path class="ghost-shape" d="M75 12C42 12 18 39 18 76v56C28 118 38 118 48 132C58 146 68 146 78 132C88 118 98 118 108 132C118 146 126 146 132 132V76c0-37-26-64-60-64Z"/>
                 <path class="ghost-edge" d="M22 111V76c0-34 22-60 53-60"/>
                 <ellipse id="eye-L" class="ghost-eye" cx="56" cy="78" rx="10.5" ry="14.5"/>
                 <ellipse id="eye-R" class="ghost-eye" cx="94" cy="78" rx="10.5" ry="14.5"/>
@@ -1137,10 +1137,11 @@ jobs:
               }
 
               .wordmark { display: none; }
-              /* Island touches the physical top edge: no top border or floating gap. */
-              button { width: 260px; height: 18px; padding: 0 8px; border-left: 1px solid rgba(255,255,255,.72); border-right: 1px solid rgba(255,255,255,.72); border-bottom: 1px solid rgba(255,255,255,.72); border-top: 0; border-radius: 0 0 999px 999px; gap: 0; background: rgba(5,5,5,.99); box-shadow: 0 5px 18px rgba(0,0,0,.34), 0 0 12px rgba(255,255,255,.06); }
-              button::before { border-radius: 0 0 999px 999px; }
-              svg { display: none !important; }
+              /* The launcher remains clickable but has no backing plaque, bar, or text. */
+              button { width: 260px; height: 18px; padding: 0; border: 0!important; border-radius: 0; gap: 0; background: transparent!important; box-shadow: none!important; color: transparent; }
+              button::before { display:none!important; content:none!important; }
+              button:hover,button:focus-visible { border:0!important; background:transparent!important; box-shadow:none!important; }
+              svg,.wordmark { display:none!important; }
 
               button:hover {
                 border-color: #fff;

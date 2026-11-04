@@ -12,7 +12,7 @@ if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
 if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
-for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"):
+for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.POST_NOTIFICATIONS", "android.permission.USE_FULL_SCREEN_INTENT", "android.permission.VIBRATE"):
     if permission not in text:
         text = text.replace("<application", f'<uses-permission android:name="{permission}" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
@@ -320,6 +320,31 @@ public class BosleyOverlayPlugin extends Plugin {
   @ActivityCallback private void overlayPermissionResult(PluginCall call,ActivityResult result){
     JSObject r=new JSObject();r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);
   }
+  @PluginMethod public void showIncomingCall(PluginCall call){
+    try{
+      android.app.NotificationManager manager=(android.app.NotificationManager)getContext().getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+      String channel="bosley_incoming_calls";
+      if(Build.VERSION.SDK_INT>=26){
+        android.app.NotificationChannel c=new android.app.NotificationChannel(channel,"Bosley incoming calls",android.app.NotificationManager.IMPORTANCE_HIGH);
+        c.setDescription("Incoming Bosley voice calls");c.enableVibration(true);c.setVibrationPattern(new long[]{0,400,300,400,1000});
+        c.setSound(android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE),new android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+        manager.createNotificationChannel(c);
+      }
+      Intent accept=new Intent(getContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_accept");
+      Intent decline=new Intent(getContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_decline");
+      android.app.PendingIntent answer=android.app.PendingIntent.getActivity(getContext(),702,accept,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
+      android.app.PendingIntent reject=android.app.PendingIntent.getActivity(getContext(),703,decline,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
+      android.app.PendingIntent full=android.app.PendingIntent.getActivity(getContext(),704,accept,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
+      android.app.Notification.Builder builder=Build.VERSION.SDK_INT>=26?new android.app.Notification.Builder(getContext(),channel):new android.app.Notification.Builder(getContext());
+      builder.setSmallIcon(android.R.drawable.sym_call_incoming).setContentTitle("BOSLEY").setContentText("AI Operating System · Encrypted Voice Link").setCategory(android.app.Notification.CATEGORY_CALL).setPriority(android.app.Notification.PRIORITY_MAX).setOngoing(true).setAutoCancel(false).setVibrate(new long[]{0,400,300,400,1000}).setFullScreenIntent(full,true).addAction(android.R.drawable.ic_menu_close_clear_cancel,"Decline",reject).addAction(android.R.drawable.sym_action_call,"Answer",answer);
+      if(Build.VERSION.SDK_INT>=31){android.app.Person person=new android.app.Person.Builder().setName("BOSLEY").build();builder.setStyle(android.app.Notification.CallStyle.forIncomingCall(person,reject,answer));}
+      manager.notify(702,builder.build());JSObject r=new JSObject();r.put("shown",true);r.put("fullScreenIntent",true);call.resolve(r);
+    }catch(Exception e){call.reject("Could not show the Bosley incoming-call notification.",e);}
+  }
+  @PluginMethod public void dismissIncomingCall(PluginCall call){
+    try{android.app.NotificationManager manager=(android.app.NotificationManager)getContext().getSystemService(android.content.Context.NOTIFICATION_SERVICE);if(manager!=null)manager.cancel(702);}catch(Exception ignored){}
+    call.resolve();
+  }
   @PluginMethod public void show(PluginCall call){
     if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(getContext())){call.reject("Overlay permission is required. Tap Enable floating widget and allow display over other apps.");return;}
     Intent i=styledIntent(call,BosleyOverlayService.ACTION_SHOW);
@@ -348,9 +373,11 @@ public class BosleyOverlayPlugin extends Plugin {
   }
   @PluginMethod public void hide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE);startOverlayService(i);JSObject r=new JSObject();r.put("visible",false);call.resolve(r);}
   @PluginMethod public void consumeLaunchAction(PluginCall call){
-    String action=getActivity().getIntent().getStringExtra("bosley_quick_action");
-    getActivity().getIntent().removeExtra("bosley_quick_action");
-    JSObject r=new JSObject();r.put("action",action==null?"":action);call.resolve(r);
+    android.content.Intent intent=getActivity().getIntent();
+    String action=intent.getStringExtra("bosley_quick_action");
+    String callAction=intent.getStringExtra("bosley_call_action");
+    intent.removeExtra("bosley_quick_action");intent.removeExtra("bosley_call_action");
+    JSObject r=new JSObject();r.put("action",action==null?"":action);r.put("callAction",callAction==null?"":callAction);call.resolve(r);
   }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}
 }''')
@@ -364,7 +391,8 @@ if "BosleyOverlayPlugin" not in a:
     super.onNewIntent(intent);
     setIntent(intent);
     String action=intent.getStringExtra("bosley_quick_action");
-    if(action!=null && ("panel".equals(action)||"voice".equals(action))){
+    String callAction=intent.getStringExtra("bosley_call_action");
+    if((action!=null && ("panel".equals(action)||"voice".equals(action)))||callAction!=null){
       String js="window.dispatchEvent(new Event(String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)))";
       getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));
     }

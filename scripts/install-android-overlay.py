@@ -414,7 +414,7 @@ public class BosleyOverlayPlugin extends Plugin {
       call.reject("Enable Bosley visual guide in Android Accessibility settings, then try Check target again.");return;
     }
     Intent request=new Intent(BosleyTargetAccessibilityService.FIND);
-    request.setPackage(getContext().getPackageName());request.putExtra("task",task.slice(0,500));
+    request.setPackage(getContext().getPackageName());request.putExtra("task",task.substring(0,500));
     getContext().sendBroadcast(request);
     JSObject result=new JSObject();result.put("ok",true);result.put("state","target-search-requested");call.resolve(result);
   }

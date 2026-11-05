@@ -103,7 +103,7 @@ jobs:
 
           source = path.read_text()
           if "signingConfigs" not in source:
-              android_match = re.search(r"\\bandroid\\s*\\{", source)
+              android_match = re.search(r"\bandroid\s*\{", source)
               if not android_match:
                   raise SystemExit("Could not locate the Android Gradle configuration block.")
               signing = """android {
@@ -120,10 +120,10 @@ jobs:
           elif "signingConfigs.release" not in source:
               raise SystemExit("A signingConfigs block already exists but is not the expected Bosley release configuration.")
 
-          build_types = re.search(r"buildTypes\\s*\\{", source)
+          build_types = re.search(r"buildTypes\s*\{", source)
           if not build_types:
               raise SystemExit("Could not locate the Android buildTypes block.")
-          release_block = re.search(r"release\\s*\\{", source[build_types.end():])
+          release_block = re.search(r"release\s*\{", source[build_types.end():])
           if not release_block:
               raise SystemExit("Could not locate the release build type.")
           release_start = build_types.end() + release_block.end()
@@ -132,7 +132,7 @@ jobs:
               if "signingConfigs.release" not in release_body.split("}", 1)[0]:
                   raise SystemExit("The release build type has a conflicting signing configuration.")
           else:
-              source = source[:release_start] + "\\n            signingConfig signingConfigs.release" + source[release_start:]
+              source = source[:release_start] + "\n            signingConfig signingConfigs.release" + source[release_start:]
 
           path.write_text(source)
           print("Configured the release variant to use the validated upload keystore.")

@@ -23,29 +23,40 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data),
 const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 const unb64 = (value: string) => Uint8Array.from(atob(value), c => c.charCodeAt(0));
 
-function encryptionKeyBytes() {
+async function encryptionKeyBytes() {
   const configured = ENCRYPTION_KEY.trim().replace(/^["']|["']$/g, "");
   if (!configured) throw new Error("Missing AGENT_CREDENTIALS_ENCRYPTION_KEY Supabase Edge Function secret.");
-  let raw: Uint8Array;
-  try {
-    if (/^[a-f0-9]{64}$/i.test(configured)) {
-      raw = Uint8Array.from(configured.match(/../g)!, x => parseInt(x, 16));
-    } else if (configured.length === 32 && /^[\x20-\x7e]{32}$/.test(configured)) {
-      // Also accept a 32-character printable secret as 32 raw UTF-8 bytes.
-      raw = new TextEncoder().encode(configured);
-    } else {
-      const base64 = configured.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, "");
-      const paddedBase64 = base64 + "=".repeat((4 - base64.length % 4) % 4);
-      raw = unb64(paddedBase64);
+  let raw: Uint8Array | null = null;
+  if (/^[a-f0-9]{64}$/i.test(configured)) {
+    raw = Uint8Array.from(configured.match(/../g)!, x => parseInt(x, 16));
+  } else if (configured.length === 32 && /^[\\x20-\\x7e]{32}$/.test(configured)) {
+    // Preserve compatibility with existing 32-character printable secrets.
+    raw = new TextEncoder().encode(configured);
+  } else {
+    const base64 = configured.replace(/-/g, "+").replace(/_/g, "/").replace(/\\s/g, "");
+    if (/^[A-Za-z0-9+/]+={0,2}$/.test(base64) && base64.length % 4 !== 1) {
+      try {
+        const paddedBase64 = base64 + "=".repeat((4 - base64.length % 4) % 4);
+        const decoded = unb64(paddedBase64);
+        if (decoded.length === 32) raw = decoded;
+      } catch {
+        // Treat a sufficiently long non-encoded secret as text below.
+      }
     }
-  } catch {
-    throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY is not valid base64, base64url, 32-character text, or 64-character hexadecimal.");
   }
-  if (raw.length !== 32) throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY must be 32 bytes: use 32-character text, 64-character hexadecimal, or base64 that decodes to 32 bytes.");
+  if (!raw) {
+    const textBytes = new TextEncoder().encode(configured);
+    if (textBytes.length < 32) {
+      throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY must contain at least 32 characters, or decode to exactly 32 bytes.");
+    }
+    // Stable SHA-256 derivation supports long text secrets that are not valid base64.
+    raw = new Uint8Array(await crypto.subtle.digest("SHA-256", textBytes));
+  }
+  if (raw.length !== 32) throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY must resolve to exactly 32 bytes.");
   return raw;
 }
 async function encryptionKey() {
-  return crypto.subtle.importKey("raw", encryptionKeyBytes(), "AES-GCM", false, ["encrypt", "decrypt"]);
+  return crypto.subtle.importKey("raw", await encryptionKeyBytes(), "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 async function encryptSecret(secret: string) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -112,7 +123,7 @@ Deno.serve(async (req: Request) => {
     if (error) return json({ ok: false, error: "Could not load provider connections." }, 500);
     let credentialStoreReady = false;
     let credentialStoreIssue = "";
-    try { encryptionKeyBytes(); credentialStoreReady = true; } catch (e) { credentialStoreIssue = (e as Error).message; }
+    try { await encryptionKeyBytes(); credentialStoreReady = true; } catch (e) { credentialStoreIssue = (e as Error).message; }
     return json({ ok: true, credentialStoreReady, credentialStoreIssue, providers: Object.entries(PROVIDERS).map(([id, p]) => ({ id, name: p.label, defaultModel: p.model, connected: !!data?.some(x => x.provider === id), ...(data?.find(x => x.provider === id) || {}) })) });
   }
   if (action === "connect") {

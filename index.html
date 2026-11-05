@@ -2923,7 +2923,7 @@ async function drawAgents(){
   $("#agent-test-provider").innerHTML=options||'<option value="">No connected providers</option>';
   $("#agent-chat-provider").innerHTML=options||'<option value="">No connected providers</option>';
   $("#agent-test-button").disabled=!choices.length;$("#agent-chat-send").disabled=!choices.length;
-  list.querySelectorAll("form[data-agent-connect]").forEach(form=>{form.querySelector('button[type="submit"]').disabled=!credentialStoreReady;form.addEventListener("submit",async e=>{
+  list.querySelectorAll("form[data-agent-connect]").forEach(form=>{const connectButton=form.querySelector('button[type="submit"]');connectButton.disabled=false;form.addEventListener("submit",async e=>{
    e.preventDefault();const provider=form.dataset.agentConnect,key=form.querySelector('input[type="password"]'),model=form.querySelector('input[id^="agent-model-"]'),button=form.querySelector('button[type="submit"]');
    if(!key.value.trim())return;button.disabled=true;if(status)status.textContent="Encrypting and saving provider credentials…";
    try{
@@ -2940,7 +2940,7 @@ async function drawAgents(){
     }
    }
    catch(error){if(status)status.textContent="NOT SAVED · "+String(error.message||error);}
-   finally{button.disabled=!credentialStoreReady}
+   finally{button.disabled=false}
   })});
   list.querySelectorAll("[data-agent-disconnect]").forEach(button=>button.addEventListener("click",async()=>{
    if(!confirm("Disconnect this provider and delete its saved API credential from Bosley?"))return;

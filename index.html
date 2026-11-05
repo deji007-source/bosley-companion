@@ -67,14 +67,20 @@ html[data-agent-state=working] .launch .mascot-eye{filter:drop-shadow(0 0 5px #f
 @keyframes bosley-teleport-in{0%{opacity:0;filter:blur(5px);transform:translate(-50%,-9px) scale(.82)}55%{opacity:1;filter:blur(0);transform:translate(-50%,2px) scale(1.035)}100%{transform:translate(-50%,0) scale(1)}}
 @keyframes bosley-lock-focus{from{transform:translateY(1px) scale(.985)}to{transform:translateY(-1px) scale(1.025)}}
 @media(prefers-reduced-motion:reduce){html.bosley-arrive .stage,html[data-agent-state=thinking] .launch #bosley-mascot,html[data-agent-state=working] .launch #bosley-mascot{animation:none!important}}
-.launch .eyes{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
-.launch .eyes{display:none!important}
-.launch{height:30px!important;width:96px!important;border:0!important;border-radius:0 0 17px 17px!important;background:#050505!important;box-shadow:0 4px 12px #0009,inset 0 -1px #ffffff0a!important;clip-path:inset(0 round 0 0 17px 17px)!important}
-.launch::after{display:none!important}
-.launch:hover{background:#111!important;box-shadow:0 5px 15px #000b!important}
-.launch:active{background:#000!important;box-shadow:inset 0 2px 5px #000!important}
-html[data-widget-size=compact] .launch,html[data-widget-size=default] .launch,html[data-widget-size=wide] .launch{width:96px!important;height:30px!important}
-html[data-widget-edge=soft] .launch,html[data-widget-edge=balanced] .launch,html[data-widget-edge=sharp] .launch{border-radius:0 0 17px 17px!important}
+.launch{width:56px;height:56px;border:1px solid #333;border-radius:18px;background:radial-gradient(ellipse at 50% 20%,#202020,#050505 72%);padding:3px;box-shadow:0 7px 24px #000b,inset 0 1px #ffffff20}
+.launch #bosley-mascot{display:block;width:100%;height:100%;overflow:visible}
+.launch:hover{background:#151515;border-color:#666}
+.launch:active{background:#000;box-shadow:inset 0 2px 6px #000}
+.launch .mascot-eye{transform-box:fill-box;transform-origin:center;transition:transform .08s ease}
+html.blink .launch .mascot-eye{transform:scaleY(.12)}
+html[data-eyes=speaking] .launch .mascot-eye{animation:talk .55s ease-in-out infinite}
+html[data-eyes=thinking] .launch .mascot-eye:first-of-type{transform:rotate(-3deg)}
+html[data-widget-size=compact] .launch{width:48px;height:48px}
+html[data-widget-size=default] .launch{width:56px;height:56px}
+html[data-widget-size=wide] .launch{width:64px;height:64px}
+html[data-widget-edge=soft] .launch{border-radius:20px}
+html[data-widget-edge=balanced] .launch{border-radius:15px}
+html[data-widget-edge=sharp] .launch{border-radius:8px}
 
 /* ---- panel ---- */
 .panel{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:min(900px,calc(100vw - 24px));height:min(820px,calc(100dvh - 24px));min-height:420px;display:flex;flex-direction:column;border:1px solid #263744;border-radius:24px;overflow:hidden;background:#05080c;box-shadow:0 24px 90px #000d,0 0 70px #1a6b8a12;animation:in .22s ease-out}
@@ -917,7 +923,7 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 </section>
 
 
-<nav id="dock-launcher" aria-label="Bosley workspace menu"><button type="button" id="dock-menu-toggle" aria-expanded="false" aria-controls="side-dock" aria-label="Open AI Agents workspace" title="Open AI Agents">✧</button><div id="dock-launcher-menu" hidden role="group" aria-label="Bosley tools"><button type="button" data-open-view="lovable-bosley" aria-label="Open hosted Lovable Bosley" title="Lovable Bosley">✦</button><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="agents-panel" aria-label="Open AI Agents" title="AI Agents">✧</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button><button type="button" data-open-view="bosley-search" aria-label="Open Bosley Search" title="Bosley Search">⌕</button><button type="button" data-open-view="control-centre" aria-label="Open Control Centre" title="Control Centre">⌘</button><button type="button" data-open-view="universal-input" aria-label="Open Universal Input" title="Type anywhere">⌨</button><button type="button" data-open-view="writing-assist" aria-label="Open Writing Assist" title="Writing Assist">✎</button></div></nav>
+<nav id="dock-launcher" aria-label="Bosley workspace menu"><button type="button" id="dock-menu-toggle" aria-expanded="false" aria-controls="dock-launcher-menu" aria-label="Open workspace pages" title="Open workspace pages">▤</button><div id="dock-launcher-menu" hidden role="group" aria-label="Bosley tools"><button type="button" data-open-view="lovable-bosley" aria-label="Open hosted Lovable Bosley" title="Lovable Bosley">✦</button><button type="button" data-open-view="ws" aria-label="Open Workspace" title="Workspace">▤</button><button type="button" data-open-view="facepanel" aria-label="Open Appearance" title="Appearance">◉</button><button type="button" data-open-view="agents-panel" aria-label="Open AI Agents" title="AI Agents">✧</button><button type="button" data-open-view="automation" aria-label="Open Automation" title="Automation">⚙</button><button type="button" data-open-view="activity" aria-label="Open Activity" title="Activity">◷</button><button type="button" data-open-view="skills-panel" aria-label="Open Skills" title="Skills">✳</button><button type="button" data-open-view="bosley-search" aria-label="Open Bosley Search" title="Bosley Search">⌕</button><button type="button" data-open-view="control-centre" aria-label="Open Control Centre" title="Control Centre">⌘</button><button type="button" data-open-view="universal-input" aria-label="Open Universal Input" title="Type anywhere">⌨</button><button type="button" data-open-view="writing-assist" aria-label="Open Writing Assist" title="Writing Assist">✎</button></div></nav>
 <aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
 <section class="workspace" id="agents-panel" hidden></section>
 <section class="workspace" id="skills-panel" hidden></section>
@@ -976,10 +982,10 @@ document.addEventListener("DOMContentLoaded",()=>{
  let active="";
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
  const dockMenu=document.getElementById("dock-launcher-menu"),dockToggle=document.getElementById("dock-menu-toggle");
- dockToggle?.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(dockMenu)dockMenu.hidden=true;const panel=document.getElementById("agents-panel");if(!panel)return;dock.hidden=false;dock.style.setProperty("display","flex","important");dock.style.setProperty("visibility","visible","important");dock.style.setProperty("pointer-events","auto","important");dockToggle.setAttribute("aria-expanded","true");if(active==="agents-panel"){panel.hidden=false;return;}show("agents-panel")});
- document.addEventListener("click",event=>{if(!event.target.closest("#dock-launcher")&&dockToggle?.getAttribute("aria-expanded")==="true"&&dock.hidden){dockToggle.setAttribute("aria-expanded","false")}});
- document.addEventListener("keydown",event=>{if(event.key==="Escape"&&dockToggle?.getAttribute("aria-expanded")==="true"){dock.hidden=true;active="";dockToggle.setAttribute("aria-expanded","false");dockToggle.focus()}});
- document.querySelectorAll("#dock-launcher [data-open-view]").forEach(button=>button.addEventListener("click",()=>show(button.dataset.openView)));
+ dockToggle?.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(!dockMenu)return;dockMenu.hidden=!dockMenu.hidden;dockToggle.setAttribute("aria-expanded",String(!dockMenu.hidden))});
+ document.addEventListener("click",event=>{if(!event.target.closest("#dock-launcher")&&dockToggle?.getAttribute("aria-expanded")==="true"){dockMenu.hidden=true;dockToggle.setAttribute("aria-expanded","false")}});
+ document.addEventListener("keydown",event=>{if(event.key==="Escape"&&dockToggle?.getAttribute("aria-expanded")==="true"){dockMenu.hidden=true;dockToggle.setAttribute("aria-expanded","false");dockToggle.focus()}});
+ document.querySelectorAll("#dock-launcher [data-open-view]").forEach(button=>button.addEventListener("click",()=>{if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");show(button.dataset.openView)}));
  function show(id){if(dockMenu)dockMenu.hidden=true;const v=views.find(x=>x.panel===id);if(!v)return;const p=document.getElementById(id);if(!p)return;if(document.body.classList.contains("desktop-panel")&&!document.body.classList.contains("desktop-floating-view")&&window.BosleyDesktop?.request){window.BosleyDesktop.request({action:"open_floating_view",payload:{view:id}}).catch(error=>console.error("Could not open floating Bosley view",error));return;}const wasActive=active===id&&!dock.hidden;if(wasActive){dock.hidden=true;active="";dockToggle?.setAttribute("aria-expanded","false");return;}dock.hidden=false;active=id;dockToggle?.setAttribute("aria-expanded","true");if(document.body.classList.contains("desktop-panel")){dock.style.visibility="visible";dock.style.pointerEvents="auto";requestAnimationFrame(()=>{if(dock.hidden)return;let saved=null;try{saved=JSON.parse(localStorage.getItem("bosley-side-dock-position")||"null")}catch{}if(saved&&Number.isFinite(saved.left)&&Number.isFinite(saved.top)){const width=dock.offsetWidth||Math.min(380,window.innerWidth-28),height=dock.offsetHeight||Math.min(680,window.innerHeight-86);const left=Math.max(8,Math.min(Math.max(8,window.innerWidth-width-8),saved.left));const top=Math.max(8,Math.min(Math.max(8,window.innerHeight-height-8),saved.top));dock.style.left=left+"px";dock.style.top=top+"px";dock.style.right="auto";dock.style.bottom="auto"}else{dock.style.left="auto";dock.style.right="14px";dock.style.top="72px";dock.style.bottom="auto"}})}for(const x of views){const panel=document.getElementById(x.panel),tab=tabs.querySelector('[data-view="'+x.panel+'"]'),button=document.getElementById(x.button),launcher=document.querySelector('#dock-launcher [data-open-view="'+x.panel+'"]');if(panel)panel.hidden=x.panel!==id;if(tab)tab.classList.toggle("on",x.panel===id);if(launcher)launcher.classList.toggle("on",x.panel===id);if(button)button.setAttribute("aria-expanded",String(x.panel===id));}p.setAttribute("aria-busy","true");Promise.resolve().then(()=>{if(typeof v.init!=="function")throw Error("No renderer is registered for this section.");return v.init()}).then(()=>{if(!p.isConnected)return;if(!p.innerHTML.trim()){throw Error("The section renderer completed without adding content. Check that its renderer is available in this build.")}}).catch(e=>{console.error("Bosley side view failed to initialize: "+id,e);if(p){const message=String(e?.message||e).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));p.innerHTML=`<h3>${v.label}</h3><p class="fb" role="alert">Could not load this section: ${message}</p><button type="button" id="bosley-panel-retry">Retry ${v.label}</button>`;p.querySelector("#bosley-panel-retry")?.addEventListener("click",()=>show(id))}}).finally(()=>p.removeAttribute("aria-busy"))}
  for(const v of views){const b=document.getElementById(v.button);if(b)b.addEventListener("click",e=>{e.preventDefault();e.stopImmediatePropagation();show(v.panel)},true)}
  document.getElementById("dock-open")?.addEventListener("click",()=>show(active||"ws"));
@@ -1233,8 +1239,6 @@ $("#activityclear").addEventListener("click",()=>{activityEvents=[];saveActivity
 
 
 /* ---------- eye states: driven only by real events ---------- */
-const eye='<span class="eye" aria-hidden="true"></span>';
-$("#launch").innerHTML='<span class="eyes" aria-label="Bosley eyes">'+eye+eye+'</span>';
 const LABEL={idle:"READY",listening:"LISTENING",thinking:"THINKING",speaking:"SPEAKING",error:"ERROR"};
 function eyes(){
  const st=S.offline||Date.now()<S.errUntil?"error":S.listening?"listening":S.busy?"thinking":S.speaking?"speaking":"idle";
@@ -1247,7 +1251,7 @@ function flash(ms=4500){S.errUntil=Date.now()+ms;eyes();setTimeout(eyes,ms+50)}
 function look(x,y){const c=v=>Math.max(-1,Math.min(1,v));H.style.setProperty("--px",c(x).toFixed(2));H.style.setProperty("--py",c(y).toFixed(2))}
 addEventListener("pointermove",e=>{
  if(RM.matches||S.listening)return;cancelAnimationFrame(raf);
- raf=requestAnimationFrame(()=>{const r=$(".eye").getBoundingClientRect();look((e.clientX-r.left-r.width/2)/240,(e.clientY-r.top-r.height/2)/240);lastMove=Date.now()})
+ raf=requestAnimationFrame(()=>{const r=$(".mascot-eye").getBoundingClientRect();look((e.clientX-r.left-r.width/2)/240,(e.clientY-r.top-r.height/2)/240);lastMove=Date.now()})
 },{passive:true});
 function blinkOnce(){H.classList.add("blink");setTimeout(()=>H.classList.remove("blink"),120)}
 (function loop(){setTimeout(()=>{if(!RM.matches&&!document.hidden){blinkOnce();if(Math.random()<.2)setTimeout(blinkOnce,260)}loop()},2500+Math.random()*4000)})();

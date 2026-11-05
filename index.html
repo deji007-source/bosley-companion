@@ -1758,7 +1758,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   }
   if(streamError&&!out)throw Error(streamError);
   if(!out)throw Error("The AI returned an empty reply. Check the provider key, model availability, and Edge Function logs.");
-  history.push({role:"assistant",content:out});S.backend=true;S.busy=false;setPhase("Response ready","success");phase.dataset.phase="success";activityEvent("Bosley generated a response. No device action is reported unless its connected executor confirms it.","success");setBosleyCompanionState("success");eyes();
+  history.push({role:"assistant",content:out});if(window.__bosleyContinuousTalkActive&&window.__bosleyLiveTalkAppend)window.__bosleyLiveTalkAppend("bosley",out);S.backend=true;S.busy=false;setPhase("Response ready","success");phase.dataset.phase="success";activityEvent("Bosley generated a response. No device action is reported unless its connected executor confirms it.","success");setBosleyCompanionState("success");eyes();
   if(userMessageSaved){try{await persistChatMessage("assistant",out)}catch(saveError){console.warn("Bosley assistant message persistence failed:",saveError);note("I replied successfully, but the reply could not be saved to your conversation history.")}}
   void autoLearnProjectContext(originalUserText);
   speak(out);
@@ -3035,7 +3035,7 @@ eyes();
    const spoken=Array.from(event.results||[]).filter(result=>result.isFinal).map(result=>String(result[0]?.transcript||"").trim()).filter(Boolean).join(" ").trim();
    if(!spoken)return;
    freeTalkProcessing=true;setState("thinking","I heard you. Let me work on that…");addLine("you",spoken);
-   Promise.resolve(send(spoken)).catch(error=>console.warn("Free Live Talk message failed:",error));
+   Promise.resolve(send(spoken)).catch(error=>{console.warn("Free Live Talk message failed:",error);if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk()});
   };
   recognition.onerror=event=>{
    if(event.error==="not-allowed"){freeTalkActive=false;window.__bosleyContinuousTalkActive=false;setState("error","Microphone permission was denied. Allow microphone access and try again.");}

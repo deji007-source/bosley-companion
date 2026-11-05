@@ -837,7 +837,19 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 #bosley-splash:focus-visible{outline:2px solid #fff;outline-offset:-8px}
 @media(prefers-reduced-motion:reduce){#bosley-splash:before,#bosley-splash:after,#bosley-splash .bs-orbit:after,#bosley-splash .bs-enter b:after{animation:none!important}}
 </style></head>
-<body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><div id="root">
+<body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><script>
+/* Independent splash failsafe: keep the launch overlay from trapping users if app boot code fails. */
+(()=>{const splash=document.getElementById("bosley-splash");if(!splash)return;
+ const enter=()=>{if(!splash.isConnected||splash.dataset.failsafeLeaving==="true")return;
+  splash.dataset.failsafeLeaving="true";splash.dataset.leaving="true";
+  window.setTimeout(()=>splash.remove(),650);
+ };
+ if(new URLSearchParams(window.location.search).has("bosleyFloat")){splash.remove();return;}
+ splash.addEventListener("click",enter,{once:true});
+ splash.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();enter()}});
+ window.setTimeout(enter,7000);
+})();
+</script><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley white ghost companion with blinking black eyes" xmlns="http://www.w3.org/2000/svg">
  <defs><linearGradient id="bosley-ghost-edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ee8ff"/><stop offset="1" stop-color="#477cbb"/></linearGradient><filter id="bosley-ghost-glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter></defs>
  <path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="url(#bosley-ghost-edge)" opacity=".28" filter="url(#bosley-ghost-glow)"/>

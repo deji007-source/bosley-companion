@@ -1925,7 +1925,7 @@ function speak(t){
  if(!speechOn){if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();return;}
  const generation=++bosleySpeechGeneration;
  const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;
- if(nativeVoice&&typeof nativeVoice.speakText==="function"){
+ if(nativeVoice&&typeof nativeVoice.speakText==="function"&&!window.__bosleyContinuousTalkActive){
   try{
    S.speaking=true;$("#stop").hidden=false;setBosleyMouth(false);eyes();setBosleyCompanionState("speaking");
    bosleySpeechWatchdog=setTimeout(()=>finishBosleySpeech(generation),Math.max(3500,Math.min(30000,textToSpeak.length*85)));

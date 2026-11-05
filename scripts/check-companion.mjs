@@ -160,7 +160,7 @@ const contracts = [
   ["Bosley launcher uses a white ghost silhouette", 'aria-label="Bosley white ghost companion with blinking black eyes"'],
   ["Bosley launcher has two large black eyes", 'class="mascot-eye" cx="45" cy="51"'],
   ["Bosley launcher uses the Bosley blue accent", 'stop-color="#8ee8ff"'],
-  ["Bosley launcher supports blinking", 'html.blink #bosley-mascot .mascot-eye'],
+  ["Bosley launcher supports blinking", 'html.blink .launch .mascot-eye'],
   ["Detachable side-view dock", 'id="side-dock"'],
   ["Visible side-view launcher", 'id="dock-launcher"'],
   ["Workspace launcher action", 'data-open-view="ws"'],

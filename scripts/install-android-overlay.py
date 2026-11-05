@@ -12,18 +12,16 @@ if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
 if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
-for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.POST_NOTIFICATIONS", "android.permission.USE_FULL_SCREEN_INTENT", "android.permission.VIBRATE", "android.permission.SCHEDULE_EXACT_ALARM"):
+for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.POST_NOTIFICATIONS"):
     if permission not in text:
         text = text.replace("<application", f'<uses-permission android:name="{permission}" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
     text = text.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1) if 'xmlns:tools=' not in text else text
     text = text.replace("<application", '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <application', 1)
 if "BosleyOverlayService" not in text:
-    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and scheduled incoming-call audio alerts" /></service>\n    </application>')
+    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and visual task guide" /></service>\n    </application>')
 else:
     text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and scheduled incoming-call audio alerts" /></service>', text)
-if "BosleyCallAlarmReceiver" not in text:
-    text = text.replace("</application>", '        <receiver android:name=".BosleyCallAlarmReceiver" android:enabled="true" android:exported="false" />\n    </application>')
 manifest.write_text(text)
 # The Android guide is intentionally stationary. Do not register an accessibility
 # service to inspect other apps or automatically reposition the guide target.
@@ -36,7 +34,6 @@ import android.content.*;
 import android.graphics.*;
 import android.graphics.drawable.GradientDrawable;
 import android.os.*;
-import android.media.*;
 import android.provider.Settings;
 import android.view.*;
 import android.widget.*;
@@ -44,9 +41,9 @@ import android.graphics.PixelFormat;
 import android.util.DisplayMetrics;
 
 public class BosleyOverlayService extends Service {
-  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE", ACTION_CALL_RING_START="com.bosley.companion.CALL_RING_START", ACTION_CALL_RING_STOP="com.bosley.companion.CALL_RING_STOP";
+  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE";
   int widgetWidth=44,widgetHeight=44,cornerDp=18,borderDp=1,eyeWidth=9,eyeHeight=17,eyeGapDp=8; String eyeShape="soft-square";
-  MediaPlayer callRingtone; WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
+  WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
   static final String CHANNEL_ID="bosley_floating_companion";
   void promoteToForeground(){
     if(Build.VERSION.SDK_INT>=26){
@@ -65,24 +62,7 @@ public class BosleyOverlayService extends Service {
     else startForeground(701,notification);
   }
   @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);promoteToForeground();}
-  void startCallRingtone(){
-    if(callRingtone!=null){try{if(callRingtone.isPlaying())return;}catch(Exception ignored){}stopCallRingtone();}
-    try{
-      android.net.Uri uri=RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-      if(uri==null)uri=RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-      if(uri==null)return;
-      MediaPlayer player=new MediaPlayer();callRingtone=player;
-      player.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
-      player.setDataSource(this,uri);player.setLooping(true);
-      player.setOnPreparedListener(p->{if(callRingtone==p){try{p.start();}catch(Exception e){android.util.Log.e("BosleyCall","Could not start ringtone",e);stopCallRingtone();}}});
-      player.setOnErrorListener((p,what,extra)->{android.util.Log.e("BosleyCall","Ringtone playback failed: "+what+"/"+extra);stopCallRingtone();return true;});
-      player.prepareAsync();
-    }catch(Exception e){android.util.Log.e("BosleyCall","Could not prepare ringtone",e);stopCallRingtone();}
-  }
-  void stopCallRingtone(){MediaPlayer player=callRingtone;callRingtone=null;if(player!=null){try{player.setOnPreparedListener(null);player.setOnErrorListener(null);if(player.isPlaying())player.stop();}catch(Exception ignored){}try{player.reset();}catch(Exception ignored){}try{player.release();}catch(Exception ignored){}}}
   @Override public int onStartCommand(Intent i,int flags,int id){
-    if(i!=null && ACTION_CALL_RING_START.equals(i.getAction())){startCallRingtone();return START_STICKY;}
-    if(i!=null && ACTION_CALL_RING_STOP.equals(i.getAction())){stopCallRingtone();if(bar==null&&guideLine==null&&guideCard==null)stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
     if(i!=null && ACTION_TARGET.equals(i.getAction())){updateGuideTarget(i);return START_STICKY;}
@@ -159,7 +139,7 @@ public class BosleyOverlayService extends Service {
   void removeGuide(){guideStatusView=null;if(wm!=null&&guideTarget!=null){try{wm.removeView(guideTarget);}catch(Exception ignored){}guideTarget=null;}if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
   void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-  @Override public void onDestroy(){stopCallRingtone();removeBar();super.onDestroy();}
+  @Override public void onDestroy(){removeBar();removeGuide();super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
 }''')
 (src / "BosleyTargetAccessibilityService.java").write_text(r'''package com.bosley.companion;
@@ -359,54 +339,6 @@ public class BosleyOverlayPlugin extends Plugin {
   @ActivityCallback private void overlayPermissionResult(PluginCall call,ActivityResult result){
     JSObject r=new JSObject();r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);
   }
-  @PluginMethod public void requestCallNotificationPermission(PluginCall call){
-    if(Build.VERSION.SDK_INT>=33 && getPermissionState("notifications")!=PermissionState.GRANTED){requestPermissionForAlias("notifications",call,"callNotificationPermissionCallback");return;}
-    JSObject r=new JSObject();r.put("granted",true);call.resolve(r);
-  }
-  @PermissionCallback private void callNotificationPermissionCallback(PluginCall call){
-    boolean granted=Build.VERSION.SDK_INT<33||getPermissionState("notifications")==PermissionState.GRANTED;
-    JSObject r=new JSObject();r.put("granted",granted);if(granted)call.resolve(r);else call.reject("Notification permission is required for incoming Bosley calls.");
-  }
-  @PluginMethod public void scheduleCallAlarm(PluginCall call){
-    long at=call.getLong("at",0L);
-    if(at<=System.currentTimeMillis()){call.reject("Choose a future call time.");return;}
-    try{
-      Intent alarm=new Intent(getContext(),BosleyCallAlarmReceiver.class).putExtra("briefing",true);
-      int request=(int)(at&0x7fffffff);
-      android.app.PendingIntent pending=android.app.PendingIntent.getBroadcast(getContext(),request,alarm,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
-      android.app.AlarmManager manager=(android.app.AlarmManager)getContext().getSystemService(android.content.Context.ALARM_SERVICE);
-      boolean exact=false;
-      if(Build.VERSION.SDK_INT>=31 && manager.canScheduleExactAlarms()){manager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP,at,pending);exact=true;}
-      else if(Build.VERSION.SDK_INT>=23)manager.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP,at,pending);
-      else {manager.setExact(android.app.AlarmManager.RTC_WAKEUP,at,pending);exact=true;}
-      JSObject r=new JSObject();r.put("scheduled",true);r.put("exact",exact);call.resolve(r);
-    }catch(Exception e){call.reject("Could not schedule the Android Bosley call alarm.",e);}
-  }
-  @PluginMethod public void showIncomingCall(PluginCall call){
-    try{
-      android.app.NotificationManager manager=(android.app.NotificationManager)getContext().getSystemService(android.content.Context.NOTIFICATION_SERVICE);
-      String channel="bosley_incoming_calls_v2";
-      if(Build.VERSION.SDK_INT>=26){
-        android.app.NotificationChannel c=new android.app.NotificationChannel(channel,"Bosley incoming calls",android.app.NotificationManager.IMPORTANCE_HIGH);
-        c.setDescription("Incoming Bosley voice calls");c.enableVibration(true);c.setVibrationPattern(new long[]{0,400,300,400,1000});c.setSound(null,null);
-        manager.createNotificationChannel(c);
-      }
-      try{Intent ring=new Intent(getContext(),BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CALL_RING_START);startOverlayService(ring);}catch(Exception ringError){android.util.Log.w("BosleyCall","Native ringtone service unavailable; keeping the incoming-call notification",ringError);}
-      Intent accept=new Intent(getContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_accept");
-      Intent decline=new Intent(getContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_decline");
-      android.app.PendingIntent answer=android.app.PendingIntent.getActivity(getContext(),702,accept,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
-      android.app.PendingIntent reject=android.app.PendingIntent.getActivity(getContext(),703,decline,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
-      android.app.PendingIntent full=android.app.PendingIntent.getActivity(getContext(),704,accept,android.app.PendingIntent.FLAG_UPDATE_CURRENT|android.app.PendingIntent.FLAG_IMMUTABLE);
-      android.app.Notification.Builder builder=Build.VERSION.SDK_INT>=26?new android.app.Notification.Builder(getContext(),channel):new android.app.Notification.Builder(getContext());
-      builder.setSmallIcon(android.R.drawable.sym_call_incoming).setContentTitle("BOSLEY").setContentText("AI Operating System · Encrypted Voice Link").setCategory(android.app.Notification.CATEGORY_CALL).setPriority(android.app.Notification.PRIORITY_MAX).setOngoing(true).setAutoCancel(false).setVibrate(new long[]{0,400,300,400,1000}).setFullScreenIntent(full,true).addAction(android.R.drawable.ic_menu_close_clear_cancel,"Decline",reject).addAction(android.R.drawable.sym_action_call,"Answer",answer);
-      if(Build.VERSION.SDK_INT>=31){android.app.Person person=new android.app.Person.Builder().setName("BOSLEY").build();builder.setStyle(android.app.Notification.CallStyle.forIncomingCall(person,reject,answer));}
-      manager.notify(702,builder.build());JSObject r=new JSObject();r.put("shown",true);r.put("fullScreenIntent",true);call.resolve(r);
-    }catch(Exception e){call.reject("Could not show the Bosley incoming-call notification.",e);}
-  }
-  @PluginMethod public void dismissIncomingCall(PluginCall call){
-    try{android.app.NotificationManager manager=(android.app.NotificationManager)getContext().getSystemService(android.content.Context.NOTIFICATION_SERVICE);if(manager!=null)manager.cancel(702);Intent stop=new Intent(getContext(),BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CALL_RING_STOP);startOverlayService(stop);}catch(Exception ignored){}
-    call.resolve();
-  }
   @PluginMethod public void show(PluginCall call){
     if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(getContext())){call.reject("Overlay permission is required. Tap Enable floating widget and allow display over other apps.");return;}
     Intent i=styledIntent(call,BosleyOverlayService.ACTION_SHOW);
@@ -451,40 +383,12 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void consumeLaunchAction(PluginCall call){
     android.content.Intent intent=getActivity().getIntent();
     String action=intent.getStringExtra("bosley_quick_action");
-    String callAction=intent.getStringExtra("bosley_call_action");
-    intent.removeExtra("bosley_quick_action");intent.removeExtra("bosley_call_action");
-    JSObject r=new JSObject();r.put("action",action==null?"":action);r.put("callAction",callAction==null?"":callAction);call.resolve(r);
+    intent.removeExtra("bosley_quick_action");
+    JSObject r=new JSObject();r.put("action",action==null?"":action);call.resolve(r);
   }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}
 }''')
-(src / "BosleyCallAlarmReceiver.java").write_text(r'''package com.bosley.companion;
-import android.content.*;
-import android.app.*;
-import android.os.Build;
-import android.media.*;
-public class BosleyCallAlarmReceiver extends BroadcastReceiver {
-  @Override public void onReceive(Context context,Intent intent){
-    try{
-      try{Intent ring=new Intent(context,BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CALL_RING_START);if(Build.VERSION.SDK_INT>=26)context.startForegroundService(ring);else context.startService(ring);}catch(Exception ringError){android.util.Log.w("BosleyCallAlarm","Native ringtone service unavailable; keeping the incoming-call notification",ringError);}
-      String channel="bosley_incoming_calls_v2";
-      NotificationManager manager=(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
-      if(Build.VERSION.SDK_INT>=26){
-        NotificationChannel c=new NotificationChannel(channel,"Bosley incoming calls",NotificationManager.IMPORTANCE_HIGH);
-        c.setDescription("Incoming Bosley voice calls");c.enableVibration(true);c.setVibrationPattern(new long[]{0,400,300,400,1000});c.setSound(null,null);
-        manager.createNotificationChannel(c);
-      }
-      Intent accept=new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_accept");
-      Intent decline=new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("bosley_call_action","call_decline");
-      PendingIntent answer=PendingIntent.getActivity(context,702,accept,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-      PendingIntent reject=PendingIntent.getActivity(context,703,decline,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-      PendingIntent full=PendingIntent.getActivity(context,704,accept,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-      Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(context,channel):new Notification.Builder(context);
-      b.setSmallIcon(android.R.drawable.sym_call_incoming).setContentTitle("BOSLEY").setContentText("Your scheduled briefing is ready").setCategory(Notification.CATEGORY_CALL).setPriority(Notification.PRIORITY_MAX).setOngoing(true).setAutoCancel(false).setVibrate(new long[]{0,400,300,400,1000}).setFullScreenIntent(full,true).addAction(android.R.drawable.ic_menu_close_clear_cancel,"Decline",reject).addAction(android.R.drawable.sym_action_call,"Answer",answer);
-      if(Build.VERSION.SDK_INT>=31)b.setStyle(Notification.CallStyle.forIncomingCall(new Person.Builder().setName("BOSLEY").build(),reject,answer));
-      manager.notify(702,b.build());
-    }catch(Exception e){android.util.Log.e("BosleyCallAlarm","Could not show scheduled call",e);}
-  }
-}''')
+
 activity = src / "MainActivity.java"
 if not activity.exists():
     raise SystemExit("Generated MainActivity.java not found at expected Capacitor package path")
@@ -495,8 +399,7 @@ if "BosleyOverlayPlugin" not in a:
     super.onNewIntent(intent);
     setIntent(intent);
     String action=intent.getStringExtra("bosley_quick_action");
-    String callAction=intent.getStringExtra("bosley_call_action");
-    if((action!=null && ("panel".equals(action)||"voice".equals(action)))||callAction!=null){
+    if((action!=null && ("panel".equals(action)||"voice".equals(action)))){
       String js="window.dispatchEvent(new Event(String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)))";
       getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));
     }

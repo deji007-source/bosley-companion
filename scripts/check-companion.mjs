@@ -281,7 +281,7 @@ assert.ok(androidInstaller.includes('android:name=".BosleyTargetAccessibilitySer
 assert.ok(androidInstaller.includes('canRetrieveWindowContent="true"') && androidInstaller.includes("bosley_accessibility_service.xml"), "Android target finder must be configured to inspect visible controls only when requested");
 assert.ok(!androidInstaller.includes('canPerformGestures="true"') && androidInstaller.includes("does not record your screen, click, type, or run actions"), "Android visual guide must remain read-only and disclose its limited access");
 assert.ok(androidInstaller.includes("Find target"), "Android guide must retain explicit user-triggered target discovery");
-assert.ok(androidInstaller.includes("requestScreenCapture(PluginCall call)") && androidInstaller.includes("registerCallback(new MediaProjection.Callback()") && !androidInstaller.includes("android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION") && androidInstaller.includes('android:foregroundServiceType="specialUse"'), "Android capture implementation is retained for re-enabling, while the current build opts out of MediaProjection permissions and service type");
+assert.ok(androidInstaller.includes("FOREGROUND_SERVICE_MEDIA_PROJECTION") && androidInstaller.includes("FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION") && androidInstaller.includes("registerCallback(new MediaProjection.Callback()"), "Android screen capture must follow modern MediaProjection foreground-service and callback requirements");
 
 assert.ok(androidInstaller.includes("BOSLEY GUIDE"), "Android guide card should retain its title");
 assert.ok(!androidInstaller.includes("drag to move"), "Android guide card must not imply that the tether moves automatically or can be dragged");

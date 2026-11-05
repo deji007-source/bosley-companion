@@ -1915,7 +1915,7 @@ function speak(t){
    return;
   }catch(error){S.speaking=false;$("#stop").hidden=true;console.warn("Native Bosley speech unavailable; trying browser speech:",error)}
  }
- if(!("speechSynthesis"in window)){if(nativeVoice?.speakText){try{S.speaking=true;$("#stop").hidden=false;setBosleyCompanionState("speaking");nativeVoice.speakText({text:String(t||""),profile:voiceProfile}).catch(()=>{});setTimeout(finishBosleySpeech,Math.max(1800,String(t||"").length*55));}catch{if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();}}return;}
+ if(!("speechSynthesis"in window)){if(nativeVoice?.speakText){try{S.speaking=true;$("#stop").hidden=false;setBosleyCompanionState("speaking");nativeVoice.speakText({text:String(t||""),profile:voiceProfile}).catch(()=>{});setTimeout(finishBosleySpeech,Math.max(1800,String(t||"").length*55));}catch{if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();}}else if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();return;}
  speechSynthesis.cancel();
  const u=new SpeechSynthesisUtterance(String(t||""));
  const selected=chooseBosleyVoice();
@@ -3027,7 +3027,7 @@ eyes();
  function listenFreeTalk(){
   if(!freeTalkActive||freeTalkMuted||freeTalkProcessing||S.busy||S.speaking)return;
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!Recognition){listenFreeTalkChunk().catch(error=>{console.warn("Free voice chunk capture failed:",error);setState("error",String(error?.message||"Voice capture unavailable").slice(0,180));if(freeTalkActive&&!freeTalkMuted)setTimeout(listenFreeTalk,1200)});return}
+  if(!Recognition){listenFreeTalkChunk().catch(error=>{console.warn("Free voice chunk capture failed:",error);const denied=error?.name==="NotAllowedError"||error?.name==="SecurityError";if(denied){freeTalkActive=false;window.__bosleyContinuousTalkActive=false;setState("error","Microphone permission was denied. Allow microphone access, then start Live Talk again.")}else{setState("error",String(error?.message||"Voice capture unavailable").slice(0,180));if(freeTalkActive&&!freeTalkMuted)setTimeout(listenFreeTalk,1800)}});return}
   const recognition=new Recognition();freeRecognition=recognition;
   recognition.lang=navigator.language||"en-US";recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
   recognition.onstart=()=>setState("listening","Free voice mode · speak naturally. Bosley will reply and listen again.");

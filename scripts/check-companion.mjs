@@ -317,6 +317,11 @@ assert.ok(html.includes('id="live-talk-start"'), "Bosley must expose a dedicated
 assert.ok(telegramWebhook.includes('summary: "remote_listener_queue:v1"') && remoteAction.includes('eq("summary", "remote_listener_queue:v1")'), "Telegram-triggered automation must enter the same durable Windows listener queue as app tasks");
 assert.ok(html.includes("RTCPeerConnection") && html.includes("/v1/realtime/calls"), "Live Talk must use browser WebRTC speech-to-speech");
 assert.ok(html.includes("remoteAudio.volume=1") && html.includes('remoteAudio.setAttribute("playsinline","")'), "Realtime Live Talk must attach an audible playback element for spoken replies");
+assert.ok(html.includes("let bosleySpeechWatchdog=null,bosleySpeechGeneration=0") && html.includes("speechSynthesis.resume()") && html.includes("u.onerror=event=>"), "Browser speech output must recover from paused or failed synthesis instead of silently remaining muted");
+assert.ok(html.includes("if(!speechOn){if(window.__bosleyResumeContinuousTalk)") && html.includes('liveAudio.muted=!v'), "The voice toggle must control normal chat, free Live Talk and Realtime audio consistently");
+assert.ok(html.includes("if(window.__bosleyContinuousTalkActive&&window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk()"), "Live Talk must resume listening after task execution and chat completion");
+assert.ok(html.includes("remoteAudio.srcObject=stream") && html.includes("remoteAudio.muted=!speechOn"), "Realtime audio must bind incoming tracks and respect the voice toggle");
+
 assert.ok(html.includes("speechOn&&!window.__bosleyContinuousTalkActive"), "Live Talk must speak replies even when general chat speech is disabled");
 assert.ok(html.includes("if(!window.__bosleyRealtimeTalkActive)speak(out)") && html.includes("window.__bosleyRealtimeTalkActive=true"), "Realtime task replies must not be spoken twice by browser TTS and the Realtime audio stream");
 assert.ok(html.includes("window.__bosleyLiveTalkAppend=(who,text)") && html.includes('addLine("bosley",text)'), "Free Live Talk replies must appear in the in-session transcript");

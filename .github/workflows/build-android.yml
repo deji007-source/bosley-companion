@@ -51,22 +51,6 @@ jobs:
           grep -q 'id="side-dock"' dist/index.html
           grep -q 'id="launch"' dist/index.html
 
-      - name: Temporarily disable Android screen-capture entry point
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path("dist/index.html")
-          html = path.read_text()
-          old = "const androidCapture=()=>!!(window.Capacitor?.isNativePlatform?.()&&window.Capacitor?.Plugins?.BosleyOverlay?.requestScreenCapture);"
-          if old not in html:
-              raise SystemExit("Could not locate Android screen-capture feature gate; refusing an unverified build.")
-          html = html.replace(old, "const androidCapture=()=>false;", 1)
-          path.write_text(html)
-          if "const androidCapture=()=>false;" not in html:
-              raise SystemExit("Android screen-capture feature gate was not disabled.")
-          print("Android screen capture is temporarily hidden; Windows and web code remains unchanged.")
-          PY
-
       - name: Install Capacitor Android tooling
         run: npm install --no-save @capacitor/core@^7 @capacitor/cli@^7 @capacitor/android@^7
 
@@ -81,9 +65,11 @@ jobs:
           grep -Fq 'android:name=".BosleyOverlayService"' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:name=".BosleyTargetAccessibilityService"' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:canRetrieveWindowContent="true"' android/app/src/main/res/xml/bosley_accessibility_service.xml
-          ! grep -Fq "FOREGROUND_SERVICE_MEDIA_PROJECTION" android/app/src/main/AndroidManifest.xml
-          ! grep -Fq "mediaProjection" android/app/src/main/AndroidManifest.xml
-          echo "Floating companion and visual guide declarations verified; Android screen capture is temporarily opted out."
+          grep -Fq 'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:foregroundServiceType="specialUse|mediaProjection"' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'ACTION_CAPTURE_START' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'registerCallback(new MediaProjection.Callback()' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java
+          echo "Floating companion, visual guide and user-consented one-shot screen capture declarations verified."
 
       - name: Generate Bosley launcher icon
         run: |

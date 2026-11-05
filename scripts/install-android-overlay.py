@@ -10,7 +10,7 @@ if not manifest.exists():
 text = manifest.read_text()
 if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
-for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION", "android.permission.POST_NOTIFICATIONS"):
+for permission in ("android.permission.MODIFY_AUDIO_SETTINGS", "android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION", "android.permission.POST_NOTIFICATIONS"):
     if permission not in text:
         text = text.replace("<application", f'<uses-permission android:name="{permission}" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:

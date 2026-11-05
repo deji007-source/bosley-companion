@@ -1266,8 +1266,8 @@ jobs:
           grep -Fq "movable: true" desktop/main.cjs
           grep -Fq "loadFile(path.join(__dirname, 'companion.html'))" desktop/main.cjs
           grep -Fq 'aria-label="Bosley white ghost with blinking eyes and an animated speaking mouth"' desktop/companion.html
-grep -Fq 'id="ghost-mouth"' desktop/companion.html
-grep -Fq 'ghost-talk' desktop/companion.html
+          grep -Fq 'id="ghost-mouth"' desktop/companion.html
+          grep -Fq 'ghost-talk' desktop/companion.html
           grep -Fq 'ghost-blink' desktop/companion.html
           grep -Fq 'class="ghost-eye"' desktop/companion.html
           grep -Fq "onCompanionState" desktop/assets/companion.js

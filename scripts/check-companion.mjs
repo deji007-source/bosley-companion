@@ -668,6 +668,8 @@ for (const table of ["reminders", "schedules", "bosley_planner_tasks"]) assert.o
 const searchPathMigration = readText(new URL("../supabase/migrations/20261103090613_pin_normalize_automation_instruction_search_path.sql", import.meta.url), "utf8");
 assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automation_instruction(text, uuid) SET search_path = ''"), "Automation instruction SQL function must pin its search_path");
 
+assert.ok(html.includes('id="bosley-splash"') && appScript.includes("function installBosleySplash()"), "The monochrome launch splash must be present and initialized on every main app load");
+assert.ok(appScript.includes('new URLSearchParams(window.location.search).has("bosleyFloat")') && appScript.includes("splash.remove();return;"), "Detached Windows workspace windows must skip the full-app launch splash");
 assert.ok(html.includes("bosley.search.history.v1") && html.includes("bosley-search-history"), "Bosley Search must keep and display recent searches on each device");
 assert.ok(html.includes("Include public web") && html.includes("google.com/search?q="), "Bosley Search must remain useful without a signed-in Brain session");
 assert.ok(html.includes("bosley-search-hero") && html.includes("bosley-search-result"), "Bosley Search must render its branded search console and result cards");

@@ -1782,7 +1782,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   p.className="err";p.textContent=friendly;setPhase("Could not complete · message kept","error");phase.dataset.phase="error";activityEvent("Bosley response failed: "+failure.slice(0,150),"error");
   flash();
   if(window.__bosleyContinuousTalkActive&&window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();
- }finally{clearTimeout(to);setTimeout(()=>{if(!S.busy){setBosleyCompanionState("idle");eyes()}},650)}
+ }finally{clearTimeout(to);setTimeout(()=>{if(!S.busy){setBosleyCompanionState("idle");eyes();if(window.__bosleyContinuousTalkActive&&window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk()}},650)}
 }
 let pendingImageData=null,pendingFileContext="",pendingFileNames=[];
 function clearImageAttachment(){pendingImageData=null;$("#camera-input").value="";$("#imageattachment").hidden=true;$("#imagepreview").removeAttribute("src")}
@@ -1910,45 +1910,72 @@ function setBosleyMouth(open,synced=false){
  if(open)launch.dataset.mouth="open";
  else delete launch.dataset.mouth;
 }
-function finishBosleySpeech(){
+let bosleySpeechWatchdog=null,bosleySpeechGeneration=0;
+function finishBosleySpeech(generation=bosleySpeechGeneration){
+ if(generation!==bosleySpeechGeneration)return;
+ if(bosleySpeechWatchdog){clearTimeout(bosleySpeechWatchdog);bosleySpeechWatchdog=null}
  if(bosleyMouthPulseTimer)clearTimeout(bosleyMouthPulseTimer);
  bosleyMouthPulseTimer=null;
  S.speaking=false;$("#stop").hidden=true;setBosleyMouth(false);eyes();setBosleyCompanionState("idle");
  if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();
 }
 function speak(t){
- if(!speechOn&&!window.__bosleyContinuousTalkActive){if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();return;}
+ const textToSpeak=String(t||"").trim();
+ if(!textToSpeak)return;
+ if(!speechOn){if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();return;}
+ const generation=++bosleySpeechGeneration;
  const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;
- // Android WebView speechSynthesis is inconsistent across device images.
- // Prefer Android's native TextToSpeech engine in the installed app.
- if(nativeVoice&&typeof nativeVoice.speakText==="function"&&!window.__bosleyContinuousTalkActive){
+ if(nativeVoice&&typeof nativeVoice.speakText==="function"){
   try{
    S.speaking=true;$("#stop").hidden=false;setBosleyMouth(false);eyes();setBosleyCompanionState("speaking");
-   Promise.resolve(nativeVoice.speakText({text:String(t||""),profile:voiceProfile})).then(finishBosleySpeech).catch(error=>{console.warn("Native Bosley speech failed:",error?.message||error);finishBosleySpeech()});
+   bosleySpeechWatchdog=setTimeout(()=>finishBosleySpeech(generation),Math.max(3500,Math.min(30000,textToSpeak.length*85)));
+   Promise.resolve(nativeVoice.speakText({text:textToSpeak,profile:voiceProfile})).then(()=>finishBosleySpeech(generation)).catch(error=>{console.warn("Native Bosley speech failed:",error?.message||error);if(generation===bosleySpeechGeneration){if("speechSynthesis"in window)startBrowserSpeech(textToSpeak,generation);else finishBosleySpeech(generation)}});
    return;
   }catch(error){S.speaking=false;$("#stop").hidden=true;console.warn("Native Bosley speech unavailable; trying browser speech:",error)}
  }
- if(!("speechSynthesis"in window)){if(nativeVoice?.speakText){try{S.speaking=true;$("#stop").hidden=false;setBosleyCompanionState("speaking");nativeVoice.speakText({text:String(t||""),profile:voiceProfile}).catch(()=>{});setTimeout(finishBosleySpeech,Math.max(1800,String(t||"").length*55));}catch{if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();}}else if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();return;}
- speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(String(t||""));
- const selected=chooseBosleyVoice();
- if(selected)u.voice=selected;
- u.lang=selected?.lang||((voiceProfile==="system"&&navigator.language)?navigator.language:"en-GB");
- u.rate=voiceProfile==="jarvis"?0.9:voiceProfile==="warm"?0.96:1;
- u.pitch=voiceProfile==="jarvis"?0.78:voiceProfile==="warm"?1.04:1;
- u.onstart=()=>{S.speaking=true;$("#stop").hidden=false;setBosleyMouth(false,true);eyes();setBosleyCompanionState("speaking")};
- u.onboundary=event=>{
-  if(!S.speaking)return;
-  setBosleyMouth(true,true);
-  if(bosleyMouthPulseTimer)clearTimeout(bosleyMouthPulseTimer);
-  const duration=Math.max(75,Math.min(155,Number(event?.charLength||3)*24));
-  bosleyMouthPulseTimer=setTimeout(()=>{setBosleyMouth(false,true);bosleyMouthPulseTimer=null},duration);
- };
- u.onend=finishBosleySpeech;u.onerror=finishBosleySpeech;
- speechSynthesis.speak(u);
+ if(!("speechSynthesis"in window)){finishBosleySpeech(generation);return;}
+ startBrowserSpeech(textToSpeak,generation);
 }
-function stopSpeak(){const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;if(nativeVoice?.stopSpeaking){try{nativeVoice.stopSpeaking().catch(()=>{})}catch{}}if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes();setBosleyCompanionState("idle");if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk()}
-function setSpeech(v){speechOn=v;if(!v)stopSpeak();$("#voice").textContent="VOICE "+(v?"ON":"OFF");try{localStorage.setItem("bosley_prefs",JSON.stringify({speechOn:v}))}catch{}}
+function startBrowserSpeech(textToSpeak,generation){
+ try{
+  if(!("speechSynthesis"in window)){finishBosleySpeech(generation);return;}
+  speechSynthesis.cancel();speechSynthesis.resume();
+  const u=new SpeechSynthesisUtterance(textToSpeak);
+  const selected=chooseBosleyVoice();
+  if(selected)u.voice=selected;
+  u.lang=selected?.lang||((voiceProfile==="system"&&navigator.language)?navigator.language:"en-GB");
+  u.rate=voiceProfile==="jarvis"?0.9:voiceProfile==="warm"?0.96:1;
+  u.pitch=voiceProfile==="jarvis"?0.78:voiceProfile==="warm"?1.04:1;
+  S.speaking=true;$("#stop").hidden=false;setBosleyMouth(false,true);eyes();setBosleyCompanionState("speaking");
+  bosleySpeechWatchdog=setTimeout(()=>finishBosleySpeech(generation),Math.max(3500,Math.min(30000,textToSpeak.length*100)));
+  u.onstart=()=>{if(generation!==bosleySpeechGeneration)return;S.speaking=true;$("#stop").hidden=false;setBosleyMouth(false,true);eyes();setBosleyCompanionState("speaking")};
+  u.onboundary=event=>{
+   if(generation!==bosleySpeechGeneration||!S.speaking)return;
+   setBosleyMouth(true,true);
+   if(bosleyMouthPulseTimer)clearTimeout(bosleyMouthPulseTimer);
+   const duration=Math.max(75,Math.min(155,Number(event?.charLength||3)*24));
+   bosleyMouthPulseTimer=setTimeout(()=>{setBosleyMouth(false,true);bosleyMouthPulseTimer=null},duration);
+  };
+  u.onend=()=>finishBosleySpeech(generation);
+  u.onerror=event=>{console.warn("Browser speech output failed:",event?.error||"unknown");finishBosleySpeech(generation)};
+  speechSynthesis.speak(u);
+  setTimeout(()=>{if(generation===bosleySpeechGeneration&&speechSynthesis.paused)speechSynthesis.resume()},250);
+ }catch(error){console.warn("Browser speech output unavailable:",error);finishBosleySpeech(generation)}
+}
+function stopSpeak(){
+ bosleySpeechGeneration++;if(bosleySpeechWatchdog){clearTimeout(bosleySpeechWatchdog);bosleySpeechWatchdog=null}
+ const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;if(nativeVoice?.stopSpeaking){try{nativeVoice.stopSpeaking().catch(()=>{})}catch{}}
+ if("speechSynthesis"in window)speechSynthesis.cancel();
+ S.speaking=false;$("#stop").hidden=true;eyes();setBosleyCompanionState("idle");
+ if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();
+}
+function setSpeech(v){
+ speechOn=v;if(!v)stopSpeak();
+ const liveAudio=document.querySelector('[aria-label="Bosley live voice reply"]');
+ if(liveAudio){liveAudio.muted=!v;liveAudio.volume=v?1:0}
+ $("#voice").textContent="VOICE "+(v?"ON":"OFF");
+ try{localStorage.setItem("bosley_prefs",JSON.stringify({speechOn:v}))}catch{}
+}
 $("#voice").onclick=()=>setSpeech(!speechOn);$("#stop").onclick=stopSpeak;setSpeech(speechOn);
 function setVoiceMode(next){
  if(!["agent","dictate","edit"].includes(next))return;
@@ -3147,7 +3174,7 @@ eyes();
    mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
    pc=new RTCPeerConnection();
    remoteAudio=new Audio();remoteAudio.autoplay=true;remoteAudio.playsInline=true;remoteAudio.volume=1;remoteAudio.muted=false;remoteAudio.setAttribute("playsinline","");remoteAudio.setAttribute("aria-label","Bosley live voice reply");remoteAudio.style.position="fixed";remoteAudio.style.width="1px";remoteAudio.style.height="1px";remoteAudio.style.opacity="0";remoteAudio.style.pointerEvents="none";document.body.appendChild(remoteAudio);
-   pc.ontrack=event=>{remoteAudio.srcObject=event.streams[0];remoteAudio.play().then(()=>setState("speaking","Bosley is speaking. You can interrupt naturally.")).catch(error=>{console.warn("Live audio playback was blocked",error);setState("error","Audio playback was blocked. Tap the live conversation once to enable sound.");});};
+   pc.ontrack=event=>{const stream=event.streams?.[0]||new MediaStream([event.track]);remoteAudio.srcObject=stream;remoteAudio.muted=!speechOn;remoteAudio.volume=speechOn?1:0;remoteAudio.play().then(()=>setState("speaking","Bosley is speaking. You can interrupt naturally.")).catch(error=>{console.warn("Live audio playback was blocked",error);setState("error","Sound is blocked by this browser. Tap the Live Talk panel once, then continue speaking.");});};
    mic.getTracks().forEach(track=>pc.addTrack(track,mic));
    channel=pc.createDataChannel("bosley-events");
    channel.onopen=()=>{sendEvent({type:"session.update",session:{instructions:"You are Bosley, a warm, concise, thoughtful voice companion. Speak naturally and calmly. Let the user finish their thoughts. They may interrupt you; stop and listen. Keep spoken replies clear and conversational. If the user asks you to perform a task, use bosley_task to pass the request into Bosley's existing task workflow. Never claim an action is complete unless the task workflow confirms it. Consequential actions must remain subject to the app's existing on-screen approval flow.",tools:[{type:"function",name:"bosley_task",description:"Send a clear user-requested task to Bosley's existing authenticated task workflow. Use for explicit actions, research, or workspace/device tasks, not ordinary conversation. The task workflow may ask for on-screen approval.",parameters:{type:"object",properties:{task:{type:"string",description:"The user's task, preserving their intent and relevant details."}},required:["task"],additionalProperties:false}}],tool_choice:"auto"}});setState("listening","I'm listening. Speak naturally.");};

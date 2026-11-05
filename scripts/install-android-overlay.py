@@ -21,11 +21,12 @@ if "SYSTEM_ALERT_WINDOW" not in text:
 if "BosleyOverlayService" not in text:
     text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse|mediaProjection"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion, visual guide and screen capture" /></service>\n    </application>')
 else:
-    text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and scheduled incoming-call audio alerts" /></service>', text)
+    text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse|mediaProjection"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion, visual guide and screen capture" /></service>', text)
 manifest.write_text(text)
 accessibility_service = '''        <service android:name=".BosleyTargetAccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/bosley_accessibility_label"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/bosley_accessibility_service" /></service>'''
 if "BosleyTargetAccessibilityService" not in text:
     text = text.replace("</application>", accessibility_service + "\n    </application>")
+manifest.write_text(text)
 
 # The guide target finder is explicitly user-enabled in Android Accessibility settings.
 # It inspects visible control labels and bounds only after the user taps Find target.
@@ -358,6 +359,7 @@ public class BosleyOverlayPlugin extends Plugin {
             }catch(Exception e){cleanupScreenCapture();call.reject("Screen capture failed: "+String.valueOf(e.getMessage()),e);}
             finally{if(image!=null)image.close();if(bitmap!=null&&!bitmap.isRecycled())bitmap.recycle();}
           },captureHandler);
+          activeProjection.registerCallback(new MediaProjection.Callback(){@Override public void onStop(){cleanupScreenCapture();}},captureHandler);
           captureDisplay=activeProjection.createVirtualDisplay("BosleyScreenCapture",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,captureReader.getSurface(),null,captureHandler);
           captureHandler.postDelayed(()->{if(captureReader!=null){cleanupScreenCapture();call.reject("Android did not provide a screen image in time. Please try again.");}},5000);
         }catch(Exception e){cleanupScreenCapture();call.reject("Could not capture the Android screen: "+String.valueOf(e.getMessage()),e);}

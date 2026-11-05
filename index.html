@@ -1774,7 +1774,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   history.push({role:"assistant",content:out});if(window.__bosleyContinuousTalkActive&&window.__bosleyLiveTalkAppend)window.__bosleyLiveTalkAppend("bosley",out);S.backend=true;S.busy=false;setPhase("Response ready","success");phase.dataset.phase="success";activityEvent("Bosley generated a response. No device action is reported unless its connected executor confirms it.","success");setBosleyCompanionState("success");eyes();
   if(userMessageSaved){try{await persistChatMessage("assistant",out)}catch(saveError){console.warn("Bosley assistant message persistence failed:",saveError);note("I replied successfully, but the reply could not be saved to your conversation history.")}}
   void autoLearnProjectContext(originalUserText);
-  speak(out);
+  if(!window.__bosleyRealtimeTalkActive)speak(out);
  }catch(e){
   S.busy=false;S.backend=null;setBosleyCompanionState("error");
   const failure=String(e?.message||"");
@@ -3137,6 +3137,7 @@ eyes();
   if(event.type==="error"){const detail=event.error?.message||"The live voice service reported an error.";setState("error",String(detail).slice(0,220));setBosleyCompanionState("error");}
  }
  async function startSession(){
+  window.__bosleyRealtimeTalkActive=true;
   if(!user?.id||!db){setState("error","Sign in to start a live conversation.");return}
   startButton.disabled=true;setState("thinking","Connecting securely…");
   try{
@@ -3161,7 +3162,7 @@ eyes();
   }catch(error){console.warn("Bosley Realtime Talk unavailable; trying free voice mode",error);cleanup(false);try{startFreeTalk()}catch(fallbackError){setState("error",String(fallbackError?.message||error?.message||error).slice(0,240));startButton.disabled=false;startButton.textContent="Try again";}}
  }
  function cleanup(hide=true){
-  closed=true;freeTalkActive=false;freeTalkMuted=false;freeTalkProcessing=false;window.__bosleyContinuousTalkActive=false;window.__bosleyResumeContinuousTalk=null;try{freeRecognition?.stop()}catch{}freeRecognition=null;try{if(freeRecorder?.state==="recording")freeRecorder.stop()}catch{}freeRecorder=null;freeChunkStream?.getTracks().forEach(track=>track.stop());freeChunkStream=null;
+  closed=true;window.__bosleyRealtimeTalkActive=false;freeTalkActive=false;freeTalkMuted=false;freeTalkProcessing=false;window.__bosleyContinuousTalkActive=false;window.__bosleyResumeContinuousTalk=null;try{freeRecognition?.stop()}catch{}freeRecognition=null;try{if(freeRecorder?.state==="recording")freeRecorder.stop()}catch{}freeRecorder=null;freeChunkStream?.getTracks().forEach(track=>track.stop());freeChunkStream=null;
   try{channel?.close()}catch{}channel=null;try{pc?.close()}catch{}pc=null;
   if(mic){mic.getTracks().forEach(track=>{try{track.stop()}catch{}});mic=null}
   if(remoteAudio){try{remoteAudio.pause();remoteAudio.srcObject=null;remoteAudio.remove()}catch{}remoteAudio=null}

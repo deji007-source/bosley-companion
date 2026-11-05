@@ -63,7 +63,7 @@ import android.graphics.PixelFormat;
 import android.util.DisplayMetrics;
 
 public class BosleyOverlayService extends Service {
-  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE";
+  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE", ACTION_CAPTURE_START="com.bosley.companion.CAPTURE_START", ACTION_CAPTURE_STOP="com.bosley.companion.CAPTURE_STOP";
   int widgetWidth=44,widgetHeight=44,cornerDp=18,borderDp=1,eyeWidth=9,eyeHeight=17,eyeGapDp=8; String eyeShape="soft-square";
   WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
   static final String CHANNEL_ID="bosley_floating_companion";
@@ -83,8 +83,33 @@ public class BosleyOverlayService extends Service {
     if(Build.VERSION.SDK_INT>=34)startForeground(701,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
     else startForeground(701,notification);
   }
+  void promoteToCaptureForeground(){
+    if(Build.VERSION.SDK_INT<34)return;
+    NotificationManager manager=(NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+    if(manager!=null)manager.createNotificationChannel(new NotificationChannel(CHANNEL_ID,"Bosley floating companion",NotificationManager.IMPORTANCE_LOW));
+    Intent open=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    PendingIntent pending=PendingIntent.getActivity(this,701,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+    Notification notification=new Notification.Builder(this,CHANNEL_ID).setSmallIcon(android.R.drawable.ic_dialog_info)
+      .setContentTitle("Bosley is capturing your screen").setContentText("One-time screen capture requested by you.")
+      .setContentIntent(pending).setOngoing(true).setCategory(Notification.CATEGORY_SERVICE).build();
+    startForeground(701,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE|android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+  }
+  void stopCaptureForeground(){
+    if(Build.VERSION.SDK_INT>=34){
+      NotificationManager manager=(NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+      if(manager!=null)manager.createNotificationChannel(new NotificationChannel(CHANNEL_ID,"Bosley floating companion",NotificationManager.IMPORTANCE_LOW));
+      Intent open=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+      PendingIntent pending=PendingIntent.getActivity(this,701,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+      Notification notification=new Notification.Builder(this,CHANNEL_ID).setSmallIcon(android.R.drawable.ic_dialog_info)
+        .setContentTitle("Bosley floating companion is active").setContentText("The floating widget can stay visible while you use other apps.")
+        .setContentIntent(pending).setOngoing(true).setCategory(Notification.CATEGORY_SERVICE).build();
+      startForeground(701,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+    }
+  }
   @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);promoteToForeground();}
   @Override public int onStartCommand(Intent i,int flags,int id){
+    if(i!=null && ACTION_CAPTURE_START.equals(i.getAction())){promoteToCaptureForeground();return START_NOT_STICKY;}
+    if(i!=null && ACTION_CAPTURE_STOP.equals(i.getAction())){stopCaptureForeground();if(bar==null&&guideLine==null&&guideCard==null)stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
     if(i!=null && ACTION_TARGET.equals(i.getAction())){updateGuideTarget(i);return START_STICKY;}
@@ -307,37 +332,43 @@ public class BosleyOverlayPlugin extends Plugin {
   @ActivityCallback private void screenCapturePermissionResult(PluginCall call,ActivityResult result){
     if(result.getResultCode()!=android.app.Activity.RESULT_OK||result.getData()==null){call.resolve(new JSObject().put("cancelled",true));return;}
     try{
-      MediaProjectionManager manager=(MediaProjectionManager)getContext().getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE);
-      activeProjection=manager.getMediaProjection(result.getResultCode(),result.getData());
-      if(activeProjection==null)throw new IllegalStateException("Android did not grant a screen-capture session.");
-      WindowManager wm=(WindowManager)getContext().getSystemService(android.content.Context.WINDOW_SERVICE);
-      DisplayMetrics metrics=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(metrics);
-      int width=Math.max(1,metrics.widthPixels),height=Math.max(1,metrics.heightPixels),density=metrics.densityDpi;
-      captureReader=ImageReader.newInstance(width,height,PixelFormat.RGBA_8888,2);
-      captureDisplay=activeProjection.createVirtualDisplay("BosleyScreenCapture",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,captureReader.getSurface(),null,captureHandler);
+      Intent foreground=new Intent(getContext(),BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CAPTURE_START);
+      if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(foreground);else getContext().startService(foreground);
       captureHandler.postDelayed(()->{
         try{
-          Image image=captureReader.acquireLatestImage();
-          if(image==null)throw new IllegalStateException("Android did not provide a screenshot frame. Please try again.");
-          Bitmap bitmap=null;
-          try{
-            Image.Plane plane=image.getPlanes()[0];ByteBuffer buffer=plane.getBuffer();
-            int pixelStride=plane.getPixelStride(),rowStride=plane.getRowStride(),rowPadding=rowStride-pixelStride*width;
-            Bitmap padded=Bitmap.createBitmap(width+Math.max(0,rowPadding/pixelStride),height,Bitmap.Config.ARGB_8888);
-            padded.copyPixelsFromBuffer(buffer);bitmap=Bitmap.createBitmap(padded,0,0,width,height);padded.recycle();
-          }finally{image.close();}
-          int max=1280; if(Math.max(width,height)>max){float scale=(float)max/Math.max(width,height);Bitmap scaled=Bitmap.createScaledBitmap(bitmap,Math.max(1,Math.round(width*scale)),Math.max(1,Math.round(height*scale)),true);bitmap.recycle();bitmap=scaled;}
-          ByteArrayOutputStream out=new ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);bitmap.recycle();
-          JSObject response=new JSObject();response.put("ok",true);response.put("dataUrl","data:image/jpeg;base64,"+Base64.encodeToString(out.toByteArray(),Base64.NO_WRAP));call.resolve(response);
-        }catch(Exception e){call.reject("Screen capture failed: "+String.valueOf(e.getMessage()),e);}
-        finally{cleanupScreenCapture();}
-      },650);
-    }catch(Exception e){cleanupScreenCapture();call.reject("Could not capture the Android screen: "+String.valueOf(e.getMessage()),e);}
+          MediaProjectionManager manager=(MediaProjectionManager)getContext().getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE);
+          activeProjection=manager.getMediaProjection(result.getResultCode(),result.getData());
+          if(activeProjection==null)throw new IllegalStateException("Android did not grant a screen-capture session.");
+          WindowManager wm=(WindowManager)getContext().getSystemService(android.content.Context.WINDOW_SERVICE);
+          DisplayMetrics metrics=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(metrics);
+          int width=Math.max(1,metrics.widthPixels),height=Math.max(1,metrics.heightPixels),density=metrics.densityDpi;
+          captureReader=ImageReader.newInstance(width,height,PixelFormat.RGBA_8888,2);
+          captureReader.setOnImageAvailableListener(reader->{
+            Image image=null;Bitmap bitmap=null;
+            try{
+              image=reader.acquireLatestImage();if(image==null)return;
+              Image.Plane plane=image.getPlanes()[0];ByteBuffer buffer=plane.getBuffer();
+              int pixelStride=plane.getPixelStride(),rowStride=plane.getRowStride(),rowPadding=rowStride-pixelStride*width;
+              Bitmap padded=Bitmap.createBitmap(width+Math.max(0,rowPadding/pixelStride),height,Bitmap.Config.ARGB_8888);
+              padded.copyPixelsFromBuffer(buffer);bitmap=Bitmap.createBitmap(padded,0,0,width,height);padded.recycle();
+              int max=1280;if(Math.max(width,height)>max){float scale=(float)max/Math.max(width,height);Bitmap scaled=Bitmap.createScaledBitmap(bitmap,Math.max(1,Math.round(width*scale)),Math.max(1,Math.round(height*scale)),true);bitmap.recycle();bitmap=scaled;}
+              ByteArrayOutputStream out=new ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);
+              JSObject response=new JSObject();response.put("ok",true);response.put("dataUrl","data:image/jpeg;base64,"+Base64.encodeToString(out.toByteArray(),Base64.NO_WRAP));
+              cleanupScreenCapture();call.resolve(response);
+            }catch(Exception e){cleanupScreenCapture();call.reject("Screen capture failed: "+String.valueOf(e.getMessage()),e);}
+            finally{if(image!=null)image.close();if(bitmap!=null&&!bitmap.isRecycled())bitmap.recycle();}
+          },captureHandler);
+          captureDisplay=activeProjection.createVirtualDisplay("BosleyScreenCapture",width,height,density,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,captureReader.getSurface(),null,captureHandler);
+          captureHandler.postDelayed(()->{if(captureReader!=null){cleanupScreenCapture();call.reject("Android did not provide a screen image in time. Please try again.");}},5000);
+        }catch(Exception e){cleanupScreenCapture();call.reject("Could not capture the Android screen: "+String.valueOf(e.getMessage()),e);}
+      },350);
+    }catch(Exception e){cleanupScreenCapture();call.reject("Could not start Android screen capture: "+String.valueOf(e.getMessage()),e);}
   }
   private void cleanupScreenCapture(){
     if(captureDisplay!=null){try{captureDisplay.release();}catch(Exception ignored){}captureDisplay=null;}
-    if(captureReader!=null){try{captureReader.close();}catch(Exception ignored){}captureReader=null;}
+    if(captureReader!=null){try{captureReader.setOnImageAvailableListener(null,null);captureReader.close();}catch(Exception ignored){}captureReader=null;}
     if(activeProjection!=null){try{activeProjection.stop();}catch(Exception ignored){}activeProjection=null;}
+    try{Intent stop=new Intent(getContext(),BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CAPTURE_STOP);if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(stop);else getContext().startService(stop);}catch(Exception ignored){}
   }
   @Override protected void handleOnDestroy(){cleanupScreenCapture();try{if(bosleyTts!=null)bosleyTts.shutdown();}catch(Exception ignored){}super.handleOnDestroy();}
   @PluginMethod public void requestMicrophonePermission(PluginCall call){

@@ -3133,7 +3133,7 @@ eyes();
   if(event.type==="response.output_audio_transcript.delta"||event.type==="response.output_text.delta"){updateAssistant(event.delta);return}
   if(event.type==="response.output_audio_transcript.done"||event.type==="response.output_text.done"){if(event.transcript&&!assistantText)updateAssistant(event.transcript);if(assistantText.trim()&&!assistantSaved){assistantSaved=true;const reply=assistantText.trim();history.push({role:"assistant",content:reply});addMsg("bosley",reply);if(user&&db)persistChatMessage("assistant",reply).catch(error=>{console.warn("Live Talk reply save failed:",error);setState("error","Bosley replied, but this live reply could not be saved to chat history.");});}return}
   if(event.type==="response.function_call_arguments.done"&&event.name==="bosley_task"){runTaskTool(event).catch(error=>console.warn("Live task routing failed",error));return}
-  if(event.type==="response.done"){if(!closed){setState("listening","Your turn.");setBosleyCompanionState("idle")}return}
+  if(event.type==="response.done"){if(assistantText.trim()&&!assistantSaved){assistantSaved=true;const reply=assistantText.trim();history.push({role:"assistant",content:reply});addMsg("bosley",reply);if(user&&db)persistChatMessage("assistant",reply).catch(error=>console.warn("Live Talk reply save failed:",error));}if(!closed){setState("listening","Your turn.");setBosleyCompanionState("idle")}return}
   if(event.type==="error"){const detail=event.error?.message||"The live voice service reported an error.";setState("error",String(detail).slice(0,220));setBosleyCompanionState("error");}
  }
  async function startSession(){

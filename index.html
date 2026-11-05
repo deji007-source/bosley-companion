@@ -3267,6 +3267,8 @@ eyes();
 })();
 (function installBosleySplash(){
  const splash=$("#bosley-splash");if(!splash)return;
+ // The main app gets the launch experience on every fresh page load. Detached workspace windows do not.
+ if(new URLSearchParams(window.location.search).has("bosleyFloat")){splash.remove();return;}
  const reduceMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
  const canvas=document.createElement("canvas");canvas.className="bs-matrix";canvas.setAttribute("aria-hidden","true");splash.prepend(canvas);
  const ctx=canvas.getContext("2d");let raf=0,done=false,last=0,drops=[],width=0,height=0,dpr=1;

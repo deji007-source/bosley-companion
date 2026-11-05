@@ -32,10 +32,11 @@ async function decryptSavedGroqKey(ciphertext: string, iv: string) {
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin") ?? "";
   const cors = {
-    "Access-Control-Allow-Origin": ORIGINS.includes(origin) ? origin : ORIGINS[0],
+    // Requests are authenticated with a per-user Supabase access token;
+    // wildcard CORS also supports the signed-in Electron file:// desktop build.
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, content-type, apikey",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    Vary: "Origin",
   };
   const json = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });

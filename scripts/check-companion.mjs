@@ -313,6 +313,12 @@ assert.ok(gateway.includes("credentialStoreIssue") && gateway.includes("encrypti
 assert.ok(html.includes("autoLearnProjectContext") && html.includes("project_context") && html.includes("sensitive.test(value)"), "Bosley must learn durable project preferences while filtering sensitive information");
 assert.ok(html.includes('id="live-talk-start"'), "Bosley must expose a dedicated Live Talk entry point");
 assert.ok(html.includes("RTCPeerConnection") && html.includes("/v1/realtime/calls"), "Live Talk must use browser WebRTC speech-to-speech");
+assert.ok(html.includes("remoteAudio.volume=1") && html.includes('remoteAudio.setAttribute("playsinline","")'), "Realtime Live Talk must attach an audible playback element for spoken replies");
+assert.ok(html.includes("speechOn&&!window.__bosleyContinuousTalkActive"), "Live Talk must speak replies even when general chat speech is disabled");
+assert.ok(html.includes("window.__bosleyLiveTalkAppend=(who,text)") && html.includes('addLine("bosley",text)'), "Free Live Talk replies must appear in the in-session transcript");
+assert.ok(html.includes('addMsg("you",spoken)') && html.includes('addMsg("bosley",reply)'), "Realtime Live Talk must mirror both sides of the spoken conversation into the main chat");
+assert.ok(html.includes('persistChatMessage("user",spoken)') && html.includes('persistChatMessage("assistant",reply)'), "Realtime Live Talk transcripts must be saved to chat history");
+
 assert.ok(html.includes('action:"realtime_session"') && gateway.includes('action === "realtime_session"') && gateway.includes("/v1/realtime/client_secrets"), "Live Talk must mint short-lived authenticated Realtime credentials");
 assert.ok(html.includes("response.function_call_arguments.done") && html.includes("bosley_task"), "Live Talk must route explicit tasks through the existing task workflow");
 assert.ok(html.includes('id="bosley-splash"') && html.includes("TAP TO ENTER"), "Bosley must show a tappable animated splash screen");

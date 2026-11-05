@@ -679,6 +679,7 @@ assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automati
 
 assert.ok(html.includes('id="bosley-splash"') && appScript.includes("function installBosleySplash()"), "The monochrome launch splash must be present and initialized on every main app load");
 assert.ok(html.includes("Independent splash failsafe") && html.includes("window.setTimeout(enter,7000)") && html.indexOf("Independent splash failsafe") < html.indexOf('<div id="root">'), "Splash must have an independent early-loading exit path even if later app initialization fails");
+assert.ok(html.includes('if(typeof r==="function")return r();if(typeof drawAgents==="function")return drawAgents();'), "AI Agents dock must fall back to its in-page renderer if the global renderer registry is unavailable");
 assert.ok(appScript.includes('new URLSearchParams(window.location.search).has("bosleyFloat")') && appScript.includes("splash.remove();return;"), "Detached Windows workspace windows must skip the full-app launch splash");
 assert.ok(html.includes("bosley.search.history.v1") && html.includes("bosley-search-history"), "Bosley Search must keep and display recent searches on each device");
 assert.ok(html.includes("Include public web") && html.includes("google.com/search?q="), "Bosley Search must remain useful without a signed-in Brain session");

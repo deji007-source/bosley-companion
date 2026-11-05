@@ -35,7 +35,8 @@ function encryptionKeyBytes() {
       raw = new TextEncoder().encode(configured);
     } else {
       const base64 = configured.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, "");
-      raw = unb64(base64);
+      const paddedBase64 = base64 + "=".repeat((4 - base64.length % 4) % 4);
+      raw = unb64(paddedBase64);
     }
   } catch {
     throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY is not valid base64, base64url, 32-character text, or 64-character hexadecimal.");
@@ -121,7 +122,7 @@ Deno.serve(async (req: Request) => {
     if (!(provider in PROVIDERS)) return json({ ok: false, error: "Unsupported provider." }, 400);
     if (apiKey.length < 12 || apiKey.length > 500) return json({ ok: false, error: "Enter a valid provider API key." }, 400);
     let encrypted;
-    try { encrypted = await encryptSecret(apiKey); } catch (e) { return json({ ok: false, error: (e as Error).message }, 503); }
+    try { encrypted = await encryptSecret(apiKey); } catch (e) { const message = (e as Error).message; console.error("Agent credential encryption setup failed:", message); return json({ ok: false, error: message }, 503); }
     const { error } = await db.from("agent_provider_connections").upsert({ user_id: user.id, provider, ...encrypted, model: model || PROVIDERS[provider].model, enabled: true, updated_at: new Date().toISOString() }, { onConflict: "user_id,provider" });
     if (error) { console.error("Provider credential save failed:", error); return json({ ok: false, error: "Could not securely save this provider connection." }, 500); }
     return json({ ok: true, provider, connected: true, message: "API key encrypted and saved. Run a connection test before using this provider." });

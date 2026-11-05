@@ -1264,7 +1264,7 @@ jobs:
           grep -Fq "capture_screen" desktop/main.cjs
           grep -Fq 'id="targetContext"' desktop/main.cjs
           grep -Fq 'window.bosleySetTarget' desktop/main.cjs
-          grep -Fq 'width: 300, height: 220' desktop/main.cjs
+          grep -Fq 'width: 340, height: 300' desktop/main.cjs
           grep -Fq "wake_companion" desktop/main.cjs
           grep -Fq "walking-companion.json" desktop/main.cjs
           grep -Fq "setWalkingCompanionEnabled" desktop/main.cjs

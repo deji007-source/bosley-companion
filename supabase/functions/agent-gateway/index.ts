@@ -112,6 +112,58 @@ Deno.serve(async (req: Request) => {
     const { error } = await db.from("agent_provider_connections").delete().eq("user_id", user.id).eq("provider", provider);
     return error ? json({ ok: false, error: "Could not remove provider connection." }, 500) : json({ ok: true, connected: false });
   }
+  if (action === "realtime_session") {
+    const { data: saved, error } = await db.from("agent_provider_connections")
+      .select("api_key_ciphertext,api_key_iv,enabled")
+      .eq("user_id", user.id)
+      .eq("provider", "openai")
+      .maybeSingle();
+    if (error) return json({ ok: false, error: "Could not load your OpenAI connection." }, 500);
+    if (!saved) return json({ ok: false, error: "Connect your OpenAI provider in Bosley Agents before starting Live Talk." }, 404);
+    if (!saved.enabled) return json({ ok: false, error: "Your OpenAI provider connection is disabled." }, 409);
+    try {
+      const key = await decryptSecret(saved.api_key_ciphertext, saved.api_key_iv);
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(user.id + ":" + SUPABASE_URL));
+      const safetyIdentifier = Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, "0")).join("");
+      const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: "Bearer " + key, "OpenAI-Safety-Identifier": safetyIdentifier },
+        body: JSON.stringify({
+          expires_after: { anchor: "created_at", seconds: 600 },
+          session: {
+            type: "realtime",
+            model: "gpt-realtime-2.1",
+            audio: {
+              input: {
+                noise_reduction: { type: "near_field" },
+                transcription: { model: "gpt-4o-mini-transcribe", language: "en" },
+                turn_detection: { type: "semantic_vad", eagerness: "auto" }
+              },
+              output: { voice: "marin", speed: 1.0 }
+            },
+            tools: [{
+              type: "function",
+              name: "bosley_task",
+              description: "Send an explicit user-requested action, research, or workspace/device task to Bosley's existing task workflow. Ordinary conversation should not use this tool.",
+              parameters: { type: "object", properties: { task: { type: "string", description: "The user's task, preserving their intent and relevant details." } }, required: ["task"], additionalProperties: false }
+            }],
+            tool_choice: "auto",
+            instructions: "You are Bosley, a warm, concise, thoughtful voice companion. Speak naturally and calmly. Let the user finish their thoughts and allow interruptions. For explicit tasks, use bosley_task to route the request through Bosley's authenticated task workflow. Never claim a task is complete without confirmation. Consequential actions require the app's existing on-screen approval."
+          }
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || typeof payload?.value !== "string") {
+        const detail = payload?.error?.message || "OpenAI could not create a Realtime session.";
+        return json({ ok: false, error: String(detail).slice(0, 320) }, 502);
+      }
+      return json({ ok: true, token: payload.value, expiresAt: payload.expires_at, model: payload.session?.model || "gpt-realtime-2.1" });
+    } catch (e) {
+      const message = (e as Error)?.message || "Could not create a secure live voice session.";
+      console.error("Realtime session creation failed:", message);
+      return json({ ok: false, error: message.slice(0, 320) }, 502);
+    }
+  }
   if (action === "test" || action === "chat") {
     const provider = body.provider as Provider;
     if (!(provider in PROVIDERS)) return json({ ok: false, error: "Select a supported provider." }, 400);

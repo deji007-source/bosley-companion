@@ -3129,9 +3129,9 @@ eyes();
   if(event.type==="input_audio_buffer.speech_started"){setState("listening","I'm listening.");setBosleyCompanionState("thinking");return}
   if(event.type==="input_audio_buffer.speech_stopped"){setState("thinking","Let me think…");setBosleyCompanionState("thinking");return}
   if(event.type==="response.created"){assistantLine=null;assistantText="";assistantSaved=false;setState("speaking","Bosley is replying…");setBosleyCompanionState("speaking");return}
-  if(event.type==="conversation.item.input_audio_transcription.completed"){addLine("you",event.transcript);return}
+  if(event.type==="conversation.item.input_audio_transcription.completed"){const spoken=String(event.transcript||"").trim();if(spoken){addLine("you",spoken);addMsg("you",spoken);history.push({role:"user",content:spoken});if(user&&db)persistChatMessage("user",spoken).catch(error=>{console.warn("Live Talk user transcript save failed:",error);setState("error","Your spoken message is visible, but could not be saved to chat history.");});}return}
   if(event.type==="response.output_audio_transcript.delta"||event.type==="response.output_text.delta"){updateAssistant(event.delta);return}
-  if(event.type==="response.output_audio_transcript.done"||event.type==="response.output_text.done"){if(event.transcript&&!assistantText)updateAssistant(event.transcript);if(assistantText.trim()&&!assistantSaved){assistantSaved=true;const reply=assistantText.trim();history.push({role:"assistant",content:reply});if(user&&db)persistChatMessage("assistant",reply).catch(error=>{console.warn("Live Talk reply save failed:",error);setState("error","Bosley replied, but this live reply could not be saved to chat history.");});}return}
+  if(event.type==="response.output_audio_transcript.done"||event.type==="response.output_text.done"){if(event.transcript&&!assistantText)updateAssistant(event.transcript);if(assistantText.trim()&&!assistantSaved){assistantSaved=true;const reply=assistantText.trim();history.push({role:"assistant",content:reply});addMsg("bosley",reply);if(user&&db)persistChatMessage("assistant",reply).catch(error=>{console.warn("Live Talk reply save failed:",error);setState("error","Bosley replied, but this live reply could not be saved to chat history.");});}return}
   if(event.type==="response.function_call_arguments.done"&&event.name==="bosley_task"){runTaskTool(event).catch(error=>console.warn("Live task routing failed",error));return}
   if(event.type==="response.done"){if(!closed){setState("listening","Your turn.");setBosleyCompanionState("idle")}return}
   if(event.type==="error"){const detail=event.error?.message||"The live voice service reported an error.";setState("error",String(detail).slice(0,220));setBosleyCompanionState("error");}
@@ -3164,7 +3164,7 @@ eyes();
   closed=true;freeTalkActive=false;freeTalkMuted=false;freeTalkProcessing=false;window.__bosleyContinuousTalkActive=false;window.__bosleyResumeContinuousTalk=null;try{freeRecognition?.stop()}catch{}freeRecognition=null;try{if(freeRecorder?.state==="recording")freeRecorder.stop()}catch{}freeRecorder=null;freeChunkStream?.getTracks().forEach(track=>track.stop());freeChunkStream=null;
   try{channel?.close()}catch{}channel=null;try{pc?.close()}catch{}pc=null;
   if(mic){mic.getTracks().forEach(track=>{try{track.stop()}catch{}});mic=null}
-  if(remoteAudio){try{remoteAudio.pause();remoteAudio.srcObject=null}catch{}remoteAudio=null}
+  if(remoteAudio){try{remoteAudio.pause();remoteAudio.srcObject=null;remoteAudio.remove()}catch{}remoteAudio=null}
   muteButton.disabled=true;endButton.disabled=true;startButton.disabled=false;startButton.textContent="Start talking";muted=false;muteButton.textContent="Mute";
   assistantLine=null;assistantText="";window.__bosleyLiveTalkAppend=null;
   if(hide){root.hidden=true;setState("idle","Ready when you are.");}

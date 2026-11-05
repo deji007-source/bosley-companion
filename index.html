@@ -2995,15 +2995,15 @@ eyes();
   assistantLine=null;assistantText="";setState("listening","I'm listening.");
  }
  function handleEvent(event){
-  if(event.type==="input_audio_buffer.speech_started"){setState("listening","I'm listening.");return}
-  if(event.type==="input_audio_buffer.speech_stopped"){setState("thinking","Let me think…");return}
-  if(event.type==="response.created"){assistantLine=null;assistantText="";setState("speaking","Bosley is replying…");return}
+  if(event.type==="input_audio_buffer.speech_started"){setState("listening","I'm listening.");setBosleyCompanionState("thinking");return}
+  if(event.type==="input_audio_buffer.speech_stopped"){setState("thinking","Let me think…");setBosleyCompanionState("thinking");return}
+  if(event.type==="response.created"){assistantLine=null;assistantText="";setState("speaking","Bosley is replying…");setBosleyCompanionState("speaking");return}
   if(event.type==="conversation.item.input_audio_transcription.completed"){addLine("you",event.transcript);return}
   if(event.type==="response.output_audio_transcript.delta"||event.type==="response.output_text.delta"){updateAssistant(event.delta);return}
   if(event.type==="response.output_audio_transcript.done"||event.type==="response.output_text.done"){if(event.transcript&&!assistantText)updateAssistant(event.transcript);return}
   if(event.type==="response.function_call_arguments.done"&&event.name==="bosley_task"){runTaskTool(event).catch(error=>console.warn("Live task routing failed",error));return}
-  if(event.type==="response.done"){if(!closed)setState("listening","Your turn.");return}
-  if(event.type==="error"){const detail=event.error?.message||"The live voice service reported an error.";setState("error",String(detail).slice(0,220));}
+  if(event.type==="response.done"){if(!closed){setState("listening","Your turn.");setBosleyCompanionState("idle")}return}
+  if(event.type==="error"){const detail=event.error?.message||"The live voice service reported an error.";setState("error",String(detail).slice(0,220));setBosleyCompanionState("error");}
  }
  async function startSession(){
   if(!user?.id||!db){setState("error","Sign in to start a live conversation.");return}

@@ -478,7 +478,7 @@ assert.ok(html.includes('if(/^(?:hey\\s+)?') && html.includes('action:"wake_comp
 
 assert.ok(html.includes('class="mascot-eye" cx="45" cy="51"') && html.includes('class="mascot-eye" cx="75" cy="51"'), "Bosley ghost must render two large black eyes");
 assert.ok(html.includes('fill="#fff"') && html.includes('fill="#050505"'), "Bosley ghost must use a white body and black eyes");
-assert.ok(html.includes("html.blink #bosley-mascot .mascot-eye"), "Bosley ghost eyes must support blinking");
+assert.ok(html.includes("html.blink .launch .mascot-eye"), "Bosley ghost eyes must support blinking");
 assert.ok(html.includes("@keyframes ghost-focus"), "Bosley ghost must animate subtly while thinking or working");
 assert.ok(html.includes("prefers-reduced-motion:reduce"), "Ghost animation must respect reduced-motion settings");
 
@@ -680,10 +680,10 @@ assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automati
 assert.ok(html.includes('id="bosley-splash"') && appScript.includes("function installBosleySplash()"), "The monochrome launch splash must be present and initialized on every main app load");
 assert.ok(html.includes("Independent splash failsafe") && html.includes("window.setTimeout(enter,7000)") && html.indexOf("Independent splash failsafe") < html.indexOf('<div id="root">'), "Splash must have an independent early-loading exit path even if later app initialization fails");
 assert.ok(html.includes('if(typeof r==="function")return r();if(typeof drawAgents==="function")return drawAgents();'), "AI Agents dock must fall back to its in-page renderer if the global renderer registry is unavailable");
-assert.ok(html.includes('aria-label="Open AI Agents workspace"') && html.includes('dockToggle?.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(dockMenu)dockMenu.hidden=true;const panel=document.getElementById("agents-panel");if(!panel)return;dock.hidden=false;dock.style.setProperty("display","flex","important");dock.style.setProperty("visibility","visible","important");dock.style.setProperty("pointer-events","auto","important");dockToggle.setAttribute("aria-expanded","true");if(active==="agents-panel"){panel.hidden=false;return;}show("agents-panel")})'), "The floating launcher must explicitly reveal the dock and open AI Agents on one tap");
+assert.ok(html.includes('aria-label="Open workspace pages"') && html.includes('dockMenu.hidden=!dockMenu.hidden'), "The floating launcher must toggle the complete workspace pages dropdown");
 assert.ok(html.includes('function show(id){if(dockMenu)dockMenu.hidden=true;const v=views.find(x=>x.panel===id);'), "Opening a dock view must not reset launcher state while hiding the tools menu");
-assert.ok(html.includes('dockToggle?.setAttribute("aria-expanded","false");for(const v of views)'), "Closing the workspace must reset the launcher expanded state");
-assert.ok(html.includes('if(wasActive){dock.hidden=true;active="";dockToggle?.setAttribute("aria-expanded","false");return;}dock.hidden=false;active=id;dockToggle?.setAttribute("aria-expanded","true");'), "Opening and closing the workspace must keep launcher state synchronised");
+assert.ok(html.includes('dockToggle?.setAttribute("aria-expanded","false");for(const v of views)')===false, "The workspace panel must not control the dropdown launcher expanded state");
+assert.ok(html.includes('if(wasActive){dock.hidden=true;active="";return;}dock.hidden=false;active=id;'), "Opening and closing the workspace must keep its state independent from the dropdown");
 assert.ok(appScript.includes('new URLSearchParams(window.location.search).has("bosleyFloat")') && appScript.includes("splash.remove();return;"), "Detached Windows workspace windows must skip the full-app launch splash");
 assert.ok(html.includes("bosley.search.history.v1") && html.includes("bosley-search-history"), "Bosley Search must keep and display recent searches on each device");
 assert.ok(html.includes("Include public web") && html.includes("google.com/search?q="), "Bosley Search must remain useful without a signed-in Brain session");

@@ -83,20 +83,30 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/bosley-release.keystore"
-            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/bosley-release.keystore" >> "$GITHUB_ENV"
-            echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
-            echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
-            echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+            set -euo pipefail
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/bosley-release.keystore"
+            test -s "$RUNNER_TEMP/bosley-release.keystore"
+            keytool -list -keystore "$RUNNER_TEMP/bosley-release.keystore" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+            {
+              echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/bosley-release.keystore"
+              echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
+              echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS"
+              echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
             python3 - <<'PY'
           from pathlib import Path
           import re
-          p = Path("android/app/build.gradle")
-          if not p.exists():
-              raise SystemExit("Expected Android Gradle Groovy build file not found; release signing was not configured.")
-          s = p.read_text()
-          if "signingConfigs {" not in s:
-          s = re.sub(r"\bandroid\s*\{", """android {
+
+          path = Path("android/app/build.gradle")
+          if not path.is_file():
+              raise SystemExit("Expected android/app/build.gradle was not generated.")
+
+          source = path.read_text()
+          if "signingConfigs" not in source:
+              android_match = re.search(r"\\bandroid\\s*\\{", source)
+              if not android_match:
+                  raise SystemExit("Could not locate the Android Gradle configuration block.")
+              signing = """android {
               signingConfigs {
                   release {
                       storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
@@ -105,16 +115,30 @@ jobs:
                       keyPassword System.getenv('ANDROID_KEY_PASSWORD')
                   }
               }
-          """, s, count=1)
-          match = re.search(r"buildTypes\s*\{", s)
-          if not match:
-              raise SystemExit("Could not find Android buildTypes block.")
-          release = re.search(r"release\s*\{", s[match.end():])
-          if not release:
-              raise SystemExit("Could not find Android release build type.")
-          pos = match.end() + release.end()
-          s = s[:pos] + "\n            signingConfig signingConfigs.release" + s[pos:]
-          p.write_text(s)
+          """
+              source = source[:android_match.start()] + signing + source[android_match.end():]
+          elif "signingConfigs.release" not in source:
+              raise SystemExit("A signingConfigs block already exists but is not the expected Bosley release configuration.")
+
+          build_types = re.search(r"buildTypes\\s*\\{", source)
+          if not build_types:
+              raise SystemExit("Could not locate the Android buildTypes block.")
+          release_block = re.search(r"release\\s*\\{", source[build_types.end():])
+          if not release_block:
+              raise SystemExit("Could not locate the release build type.")
+          release_start = build_types.end() + release_block.end()
+          release_end = source.find("}", release_start)
+          if release_end < 0:
+              raise SystemExit("Could not safely locate the end of the release build type.")
+          release_body = source[release_start:release_end]
+          if "signingConfig" in release_body:
+              if "signingConfigs.release" not in release_body:
+                  raise SystemExit("The release build type has a conflicting signing configuration.")
+          else:
+              source = source[:release_start] + "\\n            signingConfig signingConfigs.release" + source[release_start:]
+
+          path.write_text(source)
+          print("Configured the release variant to use the validated upload keystore.")
           PY
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
@@ -128,18 +152,32 @@ jobs:
           cd android
           chmod +x gradlew
           if [ "${{ steps.signing.outputs.configured }}" = "true" ]; then
-            ./gradlew assembleRelease bundleRelease
+            ./gradlew --no-daemon assembleRelease bundleRelease
           else
-            ./gradlew assembleDebug
+            ./gradlew --no-daemon assembleDebug
           fi
 
-      - name: Verify Android package
+      - name: Verify Android package signatures
+        shell: bash
         run: |
+          set -euo pipefail
           if [ "${{ steps.signing.outputs.configured }}" = "true" ]; then
-            test -s android/app/build/outputs/apk/release/app-release.apk
-            test -s android/app/build/outputs/bundle/release/app-release.aab
+            APK="android/app/build/outputs/apk/release/app-release.apk"
+            AAB="android/app/build/outputs/bundle/release/app-release.aab"
+            test -s "$APK"
+            test -s "$AAB"
+            APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+            test -n "$APKSIGNER"
+            "$APKSIGNER" verify --verbose --print-certs "$APK"
+            jarsigner -verify "$AAB"
+            echo "Release APK and Android App Bundle signature checks passed."
           else
-            test -s android/app/build/outputs/apk/debug/app-debug.apk
+            APK="android/app/build/outputs/apk/debug/app-debug.apk"
+            test -s "$APK"
+            APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+            test -n "$APKSIGNER"
+            "$APKSIGNER" verify --verbose "$APK"
+            echo "Debug APK signature is valid; this is not a Play release."
           fi
 
       - name: Upload signed release APK and Play bundle

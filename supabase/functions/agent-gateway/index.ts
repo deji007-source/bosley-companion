@@ -23,11 +23,21 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data),
 const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 const unb64 = (value: string) => Uint8Array.from(atob(value), c => c.charCodeAt(0));
 
+function encryptionKeyBytes() {
+  if (!ENCRYPTION_KEY) throw new Error("Missing AGENT_CREDENTIALS_ENCRYPTION_KEY Supabase Edge Function secret.");
+  let raw: Uint8Array;
+  try {
+    raw = /^[a-f0-9]{64}$/i.test(ENCRYPTION_KEY)
+      ? Uint8Array.from(ENCRYPTION_KEY.match(/../g)!, x => parseInt(x, 16))
+      : unb64(ENCRYPTION_KEY);
+  } catch {
+    throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY is not valid base64 or 64-character hexadecimal.");
+  }
+  if (raw.length !== 32) throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY must decode to exactly 32 bytes (base64 or 64-character hexadecimal).");
+  return raw;
+}
 async function encryptionKey() {
-  if (!ENCRYPTION_KEY) throw new Error("Agent credential encryption is not configured on the server.");
-  const raw = /^[a-f0-9]{64}$/i.test(ENCRYPTION_KEY) ? Uint8Array.from(ENCRYPTION_KEY.match(/../g)!, x => parseInt(x, 16)) : unb64(ENCRYPTION_KEY);
-  if (raw.length !== 32) throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY must be a 32-byte base64 or 64-character hex value.");
-  return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
+  return crypto.subtle.importKey("raw", encryptionKeyBytes(), "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 async function encryptSecret(secret: string) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -92,7 +102,10 @@ Deno.serve(async (req: Request) => {
   if (action === "providers") {
     const { data, error } = await db.from("agent_provider_connections").select("provider,model,enabled,updated_at").eq("user_id", user.id);
     if (error) return json({ ok: false, error: "Could not load provider connections." }, 500);
-    return json({ ok: true, credentialStoreReady: !!ENCRYPTION_KEY, providers: Object.entries(PROVIDERS).map(([id, p]) => ({ id, name: p.label, defaultModel: p.model, connected: !!data?.some(x => x.provider === id), ...(data?.find(x => x.provider === id) || {}) })) });
+    let credentialStoreReady = false;
+    let credentialStoreIssue = "";
+    try { encryptionKeyBytes(); credentialStoreReady = true; } catch (e) { credentialStoreIssue = (e as Error).message; }
+    return json({ ok: true, credentialStoreReady, credentialStoreIssue, providers: Object.entries(PROVIDERS).map(([id, p]) => ({ id, name: p.label, defaultModel: p.model, connected: !!data?.some(x => x.provider === id), ...(data?.find(x => x.provider === id) || {}) })) });
   }
   if (action === "connect") {
     const provider = body.provider as Provider;

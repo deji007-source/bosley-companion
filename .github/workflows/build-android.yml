@@ -61,6 +61,10 @@ jobs:
           python3 scripts/install-android-overlay.py
           grep -Fq 'updateGuideTarget(i)' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'result.putExtra("label",bestLabel' android/app/src/main/java/com/bosley/companion/BosleyTargetAccessibilityService.java
+          grep -Fq 'android:name=".BosleyTargetAccessibilityService"' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'canRetrieveWindowContent="true"' android/app/src/main/res/xml/bosley_accessibility_service.xml
+          grep -Fq 'FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
+          grep -Fq 'registerCallback(new MediaProjection.Callback()' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java
           echo "Android tether target updates and match labels verified."
 
       - name: Generate Bosley launcher icon

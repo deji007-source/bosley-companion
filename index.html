@@ -3048,6 +3048,7 @@ eyes();
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!Recognition)throw new Error("This device does not provide continuous browser speech recognition. Use the microphone button for voice input.");
   freeTalkActive=true;freeTalkMuted=false;freeTalkProcessing=false;closed=false;window.__bosleyContinuousTalkActive=true;
+  window.__bosleyResumeContinuousTalk=()=>{if(!freeTalkActive||freeTalkMuted)return;freeTalkProcessing=false;setTimeout(listenFreeTalk,300)};
   startButton.disabled=true;startButton.textContent="Listening";muteButton.disabled=false;muteButton.textContent="Mute";endButton.disabled=false;
   setState("listening","Free voice mode · uses your connected Groq agent and your device's speech services.");
   listenFreeTalk();
@@ -3117,7 +3118,6 @@ eyes();
   if(hide){root.hidden=true;setState("idle","Ready when you are.");}
  }
  start.addEventListener("click",()=>{root.hidden=false;setState("idle","Ready when you are.");startButton.disabled=false;startButton.textContent="Start talking";startButton.focus()});
- window.__bosleyResumeContinuousTalk=()=>{if(!freeTalkActive||freeTalkMuted)return;freeTalkProcessing=false;setTimeout(listenFreeTalk,300)};
  startButton.addEventListener("click",startSession);
  muteButton.addEventListener("click",()=>{if(freeTalkActive){freeTalkMuted=!freeTalkMuted;if(freeTalkMuted){try{freeRecognition?.stop()}catch{}setState("idle","Microphone paused. Tap Unmute when ready.");muteButton.textContent="Unmute"}else{muteButton.textContent="Mute";setState("listening","Listening again…");listenFreeTalk()}return}muted=!muted;mic?.getAudioTracks().forEach(track=>track.enabled=!muted);muteButton.textContent=muted?"Unmute":"Mute";});
  endButton.addEventListener("click",()=>cleanup(true));

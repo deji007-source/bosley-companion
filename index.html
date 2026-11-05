@@ -1768,6 +1768,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   const friendly=e.name==="AbortError"?"I took too long to answer. Your message is still here; try again in a moment.":e.status===413||/413|too large|request entity/i.test(failure)?"That request is too large for the current AI route. I kept your message and reduced the conversation context; try sending it again.":e.status===429?"I’m receiving too many requests right now. Give it a short moment, then try again.":/not configured|provider.*key/i.test(failure)?"The AI service needs its provider configuration checked. Your message is still here.":"I couldn’t reach the AI service just now. Your message is still here; try again in a moment.";
   p.className="err";p.textContent=friendly;setPhase("Could not complete · message kept","error");phase.dataset.phase="error";activityEvent("Bosley response failed: "+failure.slice(0,150),"error");
   flash();
+  if(window.__bosleyContinuousTalkActive&&window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();
  }finally{clearTimeout(to);setTimeout(()=>{if(!S.busy){setBosleyCompanionState("idle");eyes()}},650)}
 }
 let pendingImageData=null,pendingFileContext="",pendingFileNames=[];
@@ -1900,20 +1901,21 @@ function finishBosleySpeech(){
  if(bosleyMouthPulseTimer)clearTimeout(bosleyMouthPulseTimer);
  bosleyMouthPulseTimer=null;
  S.speaking=false;$("#stop").hidden=true;setBosleyMouth(false);eyes();setBosleyCompanionState("idle");
+ if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();
 }
 function speak(t){
- if(!speechOn)return;
+ if(!speechOn){if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();return;}
  const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;
  // Android WebView speechSynthesis is inconsistent across device images.
  // Prefer Android's native TextToSpeech engine in the installed app.
- if(nativeVoice&&typeof nativeVoice.speakText==="function"){
+ if(nativeVoice&&typeof nativeVoice.speakText==="function"&&!window.__bosleyContinuousTalkActive){
   try{
    S.speaking=true;$("#stop").hidden=false;setBosleyMouth(false);eyes();setBosleyCompanionState("speaking");
    Promise.resolve(nativeVoice.speakText({text:String(t||""),profile:voiceProfile})).then(finishBosleySpeech).catch(error=>{console.warn("Native Bosley speech failed:",error?.message||error);finishBosleySpeech()});
    return;
   }catch(error){S.speaking=false;$("#stop").hidden=true;console.warn("Native Bosley speech unavailable; trying browser speech:",error)}
  }
- if(!("speechSynthesis"in window))return;
+ if(!("speechSynthesis"in window)){if(nativeVoice?.speakText){try{S.speaking=true;$("#stop").hidden=false;setBosleyCompanionState("speaking");nativeVoice.speakText({text:String(t||""),profile:voiceProfile}).catch(()=>{});setTimeout(finishBosleySpeech,Math.max(1800,String(t||"").length*55));}catch{if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();}}return;}
  speechSynthesis.cancel();
  const u=new SpeechSynthesisUtterance(String(t||""));
  const selected=chooseBosleyVoice();
@@ -1932,7 +1934,7 @@ function speak(t){
  u.onend=finishBosleySpeech;u.onerror=finishBosleySpeech;
  speechSynthesis.speak(u);
 }
-function stopSpeak(){const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;if(nativeVoice?.stopSpeaking){try{nativeVoice.stopSpeaking().catch(()=>{})}catch{}}if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes();setBosleyCompanionState("idle")}
+function stopSpeak(){const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;if(nativeVoice?.stopSpeaking){try{nativeVoice.stopSpeaking().catch(()=>{})}catch{}}if("speechSynthesis"in window)speechSynthesis.cancel();S.speaking=false;$("#stop").hidden=true;eyes();setBosleyCompanionState("idle");if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk()}
 function setSpeech(v){speechOn=v;if(!v)stopSpeak();$("#voice").textContent="VOICE "+(v?"ON":"OFF");try{localStorage.setItem("bosley_prefs",JSON.stringify({speechOn:v}))}catch{}}
 $("#voice").onclick=()=>setSpeech(!speechOn);$("#stop").onclick=stopSpeak;setSpeech(speechOn);
 function setVoiceMode(next){
@@ -3016,12 +3018,41 @@ eyes();
  const root=document.createElement("section");
  root.id="bosley-live-voice";root.hidden=true;root.dataset.state="idle";
  root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Bosley live voice conversation");
- root.innerHTML='<div class="blv-card"><div class="blv-head"><span class="blv-brand">BOSLEY · LIVE</span><button type="button" data-live="close" aria-label="Close live conversation">Close</button></div><div class="blv-orb" aria-hidden="true"><svg class="blv-ghost" viewBox="0 0 120 120"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="blv-status" data-live-status aria-live="polite">Ready when you are.</div><div class="blv-transcript" data-live-transcript aria-live="polite"><div class="blv-hint">Your conversation will appear here.</div></div><div class="blv-actions"><button type="button" class="primary" data-live="start">Start talking</button><button type="button" data-live="mute" disabled>Mute</button><button type="button" data-live="end" disabled>End</button></div><div class="blv-hint">Bosley listens only while this session is active. You can interrupt naturally.</div></div>';
+ root.innerHTML='<div class="blv-card"><div class="blv-head"><span class="blv-brand">BOSLEY · LIVE</span><button type="button" data-live="close" aria-label="Close live conversation">Close</button></div><div class="blv-orb" aria-hidden="true"><svg class="blv-ghost" viewBox="0 0 120 120"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="blv-status" data-live-status aria-live="polite">Ready when you are.</div><div class="blv-transcript" data-live-transcript aria-live="polite"><div class="blv-hint">Your conversation will appear here.</div></div><div class="blv-actions"><button type="button" class="primary" data-live="start">Start talking</button><button type="button" data-live="mute" disabled>Mute</button><button type="button" data-live="end" disabled>End</button></div><div class="blv-hint">Realtime is optional. If OpenAI is not connected, Bosley can use browser speech recognition, your connected Groq agent and device speech instead.</div></div>';
  document.body.appendChild(root);
  const status=root.querySelector("[data-live-status]"),transcript=root.querySelector("[data-live-transcript]");
  const startButton=root.querySelector('[data-live="start"]'),muteButton=root.querySelector('[data-live="mute"]'),endButton=root.querySelector('[data-live="end"]');
- let pc=null,channel=null,mic=null,remoteAudio=null,muted=false,closed=true,assistantLine=null,assistantText="";
+ let pc=null,channel=null,mic=null,remoteAudio=null,muted=false,closed=true,assistantLine=null,assistantText="",freeRecognition=null,freeTalkActive=false,freeTalkMuted=false,freeTalkProcessing=false;
  function setState(state,label){root.dataset.state=state;status.textContent=label;}
+ function listenFreeTalk(){
+  if(!freeTalkActive||freeTalkMuted||freeTalkProcessing||S.busy||S.speaking)return;
+  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Recognition){setState("error","Continuous speech recognition is unavailable here. Use the microphone button for voice input.");return}
+  const recognition=new Recognition();freeRecognition=recognition;
+  recognition.lang=navigator.language||"en-US";recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
+  recognition.onstart=()=>setState("listening","Free voice mode · speak naturally. Bosley will reply and listen again.");
+  recognition.onresult=event=>{
+   const spoken=Array.from(event.results||[]).filter(result=>result.isFinal).map(result=>String(result[0]?.transcript||"").trim()).filter(Boolean).join(" ").trim();
+   if(!spoken)return;
+   freeTalkProcessing=true;setState("thinking","I heard you. Let me work on that…");addLine("you",spoken);
+   Promise.resolve(send(spoken)).catch(error=>console.warn("Free Live Talk message failed:",error));
+  };
+  recognition.onerror=event=>{
+   if(event.error==="not-allowed"){freeTalkActive=false;window.__bosleyContinuousTalkActive=false;setState("error","Microphone permission was denied. Allow microphone access and try again.");}
+   else if(event.error!=="no-speech"&&event.error!=="aborted")setState("error","Voice input paused: "+String(event.error||"recognition error"));
+  };
+  recognition.onend=()=>{if(freeRecognition===recognition)freeRecognition=null;if(freeTalkActive&&!freeTalkMuted&&!freeTalkProcessing)setTimeout(listenFreeTalk,250)};
+  try{recognition.start()}catch(error){if(freeRecognition===recognition)freeRecognition=null;setState("error","Could not start continuous voice input. Use the microphone button instead.");}
+ }
+ function startFreeTalk(){
+  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Recognition)throw new Error("This device does not provide continuous browser speech recognition. Use the microphone button for voice input.");
+  freeTalkActive=true;freeTalkMuted=false;freeTalkProcessing=false;closed=false;window.__bosleyContinuousTalkActive=true;
+  startButton.disabled=true;startButton.textContent="Listening";muteButton.disabled=false;muteButton.textContent="Mute";endButton.disabled=false;
+  setState("listening","Free voice mode · uses your connected Groq agent and your device's speech services.");
+  listenFreeTalk();
+ }
+
  function addLine(who,text){const clean=String(text||"").trim();if(!clean)return;const empty=transcript.querySelector(".blv-hint");if(empty)empty.remove();const row=document.createElement("div");row.className="blv-line";const name=document.createElement("strong");name.textContent=who==="you"?"YOU":"BOSLEY";const p=document.createElement("p");p.textContent=clean;row.append(name,p);transcript.appendChild(row);transcript.scrollTop=transcript.scrollHeight;return p;}
  function updateAssistant(delta){if(!assistantLine)assistantLine=addLine("bosley","");if(!assistantLine)return;assistantText+=String(delta||"");assistantLine.textContent=assistantText;transcript.scrollTop=transcript.scrollHeight;}
  function sendEvent(value){if(channel?.readyState==="open")channel.send(JSON.stringify(value));}
@@ -3074,10 +3105,11 @@ eyes();
    const answer=await response.text();if(!response.ok)throw new Error(answer.slice(0,320)||"Realtime connection was rejected.");
    await pc.setRemoteDescription({type:"answer",sdp:answer});
    closed=false;muteButton.disabled=false;endButton.disabled=false;muteButton.textContent="Mute";startButton.textContent="Connected";startButton.disabled=true;
-  }catch(error){console.warn("Bosley Live Talk failed",error);setState("error",String(error?.message||error).slice(0,240));cleanup(false);startButton.disabled=false;startButton.textContent="Try again";}
+  }catch(error){console.warn("Bosley Realtime Talk unavailable; trying free voice mode",error);cleanup(false);try{startFreeTalk()}catch(fallbackError){setState("error",String(fallbackError?.message||error?.message||error).slice(0,240));startButton.disabled=false;startButton.textContent="Try again";}}
  }
  function cleanup(hide=true){
-  closed=true;try{channel?.close()}catch{}channel=null;try{pc?.close()}catch{}pc=null;
+  closed=true;freeTalkActive=false;freeTalkMuted=false;freeTalkProcessing=false;window.__bosleyContinuousTalkActive=false;window.__bosleyResumeContinuousTalk=null;try{freeRecognition?.stop()}catch{}freeRecognition=null;
+  try{channel?.close()}catch{}channel=null;try{pc?.close()}catch{}pc=null;
   if(mic){mic.getTracks().forEach(track=>{try{track.stop()}catch{}});mic=null}
   if(remoteAudio){try{remoteAudio.pause();remoteAudio.srcObject=null}catch{}remoteAudio=null}
   muteButton.disabled=true;endButton.disabled=true;startButton.disabled=false;startButton.textContent="Start talking";muted=false;muteButton.textContent="Mute";
@@ -3085,8 +3117,9 @@ eyes();
   if(hide){root.hidden=true;setState("idle","Ready when you are.");}
  }
  start.addEventListener("click",()=>{root.hidden=false;setState("idle","Ready when you are.");startButton.disabled=false;startButton.textContent="Start talking";startButton.focus()});
+ window.__bosleyResumeContinuousTalk=()=>{if(!freeTalkActive||freeTalkMuted)return;freeTalkProcessing=false;setTimeout(listenFreeTalk,300)};
  startButton.addEventListener("click",startSession);
- muteButton.addEventListener("click",()=>{muted=!muted;mic?.getAudioTracks().forEach(track=>track.enabled=!muted);muteButton.textContent=muted?"Unmute":"Mute";});
+ muteButton.addEventListener("click",()=>{if(freeTalkActive){freeTalkMuted=!freeTalkMuted;if(freeTalkMuted){try{freeRecognition?.stop()}catch{}setState("idle","Microphone paused. Tap Unmute when ready.");muteButton.textContent="Unmute"}else{muteButton.textContent="Mute";setState("listening","Listening again…");listenFreeTalk()}return}muted=!muted;mic?.getAudioTracks().forEach(track=>track.enabled=!muted);muteButton.textContent=muted?"Unmute":"Mute";});
  endButton.addEventListener("click",()=>cleanup(true));
  root.addEventListener("click",event=>{const action=event.target.closest("[data-live]")?.dataset.live;if(action==="close")cleanup(true)});
  root.addEventListener("keydown",event=>{if(event.key==="Escape")cleanup(true)});

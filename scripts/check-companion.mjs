@@ -25,6 +25,10 @@ assert.ok(!androidInstaller.includes('android.permission.CAMERA'), "Android buil
 assert.ok(androidInstaller.includes('"android.permission.MODIFY_AUDIO_SETTINGS"') && androidInstaller.includes('"android.permission.RECORD_AUDIO"'), "Android WebView Live Talk must declare both audio permissions required by Capacitor microphone capture");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
+assert.ok(appScript.includes('connectButton.disabled=false'), "Agents Connect buttons must remain available so server configuration errors can be shown and corrected");
+assert.ok(!appScript.includes("disabled=!credentialStoreReady"), "Agents UI must not silently disable provider connection when credential-store readiness is false");
+assert.ok(gateway.includes('configured.length === 32') && gateway.includes('configured.replace(/-/g, "+").replace(/_/g, "/")'), "Agent gateway must accept 32-byte text and base64url encryption secrets as well as standard encodings");
+assert.ok(gateway.includes('if (action === "connect")') && gateway.includes('if (action === "test" || action === "chat")'), "Agent gateway must support secure provider connection, testing, and chat actions");
 const companionChat = readText(new URL("../supabase/functions/companion-chat/index.ts", import.meta.url), "utf8");
 const remoteTranscribe = readText(new URL("../supabase/functions/remote-transcribe/index.ts", import.meta.url), "utf8");
 const telegramWebhook = readText(new URL("../supabase/functions/telegram-webhook/index.ts", import.meta.url), "utf8");

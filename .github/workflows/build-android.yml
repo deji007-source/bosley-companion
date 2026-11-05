@@ -59,12 +59,13 @@ jobs:
           npx cap add android
           npx cap sync android
           python3 scripts/install-android-overlay.py
+          python3 scripts/prepare-android-direct-install.py
           grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.SYSTEM_ALERT_WINDOW' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:name=".BosleyOverlayService"' android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android:name=".BosleyTargetAccessibilityService"' android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android:canRetrieveWindowContent="true"' android/app/src/main/res/xml/bosley_accessibility_service.xml
+          ! grep -Fq 'BIND_ACCESSIBILITY_SERVICE' android/app/src/main/AndroidManifest.xml
+          ! grep -Fq 'BosleyTargetAccessibilityService' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:foregroundServiceType="specialUse|mediaProjection"' android/app/src/main/AndroidManifest.xml
           grep -Fq 'ACTION_CAPTURE_START' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java

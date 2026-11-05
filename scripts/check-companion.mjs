@@ -298,7 +298,7 @@ assert.ok(html.includes("edges.sort((a,b)=>b.score-a.score"), "Knowledge graph m
 assert.ok(html.includes("async function ensureChatConversation(title)") && html.includes('persistChatMessage("user",historyText)') && html.includes('persistChatMessage("assistant",out)'), "Chat messages must be saved individually so user requests survive failed AI replies");
 assert.ok(html.includes("const originalUserText=String(text||\"\").trim()") && html.includes("enrichedRequestText"), "Chat history must preserve original user wording rather than saving expanded search context");
 assert.ok(html.includes("const guideRequest=") && html.includes("await startBosleyGuide(task)"), "Natural guide requests from chat must create and launch a visual walkthrough");
-assert.ok(html.includes("find out(?:\\s+about)?") && html.includes("browse(?:\\s+the)?\\s+web"), "Natural research requests must route through Second Brain and public web search");
+assert.ok(html.includes("find\\s+out(?:\\s+about)?") && html.includes("browse(?:\\s+the)?\\s+web"), "Natural research requests must route through Second Brain and public web search");
 assert.ok(html.includes('id="live-talk-start"'), "Bosley must expose a dedicated Live Talk entry point");
 assert.ok(html.includes("RTCPeerConnection") && html.includes("/v1/realtime/calls"), "Live Talk must use browser WebRTC speech-to-speech");
 assert.ok(html.includes('action:"realtime_session"') && gateway.includes('action === "realtime_session"') && gateway.includes("/v1/realtime/client_secrets"), "Live Talk must mint short-lived authenticated Realtime credentials");

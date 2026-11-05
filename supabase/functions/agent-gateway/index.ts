@@ -24,16 +24,23 @@ const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 const unb64 = (value: string) => Uint8Array.from(atob(value), c => c.charCodeAt(0));
 
 function encryptionKeyBytes() {
-  if (!ENCRYPTION_KEY) throw new Error("Missing AGENT_CREDENTIALS_ENCRYPTION_KEY Supabase Edge Function secret.");
+  const configured = ENCRYPTION_KEY.trim().replace(/^["']|["']$/g, "");
+  if (!configured) throw new Error("Missing AGENT_CREDENTIALS_ENCRYPTION_KEY Supabase Edge Function secret.");
   let raw: Uint8Array;
   try {
-    raw = /^[a-f0-9]{64}$/i.test(ENCRYPTION_KEY)
-      ? Uint8Array.from(ENCRYPTION_KEY.match(/../g)!, x => parseInt(x, 16))
-      : unb64(ENCRYPTION_KEY);
+    if (/^[a-f0-9]{64}$/i.test(configured)) {
+      raw = Uint8Array.from(configured.match(/../g)!, x => parseInt(x, 16));
+    } else if (configured.length === 32 && /^[\x20-\x7e]{32}$/.test(configured)) {
+      // Also accept a 32-character printable secret as 32 raw UTF-8 bytes.
+      raw = new TextEncoder().encode(configured);
+    } else {
+      const base64 = configured.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, "");
+      raw = unb64(base64);
+    }
   } catch {
-    throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY is not valid base64 or 64-character hexadecimal.");
+    throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY is not valid base64, base64url, 32-character text, or 64-character hexadecimal.");
   }
-  if (raw.length !== 32) throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY must decode to exactly 32 bytes (base64 or 64-character hexadecimal).");
+  if (raw.length !== 32) throw new Error("AGENT_CREDENTIALS_ENCRYPTION_KEY must be 32 bytes: use 32-character text, 64-character hexadecimal, or base64 that decodes to 32 bytes.");
   return raw;
 }
 async function encryptionKey() {

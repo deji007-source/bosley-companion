@@ -1644,7 +1644,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
  let alreadyDisplayed=false;
  const automationIntent=/\b(?:automate|automation|workflow|run|execute|trigger|open|launch|wake up|switch to desktop|move .* to desktop|focus |minimize |maximize |click |tap |type |send |text |call |turn on|turn off|bluetooth|spotify|whatsapp|chrome|youtube|laptop|windows|android|phone|device|listener)\b/i.test(String(text||""));
  if(user&&automationIntent){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
- const guideRequest=String(originalUserText||"").match(/^(?:bosley[, ]*)?(?:please\s+)?(?:guide me|walk me through|take me through|show me how to|help me navigate)\s+(.+)$/i);
+ const guideRequest=String(originalUserText||"").match(/^(?:bosley[, ]*)?(?:please\s+)?(?:guide me(?: through| on| with)?|walk me through|take me through|show me how to|help me navigate)\s+(.+)$/i);
  if(guideRequest&&user&&!imageData&&!fileContext){
   const title=guideRequest[1].trim().replace(/[.!?]+$/,"").slice(0,180);
   if(title){
@@ -1658,9 +1658,9 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
  }
  if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}
  const explicitNoSearch=/\b(?:don't|do not|without|skip)\s+(?:the\s+)?(?:web\s+)?search\b/i.test(String(text||""));
- const searchIntent=!explicitNoSearch&&!imageData&&!fileContext&&user&&/\b(?:look\s*up|search(?:\s+(?:the\s+)?(?:web|internet)|\s+for)?|google|find\s+online|research)\b/i.test(String(text||""));
+ const searchIntent=!explicitNoSearch&&!imageData&&!fileContext&&user&&/\b(?:look\s*up|look\s+into|search(?:\s+(?:the\s+)?(?:web|internet)|\s+for)?|google|find\s+online|find\s+out(?:\s+about)?|research|browse(?:\s+the)?\s+web|check\s+(?:the\s+)?(?:web|internet|online)|latest\s+(?:news|updates)|current\s+events)\b/i.test(String(text||""));
  if(searchIntent){
-  const query=String(text).replace(/^(?:bosley[, ]*)?(?:look\s*up|search(?:\s+(?:the\s+)?web|\s+for)?|google|find\s+online|research)\b[: ,]*/i,"").trim();
+  const query=String(text).replace(/^(?:bosley[, ]*)?(?:please\s+)?(?:can you\s+|could you\s+)?(?:look\s*up|look\s+into|search(?:\s+(?:the\s+)?web|\s+for)?|google|find\s+online|find\s+out(?:\s+about)?|research|browse(?:\s+the)?\s+web|check\s+(?:the\s+)?(?:web|internet|online))\b[: ,]*/i,"").trim();
   if(query.length>=2){
    addMsg("you",text);alreadyDisplayed=true;const statusMessage=addMsg("sys","Searching your Second Brain and public web sources…");setPhase("SEARCHING","busy");
    try{const {data,error}=await db.functions.invoke("bosley-search",{body:{query,web:true}});if(error)throw error;if(!data)throw Error("Search returned no data.");

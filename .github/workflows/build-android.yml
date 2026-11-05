@@ -127,12 +127,9 @@ jobs:
           if not release_block:
               raise SystemExit("Could not locate the release build type.")
           release_start = build_types.end() + release_block.end()
-          release_end = source.find("}", release_start)
-          if release_end < 0:
-              raise SystemExit("Could not safely locate the end of the release build type.")
-          release_body = source[release_start:release_end]
-          if "signingConfig" in release_body:
-              if "signingConfigs.release" not in release_body:
+          release_body = source[release_start:]
+          if "signingConfig" in release_body.split("}", 1)[0]:
+              if "signingConfigs.release" not in release_body.split("}", 1)[0]:
                   raise SystemExit("The release build type has a conflicting signing configuration.")
           else:
               source = source[:release_start] + "\\n            signingConfig signingConfigs.release" + source[release_start:]

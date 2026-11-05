@@ -963,7 +963,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  const views=[
   {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{const r=window.BosleyPanelRenderers?.workspace;if(typeof r!=="function")throw Error("Workspace renderer is not connected to the dock.");return r()}},
   {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{const r=window.BosleyPanelRenderers?.appearance;if(typeof r!=="function")throw Error("Appearance renderer is not connected to the dock.");return r()}},
-  {button:"",panel:"agents-panel",label:"AI Agents",init:()=>{const r=window.BosleyPanelRenderers?.agents;if(typeof r!=="function")throw Error("AI Agents renderer is not connected to the dock.");return r()}},
+  {button:"",panel:"agents-panel",label:"AI Agents",init:()=>{const r=window.BosleyPanelRenderers?.agents;if(typeof r==="function")return r();if(typeof drawAgents==="function")return drawAgents();throw Error("AI Agents renderer failed to initialise. Reload the page and retry.")}},
   {button:"autotoggle",panel:"automation",label:"Automation",init:()=>{const r=window.BosleyPanelRenderers?.automation;if(typeof r!=="function")throw Error("Automation renderer is not connected to the dock.");return r()}},
   {button:"activitytoggle",panel:"activity",label:"Activity",init:()=>{const r=window.BosleyPanelRenderers?.activity;if(typeof r!=="function")throw Error("Activity renderer is not connected to the dock.");return r()}},
   {button:"",panel:"skills-panel",label:"Skills",init:()=>{const r=window.BosleyPanelRenderers?.skills;if(typeof r!=="function")throw Error("Skills renderer is not connected to the dock.");return r()}},

@@ -315,6 +315,7 @@ assert.ok(html.includes('id="live-talk-start"'), "Bosley must expose a dedicated
 assert.ok(html.includes("RTCPeerConnection") && html.includes("/v1/realtime/calls"), "Live Talk must use browser WebRTC speech-to-speech");
 assert.ok(html.includes("remoteAudio.volume=1") && html.includes('remoteAudio.setAttribute("playsinline","")'), "Realtime Live Talk must attach an audible playback element for spoken replies");
 assert.ok(html.includes("speechOn&&!window.__bosleyContinuousTalkActive"), "Live Talk must speak replies even when general chat speech is disabled");
+assert.ok(html.includes("if(!window.__bosleyRealtimeTalkActive)speak(out)") && html.includes("window.__bosleyRealtimeTalkActive=true"), "Realtime task replies must not be spoken twice by browser TTS and the Realtime audio stream");
 assert.ok(html.includes("window.__bosleyLiveTalkAppend=(who,text)") && html.includes('addLine("bosley",text)'), "Free Live Talk replies must appear in the in-session transcript");
 assert.ok(html.includes('addMsg("you",spoken)') && html.includes('addMsg("bosley",reply)'), "Realtime Live Talk must mirror both sides of the spoken conversation into the main chat");
 assert.ok(html.includes('persistChatMessage("user",spoken)') && html.includes('persistChatMessage("assistant",reply)'), "Realtime Live Talk transcripts must be saved to chat history");

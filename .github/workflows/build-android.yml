@@ -61,6 +61,7 @@ jobs:
           python3 scripts/install-android-overlay.py
           python3 scripts/prepare-android-direct-install.py
           grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android.permission.MODIFY_AUDIO_SETTINGS' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.SYSTEM_ALERT_WINDOW' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:name=".BosleyOverlayService"' android/app/src/main/AndroidManifest.xml

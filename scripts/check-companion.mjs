@@ -25,6 +25,8 @@ const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml
 const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
 const companionChat = readText(new URL("../supabase/functions/companion-chat/index.ts", import.meta.url), "utf8");
 const remoteTranscribe = readText(new URL("../supabase/functions/remote-transcribe/index.ts", import.meta.url), "utf8");
+const telegramWebhook = readText(new URL("../supabase/functions/telegram-webhook/index.ts", import.meta.url), "utf8");
+const remoteAction = readText(new URL("../supabase/functions/remote-action/index.ts", import.meta.url), "utf8");
 assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with blinking eyes and an animated speaking mouth"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating character must be the white Bosley ghost with visible black eyes");
 assert.ok(!windowsWorkflow.includes('id="hat-group"') && !windowsWorkflow.includes('id="hat-brim"'), "Windows ghost mascot must not include the previous fedora");
 assert.ok(windowsWorkflow.includes("open_floating_view")&&windowsWorkflow.includes("const win = new BrowserWindow({")&&windowsWorkflow.includes("bosleyFloat: viewId"), "Windows side-panel icons must create native floating page windows");
@@ -312,6 +314,7 @@ assert.ok(companionChat.includes("decryptSavedAgentKey") && companionChat.includ
 assert.ok(gateway.includes("credentialStoreIssue") && gateway.includes("encryptionKeyBytes()"), "Agent provider setup must report precise credential encryption configuration errors");
 assert.ok(html.includes("autoLearnProjectContext") && html.includes("project_context") && html.includes("sensitive.test(value)"), "Bosley must learn durable project preferences while filtering sensitive information");
 assert.ok(html.includes('id="live-talk-start"'), "Bosley must expose a dedicated Live Talk entry point");
+assert.ok(telegramWebhook.includes('summary: "remote_listener_queue:v1"') && remoteAction.includes('eq("summary", "remote_listener_queue:v1")'), "Telegram-triggered automation must enter the same durable Windows listener queue as app tasks");
 assert.ok(html.includes("RTCPeerConnection") && html.includes("/v1/realtime/calls"), "Live Talk must use browser WebRTC speech-to-speech");
 assert.ok(html.includes("remoteAudio.volume=1") && html.includes('remoteAudio.setAttribute("playsinline","")'), "Realtime Live Talk must attach an audible playback element for spoken replies");
 assert.ok(html.includes("speechOn&&!window.__bosleyContinuousTalkActive"), "Live Talk must speak replies even when general chat speech is disabled");

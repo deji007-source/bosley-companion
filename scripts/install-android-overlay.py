@@ -12,14 +12,14 @@ if "android.permission.RECORD_AUDIO" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <application', 1)
 if "android.permission.CAMERA" not in text:
     text = text.replace("<application", '<uses-permission android:name="android.permission.CAMERA" />\n    <application', 1)
-for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.POST_NOTIFICATIONS"):
+for permission in ("android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION", "android.permission.POST_NOTIFICATIONS"):
     if permission not in text:
         text = text.replace("<application", f'<uses-permission android:name="{permission}" />\n    <application', 1)
 if "SYSTEM_ALERT_WINDOW" not in text:
     text = text.replace("<manifest ", '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1) if 'xmlns:tools=' not in text else text
     text = text.replace("<application", '<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />\n    <application', 1)
 if "BosleyOverlayService" not in text:
-    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and visual task guide" /></service>\n    </application>')
+    text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse|mediaProjection"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion, visual guide and screen capture" /></service>\n    </application>')
 else:
     text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and scheduled incoming-call audio alerts" /></service>', text)
 manifest.write_text(text)

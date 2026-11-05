@@ -3,11 +3,31 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY") || "";
+const AGENT_ENCRYPTION_KEY = Deno.env.get("AGENT_CREDENTIALS_ENCRYPTION_KEY") || "";
 const MODEL = Deno.env.get("COMPANION_MODEL") ?? "openai/gpt-oss-120b";
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
+const decodeBase64 = (value: string) => Uint8Array.from(atob(value), c => c.charCodeAt(0));
+function agentEncryptionKeyBytes() {
+  if (!AGENT_ENCRYPTION_KEY) throw new Error("Agent credential encryption is not configured.");
+  let raw: Uint8Array;
+  try {
+    raw = /^[a-f0-9]{64}$/i.test(AGENT_ENCRYPTION_KEY)
+      ? Uint8Array.from(AGENT_ENCRYPTION_KEY.match(/../g)!, x => parseInt(x, 16))
+      : decodeBase64(AGENT_ENCRYPTION_KEY);
+  } catch {
+    throw new Error("Agent credential encryption key has invalid encoding.");
+  }
+  if (raw.length !== 32) throw new Error("Agent credential encryption key must decode to 32 bytes.");
+  return raw;
+}
+async function decryptSavedAgentKey(ciphertext: string, iv: string) {
+  const key = await crypto.subtle.importKey("raw", agentEncryptionKeyBytes(), "AES-GCM", false, ["decrypt"]);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: decodeBase64(iv) }, key, decodeBase64(ciphertext));
+  return new TextDecoder().decode(plain);
+}
 const hits = new Map<string, number[]>();
 const LIMIT_PER_MIN = 15;
 const MAX_BODY_BYTES = 1_600_000;
@@ -36,7 +56,22 @@ Deno.serve(async (req: Request) => {
   const { data: authData, error: authError } = await admin.auth.getUser(token);
   const user = authError ? null : authData.user;
   if (!user) return json({ error: "Sign in required" }, 401);
-  if (!GROQ_API_KEY) return json({ error: "The AI service needs provider configuration." }, 503);
+  let providerApiKey = GROQ_API_KEY;
+  let selectedModel = MODEL;
+  const { data: savedGroq, error: savedGroqError } = await admin.from("agent_provider_connections")
+    .select("api_key_ciphertext,api_key_iv,model,enabled")
+    .eq("user_id", user.id).eq("provider", "groq").maybeSingle();
+  if (savedGroqError && !providerApiKey) return json({ error: "Could not load your saved Groq connection. Check Bosley Agents and try again." }, 503);
+  if (savedGroq?.enabled) {
+    try {
+      providerApiKey = await decryptSavedAgentKey(savedGroq.api_key_ciphertext, savedGroq.api_key_iv);
+      selectedModel = savedGroq.model || MODEL;
+    } catch (error) {
+      console.error("Saved Groq credential could not be decrypted:", String(error).slice(0, 180));
+      return json({ error: "Your saved Groq connection needs its credential encryption setting checked. Reconnect Groq in Bosley Agents after the server setting is corrected." }, 503);
+    }
+  }
+  if (!providerApiKey) return json({ error: "Connect Groq in Bosley Agents or configure the server GROQ_API_KEY before chatting." }, 503);
 
   const now = Date.now();
   const recent = (hits.get(user.id) ?? []).filter((time) => now - time < 60_000);
@@ -125,13 +160,13 @@ Deno.serve(async (req: Request) => {
     console.warn("Bosley memory lookup skipped:", String(error).slice(0, 160));
   }
   const systemMessage = { role: "system", content: SYSTEM + memoryContext };
-  const model = hasImage ? "meta-llama/llama-4-scout-17b-16e-instruct" : MODEL;
+  const model = hasImage ? "meta-llama/llama-4-scout-17b-16e-instruct" : selectedModel;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 28_000);
   const callProvider = (messages: any[], maxTokens: number) => fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     signal: controller.signal,
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + GROQ_API_KEY },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + providerApiKey },
     body: JSON.stringify({ model, messages, stream: true, temperature: 0.55, max_tokens: maxTokens }),
   });
 

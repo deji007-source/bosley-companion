@@ -1394,6 +1394,23 @@ async function persistChatExchange(userText,assistantText){
  await persistChatMessage("user",userText);
  await persistChatMessage("assistant",assistantText);
 }
+async function autoLearnProjectContext(userText){
+ if(!db||!user)return;
+ const value=String(userText||"").trim();
+ if(value.length<24||value.length>1200)return;
+ const sensitive=/\b(?:password|passcode|api\s*key|access\s*token|refresh\s*token|secret|credential|private\s*key|recovery\s*code|one.time\s*code|otp|pin\s*code|home\s*address|phone\s*number|medical|diagnosis|health\s*condition|religion|ethnicity|sexual\s+orientation|political\s+party)\b/i;
+ if(sensitive.test(value))return;
+ const durable=/\b(?:i prefer|i want|i would like|i'd like|always|from now on|please keep|don't change|do not change|bosley should|the companion should|our build should|our project|we are building|we're building|remember(?: that)?)\b/i;
+ if(!durable.test(value))return;
+ try{
+  const {data:existing,error:lookupError}=await db.from("memories").select("id").eq("user_id",user.id).eq("content",value).limit(1);
+  if(lookupError)throw lookupError;
+  if(existing?.length)return;
+  const now=new Date().toISOString();
+  const {error}=await db.from("memories").insert({user_id:user.id,content:value,kind:"project_context",importance:2,created_at:now,updated_at:now});
+  if(error)throw error;
+ }catch(error){console.warn("Bosley safe project-memory learning skipped:",error)}
+}
 async function restoreLatestConversation(){
  if(!db||!user)return;
  try{
@@ -1743,6 +1760,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   if(!out)throw Error("The AI returned an empty reply. Check the provider key, model availability, and Edge Function logs.");
   history.push({role:"assistant",content:out});S.backend=true;S.busy=false;setPhase("Response ready","success");phase.dataset.phase="success";activityEvent("Bosley generated a response. No device action is reported unless its connected executor confirms it.","success");setBosleyCompanionState("success");eyes();
   if(userMessageSaved){try{await persistChatMessage("assistant",out)}catch(saveError){console.warn("Bosley assistant message persistence failed:",saveError);note("I replied successfully, but the reply could not be saved to your conversation history.")}}
+  void autoLearnProjectContext(originalUserText);
   speak(out);
  }catch(e){
   S.busy=false;S.backend=null;setBosleyCompanionState("error");

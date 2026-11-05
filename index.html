@@ -3137,8 +3137,8 @@ eyes();
   if(event.type==="error"){const detail=event.error?.message||"The live voice service reported an error.";setState("error",String(detail).slice(0,220));setBosleyCompanionState("error");}
  }
  async function startSession(){
-  window.__bosleyRealtimeTalkActive=true;
   if(!user?.id||!db){setState("error","Sign in to start a live conversation.");return}
+  window.__bosleyRealtimeTalkActive=true;
   startButton.disabled=true;setState("thinking","Connecting securely…");
   try{
    const {data,error}=await db.functions.invoke("agent-gateway",{body:{action:"realtime_session"}});

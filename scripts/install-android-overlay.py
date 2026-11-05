@@ -406,6 +406,18 @@ public class BosleyOverlayPlugin extends Plugin {
     Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_GUIDE);i.putExtra("instruction",instruction);startOverlayService(i);
     JSObject r=new JSObject();r.put("ok",true);r.put("state","native-overlay-requested");call.resolve(r);
   }
+  @PluginMethod public void findGuideTarget(PluginCall call){
+    String task=call.getString("task","");
+    if(task==null||task.trim().isEmpty())task="Find the relevant control for the active Bosley guide.";
+    String enabled=android.provider.Settings.Secure.getString(getContext().getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+    if(enabled==null||!enabled.contains(getContext().getPackageName()+"/"+BosleyTargetAccessibilityService.class.getName())){
+      call.reject("Enable Bosley visual guide in Android Accessibility settings, then try Check target again.");return;
+    }
+    Intent request=new Intent(BosleyTargetAccessibilityService.FIND);
+    request.setPackage(getContext().getPackageName());request.putExtra("task",task.slice(0,500));
+    getContext().sendBroadcast(request);
+    JSObject result=new JSObject();result.put("ok",true);result.put("state","target-search-requested");call.resolve(result);
+  }
   @PluginMethod public void stopGuide(PluginCall call){Intent i=new Intent(getContext(),BosleyOverlayService.class);i.setAction(BosleyOverlayService.ACTION_HIDE_GUIDE);startOverlayService(i);JSObject r=new JSObject();r.put("ok",true);call.resolve(r);}
   @PluginMethod public void openExternalUrl(PluginCall call){
     String raw=call.getString("url","");

@@ -1674,7 +1674,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
  let alreadyDisplayed=false;
  const automationIntent=/\b(?:automate|automation|workflow|run|execute|trigger|open|launch|wake up|switch to desktop|move .* to desktop|focus |minimize |maximize |click |tap |type |send |text |call |turn on|turn off|bluetooth|spotify|whatsapp|chrome|youtube|laptop|windows|android|phone|device|listener)\b/i.test(String(text||""));
  if(user&&automationIntent){try{await syncWorkflows()}catch(e){autoLog("warning","Could not refresh saved workflows before command matching: "+String(e?.message||e))}}
- const guideRequest=String(originalUserText||"").match(/^(?:bosley[, ]*)?(?:please\s+)?(?:guide me(?: through| on| with)?|walk me through|take me through|show me how to|help me navigate|set up? (?:a )?guide(?: plan)?(?: for| to)?|start (?:a )?guide(?: for| to)?|create (?:a )?guide(?: for| to)?|set (?:up )?a plan for me to learn(?: how to)?)\s+(.+)$/i);
+ const guideRequest=String(originalUserText||"").match(/^(?:bosley[, ]*)?(?:please\s+)?(?:guide me(?: through| on| with)?|walk me through|take me through|show me how to|help me navigate|set(?: up)? (?:a )?guide(?: plan)?(?: for| to)?|start (?:a )?guide(?: for| to)?|create (?:a )?guide(?: for| to)?|set (?:up )?a plan for me to learn(?: how to)?)\s+(.+)$/i);
  if(guideRequest&&user&&!imageData&&!fileContext){
   const title=guideRequest[1].trim().replace(/[.!?]+$/,"").slice(0,180);
   if(title){

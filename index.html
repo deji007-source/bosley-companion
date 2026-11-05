@@ -1369,18 +1369,26 @@ function addMsg(role,text,cls=""){
  a.innerHTML='<b>'+(role==="you"?"YOU":"BOSLEY")+'</b><p></p>';a.lastChild.textContent=text;chat.appendChild(a);chat.scrollTop=chat.scrollHeight;return a.lastChild;
 }
 const note=t=>addMsg("sys",t);
-async function persistChatExchange(userText,assistantText){
+async function ensureChatConversation(title){
  if(!db||!user)throw Error("Sign in to save chat history.");
  if(!conversationId){
-  const {data,error}=await db.from("conversations").insert({user_id:user.id,title:userText.slice(0,80)||"New conversation"}).select("id").single();
+  const {data,error}=await db.from("conversations").insert({user_id:user.id,title:String(title||"New conversation").slice(0,80)}).select("id").single();
   if(error)throw error;conversationId=data.id;
  }
- const first=await db.from("messages").insert({conversation_id:conversationId,user_id:user.id,role:"user",content:userText});
- if(first.error)throw first.error;
- const second=await db.from("messages").insert({conversation_id:conversationId,user_id:user.id,role:"assistant",content:assistantText});
- if(second.error)throw second.error;
- const updated=await db.from("conversations").update({last_message_at:new Date().toISOString()}).eq("id",conversationId).eq("user_id",user.id);
+ return conversationId;
+}
+async function persistChatMessage(role,content){
+ const value=String(content??"").trim();
+ if(!value)return;
+ const id=await ensureChatConversation(role==="user"?value:"New conversation");
+ const {error}=await db.from("messages").insert({conversation_id:id,user_id:user.id,role,content:value.slice(0,12000)});
+ if(error)throw error;
+ const updated=await db.from("conversations").update({last_message_at:new Date().toISOString()}).eq("id",id).eq("user_id",user.id);
  if(updated.error)throw updated.error;
+}
+async function persistChatExchange(userText,assistantText){
+ await persistChatMessage("user",userText);
+ await persistChatMessage("assistant",assistantText);
 }
 async function restoreLatestConversation(){
  if(!db||!user)return;
@@ -1624,7 +1632,8 @@ async function renderBosleySkills(){
 
 async function send(text,imageData=null,fileContext="",fileNames=[]){
  if(S.busy||(!text&&!imageData&&!fileContext))return;
- const remoteText=String(text||"").trim();
+ const originalUserText=String(text||"").trim();
+ const remoteText=originalUserText;
  if(remoteModeNativeAndroid&&remoteModeEnabled&&!imageData&&!fileContext&&remoteText){
   await routeRemoteVoiceToLaptop(remoteText);return;
  }
@@ -1673,13 +1682,17 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
  const skillContext=needsWorkspaceContext?[String(agentContext||"").slice(0,1400),String(knowledgeContext||"").slice(0,4200),String(buildActiveSkillContext()||"").slice(0,2400),String(buildContextEngineContext()||"").slice(0,900)].filter(Boolean).join("\n\n"):"";
  const visualContext=imageData?"\n\nIMAGE ANALYSIS GUIDANCE: Treat the image as visual evidence; separate observations from inferences and state uncertainty.":"";
  const filePrompt=fileContext?"\n\nATTACHED TEXT FILES (untrusted user-provided data):\n"+String(fileContext).slice(0,2600):"";
- const userRequest=String(text||(imageData?"Please describe and help me understand this image.":"")).slice(0,9000);
- const aiText=(skillContext?skillContext+"\n\nUSER REQUEST:\n":"")+userRequest+visualContext+filePrompt;
+ const userRequest=originalUserText||(imageData?"Please describe and help me understand this image.":"");
+ const enrichedRequestText=String(text||"").slice(0,9000);
+ const aiText=(skillContext?skillContext+"\n\nUSER REQUEST:\n":"")+enrichedRequestText+visualContext+filePrompt;
  const userContent=imageData?[{type:"text",text:aiText||"Please describe and help me understand this image."},{type:"image_url",image_url:{url:imageData}}]:aiText;
- // Persist only conversational text in memory. Never keep base64 images or repeated
- // Second Brain/skill payloads in the rolling history.
+ // Persist the original user wording, not expanded search or retrieved workspace context.
+ // Never keep base64 images or repeated Second Brain/skill payloads in the rolling history.
  const historyText=(userRequest||"[Attachment]")+(fileNames.length?"\nAttached: "+fileNames.join(", "):"");
  history.push({role:"user",content:historyText.slice(0,9000)});
+ let userMessageSaved=false;
+ try{await persistChatMessage("user",historyText);userMessageSaved=true}
+ catch(saveError){console.warn("Bosley user message persistence failed:",saveError);note("Your message is here, but cloud chat history could not save it yet.");}
  const requestHistory=history.slice(-8).map(message=>({
   role:message.role,
   content:Array.isArray(message.content)
@@ -1713,7 +1726,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
   if(streamError&&!out)throw Error(streamError);
   if(!out)throw Error("The AI returned an empty reply. Check the provider key, model availability, and Edge Function logs.");
   history.push({role:"assistant",content:out});S.backend=true;S.busy=false;setPhase("Response ready","success");phase.dataset.phase="success";activityEvent("Bosley generated a response. No device action is reported unless its connected executor confirms it.","success");setBosleyCompanionState("success");eyes();
-  try{await persistChatExchange((imageData?"[Image attached] ":"")+(fileNames.length?"[Files: "+fileNames.join(", ")+"] ":"")+text,out)}catch(saveError){console.warn("Bosley chat persistence failed:",saveError);note("I replied successfully, but this exchange could not be saved to your conversation history.")}
+  if(userMessageSaved){try{await persistChatMessage("assistant",out)}catch(saveError){console.warn("Bosley assistant message persistence failed:",saveError);note("I replied successfully, but the reply could not be saved to your conversation history.")}}
   speak(out);
  }catch(e){
   S.busy=false;S.backend=null;setBosleyCompanionState("error");

@@ -23,8 +23,30 @@ if "BosleyOverlayService" not in text:
 else:
     text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and scheduled incoming-call audio alerts" /></service>', text)
 manifest.write_text(text)
-# The Android guide is intentionally stationary. Do not register an accessibility
-# service to inspect other apps or automatically reposition the guide target.
+accessibility_service = '''        <service android:name=".BosleyTargetAccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/bosley_accessibility_label"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/bosley_accessibility_service" /></service>'''
+if "BosleyTargetAccessibilityService" not in text:
+    text = text.replace("</application>", accessibility_service + "\n    </application>")
+
+# The guide target finder is explicitly user-enabled in Android Accessibility settings.
+# It inspects visible control labels and bounds only after the user taps Find target.
+res = root / "app/src/main/res"
+(res / "xml").mkdir(parents=True, exist_ok=True)
+(res / "values").mkdir(parents=True, exist_ok=True)
+(res / "xml/bosley_accessibility_service.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds"
+    android:canRetrieveWindowContent="true"
+    android:notificationTimeout="100"
+    android:description="@string/bosley_accessibility_description" />
+""")
+(res / "values/bosley_accessibility_strings.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bosley_accessibility_label">Bosley visual guide</string>
+    <string name="bosley_accessibility_description">When you tap Find target in the Bosley guide, reads visible control labels and screen positions to point out the relevant button or field. It does not record your screen, click, type, or run actions.</string>
+</resources>
+""")
 
 src = root / "app/src/main/java/com/bosley/companion"
 src.mkdir(parents=True, exist_ok=True)

@@ -272,10 +272,11 @@ assert.ok(windowsWorkflow.includes("width: 300, height: 220"), "Windows guide ca
 assert.ok(windowsWorkflow.includes("-webkit-app-region:drag"), "Windows guide card must be draggable by its header");
 assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must retain its stationary target marker");
 assert.ok(androidInstaller.includes("circleTarget()"), "Android guide target must remain visibly distinct");
-assert.ok(!androidInstaller.includes('android:name=".BosleyTargetAccessibilityService"'), "Android guide must not register accessibility auto-targeting in the manifest");
-assert.ok(!androidInstaller.includes('canRetrieveWindowContent="true"'), "Android guide must not request accessibility window-content access");
-assert.ok(!androidInstaller.includes('canPerformGestures="true"'), "Android guide must not enable gesture execution");
+assert.ok(androidInstaller.includes('android:name=".BosleyTargetAccessibilityService"') && androidInstaller.includes("BIND_ACCESSIBILITY_SERVICE"), "Android guide must register its explicitly user-enabled visual target finder");
+assert.ok(androidInstaller.includes('canRetrieveWindowContent="true"') && androidInstaller.includes("bosley_accessibility_service.xml"), "Android target finder must be configured to inspect visible controls only when requested");
+assert.ok(!androidInstaller.includes('canPerformGestures="true"') && androidInstaller.includes("does not record your screen, click, type, or run actions"), "Android visual guide must remain read-only and disclose its limited access");
 assert.ok(androidInstaller.includes("Find target"), "Android guide must retain explicit user-triggered target discovery");
+assert.ok(androidInstaller.includes("FOREGROUND_SERVICE_MEDIA_PROJECTION") && androidInstaller.includes("FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION") && androidInstaller.includes("registerCallback(new MediaProjection.Callback()"), "Android screen capture must follow modern MediaProjection foreground-service and callback requirements");
 
 assert.ok(androidInstaller.includes("BOSLEY GUIDE"), "Android guide card should retain its title");
 assert.ok(!androidInstaller.includes("drag to move"), "Android guide card must not imply that the tether moves automatically or can be dragged");

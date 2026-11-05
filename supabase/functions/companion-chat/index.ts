@@ -160,18 +160,26 @@ Deno.serve(async (req: Request) => {
     console.warn("Bosley memory lookup skipped:", String(error).slice(0, 160));
   }
   const systemMessage = { role: "system", content: SYSTEM + memoryContext };
-  const model = hasImage ? "meta-llama/llama-4-scout-17b-16e-instruct" : selectedModel;
+  // Groq retired the old Llama 4 Scout vision route. Use its currently documented
+  // Qwen vision model, with a second supported Qwen vision route as a 404 fallback.
+  let model = hasImage ? "qwen/qwen3.8-27b" : selectedModel;
+  const visionFallbackModel = "qwen/qwen3.6-27b";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 28_000);
-  const callProvider = (messages: any[], maxTokens: number) => fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const callProvider = (messages: any[], maxTokens: number, modelId = model) => fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     signal: controller.signal,
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + providerApiKey },
-    body: JSON.stringify({ model, messages, stream: true, temperature: 0.55, max_tokens: maxTokens }),
+    body: JSON.stringify({ model: modelId, messages, stream: true, temperature: 0.55, max_tokens: maxTokens }),
   });
 
   try {
     let upstream = await callProvider([systemMessage, ...compact], 700);
+    if (hasImage && upstream.status === 404 && model !== visionFallbackModel) {
+      console.warn("Bosley vision model unavailable; retrying with supported fallback.", { primaryModel: model, fallbackModel: visionFallbackModel });
+      model = visionFallbackModel;
+      upstream = await callProvider([systemMessage, ...compact], 700, model);
+    }
     // Some provider/model routes enforce a stricter request-size ceiling. Retry
     // once with only the last conversational exchange and a shorter prompt.
     if (upstream.status === 413 && !hasImage) {

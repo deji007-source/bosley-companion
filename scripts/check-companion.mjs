@@ -519,7 +519,7 @@ assert.ok(html.includes('id="bosley-search-polish"') && html.includes('db.functi
 assert.ok(html.includes("async function acknowledgeLaptopCommand(activeUser,id,status,summary)"), "Windows must acknowledge command execution results");
 assert.ok(remoteActionFunction.includes('body.type === "listener_status"'), "Android Remote Mode must have an authenticated Windows listener status endpoint");
 assert.ok(remoteActionFunction.includes('onConflict: "user_id,device"'), "Windows listener heartbeat must update one account/device row instead of creating duplicates");
-assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with large blinking black eyes"') && windowsWorkflow.includes("ghost-blink"), "Windows companion window must render the blinking ghost mascot");
+assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with blinking eyes and an animated speaking mouth"') && windowsWorkflow.includes("ghost-blink"), "Windows companion window must render the blinking ghost mascot");
 assert.ok(windowsWorkflow.includes('class="ghost-eye"') && windowsWorkflow.includes('.ghost-eye{fill:#050505;'), "Windows ghost must have two large black eyes");
 assert.ok(!windowsWorkflow.includes("hat-group") && !windowsWorkflow.includes("THREE.WebGLRenderer"), "Windows ghost replacement must remove the fedora and 3D character renderer");
 assert.ok(windowsWorkflow.includes("const width = 112, height = 138;"), "Windows floating ghost must use the smaller compact footprint");

@@ -268,7 +268,7 @@ assert.ok(windowsWorkflow.includes("body:hover div"), "Pencil endpoint must prov
 assert.ok(windowsWorkflow.includes("setTarget('+targetX+','+targetY+')"), "Windows tether endpoint must track target marker movement");
 assert.ok(windowsWorkflow.includes("#guideOutline{stroke:#000;stroke-width:7"), "Windows tether must have a black outline for white screens");
 assert.ok(androidInstaller.includes("paint.setColor(Color.BLACK);paint.setStrokeWidth(dp(6))"), "Android tether must have a black outline for white screens");
-assert.ok(windowsWorkflow.includes("width: 300, height: 220"), "Windows guide card should fit its target context panel");
+assert.ok(windowsWorkflow.includes("width: 340, height: 300"), "Windows guide card should fit its target context panel");
 assert.ok(windowsWorkflow.includes("-webkit-app-region:drag"), "Windows guide card must be draggable by its header");
 assert.ok(androidInstaller.includes("guideTargetLp"), "Android guide must retain its stationary target marker");
 assert.ok(androidInstaller.includes("circleTarget()"), "Android guide target must remain visibly distinct");
@@ -295,6 +295,10 @@ assert.ok(html.includes('x.length>=6'), "Knowledge graph must require a meaningf
 assert.ok(html.includes("edges:edges.slice(0,160)"), "Knowledge graph relationship generation must remain bounded");
 assert.ok(html.includes("edges.sort((a,b)=>b.score-a.score"), "Knowledge graph must prioritize stronger keyword relationships");
 
+assert.ok(html.includes("async function ensureChatConversation(title)") && html.includes('persistChatMessage("user",historyText)') && html.includes('persistChatMessage("assistant",out)'), "Chat messages must be saved individually so user requests survive failed AI replies");
+assert.ok(html.includes("const originalUserText=String(text||\"\").trim()") && html.includes("enrichedRequestText"), "Chat history must preserve original user wording rather than saving expanded search context");
+assert.ok(html.includes("const guideRequest=") && html.includes("await startBosleyGuide(task)"), "Natural guide requests from chat must create and launch a visual walkthrough");
+assert.ok(html.includes("find out(?:\\s+about)?") && html.includes("browse(?:\\s+the)?\\s+web"), "Natural research requests must route through Second Brain and public web search");
 assert.ok(html.includes('id="live-talk-start"'), "Bosley must expose a dedicated Live Talk entry point");
 assert.ok(html.includes("RTCPeerConnection") && html.includes("/v1/realtime/calls"), "Live Talk must use browser WebRTC speech-to-speech");
 assert.ok(html.includes('action:"realtime_session"') && gateway.includes('action === "realtime_session"') && gateway.includes("/v1/realtime/client_secrets"), "Live Talk must mint short-lived authenticated Realtime credentials");

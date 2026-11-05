@@ -739,6 +739,43 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 @keyframes bosleySearchPulse{to{opacity:.3;transform:translateY(-3px)}}
 @media(max-width:520px){#bosley-search{padding:12px;border-radius:14px}#bosley-search .bosley-search-mark{width:40px;height:40px;flex-basis:40px}#bosley-search .bosley-search-controls{justify-content:flex-start}#bosley-search .bosley-search-controls label{flex:1 1 100%}#bosley-search .bosley-search-result{flex-direction:column}#bosley-search .bosley-search-result .link{align-self:flex-start}}
 @media(prefers-reduced-motion:reduce){#bosley-search .bosley-search-loading span{animation:none}}
+
+/* Bosley Search visual refresh: calm, compact, monochrome. */
+#bosley-search{background:#090909;border:1px solid #242424;border-radius:18px;padding:clamp(14px,2.5vw,22px);color:#f5f5f5}
+#bosley-search .bosley-search-hero{padding:2px 0 15px;border-bottom:1px solid #252525}
+#bosley-search .bosley-search-mark,#bosley-search .bosley-search-entry>span{display:none!important}
+#bosley-search .bosley-search-kicker{color:#858585;font:9px 'DM Mono',monospace;letter-spacing:.2em}
+#bosley-search h3{color:#fff;font-size:19px;font-weight:650;letter-spacing:-.03em}
+#bosley-search .bosley-search-hero .mute{color:#898989;font-size:11px}
+#bosley-search .bosley-search-form{margin-top:15px}
+#bosley-search .bosley-search-entry{gap:8px;padding:4px;border:1px solid #393939;border-radius:13px;background:#050505;box-shadow:none}
+#bosley-search .bosley-search-entry input{padding:11px 10px!important;color:#fff;font-size:13px}
+#bosley-search .bosley-search-entry button.primary{min-height:38px;padding:8px 15px;border:0;border-radius:10px;background:#fff;color:#050505;font-size:11px;font-weight:700}
+#bosley-search .bosley-search-controls{margin-top:9px}
+#bosley-search .bosley-search-controls label{color:#a0a0a0;font-size:10px}
+#bosley-search .bosley-search-quiet-actions{display:flex;gap:6px}
+#bosley-search .bosley-search-controls button{min-height:29px;padding:6px 10px;border:1px solid #303030;border-radius:999px;background:#101010;color:#bdbdbd;font-size:10px}
+#bosley-search .bosley-search-controls button:disabled{opacity:.45}
+#bosley-search .bosley-search-writing-status{margin:8px 0 0;color:#707070;font-size:10px}
+#bosley-search .bosley-search-statusline{margin:11px 0 5px;padding:0;border:0;background:transparent}
+#bosley-search .bosley-search-live-dot{background:#aaa;box-shadow:none;width:5px;height:5px;flex-basis:5px}
+#bosley-search .bosley-search-statusline p{color:#999;font-size:10px}
+#bosley-search .bosley-search-section-head{color:#aaa;font-size:9px;letter-spacing:.13em}
+#bosley-search .bosley-search-section-head span{color:#696969}
+#bosley-search .bosley-search-section-head button{color:#aaa}
+#bosley-search .bosley-search-chips button{border:1px solid #292929;background:#111;color:#c7c7c7;font-size:10px}
+#bosley-search .bosley-search-results{gap:9px;margin-top:10px}
+#bosley-search .bosley-search-group{padding:10px;border:1px solid #242424;border-radius:13px;background:#0b0b0b}
+#bosley-search .bosley-search-group .item{margin:6px 0 0;padding:10px;border-color:#222;background:#101010}
+#bosley-search .bosley-search-result strong{color:#f0f0f0;font-size:12px}
+#bosley-search .bosley-search-result p{color:#aaa;font-size:11px;line-height:1.5}
+#bosley-search .bosley-search-result small{color:#777;font-size:9px}
+#bosley-search .bosley-search-result .link{color:#ddd;font-size:10px}
+#bosley-search .bosley-search-empty{border-color:#303030;background:#101010}
+#bosley-search .bosley-search-empty strong{color:#eee}
+#bosley-search .bosley-search-empty p,#bosley-search .bosley-search-empty-note{color:#999;font-size:11px}
+#bosley-search .bosley-search-loading{color:#aaa;font-size:10px}
+#bosley-search .bosley-search-loading span{background:#aaa}
 </style></head>
 <body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-enter">TAP TO ENTER</div></div></div><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley white ghost companion with blinking black eyes" xmlns="http://www.w3.org/2000/svg">
@@ -2772,7 +2809,7 @@ async function renderBosleySearch(){
  const historyKey="bosley.search.history.v1";
  const readHistory=()=>{try{const rows=JSON.parse(localStorage.getItem(historyKey)||"[]");return Array.isArray(rows)?rows.filter(x=>typeof x==="string").slice(0,8):[]}catch{return []}};
  const saveHistory=query=>{const rows=[query,...readHistory().filter(x=>x.toLowerCase()!==query.toLowerCase())].slice(0,8);try{localStorage.setItem(historyKey,JSON.stringify(rows))}catch{}return rows};
- panel.innerHTML='<div class="bosley-search-hero"><div class="bosley-search-mark" aria-hidden="true">⌕</div><div><p class="bosley-search-kicker">BOSLEY INTELLIGENCE</p><h3>Bosley Search</h3><p class="mute">One search across your Second Brain and the public web.</p></div></div><form id="bosley-search-form" class="form bosley-search-form"><div class="bosley-search-entry"><span aria-hidden="true">⌕</span><input id="bosley-search-query" type="search" maxlength="180" placeholder="What are you looking for?" required aria-label="Search query"><button type="button" id="bosley-search-voice" aria-label="Dictate search query" title="Voice typing">🎙</button></div><div class="bosley-search-controls"><label class="mute"><input id="bosley-search-web" type="checkbox" checked> Search public web too</label><button class="primary" type="submit" id="bosley-search-submit">Search <span aria-hidden="true">↗</span></button><button type="button" id="bosley-search-polish" title="Improve grammar and clarity">✦</button></div><p class="mute" id="bosley-search-writing-status" role="status" aria-live="polite">Type, dictate, or choose a recent search.</p></form><div class="bosley-search-statusline"><span class="bosley-search-live-dot"></span><p class="status" id="bosley-search-status" role="status" aria-live="polite">Ready · Search your Brain and public sources.</p></div><section class="bosley-search-history" id="bosley-search-history" aria-label="Recent searches"></section><div id="bosley-search-results" class="items bosley-search-results"></div><div class="bosley-search-external-wrap"><a class="link" id="bosley-search-external" target="_blank" rel="noopener noreferrer" hidden>Open full Google results ↗</a></div>';
+ panel.innerHTML='<div class="bosley-search-hero"><div><p class="bosley-search-kicker">BOSLEY SEARCH</p><h3>Find what you need.</h3><p class="mute">Your notes, projects and the open web in one place.</p></div></div><form id="bosley-search-form" class="form bosley-search-form"><div class="bosley-search-entry"><input id="bosley-search-query" type="search" maxlength="180" placeholder="Search anything…" required aria-label="Search query"><button class="primary" type="submit" id="bosley-search-submit">Search</button></div><div class="bosley-search-controls"><label class="mute"><input id="bosley-search-web" type="checkbox" checked> Include public web</label><div class="bosley-search-quiet-actions"><button type="button" id="bosley-search-voice" aria-label="Dictate search query" title="Voice typing">Speak</button><button type="button" id="bosley-search-polish" title="Improve grammar and clarity">Refine</button></div></div><p class="mute" id="bosley-search-writing-status" role="status" aria-live="polite">Type or speak a search.</p></form><div class="bosley-search-statusline"><span class="bosley-search-live-dot"></span><p class="status" id="bosley-search-status" role="status" aria-live="polite">Ready to search.</p></div><section class="bosley-search-history" id="bosley-search-history" aria-label="Recent searches"></section><div id="bosley-search-results" class="items bosley-search-results"></div><div class="bosley-search-external-wrap"><a class="link" id="bosley-search-external" target="_blank" rel="noopener noreferrer" hidden>Open Google results</a></div>';
  const form=$("#bosley-search-form"),input=$("#bosley-search-query"),status=$("#bosley-search-status"),results=$("#bosley-search-results"),web=$("#bosley-search-web"),external=$("#bosley-search-external");
  const voice=$("#bosley-search-voice"),polish=$("#bosley-search-polish"),writingStatus=$("#bosley-search-writing-status"),history=$("#bosley-search-history");
  const publicUrl=query=>"https://www.google.com/search?q="+encodeURIComponent(query);

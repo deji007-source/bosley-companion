@@ -1021,7 +1021,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const stopDrag=event=>{if(!dragState||event.pointerId!==dragState.pointerId)return;dragState=null;dock.classList.remove("is-dragging");try{const rect=dock.getBoundingClientRect();localStorage.setItem("bosley-side-dock-position",JSON.stringify({left:Math.round(rect.left),top:Math.round(rect.top)}))}catch{}};
   handle?.addEventListener("pointerup",stopDrag);handle?.addEventListener("pointercancel",stopDrag);
  }
- document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
+ document.getElementById("dock-close")?.addEventListener("click",()=>{dock.hidden=true;active="";dockToggle?.setAttribute("aria-expanded","false");for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
  if(floatingView&&views.some(v=>v.panel===floatingView)){dock.hidden=false;requestAnimationFrame(()=>show(floatingView));document.getElementById("dock-close")?.addEventListener("click",()=>window.BosleyDesktop?.request({action:"close_floating_view"}));}
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dock.hidden){dock.hidden=true;active="";tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))}});
 })();

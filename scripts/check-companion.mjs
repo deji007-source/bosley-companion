@@ -23,6 +23,8 @@ for (const [index, source] of inlineScripts.entries()) {
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
+const companionChat = readText(new URL("../supabase/functions/companion-chat/index.ts", import.meta.url), "utf8");
+const remoteTranscribe = readText(new URL("../supabase/functions/remote-transcribe/index.ts", import.meta.url), "utf8");
 assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with blinking eyes and an animated speaking mouth"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating character must be the white Bosley ghost with visible black eyes");
 assert.ok(!windowsWorkflow.includes('id="hat-group"') && !windowsWorkflow.includes('id="hat-brim"'), "Windows ghost mascot must not include the previous fedora");
 assert.ok(windowsWorkflow.includes("open_floating_view")&&windowsWorkflow.includes("const win = new BrowserWindow({")&&windowsWorkflow.includes("bosleyFloat: viewId"), "Windows side-panel icons must create native floating page windows");
@@ -299,6 +301,12 @@ assert.ok(html.includes("async function ensureChatConversation(title)") && html.
 assert.ok(html.includes("const originalUserText=String(text||\"\").trim()") && html.includes("enrichedRequestText"), "Chat history must preserve original user wording rather than saving expanded search context");
 assert.ok(html.includes("const guideRequest=") && html.includes("await startBosleyGuide(task)"), "Natural guide requests from chat must create and launch a visual walkthrough");
 assert.ok(html.includes("find\\s+out(?:\\s+about)?") && html.includes("browse(?:\\s+the)?\\s+web"), "Natural research requests must route through Second Brain and public web search");
+assert.ok(html.includes("async function listenFreeTalkChunk()") && html.includes('"/functions/v1/remote-transcribe"'), "Free Live Talk must support chunked authenticated speech transcription when browser speech recognition is unavailable");
+assert.ok(remoteTranscribe.includes("decryptSavedGroqKey") && remoteTranscribe.includes('eq("provider", "groq")') && remoteTranscribe.includes("providerKey"), "Voice transcription must use the user's encrypted saved Groq key when available");
+assert.ok(remoteTranscribe.includes('"Access-Control-Allow-Origin": "*"') && remoteTranscribe.includes("Sign in required"), "Desktop/native voice transcription must support file origins while requiring authenticated users");
+assert.ok(companionChat.includes("decryptSavedAgentKey") && companionChat.includes('eq("provider", "groq")') && companionChat.includes("selectedModel"), "Main chat must use the user's encrypted Groq provider connection and selected model");
+assert.ok(gateway.includes("credentialStoreIssue") && gateway.includes("encryptionKeyBytes()"), "Agent provider setup must report precise credential encryption configuration errors");
+assert.ok(html.includes("autoLearnProjectContext") && html.includes("project_context") && html.includes("sensitive.test(value)"), "Bosley must learn durable project preferences while filtering sensitive information");
 assert.ok(html.includes('id="live-talk-start"'), "Bosley must expose a dedicated Live Talk entry point");
 assert.ok(html.includes("RTCPeerConnection") && html.includes("/v1/realtime/calls"), "Live Talk must use browser WebRTC speech-to-speech");
 assert.ok(html.includes('action:"realtime_session"') && gateway.includes('action === "realtime_session"') && gateway.includes("/v1/realtime/client_secrets"), "Live Talk must mint short-lived authenticated Realtime credentials");

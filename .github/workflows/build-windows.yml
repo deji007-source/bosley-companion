@@ -492,10 +492,12 @@ jobs:
             });
             if (choice.response !== 1) return { ok: false, cancelled: true };
             const display = screen.getPrimaryDisplay();
-            const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1280, height: 720 }, fetchWindowIcons: false });
+            const captureWidth = 1280;
+            const captureHeight = Math.max(1, Math.round(captureWidth * display.bounds.height / display.bounds.width));
+            const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: captureWidth, height: captureHeight }, fetchWindowIcons: false });
             const source = sources.find(item => String(item.display_id) === String(display.id)) || sources[0];
             if (!source || source.thumbnail.isEmpty()) throw new Error('Windows did not provide a screenshot.');
-            const image = 'data:image/jpeg;base64,' + source.thumbnail.resize({ width: 1280, height: 720 }).toJPEG(76).toString('base64');
+            const image = 'data:image/jpeg;base64,' + source.thumbnail.resize({ width: captureWidth, height: captureHeight }).toJPEG(76).toString('base64');
             const prompt = 'You are locating a UI control in a screenshot for a visual guide. Task goal: ' + guideInstructionForTarget +
               '\\nReturn ONLY one JSON object: {"found":true,"x":0.0,"y":0.0,"confidence":0.0,"target":"short label"} or {"found":false,"reason":"short reason"}. x and y are normalized screenshot coordinates from 0 to 1, measured at the CENTER of the exact visible control most relevant to the task. Prefer the actual button, input, tab, or control, not a generic screen location. If the target app/control is not visible or ambiguous, return found:false. Never guess.';
             const response = await fetch('https://ywwfqisbmlkjcfoqehph.supabase.co/functions/v1/companion-chat', {
@@ -906,17 +908,20 @@ jobs:
                 detail: 'The screenshot will be attached to this chat for your review. It will not be sent until you press Send.'
               });
               if (choice.response !== 1) return { ok: false, cancelled: true };
-              const primaryId = String(screen.getPrimaryDisplay().id);
+              const primaryDisplay = screen.getPrimaryDisplay();
+              const primaryId = String(primaryDisplay.id);
+              const captureWidth = 1280;
+              const captureHeight = Math.max(1, Math.round(captureWidth * primaryDisplay.bounds.height / primaryDisplay.bounds.width));
               const sources = await desktopCapturer.getSources({
                 types: ['screen'],
-                thumbnailSize: { width: 1280, height: 720 },
+                thumbnailSize: { width: captureWidth, height: captureHeight },
                 fetchWindowIcons: false
               });
               const source = sources.find(item => String(item.display_id) === primaryId) || sources[0];
               if (!source || source.thumbnail.isEmpty()) {
                 throw new Error('Windows did not provide a screen image. Check display permissions and try again.');
               }
-              const thumbnail = source.thumbnail.resize({ width: 1280, height: 720 }).toJPEG(72);
+              const thumbnail = source.thumbnail.resize({ width: captureWidth, height: captureHeight }).toJPEG(72);
               return {
                 ok: true,
                 dataUrl: 'data:image/jpeg;base64,' + thumbnail.toString('base64'),

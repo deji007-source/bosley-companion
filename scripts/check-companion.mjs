@@ -322,7 +322,7 @@ assert.ok(html.includes("if(!speechOn){if(window.__bosleyResumeContinuousTalk)")
 assert.ok(html.includes("if(window.__bosleyContinuousTalkActive&&window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk()"), "Live Talk must resume listening after task execution and chat completion");
 assert.ok(html.includes("remoteAudio.srcObject=stream") && html.includes("remoteAudio.muted=!speechOn"), "Realtime audio must bind incoming tracks and respect the voice toggle");
 
-assert.ok(html.includes("speechOn&&!window.__bosleyContinuousTalkActive"), "Live Talk must speak replies even when general chat speech is disabled");
+assert.ok(html.includes("if(!speechOn){if(window.__bosleyResumeContinuousTalk)") && html.includes("speechOn=v"), "Live Talk and normal chat must both obey the user-controlled voice toggle");
 assert.ok(html.includes("if(!window.__bosleyRealtimeTalkActive)speak(out)") && html.includes("window.__bosleyRealtimeTalkActive=true"), "Realtime task replies must not be spoken twice by browser TTS and the Realtime audio stream");
 assert.ok(html.includes("window.__bosleyLiveTalkAppend=(who,text)") && html.includes('addLine("bosley",text)'), "Free Live Talk replies must appear in the in-session transcript");
 assert.ok(html.includes('addMsg("you",spoken)') && html.includes('addMsg("bosley",reply)'), "Realtime Live Talk must mirror both sides of the spoken conversation into the main chat");

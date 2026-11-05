@@ -817,6 +817,25 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 @keyframes bs-boot{to{transform:translateX(0)}}
 @media(max-width:520px){#bosley-splash .bs-orbit{width:148px;height:148px}#bosley-splash .bs-meta{font-size:8px;letter-spacing:.13em}#bosley-splash .bs-enter{gap:7px;font-size:8px}}
 @media(prefers-reduced-motion:reduce){#bosley-splash:before,#bosley-splash:after,#bosley-splash .bs-orbit:after,#bosley-splash .bs-enter b:after{animation:none!important}}
+</style><style>
+/* Bosley launch identity: restrained black, white and graphite; no accent colours. */
+#bosley-splash{background:radial-gradient(ellipse at 50% 44%,#181818 0%,#090909 48%,#000 100%)!important;color:#fff}
+#bosley-splash:before,#bosley-splash:after{border-color:#ffffff12!important;box-shadow:0 0 70px #ffffff08,inset 0 0 60px #ffffff06!important}
+#bosley-splash:after{border-color:#ffffff18!important}
+#bosley-splash .bs-orbit:before,#bosley-splash .bs-orbit:after{border-color:#ffffff35!important;box-shadow:0 0 18px #ffffff0d,inset 0 0 20px #ffffff08!important}
+#bosley-splash .bs-orbit:after{border-left-color:#fff9!important;border-right-color:#ffffff70!important}
+#bosley-splash .bs-orbit-dot{background:#fff!important;box-shadow:0 0 10px #ffffffa8!important}
+#bosley-splash .bs-ghost{filter:drop-shadow(0 0 20px #ffffff30) drop-shadow(0 12px 30px #000)!important}
+#bosley-splash .bs-wordmark{text-shadow:0 0 18px #ffffff22}
+#bosley-splash .bs-meta{color:#999!important}
+#bosley-splash .bs-meta i{background:#aaa!important;box-shadow:0 0 6px #ffffff60!important}
+#bosley-splash .bs-enter{color:#999!important}
+#bosley-splash .bs-enter b{background:#303030!important}
+#bosley-splash .bs-enter b:after{background:#fff!important;box-shadow:0 0 9px #ffffff80!important}
+#bosley-splash .bs-enter span:first-child{color:#777!important}
+#bosley-splash[data-leaving="true"]{opacity:0;transition:opacity .55s ease}
+#bosley-splash:focus-visible{outline:2px solid #fff;outline-offset:-8px}
+@media(prefers-reduced-motion:reduce){#bosley-splash:before,#bosley-splash:after,#bosley-splash .bs-orbit:after,#bosley-splash .bs-enter b:after{animation:none!important}}
 </style></head>
 <body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><div id="root">
 <main class="stage"><button class="launch" id="launch" aria-expanded="false" aria-controls="panel" aria-label="Bosley Companion: open"><svg id="bosley-mascot" viewBox="0 0 120 112" role="img" aria-label="Bosley white ghost companion with blinking black eyes" xmlns="http://www.w3.org/2000/svg">

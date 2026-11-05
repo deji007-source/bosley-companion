@@ -282,6 +282,8 @@ assert.ok(androidInstaller.includes('canRetrieveWindowContent="true"') && androi
 assert.ok(!androidInstaller.includes('canPerformGestures="true"') && androidInstaller.includes("does not record your screen, click, type, or run actions"), "Android visual guide must remain read-only and disclose its limited access");
 assert.ok(androidInstaller.includes("Find target"), "Android guide must retain explicit user-triggered target discovery");
 assert.ok(androidInstaller.includes("FOREGROUND_SERVICE_MEDIA_PROJECTION") && androidInstaller.includes("FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION") && androidInstaller.includes("registerCallback(new MediaProjection.Callback()"), "Android screen capture must follow modern MediaProjection foreground-service and callback requirements");
+assert.ok(androidInstaller.includes("requestNotificationPermission") && androidInstaller.includes("notificationPermissionCallback"), "Android 13+ notification permission must be requested contextually and remain optional for foreground services");
+assert.ok(html.includes("requestNotificationPermission") && html.includes("notificationAccess&&!notificationAccess.granted"), "Enabling the floating companion must request optional notification visibility and continue safely if declined");
 
 assert.ok(androidInstaller.includes("BOSLEY GUIDE"), "Android guide card should retain its title");
 assert.ok(!androidInstaller.includes("drag to move"), "Android guide card must not imply that the tether moves automatically or can be dragged");

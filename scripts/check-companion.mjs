@@ -657,6 +657,9 @@ assert.ok(writingAssistFunction.includes("Preserve intent and voice"), "Writing 
 assert.ok(writingAssistFunction.includes("Your original text is safe"), "Writing Assist failures must not imply drafts were changed");
 const companionChatFunction = readText(new URL("../supabase/functions/companion-chat/index.ts", import.meta.url), "utf8");
 assert.ok(companionChatFunction.includes("const minimalMessages ="), "Chat must make a compact last-resort retry before reporting oversized provider requests");
+assert.ok(companionChatFunction.includes('hasImage ? "qwen/qwen3.8-27b" : selectedModel'), "Image analysis must use the current Groq-supported Qwen vision model");
+assert.ok(companionChatFunction.includes('const visionFallbackModel = "qwen/qwen3.6-27b"') && companionChatFunction.includes('upstream.status === 404'), "Image analysis must retry with the secondary supported vision model if the primary model is unavailable");
+assert.ok(!companionChatFunction.includes("meta-llama/llama-4-scout-17b-16e-instruct"), "The retired Llama 4 Scout vision model must not be used");
 const bosleySearchFunction = readText(new URL("../supabase/functions/bosley-search/index.ts", import.meta.url), "utf8");
 assert.ok(bosleySearchFunction.includes("admin.auth.getUser(token)"), "Bosley Search must validate the caller's Supabase access token");
 assert.ok(bosleySearchFunction.includes('.eq("user_id", userId)'), "Every personal search source must be scoped to the authenticated user");

@@ -3022,12 +3022,12 @@ eyes();
  document.body.appendChild(root);
  const status=root.querySelector("[data-live-status]"),transcript=root.querySelector("[data-live-transcript]");
  const startButton=root.querySelector('[data-live="start"]'),muteButton=root.querySelector('[data-live="mute"]'),endButton=root.querySelector('[data-live="end"]');
- let pc=null,channel=null,mic=null,remoteAudio=null,muted=false,closed=true,assistantLine=null,assistantText="",freeRecognition=null,freeTalkActive=false,freeTalkMuted=false,freeTalkProcessing=false;
+ let pc=null,channel=null,mic=null,remoteAudio=null,muted=false,closed=true,assistantLine=null,assistantText="",freeRecognition=null,freeRecorder=null,freeChunkStream=null,freeTalkActive=false,freeTalkMuted=false,freeTalkProcessing=false;
  function setState(state,label){root.dataset.state=state;status.textContent=label;}
  function listenFreeTalk(){
   if(!freeTalkActive||freeTalkMuted||freeTalkProcessing||S.busy||S.speaking)return;
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!Recognition){setState("error","Continuous speech recognition is unavailable here. Use the microphone button for voice input.");return}
+  if(!Recognition){listenFreeTalkChunk().catch(error=>{console.warn("Free voice chunk capture failed:",error);setState("error",String(error?.message||"Voice capture unavailable").slice(0,180));if(freeTalkActive&&!freeTalkMuted)setTimeout(listenFreeTalk,1200)});return}
   const recognition=new Recognition();freeRecognition=recognition;
   recognition.lang=navigator.language||"en-US";recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
   recognition.onstart=()=>setState("listening","Free voice mode · speak naturally. Bosley will reply and listen again.");
@@ -3044,9 +3044,47 @@ eyes();
   recognition.onend=()=>{if(freeRecognition===recognition)freeRecognition=null;if(freeTalkActive&&!freeTalkMuted&&!freeTalkProcessing)setTimeout(listenFreeTalk,250)};
   try{recognition.start()}catch(error){if(freeRecognition===recognition)freeRecognition=null;setState("error","Could not start continuous voice input. Use the microphone button instead.");}
  }
+ async function listenFreeTalkChunk(){
+  if(!freeTalkActive||freeTalkMuted||freeTalkProcessing||S.busy||S.speaking||freeRecorder)return;
+  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw new Error("This device does not provide a compatible microphone recorder.");
+  const session=db?(await db.auth.getSession()).data.session:null;
+  if(!session)throw new Error("Sign in to use Groq voice transcription.");
+  freeChunkStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  const mime=["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(type=>MediaRecorder.isTypeSupported(type));
+  const recorder=new MediaRecorder(freeChunkStream,mime?{mimeType:mime}:undefined),chunks=[],started=Date.now();
+  freeRecorder=recorder;
+  recorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data)};
+  recorder.onerror=()=>setState("error","Microphone capture failed. Check the app's microphone permission.");
+  recorder.onstart=()=>setState("listening","Free voice mode · listening in short turns. Speak naturally.");
+  recorder.onstop=async()=>{
+   freeChunkStream?.getTracks().forEach(track=>track.stop());freeChunkStream=null;if(freeRecorder===recorder)freeRecorder=null;
+   if(!freeTalkActive||freeTalkMuted)return;
+   const duration=(Date.now()-started)/1000,blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
+   if(duration<1||!blob.size){setTimeout(listenFreeTalk,180);return}
+   try{
+    const active=db?(await db.auth.getSession()).data.session:null;if(!active)throw new Error("Your sign-in session expired.");
+    const form=new FormData();form.append("audio",blob,"voice.webm");form.append("duration",String(duration));
+    const response=await fetch(SUPABASE_URL+"/functions/v1/remote-transcribe",{method:"POST",headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:"Bearer "+active.access_token},body:form});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||!result.transcript){
+     if(response.status!==422&&response.status!==400)setState("error",String(result.error||"Voice transcription failed").slice(0,180));
+     if(freeTalkActive&&!freeTalkMuted)setTimeout(listenFreeTalk,response.status===429?1800:350);
+     return;
+    }
+    const spoken=String(result.transcript).trim();if(!spoken){setTimeout(listenFreeTalk,180);return}
+    freeTalkProcessing=true;setState("thinking","I heard you. Let me work on that…");addLine("you",spoken);
+    await send(spoken);
+   }catch(error){
+    setState("error",String(error?.message||"Voice transcription failed").slice(0,180));
+    if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();
+   }
+  };
+  recorder.start();
+  setTimeout(()=>{if(freeRecorder===recorder&&recorder.state==="recording"){try{recorder.stop()}catch{}}},4500);
+ }
  function startFreeTalk(){
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!Recognition)throw new Error("This device does not provide continuous browser speech recognition. Use the microphone button for voice input.");
+  if(!Recognition&&(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder))throw new Error("This device does not provide continuous browser speech recognition or microphone recording.");
   freeTalkActive=true;freeTalkMuted=false;freeTalkProcessing=false;closed=false;window.__bosleyContinuousTalkActive=true;
   window.__bosleyResumeContinuousTalk=()=>{if(!freeTalkActive||freeTalkMuted)return;freeTalkProcessing=false;setTimeout(listenFreeTalk,300)};
   startButton.disabled=true;startButton.textContent="Listening";muteButton.disabled=false;muteButton.textContent="Mute";endButton.disabled=false;
@@ -3109,7 +3147,7 @@ eyes();
   }catch(error){console.warn("Bosley Realtime Talk unavailable; trying free voice mode",error);cleanup(false);try{startFreeTalk()}catch(fallbackError){setState("error",String(fallbackError?.message||error?.message||error).slice(0,240));startButton.disabled=false;startButton.textContent="Try again";}}
  }
  function cleanup(hide=true){
-  closed=true;freeTalkActive=false;freeTalkMuted=false;freeTalkProcessing=false;window.__bosleyContinuousTalkActive=false;window.__bosleyResumeContinuousTalk=null;try{freeRecognition?.stop()}catch{}freeRecognition=null;
+  closed=true;freeTalkActive=false;freeTalkMuted=false;freeTalkProcessing=false;window.__bosleyContinuousTalkActive=false;window.__bosleyResumeContinuousTalk=null;try{freeRecognition?.stop()}catch{}freeRecognition=null;try{if(freeRecorder?.state==="recording")freeRecorder.stop()}catch{}freeRecorder=null;freeChunkStream?.getTracks().forEach(track=>track.stop());freeChunkStream=null;
   try{channel?.close()}catch{}channel=null;try{pc?.close()}catch{}pc=null;
   if(mic){mic.getTracks().forEach(track=>{try{track.stop()}catch{}});mic=null}
   if(remoteAudio){try{remoteAudio.pause();remoteAudio.srcObject=null}catch{}remoteAudio=null}
@@ -3119,7 +3157,7 @@ eyes();
  }
  start.addEventListener("click",()=>{root.hidden=false;setState("idle","Ready when you are.");startButton.disabled=false;startButton.textContent="Start talking";startButton.focus()});
  startButton.addEventListener("click",startSession);
- muteButton.addEventListener("click",()=>{if(freeTalkActive){freeTalkMuted=!freeTalkMuted;if(freeTalkMuted){try{freeRecognition?.stop()}catch{}setState("idle","Microphone paused. Tap Unmute when ready.");muteButton.textContent="Unmute"}else{muteButton.textContent="Mute";setState("listening","Listening again…");listenFreeTalk()}return}muted=!muted;mic?.getAudioTracks().forEach(track=>track.enabled=!muted);muteButton.textContent=muted?"Unmute":"Mute";});
+ muteButton.addEventListener("click",()=>{if(freeTalkActive){freeTalkMuted=!freeTalkMuted;if(freeTalkMuted){try{freeRecognition?.stop()}catch{}try{if(freeRecorder?.state==="recording")freeRecorder.stop()}catch{}setState("idle","Microphone paused. Tap Unmute when ready.");muteButton.textContent="Unmute"}else{muteButton.textContent="Mute";setState("listening","Listening again…");listenFreeTalk()}return}muted=!muted;mic?.getAudioTracks().forEach(track=>track.enabled=!muted);muteButton.textContent=muted?"Unmute":"Mute";});
  endButton.addEventListener("click",()=>cleanup(true));
  root.addEventListener("click",event=>{const action=event.target.closest("[data-live]")?.dataset.live;if(action==="close")cleanup(true)});
  root.addEventListener("keydown",event=>{if(event.key==="Escape")cleanup(true)});

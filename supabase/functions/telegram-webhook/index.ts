@@ -209,7 +209,7 @@ async function handlePriceCommand(userId, chatId, text) {
 }
 
 async function queueAutomation(userId, instruction) {
-  const { error } = await sb.from("automation_runs").insert({ user_id: userId, instruction, status: "pending" });
+  const { error } = await sb.from("automation_runs").insert({ user_id: userId, instruction, status: "pending", summary: "remote_listener_queue:v1" });
   if (error) { console.error("Could not queue Telegram automation:", error); return { ok: false, listenerNotified: false }; }
   const listenerNotified = await notifyLaptopListener(userId, instruction);
   return { ok: true, listenerNotified };

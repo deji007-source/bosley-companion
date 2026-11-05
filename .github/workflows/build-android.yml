@@ -59,10 +59,14 @@ jobs:
           npx cap add android
           npx cap sync android
           python3 scripts/install-android-overlay.py
-          python3 scripts/minimize-android-manifest.py
           grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml
-          ! grep -Eq 'SYSTEM_ALERT_WINDOW|FOREGROUND_SERVICE|POST_NOTIFICATIONS|BosleyTargetAccessibilityService|BosleyOverlayService' android/app/src/main/AndroidManifest.xml
-          echo "Least-privilege Android chat manifest verified; optional overlay and guide permissions are excluded from this install build."
+          grep -Fq 'android.permission.SYSTEM_ALERT_WINDOW' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:name=".BosleyOverlayService"' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:name=".BosleyTargetAccessibilityService"' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:canRetrieveWindowContent="true"' android/app/src/main/res/xml/bosley_accessibility_service.xml
+          echo "Floating companion, visual guide and user-authorized screen capture declarations verified."
 
       - name: Generate Bosley launcher icon
         run: |

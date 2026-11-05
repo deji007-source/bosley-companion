@@ -126,6 +126,8 @@ jobs:
               .ghost-shape{fill:#fff;stroke:#101820;stroke-width:4;stroke-linejoin:round;stroke-linecap:round}
               .ghost-edge{fill:none;stroke:#55c6e8;stroke-width:2;opacity:.72}
               .ghost-eye{fill:#050505;transform-box:fill-box;transform-origin:center;animation:ghost-blink 5.1s ease-in-out infinite}
+              .ghost-mouth{fill:#050505;transform-box:fill-box;transform-origin:center}
+              body[data-state="speaking"] .ghost-mouth{animation:ghost-talk .16s ease-in-out infinite alternate}
               #eye-R{animation-delay:.035s}
               body[data-state="listening"] #ghost{animation:ghost-listen .7s ease-in-out infinite alternate}
               body[data-state="thinking"] #ghost,body[data-state="working"] #ghost{animation:ghost-think .8s ease-in-out infinite alternate}
@@ -135,11 +137,12 @@ jobs:
               @keyframes ghost-listen{from{transform:translateY(0) scale(1)}to{transform:translateY(-3px) scale(1.035)}}
               @keyframes ghost-think{from{transform:translateY(1px) scale(.985)}to{transform:translateY(-3px) scale(1.035)}}
               @keyframes ghost-blink{0%,45%,48%,100%{transform:scaleY(1)}46.5%,47.5%{transform:scaleY(.08)}}
+              @keyframes ghost-talk{from{transform:scaleY(.35)}to{transform:scaleY(1.8)}}
               @media(prefers-reduced-motion:reduce){#ghost,.ghost-eye{animation:none!important}}
             </style>
           </head>
           <body data-state="idle">
-            <svg viewBox="0 0 150 180" role="img" aria-label="Bosley white ghost with large blinking black eyes" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 150 180" role="img" aria-label="Bosley white ghost with blinking eyes and an animated speaking mouth" xmlns="http://www.w3.org/2000/svg">
               <defs><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter></defs>
               <g id="ghost">
                 <path d="M75 12C42 12 18 39 18 76v43c0 5 2 8 6 8 4 0 8-4 12-9 4-5 8-7 12-7 5 0 8 4 12 9 4 5 8 8 13 8s9-3 13-8c4-5 7-9 12-9 4 0 8 2 12 7 4 5 8 9 12 9 4 0 6-3 6-8V76c0-37-26-64-60-64Z" fill="#55c6e8" opacity=".32" filter="url(#glow)"/>
@@ -147,6 +150,7 @@ jobs:
                 <path class="ghost-edge" d="M22 111V76c0-34 22-60 53-60"/>
                 <ellipse id="eye-L" class="ghost-eye" cx="56" cy="78" rx="10.5" ry="14.5"/>
                 <ellipse id="eye-R" class="ghost-eye" cx="94" cy="78" rx="10.5" ry="14.5"/>
+                <ellipse id="ghost-mouth" class="ghost-mouth" cx="75" cy="108" rx="7" ry="2.5"/>
               </g>
             </svg>
             <script src="./assets/companion.js"></script>
@@ -872,6 +876,7 @@ jobs:
               } else {
                 walkingCompanion.showInactive();
                 walkingCompanion.setAlwaysOnTop(true, 'screen-saver');
+                walkingCompanion.moveTop();
               }
               return { ok: true, state: 'awake', floatingCompanion: true };
             }

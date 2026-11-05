@@ -331,6 +331,9 @@ assert.ok(html.includes('persistChatMessage("user",spoken)') && html.includes('p
 assert.ok(html.includes('action:"realtime_session"') && gateway.includes('action === "realtime_session"') && gateway.includes("/v1/realtime/client_secrets"), "Live Talk must mint short-lived authenticated Realtime credentials");
 assert.ok(html.includes("response.function_call_arguments.done") && html.includes("bosley_task"), "Live Talk must route explicit tasks through the existing task workflow");
 assert.ok(html.includes('id="bosley-splash"') && html.includes("TAP TO ENTER"), "Bosley must show a tappable animated splash screen");
+assert.ok(html.includes("className=\"bs-matrix\"") && html.includes("requestAnimationFrame(draw)") && html.includes("glyphs=\"01\""), "Splash must render an animated binary matrix before revealing Bosley");
+assert.ok(html.includes("prefers-reduced-motion:reduce") && html.includes("cancelAnimationFrame(raf)"), "Splash animation must respect reduced motion and clean up on exit");
+assert.ok(html.includes("LIVE TRANSCRIPT") && html.includes("min-height:clamp(150px,30dvh,320px)"), "Live Talk must keep the spoken conversation transcript visibly readable");
 assert.ok(!html.includes("bosley-call-overlay") && !html.includes("bosley-call-start") && !html.includes("BosleyCall"), "Legacy incoming-call UI and process must be removed");
 assert.ok(windowsWorkflow.includes('id="ghost-mouth"') && windowsWorkflow.includes('data-state="speaking"'), "Windows floating ghost must animate its mouth while speaking");
 assert.ok(windowsWorkflow.includes("walkingCompanion.moveTop();"), "Windows Wake Up must bring the floating ghost to the top");

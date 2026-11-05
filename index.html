@@ -1917,7 +1917,7 @@ function finishBosleySpeech(){
  if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();
 }
 function speak(t){
- if(!speechOn){if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();return;}
+ if(!speechOn&&!window.__bosleyContinuousTalkActive){if(window.__bosleyResumeContinuousTalk)window.__bosleyResumeContinuousTalk();return;}
  const nativeVoice=window.Capacitor?.Plugins?.BosleyOverlay;
  // Android WebView speechSynthesis is inconsistent across device images.
  // Prefer Android's native TextToSpeech engine in the installed app.
@@ -3105,6 +3105,7 @@ eyes();
   listenFreeTalk();
  }
 
+ window.__bosleyLiveTalkAppend=(who,text)=>{if(who==="bosley"&&String(text||"").trim())addLine("bosley",text);};
  function addLine(who,text){const clean=String(text||"").trim();if(!clean)return;const empty=transcript.querySelector(".blv-hint");if(empty)empty.remove();const row=document.createElement("div");row.className="blv-line";const name=document.createElement("strong");name.textContent=who==="you"?"YOU":"BOSLEY";const p=document.createElement("p");p.textContent=clean;row.append(name,p);transcript.appendChild(row);transcript.scrollTop=transcript.scrollHeight;return p;}
  function updateAssistant(delta){if(!assistantLine)assistantLine=addLine("bosley","");if(!assistantLine)return;assistantText+=String(delta||"");assistantLine.textContent=assistantText;transcript.scrollTop=transcript.scrollHeight;}
  function sendEvent(value){if(channel?.readyState==="open")channel.send(JSON.stringify(value));}
@@ -3127,10 +3128,10 @@ eyes();
  function handleEvent(event){
   if(event.type==="input_audio_buffer.speech_started"){setState("listening","I'm listening.");setBosleyCompanionState("thinking");return}
   if(event.type==="input_audio_buffer.speech_stopped"){setState("thinking","Let me think…");setBosleyCompanionState("thinking");return}
-  if(event.type==="response.created"){assistantLine=null;assistantText="";setState("speaking","Bosley is replying…");setBosleyCompanionState("speaking");return}
+  if(event.type==="response.created"){assistantLine=null;assistantText="";assistantSaved=false;setState("speaking","Bosley is replying…");setBosleyCompanionState("speaking");return}
   if(event.type==="conversation.item.input_audio_transcription.completed"){addLine("you",event.transcript);return}
   if(event.type==="response.output_audio_transcript.delta"||event.type==="response.output_text.delta"){updateAssistant(event.delta);return}
-  if(event.type==="response.output_audio_transcript.done"||event.type==="response.output_text.done"){if(event.transcript&&!assistantText)updateAssistant(event.transcript);return}
+  if(event.type==="response.output_audio_transcript.done"||event.type==="response.output_text.done"){if(event.transcript&&!assistantText)updateAssistant(event.transcript);if(assistantText.trim()&&!assistantSaved){assistantSaved=true;const reply=assistantText.trim();history.push({role:"assistant",content:reply});if(user&&db)persistChatMessage("assistant",reply).catch(error=>{console.warn("Live Talk reply save failed:",error);setState("error","Bosley replied, but this live reply could not be saved to chat history.");});}return}
   if(event.type==="response.function_call_arguments.done"&&event.name==="bosley_task"){runTaskTool(event).catch(error=>console.warn("Live task routing failed",error));return}
   if(event.type==="response.done"){if(!closed){setState("listening","Your turn.");setBosleyCompanionState("idle")}return}
   if(event.type==="error"){const detail=event.error?.message||"The live voice service reported an error.";setState("error",String(detail).slice(0,220));setBosleyCompanionState("error");}
@@ -3144,8 +3145,8 @@ eyes();
    const token=data.token;
    mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
    pc=new RTCPeerConnection();
-   remoteAudio=new Audio();remoteAudio.autoplay=true;remoteAudio.playsInline=true;
-   pc.ontrack=event=>{remoteAudio.srcObject=event.streams[0];remoteAudio.play().catch(()=>setState("error","Tap Start talking again to allow audio playback."));};
+   remoteAudio=new Audio();remoteAudio.autoplay=true;remoteAudio.playsInline=true;remoteAudio.volume=1;remoteAudio.muted=false;remoteAudio.setAttribute("playsinline","");remoteAudio.setAttribute("aria-label","Bosley live voice reply");remoteAudio.style.position="fixed";remoteAudio.style.width="1px";remoteAudio.style.height="1px";remoteAudio.style.opacity="0";remoteAudio.style.pointerEvents="none";document.body.appendChild(remoteAudio);
+   pc.ontrack=event=>{remoteAudio.srcObject=event.streams[0];remoteAudio.play().then(()=>setState("speaking","Bosley is speaking. You can interrupt naturally.")).catch(error=>{console.warn("Live audio playback was blocked",error);setState("error","Audio playback was blocked. Tap the live conversation once to enable sound.");});};
    mic.getTracks().forEach(track=>pc.addTrack(track,mic));
    channel=pc.createDataChannel("bosley-events");
    channel.onopen=()=>{sendEvent({type:"session.update",session:{instructions:"You are Bosley, a warm, concise, thoughtful voice companion. Speak naturally and calmly. Let the user finish their thoughts. They may interrupt you; stop and listen. Keep spoken replies clear and conversational. If the user asks you to perform a task, use bosley_task to pass the request into Bosley's existing task workflow. Never claim an action is complete unless the task workflow confirms it. Consequential actions must remain subject to the app's existing on-screen approval flow.",tools:[{type:"function",name:"bosley_task",description:"Send a clear user-requested task to Bosley's existing authenticated task workflow. Use for explicit actions, research, or workspace/device tasks, not ordinary conversation. The task workflow may ask for on-screen approval.",parameters:{type:"object",properties:{task:{type:"string",description:"The user's task, preserving their intent and relevant details."}},required:["task"],additionalProperties:false}}],tool_choice:"auto"}});setState("listening","I'm listening. Speak naturally.");};
@@ -3165,7 +3166,7 @@ eyes();
   if(mic){mic.getTracks().forEach(track=>{try{track.stop()}catch{}});mic=null}
   if(remoteAudio){try{remoteAudio.pause();remoteAudio.srcObject=null}catch{}remoteAudio=null}
   muteButton.disabled=true;endButton.disabled=true;startButton.disabled=false;startButton.textContent="Start talking";muted=false;muteButton.textContent="Mute";
-  assistantLine=null;assistantText="";
+  assistantLine=null;assistantText="";window.__bosleyLiveTalkAppend=null;
   if(hide){root.hidden=true;setState("idle","Ready when you are.");}
  }
  start.addEventListener("click",()=>{root.hidden=false;setState("idle","Ready when you are.");startButton.disabled=false;startButton.textContent="Start talking";startButton.focus()});

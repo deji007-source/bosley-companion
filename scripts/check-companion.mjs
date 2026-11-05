@@ -29,6 +29,8 @@ assert.ok(appScript.includes('connectButton.disabled=false'), "Agents Connect bu
 assert.ok(!appScript.includes("disabled=!credentialStoreReady"), "Agents UI must not silently disable provider connection when credential-store readiness is false");
 assert.ok(gateway.includes('configured.length === 32') && gateway.includes('configured.replace(/-/g, "+").replace(/_/g, "/")'), "Agent gateway must accept 32-byte text and base64url encryption secrets as well as standard encodings");
 assert.ok(gateway.includes('"=".repeat((4 - base64.length % 4) % 4)'), "Agent gateway must pad unpadded base64url encryption secrets before decoding");
+assert.ok(gateway.includes('crypto.subtle.digest("SHA-256", textBytes)') && gateway.includes("textBytes.length < 32"), "Agent gateway must derive a stable AES-256 key from long non-base64 secrets and reject weak short secrets");
+assert.ok(gateway.includes("await encryptionKeyBytes()"), "Agent gateway must await asynchronous encryption-key derivation before importing AES-GCM key material");
 assert.ok(gateway.includes('if (action === "connect")') && gateway.includes('if (action === "test" || action === "chat")'), "Agent gateway must support secure provider connection, testing, and chat actions");
 const companionChat = readText(new URL("../supabase/functions/companion-chat/index.ts", import.meta.url), "utf8");
 const remoteTranscribe = readText(new URL("../supabase/functions/remote-transcribe/index.ts", import.meta.url), "utf8");

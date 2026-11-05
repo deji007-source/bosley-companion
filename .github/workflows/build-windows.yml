@@ -783,7 +783,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide', 'open_floating_view', 'close_floating_view']
+              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide', 'find_visual_guide_target', 'open_floating_view', 'close_floating_view']
             };
           });
 
@@ -867,6 +867,16 @@ jobs:
               stopVisualGuide();
               return { ok: true, state: 'stopped' };
             }
+            if (request.action === 'find_visual_guide_target') {
+              if (!guideCardWindow || guideCardWindow.isDestroyed()) throw new Error('Start a visual guide before checking its target.');
+              const result = await findVisualGuideTarget();
+              if (guideCardWindow && !guideCardWindow.isDestroyed()) {
+                const status = result.cancelled ? 'Screen capture cancelled.' : result.ok ? ('Target found: ' + result.target + ' (' + Math.round(result.confidence * 100) + '% confidence).') : (result.reason || 'No confident target found. Keep the target app visible and retry.');
+                guideCardWindow.webContents.executeJavaScript('document.getElementById("findStatus").textContent=' + JSON.stringify(status) + ';document.getElementById("find").disabled=false;' + (result.ok ? 'window.bosleySetTarget(' + JSON.stringify(String(result.target || 'matching control').slice(0,100)) + ',' + (Number(result.confidence) || 0) + ');' : '')).catch(() => {});
+              }
+              return result;
+            }
+
             if (request.action === 'wake_companion') {
               if (!panel || panel.isDestroyed()) throw new Error('Bosley desktop panel is not available.');
               if (panel.isMinimized()) panel.restore();

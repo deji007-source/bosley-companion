@@ -382,6 +382,16 @@ public class BosleyOverlayPlugin extends Plugin {
     JSObject r=new JSObject();r.put("granted",granted);
     if(granted)call.resolve(r);else call.reject("Microphone permission was not granted. Allow microphone access in Android app settings.");
   }
+  @PluginMethod public void requestNotificationPermission(PluginCall call){
+    if(Build.VERSION.SDK_INT<33||getPermissionState("notifications")==PermissionState.GRANTED){
+      JSObject r=new JSObject();r.put("granted",true);r.put("required",false);call.resolve(r);return;
+    }
+    requestPermissionForAlias("notifications",call,"notificationPermissionCallback");
+  }
+  @PermissionCallback private void notificationPermissionCallback(PluginCall call){
+    boolean granted=Build.VERSION.SDK_INT<33||getPermissionState("notifications")==PermissionState.GRANTED;
+    JSObject r=new JSObject();r.put("granted",granted);r.put("required",false);call.resolve(r);
+  }
   @PluginMethod public void requestPermission(PluginCall call){
     if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(getContext())){
       Intent i=new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:"+getContext().getPackageName()));

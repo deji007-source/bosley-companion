@@ -22,7 +22,8 @@ for (const [index, source] of inlineScripts.entries()) {
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
-assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with large blinking black eyes"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating character must be the white Bosley ghost with visible black eyes");
+const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
+assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with blinking eyes and an animated speaking mouth"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating character must be the white Bosley ghost with visible black eyes");
 assert.ok(!windowsWorkflow.includes('id="hat-group"') && !windowsWorkflow.includes('id="hat-brim"'), "Windows ghost mascot must not include the previous fedora");
 assert.ok(windowsWorkflow.includes("open_floating_view")&&windowsWorkflow.includes("const win = new BrowserWindow({")&&windowsWorkflow.includes("bosleyFloat: viewId"), "Windows side-panel icons must create native floating page windows");
 assert.ok(windowsWorkflow.includes("const column = index % 3")&&windowsWorkflow.includes("row * 84"), "Each Windows side view must receive a distinct staggered desktop position");
@@ -292,6 +293,16 @@ assert.ok(html.includes("const stopWords=new Set(["), "Knowledge graph must filt
 assert.ok(html.includes('x.length>=6'), "Knowledge graph must require a meaningful long keyword or multiple shared terms");
 assert.ok(html.includes("edges:edges.slice(0,160)"), "Knowledge graph relationship generation must remain bounded");
 assert.ok(html.includes("edges.sort((a,b)=>b.score-a.score"), "Knowledge graph must prioritize stronger keyword relationships");
+
+assert.ok(html.includes('id="live-talk-start"'), "Bosley must expose a dedicated Live Talk entry point");
+assert.ok(html.includes("RTCPeerConnection") && html.includes("/v1/realtime/calls"), "Live Talk must use browser WebRTC speech-to-speech");
+assert.ok(html.includes('action:"realtime_session"') && gateway.includes('action === "realtime_session"') && gateway.includes("/v1/realtime/client_secrets"), "Live Talk must mint short-lived authenticated Realtime credentials");
+assert.ok(html.includes("response.function_call_arguments.done") && html.includes("bosley_task"), "Live Talk must route explicit tasks through the existing task workflow");
+assert.ok(html.includes('id="bosley-splash"') && html.includes("TAP TO ENTER"), "Bosley must show a tappable animated splash screen");
+assert.ok(!html.includes("bosley-call-overlay") && !html.includes("bosley-call-start") && !html.includes("BosleyCall"), "Legacy incoming-call UI and process must be removed");
+assert.ok(windowsWorkflow.includes('id="ghost-mouth"') && windowsWorkflow.includes('data-state="speaking"'), "Windows floating ghost must animate its mouth while speaking");
+assert.ok(windowsWorkflow.includes("walkingCompanion.moveTop();"), "Windows Wake Up must bring the floating ghost to the top");
+
 console.log("Bosley regression checks passed: " + inlineScripts.length + " inline script(s), " + contracts.length + " UI contracts, and Android TTS bridge contracts.");
 
 assert.ok(windowsWorkflow.includes("findVisualGuideTarget"), "Windows guide must provide screen-aware target detection");
@@ -539,10 +550,7 @@ assert.ok(html.includes("let nativeActionBusy=false"), "Android native launch ac
 assert.ok(html.includes('window.addEventListener("bosleyNativeAction"'), "Android existing-activity taps must be forwarded into the live WebView");
 assert.ok(html.includes("if(++attempts<12)setTimeout(retry,250)"), "Android cold-start launch action must retry until the Capacitor plugin is ready");
 assert.ok(androidInstaller.includes("String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)"), "Android MainActivity must dispatch overlay tap actions to JavaScript");
-assert.ok(androidInstaller.includes("ACTION_CALL_RING_START")&&androidInstaller.includes("player.setLooping(true)"), "Android incoming calls must use a looping native ringtone while the call is ringing");
-assert.ok(androidInstaller.includes("bosley_incoming_calls_v2")&&androidInstaller.includes("keeping the incoming-call notification"), "Native ringtone failures must not prevent the incoming-call notification from appearing");
-assert.ok(androidInstaller.includes("ACTION_CALL_RING_STOP")&&androidInstaller.includes("stopCallRingtone()"), "Android call audio must stop when the call is dismissed or the service is destroyed");
-assert.ok(androidInstaller.includes("startForegroundService(ring)")&&androidInstaller.includes("c.setSound(null,null)"), "Scheduled call alarms must start native ringing without layering a second notification sound");
+assert.ok(!androidInstaller.includes("BosleyCallAlarmReceiver")&&!androidInstaller.includes("ACTION_CALL_RING")&&!androidInstaller.includes("showIncomingCall"), "Android installer must not generate the removed incoming-call and ringtone flow");
 assert.ok(androidInstaller.includes("int w=44,h=44;"), "Android floating ghost width must stay tiny on every saved size preset");
 assert.ok(androidInstaller.includes("int w=44,h=44;"), "Android floating ghost height must stay tiny on every saved size preset");
 
@@ -623,7 +631,7 @@ const searchPathMigration = readText(new URL("../supabase/migrations/20261103090
 assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automation_instruction(text, uuid) SET search_path = ''"), "Automation instruction SQL function must pin its search_path");
 
 assert.ok(html.includes("bosley.search.history.v1") && html.includes("bosley-search-history"), "Bosley Search must keep and display recent searches on each device");
-assert.ok(html.includes("Search the open web") && html.includes("google.com/search?q="), "Bosley Search must remain useful without a signed-in Brain session");
+assert.ok(html.includes("Include public web") && html.includes("google.com/search?q="), "Bosley Search must remain useful without a signed-in Brain session");
 assert.ok(html.includes("bosley-search-hero") && html.includes("bosley-search-result"), "Bosley Search must render its branded search console and result cards");
 assert.ok(androidInstaller.includes("GhostMascotView") && androidInstaller.includes("dp(44),dp(44)"), "Android overlay must be a compact ghost character, not a wide eye bar");
 assert.ok(androidInstaller.includes("openExternalUrl(PluginCall call)") && androidInstaller.includes("Intent.ACTION_VIEW") && androidInstaller.includes("Only HTTP and HTTPS links"), "Android must open approved web and WhatsApp chat links through native app routing");

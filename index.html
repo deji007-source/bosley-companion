@@ -2813,7 +2813,7 @@ async function drawAgents(){
  async function loadConnections(){
   const result=await gateway("providers");
   const credentialStoreReady=result.credentialStoreReady===true;
-  if(status&&!credentialStoreReady)status.textContent="Provider key storage is not configured on the server yet. Add AGENT_CREDENTIALS_ENCRYPTION_KEY in Supabase Edge Function secrets before connecting providers.";
+  if(status&&!credentialStoreReady)status.textContent=result.credentialStoreIssue||"Provider key storage is not configured. Check AGENT_CREDENTIALS_ENCRYPTION_KEY in Supabase Edge Function secrets.";
   const rows=providers.map(p=>({...p,...(result.providers||[]).find(x=>x.id===p.id)}));
   list.innerHTML=rows.map(p=>'<article class="item" style="display:block"><div class="actions" style="justify-content:space-between"><strong>'+esc(p.name)+'</strong><span class="status">'+(p.connected?"CONNECTED":"NOT CONNECTED")+'</span></div><p class="mute">'+esc(p.hint)+' · Default: '+esc(p.defaultModel||p.model)+'</p><form class="form" data-agent-connect="'+p.id+'"><label class="mute" for="agent-key-'+p.id+'">API key</label><input id="agent-key-'+p.id+'" type="password" autocomplete="off" maxlength="500" placeholder="'+(p.connected?"Enter a new key to rotate":"Paste provider API key")+'" required><label class="mute" for="agent-model-'+p.id+'">Model ID</label><input id="agent-model-'+p.id+'" maxlength="120" value="'+esc(p.model||p.defaultModel)+'" required><div class="actions"><button class="primary" type="submit">'+(p.connected?"Update key":"Connect")+'</button>'+(p.connected?'<button type="button" data-agent-disconnect="'+p.id+'">Disconnect</button>':'')+'</div></form></article>').join("");
   const choices=rows.filter(p=>p.connected);

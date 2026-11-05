@@ -22,6 +22,7 @@ for (const [index, source] of inlineScripts.entries()) {
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 assert.ok(!androidInstaller.includes('android.permission.CAMERA'), "Android build must not request camera permission; image capture uses the system picker");
+assert.ok(androidInstaller.includes('"android.permission.MODIFY_AUDIO_SETTINGS"') && androidInstaller.includes('"android.permission.RECORD_AUDIO"'), "Android WebView Live Talk must declare both audio permissions required by Capacitor microphone capture");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
 const companionChat = readText(new URL("../supabase/functions/companion-chat/index.ts", import.meta.url), "utf8");

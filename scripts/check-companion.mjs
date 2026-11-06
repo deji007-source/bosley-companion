@@ -261,6 +261,8 @@ const contracts = [
   ["On-demand screen capture control", 'id="screen"'],
   ["Consent-based screen capture action", 'capture_screen'],
   ["Captured screenshot normalization", "async function normalizeCapturedImage(dataUrl)"],
+  ["Sent image is attached to its own message and remains bounded", "userMessageParagraph.parentElement.appendChild(img)"],
+  ["Chat image preview is contained without cropping", "max-height:180px!important;object-fit:contain!important"],
   ["Captured screenshot size limit", "1280/Math.max(bitmap.width,bitmap.height)"],
   ["Captured screenshot JPEG compression", 'canvas.toDataURL("image/jpeg",0.82)'],
   ["Captured screenshot resource cleanup", "finally{bitmap.close?.()}"],

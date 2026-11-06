@@ -433,8 +433,8 @@ public class BosleyOverlayPlugin extends Plugin {
       if(raw==null||raw.trim().isEmpty()||raw.length()>2048)throw new IllegalArgumentException("A valid external URL is required.");
       Uri uri=Uri.parse(raw.trim());
       String scheme=uri.getScheme();
-      if(!"https".equalsIgnoreCase(scheme)&&!"http".equalsIgnoreCase(scheme))throw new IllegalArgumentException("Only HTTP and HTTPS links can be opened externally.");
-      if(uri.getHost()==null||uri.getHost().isEmpty())throw new IllegalArgumentException("The external URL must include a host.");
+      if(!"https".equalsIgnoreCase(scheme)&&!"mailto".equalsIgnoreCase(scheme)&&!"sms".equalsIgnoreCase(scheme))throw new IllegalArgumentException("Only HTTPS, email and SMS composer links can be opened externally.");
+      if("https".equalsIgnoreCase(scheme)&&(uri.getHost()==null||uri.getHost().isEmpty()))throw new IllegalArgumentException("The HTTPS link must include a host.");
       Intent intent=new Intent(Intent.ACTION_VIEW,uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       if(intent.resolveActivity(getContext().getPackageManager())==null)throw new IllegalStateException("No installed browser or app can open this link.");
       getContext().startActivity(intent);

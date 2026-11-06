@@ -1889,12 +1889,16 @@ function routeChatWorkspaceIntent(raw){
  const value=String(raw||"").trim();
  if(!/^(?:(?:bosley)[, ]*)?(?:please\s+)?(?:open|show|take me to|go to|switch to|bring up|launch)\b/i.test(value))return false;
  const routes=[
-  {id:"writing-assist",pattern:/\b(?:writing\s+(?:studio|assist)|writing\s+section|email\s+writer)\b/i,label:"Writing Studio"},
+  {id:"writing-assist",pattern:/\b(?:writing\s+(?:studio|assist)|writing\s+section|email\s+writer|contacts?|contact\s+book)\b/i,label:"Writing Studio"},
   {id:"bosley-search",pattern:/\b(?:bosley\s+search|search\s+page)\b/i,label:"Bosley Search"},
-  {id:"universal-input",pattern:/\b(?:universal\s+input|type\s+anywhere)\b/i,label:"Universal Input"},
+  {id:"universal-input",pattern:/\b(?:universal\s+input|type\s+anywhere|writing\s+assistant)\b/i,label:"Universal Input"},
   {id:"automation",pattern:/\b(?:automation|automations|workflows)\b/i,label:"Automation"},
   {id:"agents-panel",pattern:/\b(?:ai\s+agents|agents(?:\s+page)?)\b/i,label:"AI Agents"},
-  {id:"activity",pattern:/\b(?:activity|planner|tasks)\b/i,label:"Activity"}
+  {id:"activity",pattern:/\b(?:activity|planner|tasks|to.do\s+list)\b/i,label:"Activity"},
+  {id:"ws",pattern:/\b(?:workspace|dashboard|main\s+workspace)\b/i,label:"Workspace"},
+  {id:"facepanel",pattern:/\b(?:appearance|theme|personalization|mascot\s+settings)\b/i,label:"Appearance"},
+  {id:"skills-panel",pattern:/\b(?:skills|skill\s+library)\b/i,label:"Skills"},
+  {id:"control-centre",pattern:/\b(?:control\s+centre|control\s+center|settings\s+centre|settings\s+center)\b/i,label:"Control Centre"}
  ];
  const target=routes.find(item=>item.pattern.test(value));
  if(!target)return false;

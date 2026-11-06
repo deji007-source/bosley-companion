@@ -638,6 +638,7 @@ assert.ok(html.includes('role="menuitem" data-open-view="agents-panel">AI Agents
 assert.ok(html.includes('label:"AI Agents"')&&html.includes('label:"Automation"'), "AI Agents and Automation must have separate dock tabs");
 assert.ok(html.includes('id="attach-automation" role="menuitem"'), "Plus menu must expose the AI agents and automation entry");
 assert.ok(androidInstaller.includes("android.intent.action.SEND") && androidInstaller.includes("android.intent.action.PROCESS_TEXT") && androidInstaller.includes('android:mimeType="text/plain"'), "Android must expose explicit Share and Process Text integration for selected text");
+assert.ok(androidInstaller.includes('r.put("action",action==null?"":action)'), "Android native bridge must emit a valid Java empty-string fallback for launch actions");
 assert.ok(androidInstaller.includes("EXTRA_PROCESS_TEXT") && androidInstaller.includes("EXTRA_TEXT") && androidInstaller.includes('r.put("sharedText",sharedText)'), "Android native bridge must pass explicitly shared text to the writing editor");
 assert.ok(html.includes("openUniversalInputWithSharedText") && html.includes("Text received from another app"), "Shared Android text must open Universal Input with a clear, non-destructive handoff");
 assert.ok(html.includes("let nativeActionBusy=false"), "Android native launch action handling must guard duplicate intent delivery");
@@ -815,6 +816,7 @@ assert.ok(appScript.includes('new URLSearchParams(window.location.search).has("b
 assert.ok(html.includes("bosley.search.history.v1") && html.includes("bosley-search-history"), "Bosley Search must keep and display recent searches on each device");
 assert.ok(html.includes("Include public web") && html.includes("google.com/search?q="), "Bosley Search must remain useful without a signed-in Brain session");
 assert.ok(html.includes("bosley-search-hero") && html.includes("bosley-search-result"), "Bosley Search must render its branded search console and result cards");
+assert.ok(windowsWorkflow.includes("function createWritingBulb()") && windowsWorkflow.includes("alwaysOnTop: true") && windowsWorkflow.includes("openWritingAssistant: () => ipcRenderer.send"), "Windows desktop must create an always-on-top writing bulb and route its click to Universal Input");
 assert.ok(androidInstaller.includes("writingBulb.setOnClickListener(v->openCompanion(\"writing\"))") && androidInstaller.includes("Universal Input"), "Android overlay must expose a separate floating writing bulb above other apps");
 assert.ok(androidInstaller.includes('"writing".equals(action)') && html.includes('action==="writing"'), "Floating writing bulb must route into Universal Input without replacing the ghost chat gesture");
 assert.ok(androidInstaller.includes("GhostMascotView") && androidInstaller.includes("dp(44),dp(44)"), "Android overlay must be a compact ghost character, not a wide eye bar");

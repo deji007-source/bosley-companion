@@ -652,6 +652,14 @@ assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('
 assert.ok(appScript.includes('id="bosley-writing-gmail"') && appScript.includes('id="bosley-writing-outlook"'), "Writing Assist must hand off prefilled drafts to Gmail and Outlook without sending them");
 assert.ok(appScript.includes("async function bosleyCopyText") && appScript.includes("clipboard_write"), "Writing Assist and Universal Input must support native Windows clipboard handoff");
 assert.ok(appScript.includes('#universal-input,#writing-assist,#bosley-search'), "Universal Input focus tracking must not steal its own destination field");
+assert.ok(appScript.includes('id="bosley-search-google"') && appScript.includes('id="bosley-search-bing"') && appScript.includes('id="bosley-search-duck"'), "Bosley Search must provide direct fallback links to multiple public search engines");
+assert.ok(windowsWorkflow.includes("clipboard_write") && windowsWorkflow.includes("clipboard.writeText(text)"), "Windows must expose a validated native clipboard action");
+assert.ok(gateway.includes('draft_email:') && gateway.includes('draft_message:'), "Writing Assist service must support email and message generation modes");
+
+assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('value="draft_email"') && appScript.includes('value="draft_message"'), "Writing Assist must support email and message drafting as well as editing");
+assert.ok(appScript.includes('id="bosley-writing-gmail"') && appScript.includes('id="bosley-writing-outlook"'), "Writing Assist must hand off prefilled drafts to Gmail and Outlook without sending them");
+assert.ok(appScript.includes("async function bosleyCopyText") && appScript.includes("clipboard_write"), "Writing Assist and Universal Input must support native Windows clipboard handoff");
+assert.ok(appScript.includes('#universal-input,#writing-assist,#bosley-search'), "Universal Input focus tracking must not steal its own destination field");
 assert.ok(windowsWorkflow.includes("clipboard_write") && windowsWorkflow.includes("clipboard.writeText(text)"), "Windows must expose a validated native clipboard action");
 
 assert.ok(html.includes('data-open-view="writing-assist"'), "Writing Assist must be reachable from the dock launcher");

@@ -2268,11 +2268,32 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
  S.busy=true;
  if(!alreadyDisplayed)addMsg("you",(imageData?(text||"What is in this image?"):text)+(fileNames.length?"\n\nAttached: "+fileNames.join(", "):""));activityEvent("Message sent to Bosley: "+(text||"Image attached").slice(0,140),"message");
  if(imageData){const last=chat.lastElementChild;const img=document.createElement("img");img.className="chat-image";img.alt="Image sent to Bosley";img.src=imageData;last?.appendChild(img)}
- const sess=db?(await db.auth.getSession()).data.session:null;
- if(!sess){addMsg("bosley","I'm not signed in, so that message wasn't sent anywhere. Open Jarvis Workspace to sign in.","");return}
- await learnExplicitSecondBrainInstruction(text);
+ let sess=null;
+ try{
+  const sessionResult=db?await db.auth.getSession():null;
+  if(sessionResult?.error)throw sessionResult.error;
+  sess=sessionResult?.data?.session||null;
+ }catch(sessionError){
+  S.busy=false;S.backend=null;setBosleyCompanionState("error");
+  const detail=String(sessionError?.message||"session lookup failed").slice(0,180);
+  addMsg("bosley","I couldn't verify your sign-in session, so I haven't sent this message. Please check your connection and sign in again if needed. ("+detail+")","err");
+  activityEvent("Chat session lookup failed: "+detail,"error");return;
+ }
+ if(!sess){
+  S.busy=false;S.backend=null;setBosleyCompanionState("idle");
+  addMsg("bosley","I'm not signed in, so that message wasn't sent. Open the account sign-in panel and sign in, then send it again.","");return;
+ }
+ try{await learnExplicitSecondBrainInstruction(text)}catch(learningError){console.warn("Bosley instruction learning skipped:",learningError)}
  const needsWorkspaceContext=automationIntent||/\b(?:my|our|remember|recall|saved|second brain|memory|memories|instruction|preference|always|never|from now on|going forward|task|todo|reminder|schedule|calendar|project|workspace|repository|repo|build|automation|automate|workflow|agent|device|laptop|windows|android|phone|remote|listener|connect|status|what did we|what have i|what was i)\b/i.test(String(text||""));
- const [agentContext,knowledgeContext,instructionContext]=await Promise.all([needsWorkspaceContext?buildBosleyAgentContext():"",needsWorkspaceContext?buildBosleyKnowledgeContext(text):"",buildBosleyInstructionContext()]);
+ let agentContext="",knowledgeContext="",instructionContext="";
+ try{
+  [agentContext,knowledgeContext,instructionContext]=await Promise.all([needsWorkspaceContext?buildBosleyAgentContext():"",needsWorkspaceContext?buildBosleyKnowledgeContext(text):"",buildBosleyInstructionContext()]);
+ }catch(contextError){
+  S.busy=false;S.backend=null;setBosleyCompanionState("error");
+  const detail=String(contextError?.message||"workspace context lookup failed").slice(0,180);
+  addMsg("bosley","Your message is visible, but I couldn't finish preparing the workspace context. Please try sending it again. ("+detail+")","err");
+  activityEvent("Chat context preparation failed: "+detail,"error");return;
+ }
  // Persistent user-approved instructions are lightweight and available on every signed-in chat; broader workspace retrieval remains intent-driven.
  const skillContext=[String(instructionContext||"").slice(0,2400),needsWorkspaceContext?String(agentContext||"").slice(0,1400):"",needsWorkspaceContext?String(knowledgeContext||"").slice(0,4200):"",needsWorkspaceContext?String(buildActiveSkillContext()||"").slice(0,2400):"",needsWorkspaceContext?String(buildContextEngineContext()||"").slice(0,900):""].filter(Boolean).join("\n\n");
  const visualContext=imageData?"\n\nIMAGE ANALYSIS GUIDANCE: Treat the image as visual evidence; separate observations from inferences and state uncertainty.":"";

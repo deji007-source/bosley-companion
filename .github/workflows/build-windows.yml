@@ -760,6 +760,20 @@ jobs:
             }
           }
 
+          function openUniversalInput() {
+            if (!panel || panel.isDestroyed()) createPanel();
+            if (bubble && !bubble.isDestroyed()) bubble.hide();
+            panel.show();
+            panel.focus();
+            panel.setAlwaysOnTop(true, 'screen-saver');
+            // The shortcut is global, but text is only read after the user explicitly
+            // opens Universal Input and presses its clipboard-import control.
+            setTimeout(() => {
+              if (!panel || panel.isDestroyed()) return;
+              panel.webContents.executeJavaScript('window.BosleyOpenUniversalInput?.();document.querySelector("#bue-editor")?.focus();').catch(error => logStartup('UNIVERSAL INPUT SHORTCUT FAILED', error));
+            }, 350);
+          }
+
           function isTrustedPanelSender(event) {
             const frameUrl = event.senderFrame?.url || '';
             try {
@@ -783,7 +797,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'clipboard_write', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide', 'find_visual_guide_target', 'open_floating_view', 'close_floating_view']
+              actions: ['get_desktop_info', 'open_external_url', 'clipboard_read', 'clipboard_write', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide', 'find_visual_guide_target', 'open_floating_view', 'close_floating_view']
             };
           });
 
@@ -1023,6 +1037,11 @@ jobs:
               child.unref();
               return { ok: true, launched: appId, label: target.label };
             }
+            if (request.action === 'clipboard_read') {
+              // Read only in response to an explicit user action from the trusted panel.
+              const text = clipboard.readText().slice(0, 12000);
+              return { ok: true, text };
+            }
             if (request.action === 'clipboard_write') {
               const text = String(request.payload?.text || '');
               if (!text || text.length > 12000) throw new Error('Clipboard text must contain between 1 and 12000 characters.');
@@ -1060,6 +1079,8 @@ jobs:
             if (walkingCompanionEnabled) createWalkingCompanion();
             const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+B', toggleWalkingCompanion);
             if (!shortcutRegistered) logStartup('COMPANION SHORTCUT REGISTRATION FAILED');
+            const writingShortcutRegistered = globalShortcut.register('CommandOrControl+Shift+U', openUniversalInput);
+            if (!writingShortcutRegistered) logStartup('UNIVERSAL INPUT SHORTCUT REGISTRATION FAILED');
             positionWindows();
 
             ipcMain.on('toggle-panel', togglePanel);

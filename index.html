@@ -2942,7 +2942,7 @@ function installInlineWritingSuggestions(){
  pop.querySelector("[data-bwp-apply]").onclick=()=>{if(!target?.isConnected||!revised)return;const next=revised;if(target.isContentEditable){target.focus();target.textContent=next}else{target.focus();target.value=next}target.dispatchEvent(new InputEvent("input",{bubbles:true,inputType:"insertText",data:next}));target.dispatchEvent(new Event("change",{bubbles:true}));say("Suggestion applied. Review your updated text.");revised="";pop.querySelector("[data-bwp-apply]").disabled=true;pop.querySelector("[data-bwp-preview]").textContent="Applied. You can continue editing."};
  document.addEventListener("focusin",event=>{if(!editable(event.target)){launcher.hidden=true;pop.hidden=true;return}target=event.target;launcher.hidden=false;place()});
  document.addEventListener("input",event=>{if(event.target===target){revised="";pop.querySelector("[data-bwp-apply]").disabled=true;if(!pop.hidden)say("Text changed. Request a fresh suggestion.")}});
- document.addEventListener("focusout",event=>{if(event.target===target){setTimeout(()=>{if(!pop.matches(":hover")&&document.activeElement!==target){launcher.hidden=true;pop.hidden=true}},220)}});
+ document.addEventListener("focusout",event=>{if(event.target===target){setTimeout(()=>{if(!pop.matches(":hover")&&!launcher.matches(":hover")&&document.activeElement!==target){launcher.hidden=true;pop.hidden=true}},220)}});
  document.addEventListener("pointerdown",event=>{if(!pop.hidden&&!pop.contains(event.target)&&event.target!==launcher){if(!target?.contains?.(event.target)){pop.hidden=true}}});
  window.addEventListener("resize",place);window.addEventListener("scroll",place,true);
 }

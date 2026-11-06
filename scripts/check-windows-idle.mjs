@@ -3,24 +3,21 @@ import vm from 'node:vm';
 
 const workflow = fs.readFileSync('.github/workflows/build-windows.yml', 'utf8');
 function extract(name, end) {
-  // Workflow block-scalar commands are indented by YAML; locate the heredoc
-  // command independent of that indentation, then extract through its terminator.
-  const command = new RegExp('^[\\t ]*cat > desktop/' + name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + " <<'" + end + "'[\\t ]*$", 'm');
-  const match = command.exec(workflow);
-  if (!match) throw new Error(`Missing generated desktop/${name} heredoc.`);
-  const bodyStart = match.index + match[0].length;
-  const nextLine = workflow.indexOf('\\n', bodyStart);
-  if (nextLine < 0) throw new Error(`Missing body for desktop/${name}.`);
-  const terminator = new RegExp('^[\\t ]*' + end + '[\\t ]*$', 'm');
-  terminator.lastIndex = nextLine + 1;
-  const tail = workflow.slice(nextLine + 1);
-  const endMatch = terminator.exec(tail);
-  if (!endMatch) throw new Error(`Unterminated desktop/${name} heredoc.`);
-  const raw = tail.slice(0, endMatch.index);
-  const lines = raw.replace(/\\n$/, '').split('\\n');
-  const indents = lines.filter(line => line.trim()).map(line => (line.match(/^[\\t ]*/) || [''])[0].length);
+  // The workflow's YAML block scalar indents shell commands. Match the command
+  // text without assuming a particular indentation level.
+  const marker = \`cat > desktop/\${name} <<'\${end}'\`;
+  const start = workflow.indexOf(marker);
+  if (start < 0) throw new Error(\`Missing generated desktop/\${name} heredoc.\`);
+  const bodyStart = workflow.indexOf('\n', start) + 1;
+  if (!bodyStart) throw new Error(\`Missing body for desktop/\${name}.\`);
+  const tail = workflow.slice(bodyStart);
+  const terminator = new RegExp(\`^[\\\\t ]*\${end}[\\\\t ]*$\`, 'm');
+  const finish = terminator.exec(tail);
+  if (!finish) throw new Error(\`Unterminated desktop/\${name} heredoc.\`);
+  const lines = tail.slice(0, finish.index).replace(/\n$/, '').split('\n');
+  const indents = lines.filter(line => line.trim()).map(line => (line.match(/^[\t ]*/) || [''])[0].length);
   const strip = indents.length ? Math.min(...indents) : 0;
-  return lines.map(line => line.slice(Math.min(strip, (line.match(/^[\\t ]*/) || [''])[0].length))).join('\\n');
+  return lines.map(line => line.slice(Math.min(strip, (line.match(/^[\t ]*/) || [''])[0].length))).join('\n');
 }
 
 const main = extract('main.cjs', 'MAIN_EOF');
@@ -38,6 +35,6 @@ const required = [
   ['idle timeout hides rather than destroys the panel', 'panel.hide();']
 ];
 for (const [label, needle] of required) {
-  if (!main.includes(needle) && !preload.includes(needle)) throw new Error(`Windows idle-close check failed: ${label}`);
+  if (!main.includes(needle) && !preload.includes(needle)) throw new Error(\`Windows idle-close check failed: \${label}\`);
 }
 console.log('Windows panel inactivity checks passed (15-second idle timeout, scoped activity events, hide/restore lifecycle).');

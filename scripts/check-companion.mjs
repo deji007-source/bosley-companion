@@ -713,7 +713,7 @@ assert.ok(windowsWorkflow.includes("clipboard_write") && windowsWorkflow.include
 assert.ok(html.includes('data-open-view="writing-assist"'), "Writing Assist must be reachable from the dock launcher");
 assert.ok(appScript.includes("look\\s*up"), "Natural-language search command must use a real whitespace matcher");
 assert.ok(appScript.includes("insertDictationAtFocus"), "Universal Input must insert dictated text into the focused editable field");
-assert.ok(appScript.includes('$("#bosley-universal-copy").onclick'), "Universal Input must support clipboard handoff to other apps");
+assert.ok(appScript.includes('data-action="clipboard-in"') && appScript.includes('data-action="clipboard-out"'), "Universal Input must support explicit clipboard handoff to other apps");
 assert.ok(appScript.includes('window.__bosleyDictationTarget=target'), "Universal Input must preserve the last focused text field when its dock opens");
 for (const view of ["bosley-search", "control-centre", "universal-input"]) assert.ok(windowsWorkflow.includes("'"+view+"'"), "Windows must register "+view+" as a floating view");
 assert.ok(windowsWorkflow.includes("'writing-assist'"), "Windows must register Writing Assist as a floating view");

@@ -708,7 +708,7 @@ assert.ok(appScript.includes('id="bosley-writing-launch"') && appScript.includes
 
 assert.ok(appScript.includes('<ellipse cx="15.3" cy="19"') && appScript.includes('<ellipse cx="24.7" cy="19"'), "The global writing launcher must use the Bosley ghost icon with two black eyes");
 assert.ok(appScript.includes('data-bwp-mode="simplify"') && appScript.includes('data-bwp-mode="summarize"'), "The global writing assistant must offer simplify and summarize actions");
-assert.ok(appScript.includes('target.setRangeText(next,start,end,"end")') && appScript.includes('range.insertNode(document.createTextNode(next))'), "Inline writing acceptance must preserve input selection and contenteditable structure where possible");
+assert.ok(appScript.includes('target.setRangeText(next,0,target.value.length,"end")') && appScript.includes('target.textContent=next'), "Inline writing acceptance must replace the complete focused draft instead of inserting at the cursor");
 assert.ok(appScript.includes('document.addEventListener("focusin"') && appScript.includes('isContentEditable||el.matches?.("textarea'), "Global writing assistant must attach to editable fields throughout the companion");
 
 assert.ok(appScript.includes('data-bwp-mode="grammar"') && appScript.includes('data-bwp-mode="clearer"') && appScript.includes('data-bwp-apply'), "Inline Writing Assistant must offer review actions and require explicit acceptance");

@@ -687,6 +687,11 @@ assert.ok(appScript.includes('document.addEventListener("focusin"') && appScript
 
 assert.ok(appScript.includes('data-bwp-mode="grammar"') && appScript.includes('data-bwp-mode="clearer"') && appScript.includes('data-bwp-apply'), "Inline Writing Assistant must offer review actions and require explicit acceptance");
 assert.ok(appScript.includes('id="bue-file"') && appScript.includes('data-action="import"') && appScript.includes('data-action="export"') && appScript.includes('data-action="print"'), "Universal Input must support safe document import, export and PDF print handoff");
+
+assert.ok(appScript.includes('".pdf"') && appScript.includes('".docx"') && appScript.includes('pdfjsLib') && appScript.includes('mammoth.extractRawText'), "Universal Input must extract text from PDF and DOCX documents");
+assert.ok(appScript.includes('data-action="docx-export"') && appScript.includes('docx.Packer.toBlob') && appScript.includes('bosley-document.docx'), "Universal Input must export editable DOCX documents");
+assert.ok(appScript.includes('file.size>12*1024*1024') && appScript.includes('Math.min(pdf.numPages,80)'), "Document import must enforce file-size and PDF page limits");
+
 assert.ok(appScript.includes('data-action="vocabulary"') && appScript.includes('data-bue-file')===false, "Universal Input must expose vocabulary suggestions");
 assert.ok(writingGateway.includes('vocabulary:') && writingGateway.includes('mode==="analyze"||mode==="vocabulary"'), "Writing Assist must return validated vocabulary and sentence-level suggestions");
 

@@ -654,7 +654,8 @@ assert.ok(appScript.includes("async function bosleyCopyText") && appScript.inclu
 assert.ok(appScript.includes('#universal-input,#writing-assist,#bosley-search'), "Universal Input focus tracking must not steal its own destination field");
 assert.ok(appScript.includes('id="bosley-search-google"') && appScript.includes('id="bosley-search-bing"') && appScript.includes('id="bosley-search-duck"'), "Bosley Search must provide multiple public search engine fallbacks");
 assert.ok(windowsWorkflow.includes("clipboard_write") && windowsWorkflow.includes("clipboard.writeText(text)"), "Windows must expose a validated native clipboard action");
-assert.ok(gateway.includes('draft_email:') && gateway.includes('draft_message:'), "Writing Assist service must support email and message generation modes");
+const writingGateway = readText(new URL("../supabase/functions/bosley-writing-assist/index.ts", import.meta.url), "utf8");
+assert.ok(writingGateway.includes('draft_email:') && writingGateway.includes('draft_message:'), "Writing Assist service must support email and message generation modes");
 assert.ok(appScript.includes("new MediaRecorder(stream") && appScript.includes('functions/v1/remote-transcribe'), "Writing Assist must support recorded voice transcription when live browser speech recognition is unavailable");
 
 assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('value="draft_email"') && appScript.includes('value="draft_message"'), "Writing Assist must support email and message drafting as well as editing");

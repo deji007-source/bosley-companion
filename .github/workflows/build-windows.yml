@@ -446,7 +446,7 @@ jobs:
             });
           }
           function toggleWritingBulb() {
-            if (writingBulb && !writingBulb.isDestroyed()) {
+            if (writingBulb && !writingBulb.isDestroyed() && writingBulb.isVisible()) {
               writingBulb.hide();
               writingBulbVisibleUntil = 0;
               if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
@@ -459,7 +459,12 @@ jobs:
             writingBulbVisibleUntil = Number.POSITIVE_INFINITY;
             if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
             writingBulbHideTimer = null;
-            createWritingBulb();
+            if (!writingBulb || writingBulb.isDestroyed()) createWritingBulb();
+            else {
+              writingBulb.setAlwaysOnTop(true, 'screen-saver');
+              writingBulb.showInactive();
+              logStartup('WINDOWS WRITING BULB VISIBLE', writingBulb.getBounds());
+            }
           }
           let writingCard = null;
           function openWritingAssistantFromBulb() {

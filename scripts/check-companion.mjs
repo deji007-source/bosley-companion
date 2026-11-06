@@ -654,7 +654,7 @@ assert.ok(appScript.includes('id="bosley-writing-channel"') && appScript.include
 assert.ok(appScript.includes('https://wa.me/') && appScript.includes('https://t.me/share/url?url=&text=') && appScript.includes('"sms:"'), "Writing Studio must prepare WhatsApp, Telegram and SMS handoffs");
 assert.ok(appScript.includes('bosley-writing-destination-v1') && appScript.includes('id="bosley-writing-remember"'), "Writing Studio must only remember a destination on-device when explicitly selected");
 assert.ok(appScript.includes('const openPrepared=async(url,label)') && appScript.includes('await bosleyCopyText(body)'), "External app handoff must copy the reviewed draft before opening the destination");
-assert.ok(appScript.includes('id="dock-ghost-mascot"') && appScript.includes('class="dock-ghost-eye"'), "Workspace launcher must use the animated Bosley ghost instead of a generic menu glyph");
+assert.ok(html.includes('class="dock-ghost-mascot"') && html.includes('class="dock-ghost-eye"'), "Workspace launcher must use the animated Bosley ghost instead of a generic menu glyph");
 assert.ok(windowsWorkflow.includes('viewBox="0 0 150 180"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating widget must retain the reference ghost silhouette and eyes");
 
 assert.ok(appScript.includes("async function bosleyCopyText") && appScript.includes("clipboard_write"), "Writing Assist and Universal Input must support native Windows clipboard handoff");
@@ -712,7 +712,7 @@ assert.ok(searchPathMigration.includes("ALTER FUNCTION public.normalize_automati
 assert.ok(html.includes('id="bosley-splash"') && appScript.includes("function installBosleySplash()"), "The monochrome launch splash must be present and initialized on every main app load");
 assert.ok(html.includes("Independent splash failsafe") && html.includes("window.setTimeout(enter,7000)") && html.indexOf("Independent splash failsafe") < html.indexOf('<div id="root">'), "Splash must have an independent early-loading exit path even if later app initialization fails");
 assert.ok(html.includes('if(typeof r==="function")return r();if(typeof drawAgents==="function")return drawAgents();'), "AI Agents dock must fall back to its in-page renderer if the global renderer registry is unavailable");
-assert.ok(html.includes('aria-label="Open workspace pages"') && html.includes('dockMenu.hidden=!dockMenu.hidden'), "The floating launcher must toggle the complete workspace pages dropdown");
+assert.ok(html.includes('aria-label="Open Bosley tools"') && html.includes('dockMenu.hidden=!dockMenu.hidden'), "The floating launcher must toggle the complete workspace pages dropdown");
 assert.ok(html.includes('function show(id){if(dockMenu)dockMenu.hidden=true;const v=views.find(x=>x.panel===id);'), "Opening a dock view must not reset launcher state while hiding the tools menu");
 assert.ok(html.includes('dockToggle?.setAttribute("aria-expanded","false");for(const v of views)')===false, "The workspace panel must not control the dropdown launcher expanded state");
 assert.ok(html.includes('if(wasActive){dock.hidden=true;active="";return;}dock.hidden=false;active=id;'), "Opening and closing the workspace must keep its state independent from the dropdown");

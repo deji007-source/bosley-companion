@@ -88,6 +88,7 @@ assert.ok(windowsWorkflow.includes("open_floating_view")&&windowsWorkflow.includ
 assert.ok(windowsWorkflow.includes("const offset = index % 7")&&windowsWorkflow.includes("offset * 38")&&windowsWorkflow.includes("offset * 34")&&windowsWorkflow.includes("floating-view-bounds.json"), "Each Windows side view must receive a distinct initial position and persist its own restored bounds");
 assert.ok(windowsWorkflow.includes("minWidth: 520, minHeight: 420")&&windowsWorkflow.includes("floating_view_control")&&windowsWorkflow.includes("confirmScreenCapture"), "Windows floating pages must be resizable, minimizable, maximizable, restorable, closable, and support a floating capture confirmation");
 assert.ok(html.includes("floating-window-controls")&&html.includes("data-window-command=\"restore\""), "Each detached page must show independent native window controls");
+assert.ok(html.includes('title.textContent="BOSLEY · "+selected.label.toUpperCase()')&&html.includes("dock-close{display:none!important}"), "Detached pages must identify their own title and avoid a duplicate inactive close control");
 assert.ok(html.includes('get("bosleyFloat")')&&html.includes('desktop-floating-view'), "Detached windows must load the selected interactive page independently");
 assert.ok(html.includes('action:"close_floating_view"'), "Detached side views must have a working close control");
 

@@ -1932,7 +1932,7 @@ async function buildBosleyAgentContext(){
  ].join("\n");
 }
 async function buildBosleyInstructionContext(){
- const uid=user?.id;if(!db||!uid||!brainLearningEnabled())return "";
+ const uid=user?.id;if(!db||!uid)return "";
  try{
   const {data,error}=await db.from("user_second_brain_entries").select("title,content,tags,updated_at").eq("user_id",uid).eq("category","instruction").order("updated_at",{ascending:false}).limit(12);
   if(error)throw error;if(user?.id!==uid||!Array.isArray(data)||!data.length)return "";

@@ -45,25 +45,11 @@ manifest.write_text(text)
 accessibility_service = '''        <service android:name=".BosleyTargetAccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/bosley_accessibility_label"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/bosley_accessibility_service" /></service>'''
 if "BosleyTargetAccessibilityService" not in text:
     text = text.replace("</application>", accessibility_service + "\n    </application>")
-ime_service = '''        <service android:name=".BosleyKeyboardService" android:label="Bosley Keyboard" android:permission="android.permission.BIND_INPUT_METHOD" android:exported="true">
-            <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
-            <meta-data android:name="android.view.im" android:resource="@xml/bosley_input_method" />
-        </service>'''
-if "BosleyKeyboardService" not in text:
-    text = text.replace("</application>", ime_service + "\n    </application>")
-manifest.write_text(text)
-
 # The guide target finder is explicitly user-enabled in Android Accessibility settings.
 # It inspects visible control labels and bounds only after the user taps Find target.
 res = root / "app/src/main/res"
 (res / "xml").mkdir(parents=True, exist_ok=True)
 (res / "values").mkdir(parents=True, exist_ok=True)
-(res / "xml/bosley_input_method.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<input-method xmlns:android="http://schemas.android.com/apk/res/android">
-    <subtype android:label="English" android:imeSubtypeLocale="en" android:imeSubtypeMode="keyboard" />
-</input-method>
-""")
-
 (res / "xml/bosley_accessibility_service.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
@@ -238,7 +224,7 @@ public class BosleyOverlayService extends Service {
     android.webkit.WebView web=new android.webkit.WebView(this);
     web.setBackgroundColor(Color.TRANSPARENT);
     android.webkit.WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setDatabaseEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(false);settings.setLoadsImagesAutomatically(true);
-    web.setWebViewClient(new android.webkit.WebViewClient(){boolean route(String url,android.webkit.WebView view){if("bosley://close-card".equals(url)){removeWritingCardOverlay();return true;}if("bosley://paste".equals(url)){String value="";try{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);if(cm!=null&&cm.hasPrimaryClip()){ClipData clip=cm.getPrimaryClip();if(clip!=null&&clip.getItemCount()>0){CharSequence v=clip.getItemAt(0).coerceToText(BosleyOverlayService.this);if(v!=null)value=v.toString().substring(0,Math.min(6000,v.length()));}}}catch(Exception ignored){}view.evaluateJavascript("window.BosleySetClipboardText("+org.json.JSONObject.quote(value)+")",null);return true;}return !url.startsWith("https://localhost/");}@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,android.webkit.WebResourceRequest request){return route(request.getUrl().toString(),view);}@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,String url){return route(url,view);}});
+    web.setWebViewClient(new android.webkit.WebViewClient(){boolean route(String url,android.webkit.WebView view){if("bosley://close-card".equals(url)){removeWritingCardOverlay();return true;}if("bosley://enable-accessibility".equals(url)){try{Intent settingsIntent=new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(settingsIntent);}catch(Exception ignored){}return true;}if("bosley://read-active-text".equals(url)){BosleyTargetAccessibilityService.readFocusedText(value->{String js=value==null?"window.BosleyActiveFieldUnavailable&&window.BosleyActiveFieldUnavailable()":"window.BosleySetClipboardText("+org.json.JSONObject.quote(value)+")";view.post(()->view.evaluateJavascript(js,null));});return true;}if("bosley://paste".equals(url)){String value="";try{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);if(cm!=null&&cm.hasPrimaryClip()){ClipData clip=cm.getPrimaryClip();if(clip!=null&&clip.getItemCount()>0){CharSequence v=clip.getItemAt(0).coerceToText(BosleyOverlayService.this);if(v!=null)value=v.toString().substring(0,Math.min(6000,v.length()));}}}catch(Exception ignored){}view.evaluateJavascript("window.BosleySetClipboardText("+org.json.JSONObject.quote(value)+")",null);return true;}return !url.startsWith("https://localhost/");}@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,android.webkit.WebResourceRequest request){return route(request.getUrl().toString(),view);}@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,String url){return route(url,view);}});
     writingCardOverlay=web;
     writingCardLp=new WindowManager.LayoutParams(dp(292),dp(520),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
     writingCardLp.gravity=Gravity.TOP|Gravity.START;DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);writingCardLp.x=Math.max(dp(6),(dm.widthPixels-dp(292))/2);writingCardLp.y=Math.max(dp(36),(int)(dm.heightPixels*.16f));writingCardLp.softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
@@ -297,9 +283,36 @@ import java.util.regex.*;
 
 public class BosleyTargetAccessibilityService extends AccessibilityService {
   static final String FIND="com.bosley.companion.FIND_GUIDE_TARGET";
+  static volatile BosleyTargetAccessibilityService activeService;
+  public static void readFocusedText(java.util.function.Consumer<String> callback){
+    BosleyTargetAccessibilityService service=activeService;
+    if(service==null){callback.accept(null);return;}
+    service.runOnUiThread(()->{
+      String result=null;
+      try{
+        for(AccessibilityWindowInfo window:service.getWindows()){
+          AccessibilityNodeInfo root=window.getRoot();if(root==null)continue;
+          try{
+            CharSequence packageName=root.getPackageName();
+            if(service.getPackageName().contentEquals(packageName==null?"":packageName))continue;
+            AccessibilityNodeInfo field=root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
+            if(field==null)continue;
+            try{
+              if(field.isPassword()||!field.isEditable())continue;
+              CharSequence value=field.getText();
+              if(value!=null&&value.length()>0)result=value.toString().substring(0,Math.min(6000,value.length()));
+            }finally{field.recycle();}
+          }finally{root.recycle();}
+          if(result!=null)break;
+        }
+      }catch(Exception ignored){}
+      callback.accept(result);
+    });
+  }
   BroadcastReceiver receiver;
   @Override protected void onServiceConnected(){
     super.onServiceConnected();
+    activeService=this;
     receiver=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){if(FIND.equals(i.getAction()))findTarget(i.getStringExtra("task"));}};
     if(Build.VERSION.SDK_INT>=33)registerReceiver(receiver,new IntentFilter(FIND),Context.RECEIVER_NOT_EXPORTED);
     else registerReceiver(receiver,new IntentFilter(FIND));
@@ -337,122 +350,10 @@ public class BosleyTargetAccessibilityService extends AccessibilityService {
     else {android.util.DisplayMetrics dm=getResources().getDisplayMetrics();result.putExtra("found",true);result.putExtra("label",bestLabel.length()>100?bestLabel.substring(0,100):bestLabel);result.putExtra("x",Math.max(0,Math.min(1f,((bestBounds.left+bestBounds.right)/2f)/dm.widthPixels)));result.putExtra("y",Math.max(0,Math.min(1f,((bestBounds.top+bestBounds.bottom)/2f)/dm.heightPixels)));}
     if(Build.VERSION.SDK_INT>=26)getApplicationContext().startForegroundService(result);else startService(result);
   }
-  @Override public void onDestroy(){if(receiver!=null){try{unregisterReceiver(receiver);}catch(Exception ignored){}}super.onDestroy();}
+  @Override public void onDestroy(){activeService=null;if(receiver!=null){try{unregisterReceiver(receiver);}catch(Exception ignored){}}super.onDestroy();}
 }''')
 
-(src / "BosleyKeyboardService.java").write_text(r"""package com.bosley.companion;
-import android.inputmethodservice.InputMethodService;
-import android.view.View;
-import android.view.Gravity;
-import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.EditorInfo;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.text.InputType;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import java.util.Locale;
-public class BosleyKeyboardService extends InputMethodService {
-  private LinearLayout root, suggestions;
-  private boolean shift=true, sensitive=false, symbols=false, emojiMode=false;
-  private final java.util.ArrayList<TextView> letterKeys=new java.util.ArrayList<>();
-  private final java.util.ArrayList<TextView> suggestionKeys=new java.util.ArrayList<>();
-  private final java.util.ArrayList<Runnable> suggestionActions=new java.util.ArrayList<>();
-  private int suggestionCount=0;
-  private TextView shiftKey;
-  private static final String[] LETTERS={"q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"};
-  private static final String[] WORDS={"about","above","after","again","also","always","amazing","and","any","are","because","before","being","best","better","can","chat","could","day","dear","did","do","doing","dont","each","even","every","feel","find","first","for","from","get","give","going","good","great","had","has","have","hello","help","here","hey","how","i","if","important","into","is","it","just","know","like","make","message","more","much","my","need","new","not","now","of","on","one","only","or","our","out","please","really","right","said","see","should","so","some","something","thanks","that","the","their","there","they","this","time","today","tomorrow","too","was","we","well","what","when","where","which","who","will","with","would","yes","you","your"};
-  private static final String[] EMOJIS={"😀","😂","🥹","😊","😍","🙏","❤️","👍","🔥","🎉","😭","🤝","✨","😎","🥰","💯","👏","🤔"};
-  private static final String[][] SYMBOL_ROWS={{"1","2","3","4","5","6","7","8","9","0"},{"@","#","$","%","&","-","+","(",")"},{"=","*","\"","'",":",";","!","?","⌫"},{"ABC","😀",",","space",".","↵"}};
-  private int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-  private GradientDrawable bg(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
-  @Override public View onCreateInputView(){buildKeyboard();return root;}
-  @Override public void onStartInput(EditorInfo info,boolean restarting){
-    super.onStartInput(info,restarting);
-    int cls=info==null?InputType.TYPE_CLASS_TEXT:info.inputType&InputType.TYPE_MASK_CLASS;
-    int v=info==null?0:info.inputType&InputType.TYPE_MASK_VARIATION;
-    sensitive=(cls==InputType.TYPE_CLASS_NUMBER&&v==InputType.TYPE_NUMBER_VARIATION_PASSWORD)||(cls==InputType.TYPE_CLASS_TEXT&&(v==InputType.TYPE_TEXT_VARIATION_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));
-    symbols=cls==InputType.TYPE_CLASS_NUMBER;emojiMode=false;shift=true;
-    if(root==null)buildKeyboard();else{buildRows();updateLetterCase();refreshSuggestions();}
-  }
-  private TextView keyView(String label,float weight,int height,boolean accent){
-    TextView b=new TextView(this);b.setText(label);b.setTextColor(accent?Color.WHITE:Color.rgb(32,38,46));b.setTextSize(label.length()>2?12:17);b.setGravity(Gravity.CENTER);b.setTypeface(null,Typeface.BOLD);
-    b.setBackground(bg(accent?Color.rgb(92,132,190):(weight<0.9f?Color.rgb(188,201,218):Color.WHITE),9));
-    b.setElevation(dp(weight<0.9f?0:1));b.setMinHeight(dp(height));b.setMinimumWidth(dp(34));b.setIncludeFontPadding(false);b.setClickable(true);b.setGravity(Gravity.CENTER);b.setPadding(dp(2),dp(2),dp(2),dp(2));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(height),weight);lp.setMargins(dp(1),dp(2),dp(1),dp(2));b.setLayoutParams(lp);
-    b.setOnClickListener(v->press(label));return b;
-  }
-  private void buildKeyboard(){
-    root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(3),dp(4),dp(3),dp(5));root.setBackground(bg(Color.rgb(218,224,232),14));root.setClipToPadding(false);root.setClipChildren(false);
-    suggestions=new LinearLayout(this);suggestions.setOrientation(LinearLayout.HORIZONTAL);suggestions.setGravity(Gravity.CENTER);suggestions.setPadding(dp(3),0,dp(3),0);root.addView(suggestions,new LinearLayout.LayoutParams(-1,dp(36)));
-    for(int i=0;i<3;i++){final int index=i;TextView v=new TextView(this);v.setTextColor(Color.rgb(38,43,50));v.setTextSize(13);v.setTypeface(null,Typeface.BOLD);v.setGravity(Gravity.CENTER);v.setPadding(dp(6),0,dp(6),0);v.setBackground(bg(Color.rgb(230,234,240),8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-1,1);lp.setMargins(dp(2),dp(1),dp(2),dp(1));v.setMinWidth(dp(34));v.setMinimumHeight(dp(36));v.setIncludeFontPadding(false);suggestions.addView(v,lp);suggestionKeys.add(v);suggestionActions.add(null);v.setOnClickListener(x->{Runnable action=suggestionActions.get(index);if(action!=null)action.run();});}
-    buildRows();refreshSuggestions();
-  }
-  private void addRow(String[] keys,int height){
-    LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER);root.addView(line,new LinearLayout.LayoutParams(-1,dp(height)));
-    for(String k:keys){
-      float w=("space".equals(k)?4.2f:("⇧".equals(k)||"⌫".equals(k)||"?123".equals(k)||"ABC".equals(k)||"↵".equals(k)?1.45f:("😀".equals(k)?1.3f:1f)));
-      boolean accent="↵".equals(k)||"⇧".equals(k)||"⌫".equals(k)||"?123".equals(k)||"ABC".equals(k);
-      TextView v=keyView(k,w,height-3,accent);line.addView(v);
-      if(LETTERS.length>0&&k.length()==1&&Character.isLetter(k.charAt(0)))letterKeys.add(v);
-      if("⇧".equals(k))shiftKey=v;
-      if("⌫".equals(k))v.setOnLongClickListener(x->{InputConnection ic=getCurrentInputConnection();if(ic!=null)ic.deleteSurroundingText(40,0);refreshSuggestions();return true;});
-    }
-  }
-  private void buildRows(){
-    if(root==null)return;
-    root.removeViews(1,Math.max(0,root.getChildCount()-1));letterKeys.clear();shiftKey=null;
-    if(!symbols&&!emojiMode)addRow(new String[]{"1","2","3","4","5","6","7","8","9","0"},39);
-    String[][] rows=symbols?SYMBOL_ROWS:new String[][]{{"q","w","e","r","t","y","u","i","o","p"},{"a","s","d","f","g","h","j","k","l"},{"⇧","z","x","c","v","b","n","m","⌫"},{"?123","😀",",","space",".","↵"}};
-    if(emojiMode){
-      addRow(new String[]{"ABC","😀","⌫"},42);
-      for(int i=0;i<EMOJIS.length;i+=9){String[] part=java.util.Arrays.copyOfRange(EMOJIS,i,Math.min(i+9,EMOJIS.length));addRow(part,42);}
-      addRow(new String[]{"ABC",",","space",".","↵"},45);
-    }else for(String[] row:rows)addRow(row,44);
-    updateLetterCase();
-  }
-  private void updateLetterCase(){for(TextView v:letterKeys){String k=v.getText().toString();v.setText(shift?k.toUpperCase(Locale.ROOT):k.toLowerCase(Locale.ROOT));}if(shiftKey!=null)shiftKey.setText(shift?"⬆":"⇧");}
-  private void press(String k){
-    InputConnection ic=getCurrentInputConnection();if(ic==null)return;
-    if("⌫".equals(k)){ic.deleteSurroundingText(1,0);refreshSuggestions();return;}
-    if("⇧".equals(k)){shift=!shift;updateLetterCase();return;}
-    if("?123".equals(k)){symbols=true;emojiMode=false;buildRows();refreshSuggestions();return;}
-    if("ABC".equals(k)){symbols=false;emojiMode=false;shift=true;buildRows();refreshSuggestions();return;}
-    if("😀".equals(k)){emojiMode=!emojiMode;symbols=false;buildRows();refreshSuggestions();return;}
-    if("space".equals(k)){
-      String before=String.valueOf(ic.getTextBeforeCursor(48,0));String word=lastWord(before);String fix=correction(word);
-      if(fix!=null){ic.deleteSurroundingText(word.length(),0);ic.commitText(fix,1);}
-      ic.commitText(" ",1);shift=true;refreshSuggestions();return;
-    }
-    if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();int action=e==null?0:e.imeOptions&EditorInfo.IME_MASK_ACTION;if(action!=0)ic.performEditorAction(action);else{ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_ENTER));ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP,android.view.KeyEvent.KEYCODE_ENTER));}return;}
-    if(k.length()==1&&Character.isLetter(k.charAt(0))){ic.commitText(shift?k.toUpperCase(Locale.ROOT):k.toLowerCase(Locale.ROOT),1);shift=ic.getCursorCapsMode(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES)!=0;updateLetterCase();refreshSuggestions();return;}
-    ic.commitText(k,1);if(".".equals(k)||"!".equals(k)||"?".equals(k))shift=true;updateLetterCase();refreshSuggestions();
-  }
-  private String lastWord(String text){int i=text.length();while(i>0&&Character.isLetter(text.charAt(i-1)))i--;return text.substring(i);}
-  private String correction(String w){
-    if(sensitive||w==null)return null;
-    switch(w.toLowerCase(Locale.ROOT)){
-      case "teh":return "the";case "adn":return "and";case "thier":return "their";case "recieve":return "receive";case "definately":return "definitely";case "seperate":return "separate";case "occured":return "occurred";case "becuase":return "because";case "dont":return "don't";case "cant":return "can't";case "wont":return "won't";case "im":return "I'm";case "ive":return "I've";case "youre":return "you're";case "doesnt":return "doesn't";case "didnt":return "didn't";case "isnt":return "isn't";case "thats":return "that's";case "whats":return "what's";case "wheres":return "where's";default:return null;
-    }
-  }
-  private void refreshSuggestions(){
-    if(suggestions==null)return;suggestionCount=0;for(int i=0;i<suggestionKeys.size();i++){suggestionKeys.get(i).setVisibility(View.INVISIBLE);suggestionActions.set(i,null);}
-    if(emojiMode){for(int i=0;i<Math.min(EMOJIS.length,3);i++){final String emoji=EMOJIS[i];suggestion(emoji,()->{InputConnection ic=getCurrentInputConnection();if(ic!=null)ic.commitText(emoji,1);});}return;}
-    InputConnection ic=getCurrentInputConnection();if(sensitive||ic==null){suggestion("Bosley",null);return;}
-    CharSequence before=ic.getTextBeforeCursor(48,0);String text=before==null?"":before.toString();String word=lastWord(text);String fix=correction(word);
-    if(fix!=null)suggestion(fix,()->{InputConnection current=getCurrentInputConnection();if(current!=null){current.deleteSurroundingText(word.length(),0);current.commitText(fix,1);refreshSuggestions();}});
-    else if(word.length()>0){
-      int count=0;String lower=word.toLowerCase(Locale.ROOT);
-      for(String candidate:WORDS){if(candidate.startsWith(lower)&&!candidate.equalsIgnoreCase(word)){final String pick=candidate;suggestion(pick,()->{InputConnection current=getCurrentInputConnection();if(current!=null){current.deleteSurroundingText(word.length(),0);current.commitText(pick+" ",1);refreshSuggestions();}});if(++count==3)break;}}
-      if(count==0)suggestion(word,null);
-    }else{suggestion("English",null);suggestion("Bosley",null);suggestion("😀",()->{emojiMode=true;buildRows();refreshSuggestions();});}
-  }
-  private void suggestion(String value,Runnable action){
-    if(suggestionCount>=suggestionKeys.size())return;
-    int index=suggestionCount++;TextView v=suggestionKeys.get(index);v.setText(value);v.setVisibility(View.VISIBLE);suggestionActions.set(index,action);
-  }
-}
-""")
+
 
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;
 import android.content.Intent;
@@ -496,10 +397,6 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void showKeyboardPicker(PluginCall call){
     try{((android.view.inputmethod.InputMethodManager)getContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE)).showInputMethodPicker();call.resolve();}
     catch(Exception e){call.reject("Could not open keyboard picker.",e);}
-  }
-  @PluginMethod public void openKeyboardSettings(PluginCall call){
-    try{Intent i=new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);getContext().startActivity(i);call.resolve();}
-    catch(Exception e){call.reject("Could not open keyboard settings.",e);}
   }
   @PluginMethod public void writeClipboard(PluginCall call){
     String value=call.getString("text","");

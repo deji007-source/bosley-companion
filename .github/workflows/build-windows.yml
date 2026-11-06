@@ -36,6 +36,7 @@ jobs:
         run: |
           npm install
           npm run test:companion
+          node scripts/check-windows-idle.mjs
           npm run build
 
       - name: Check inline website JavaScript syntax
@@ -197,6 +198,23 @@ jobs:
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;
           let panel = null;
+          let panelIdleTimer = null;
+          const PANEL_IDLE_TIMEOUT_MS = 15000;
+          function clearPanelIdleClose() {
+            if (panelIdleTimer) clearTimeout(panelIdleTimer);
+            panelIdleTimer = null;
+          }
+          function armPanelIdleClose() {
+            clearPanelIdleClose();
+            if (!panel || panel.isDestroyed() || !panel.isVisible()) return;
+            panelIdleTimer = setTimeout(() => {
+              panelIdleTimer = null;
+              if (panel && !panel.isDestroyed() && panel.isVisible()) {
+                logStartup('PANEL AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY');
+                panel.hide();
+              }
+            }, PANEL_IDLE_TIMEOUT_MS);
+          }
           let usingHostedFallback = false;
           let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
           // Slim bezel-connected Dynamic Island sizes; keep the island centered on the physical display edge.
@@ -771,7 +789,10 @@ jobs:
               }
             });
 
+            panel.on('show', () => armPanelIdleClose());
+
             panel.on('hide', () => {
+              clearPanelIdleClose();
               if (!app.isQuitting && bubble && !bubble.isDestroyed()) {
                 positionWindows();
                 bubble.showInactive();
@@ -1193,6 +1214,9 @@ jobs:
 
             ipcMain.on('toggle-panel', togglePanel);
             ipcMain.on('bosley:open-writing', openWritingAssistantFromBulb);
+            ipcMain.on('bosley:panel-activity', event => {
+              if (panel && !panel.isDestroyed() && event.sender === panel.webContents && panel.isVisible()) armPanelIdleClose();
+            });
             ipcMain.on('bosley:companion-state', (_event, state) => {
               const allowedStates = new Set(['idle','listening','thinking','speaking','working','waiting','success','error','walk']);
               if (!allowedStates.has(state)) return;
@@ -1244,6 +1268,13 @@ jobs:
               return () => ipcRenderer.removeListener('bosley:widget-appearance', listener);
             }
           });
+
+          const reportPanelActivity = () => ipcRenderer.send('bosley:panel-activity');
+          window.addEventListener('DOMContentLoaded', () => {
+            for (const eventName of ['pointerdown','keydown','input','change','scroll','wheel','touchstart']) {
+              document.addEventListener(eventName, reportPanelActivity, { capture: true, passive: true });
+            }
+          }, { once: true });
 
           contextBridge.exposeInMainWorld('bosleyDesktop', desktopBridge);
           contextBridge.exposeInMainWorld('BosleyDesktop', desktopBridge);

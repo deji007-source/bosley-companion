@@ -883,3 +883,8 @@ assert.ok(html.includes('window.BosleyOpenUniversalInput=()=>window.BosleyOpenPa
 assert.ok(html.includes("Register dock renderers before the rest of the large application bootstrap") && html.includes("writingAssist:()=>renderBosleyWritingAssist()"), "Core workspace renderers must be registered before optional startup code can fail");
 assert.ok(html.includes('window.addEventListener("pointerup"') && html.includes("dockPointerHandledAt=Date.now()"), "Android launcher and menu items must respond to touch release without relying on delayed synthetic click");
 assert.ok(html.includes('if(typeof r!=="function")throw Error("Writing Studio renderer is unavailable.")'), "Writing Studio must report missing renderer wiring instead of silently opening a blank panel");
+
+assert.ok(html.includes("user_second_brain_entries") && html.includes("brain-cloud-form") && html.includes("loadCloudSecondBrain"), "Second Brain must save, search, delete and load account-scoped cloud entries");
+assert.ok(html.includes("bosley-second-brain:") && html.includes("postgres_changes") && html.includes("cloudBrainRows"), "Second Brain must refresh from account-scoped realtime changes and feed the knowledge graph");
+assert.ok(html.includes("Agent Command Centre") && html.includes("agent-centre-devices") && html.includes("agent-centre-runs") && html.includes("agent-centre-commands"), "Agent Command Centre must display device presence, automation runs and device command status");
+assert.ok(html.includes("bosley-agent-centre:") && html.includes("agent_device_commands"), "Agent Command Centre must refresh from authenticated device and automation activity");

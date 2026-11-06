@@ -91,6 +91,7 @@ import android.os.*;
 import android.provider.Settings;
 import android.view.*;
 import android.widget.*;
+import android.webkit.*;
 import android.graphics.PixelFormat;
 import android.util.DisplayMetrics;
 
@@ -232,27 +233,29 @@ public class BosleyOverlayService extends Service {
     scheduleBulbHide();
   }
   View writingCardOverlay; WindowManager.LayoutParams writingCardLp;
+  final class BosleyCardBridge {
+    @android.webkit.JavascriptInterface public String readClipboard(){
+      try{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);if(cm==null||!cm.hasPrimaryClip())return "";ClipData clip=cm.getPrimaryClip();if(clip==null||clip.getItemCount()==0)return "";CharSequence value=clip.getItemAt(0).coerceToText(BosleyOverlayService.this);return value==null?"":value.toString().substring(0,Math.min(6000,value.length()));}catch(Exception e){return "";}
+    }
+    @android.webkit.JavascriptInterface public void closeCard(){new Handler(Looper.getMainLooper()).post(()->removeWritingCardOverlay());}
+  }
   void showWritingCardOverlay(){
     if(writingCardOverlay!=null)return;
-    LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(14),dp(12),dp(14),dp(12));card.setElevation(dp(18));
-    GradientDrawable shell=new GradientDrawable();shell.setColor(Color.rgb(12,12,12));shell.setCornerRadius(dp(18));shell.setStroke(dp(1),Color.rgb(110,110,110));card.setBackground(shell);
-    LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
-    TextView title=new TextView(this);title.setText("Writing & Ideas");title.setTextColor(Color.WHITE);title.setTextSize(15);title.setTypeface(null,android.graphics.Typeface.BOLD);header.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-    TextView close=new TextView(this);close.setText("×");close.setTextColor(Color.WHITE);close.setTextSize(25);close.setGravity(Gravity.CENTER);header.addView(close,new LinearLayout.LayoutParams(dp(36),dp(36)));card.addView(header);
-    TextView hint=new TextView(this);hint.setText("Write or paste text here. Your draft stays in this floating card.");hint.setTextColor(Color.LTGRAY);hint.setTextSize(11);LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(-1,-2);hp.topMargin=dp(4);card.addView(hint,hp);
-    EditText editor=new EditText(this);editor.setTextColor(Color.WHITE);editor.setHintTextColor(Color.GRAY);editor.setHint("Start writing…");editor.setTextSize(14);editor.setGravity(Gravity.TOP|Gravity.START);editor.setPadding(dp(10),dp(10),dp(10),dp(10));editor.setMinLines(6);editor.setMaxLines(10);editor.setBackgroundColor(Color.rgb(30,30,30));LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(-1,dp(190));ep.topMargin=dp(10);card.addView(editor,ep);
-    LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.CENTER_VERTICAL);actions.setOrientation(LinearLayout.HORIZONTAL);
-    Button copy=new Button(this);copy.setText("Copy");copy.setOnClickListener(v->{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);cm.setPrimaryClip(ClipData.newPlainText("Bosley writing",editor.getText().toString()));Toast.makeText(this,"Text copied",Toast.LENGTH_SHORT).show();});
-    Button clear=new Button(this);clear.setText("Clear");clear.setOnClickListener(v->editor.setText(""));
-    Button expand=new Button(this);expand.setText("Open Bosley");expand.setOnClickListener(v->{removeWritingCardOverlay();openCompanion("writing-card");});
-    actions.addView(copy,new LinearLayout.LayoutParams(0,dp(44),1));actions.addView(clear,new LinearLayout.LayoutParams(0,dp(44),1));actions.addView(expand,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,-2);ap.topMargin=dp(8);card.addView(actions,ap);
-    writingCardOverlay=card;writingCardLp=new WindowManager.LayoutParams(dp(320),WindowManager.LayoutParams.WRAP_CONTENT,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
-    writingCardLp.gravity=Gravity.TOP|Gravity.START;DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);writingCardLp.x=Math.max(dp(8),(dm.widthPixels-dp(320))/2);writingCardLp.y=Math.max(dp(42),(int)(dm.heightPixels*.20f));writingCardLp.softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE|WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE;
-    title.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;public boolean onTouch(View v,MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){sx=e.getRawX();sy=e.getRawY();ox=writingCardLp.x;oy=writingCardLp.y;return true;}if(e.getAction()==MotionEvent.ACTION_MOVE){writingCardLp.x=Math.max(0,Math.min(dm.widthPixels-dp(320),ox+(int)(e.getRawX()-sx)));writingCardLp.y=Math.max(0,Math.min(dm.heightPixels-dp(120),oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(writingCardOverlay,writingCardLp);}catch(Exception ignored){}return true;}return true;}});
-    close.setOnClickListener(v->removeWritingCardOverlay());
-    try{wm.addView(writingCardOverlay,writingCardLp);editor.requestFocus();((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(editor,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);}catch(Exception e){writingCardOverlay=null;}
+    android.webkit.WebView web=new android.webkit.WebView(this);
+    web.setBackgroundColor(Color.TRANSPARENT);
+    android.webkit.WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setDatabaseEnabled(true);settings.setAllowFileAccess(true);settings.setLoadsImagesAutomatically(true);
+    web.addJavascriptInterface(new BosleyCardBridge(),"BosleyOverlayBridge");
+    writingCardOverlay=web;
+    writingCardLp=new WindowManager.LayoutParams(dp(292),dp(520),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
+    writingCardLp.gravity=Gravity.TOP|Gravity.START;DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);writingCardLp.x=Math.max(dp(6),(dm.widthPixels-dp(292))/2);writingCardLp.y=Math.max(dp(36),(int)(dm.heightPixels*.16f));writingCardLp.softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
+    web.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;public boolean onTouch(View v,MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){sx=e.getRawX();sy=e.getRawY();ox=writingCardLp.x;oy=writingCardLp.y;return false;}if(e.getAction()==MotionEvent.ACTION_MOVE&&Math.abs(e.getRawY()-sy)>dp(28)){writingCardLp.x=Math.max(0,Math.min(dm.widthPixels-dp(292),ox+(int)(e.getRawX()-sx)));writingCardLp.y=Math.max(0,Math.min(dm.heightPixels-dp(160),oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(writingCardOverlay,writingCardLp);}catch(Exception ignored){}return true;}return false;}});
+    try{
+      wm.addView(writingCardOverlay,writingCardLp);
+      StringBuilder html=new StringBuilder();try(java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(getAssets().open("public/index.html"),java.nio.charset.StandardCharsets.UTF_8))){String line;while((line=reader.readLine())!=null)html.append(line).append('\n');}
+      web.loadDataWithBaseURL("https://localhost/",html.toString(),"text/html","UTF-8",null);
+    }catch(Exception e){removeWritingCardOverlay();Toast.makeText(this,"Bosley Writing & Ideas could not open. Open the main app and try again.",Toast.LENGTH_LONG).show();}
   }
-  void removeWritingCardOverlay(){if(wm!=null&&writingCardOverlay!=null){try{wm.removeView(writingCardOverlay);}catch(Exception ignored){}writingCardOverlay=null;}}
+  void removeWritingCardOverlay(){if(wm!=null&&writingCardOverlay!=null){try{wm.removeView(writingCardOverlay);}catch(Exception ignored){}if(writingCardOverlay instanceof android.webkit.WebView)((android.webkit.WebView)writingCardOverlay).destroy();writingCardOverlay=null;}}
   void scheduleBulbHide(){bulbHandler.removeCallbacks(hideBulbTask);if(!bulbInUse&&bulb!=null)bulbHandler.postDelayed(hideBulbTask,5000);}
   void hideBulb(){bulbHandler.removeCallbacks(hideBulbTask);if(wm!=null&&bulb!=null){try{wm.removeView(bulb);}catch(Exception ignored){}bulb=null;}}
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}

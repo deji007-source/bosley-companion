@@ -1083,7 +1083,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(!toggle&&!item)return;
   event.preventDefault();event.stopImmediatePropagation();dockPointerHandledAt=Date.now();
   if(toggle&&dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));return;}
-  if(item){const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");if(item.hasAttribute("data-review-composer")){document.querySelector('[data-review-composer-action]')?.click();return;}if(typeof window.BosleyOpenPanel==="function")window.BosleyOpenPanel(id);}
+  if(item){const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");if(item.hasAttribute("data-review-composer")){item.click();return;}if(typeof window.BosleyOpenPanel==="function")window.BosleyOpenPanel(id);}
  },true);
  window.addEventListener("pointerup",event=>{if(Date.now()-dockPointerHandledAt<900)return;
   if(event.pointerType!=="touch"&&event.pointerType!=="pen")return;

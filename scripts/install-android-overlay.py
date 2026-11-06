@@ -697,7 +697,7 @@ if "BosleyOverlayPlugin" not in a:
     setIntent(intent);
     String action=intent.getStringExtra("bosley_quick_action");
     boolean hasSharedText=intent.getCharSequenceExtra(android.content.Intent.EXTRA_PROCESS_TEXT)!=null||intent.getCharSequenceExtra(android.content.Intent.EXTRA_TEXT)!=null;
-    if((action!=null && ("panel".equals(action)||"voice".equals(action)||"writing".equals(action)||"capture-screen".equals(action)))||hasSharedText){
+    if((action!=null && ("panel".equals(action)||"voice".equals(action)||"writing".equals(action)||"writing-card".equals(action)||"capture-screen".equals(action)))||hasSharedText){
       String js="window.dispatchEvent(new Event(String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)))";
       getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));
     }

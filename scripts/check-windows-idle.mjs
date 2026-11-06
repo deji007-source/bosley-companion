@@ -34,12 +34,11 @@ const required = [
   ['Windows bulb shortcut hides the existing bulb without destroying its window', "writingBulb.hide();"],
   ['Windows bulb shortcut can reopen an existing hidden bulb', 'writingBulb.isVisible()'],
   ['Windows side dock restores compact established width', 'width:min(330px,calc(100vw - 470px))'],
-  ['Windows side dock restores established desktop width and height', 'width:360px!important;height:min(600px,calc(100dvh - 24px))!important']
+  ['Windows side dock restores established desktop width and height', 'width:360px!important;height:min(600px,calc(100dvh - 24px))!important'],
   ['Windows bulb remains assigned to Ctrl+Shift+I', "globalShortcut.register('CommandOrControl+Shift+I', toggleWritingBulb)"],
   ['Windows Writing Ideas card uses the bundled shared interface', "writingCard.loadFile(path.join(__dirname, 'index.html'), { query: { bosleyWritingCard: '1' } })"],
   ['Writing Ideas card is a movable always-on-top overlay', 'resizable: true, movable: true'],
   ['Writing Ideas card fits within the desktop work area', 'Math.min(700, Math.max(560, cardArea.height - 24))'],
-  ['floating bulb remains on Ctrl+Shift+I', "globalShortcut.register('CommandOrControl+Shift+I', toggleWritingBulb)"]
 ];
 for (const [label, needle] of required) {
   if (label.startsWith('no inactivity') || label.startsWith('panel has')) {

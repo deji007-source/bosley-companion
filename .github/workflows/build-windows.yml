@@ -169,7 +169,7 @@ jobs:
           sed -i 's#https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js#./assets/supabase.js#g' desktop/index.html
 
           cat > desktop/main.cjs <<'MAIN_EOF'
-          const { app, BrowserWindow, ipcMain, screen, shell, dialog, desktopCapturer, globalShortcut } = require('electron');
+          const { app, BrowserWindow, ipcMain, screen, shell, dialog, desktopCapturer, globalShortcut, clipboard } = require('electron');
           const path = require('path');
           const { fileURLToPath } = require('url');
           const fs = require('fs');
@@ -783,7 +783,7 @@ jobs:
             return {
               platform: process.platform,
               desktopBridge: true,
-              actions: ['get_desktop_info', 'open_external_url', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide', 'find_visual_guide_target', 'open_floating_view', 'close_floating_view']
+              actions: ['get_desktop_info', 'open_external_url', 'clipboard_write', 'set_widget_appearance', 'launch_app', 'capture_screen', 'wake_companion', 'open_visual_guide', 'stop_visual_guide', 'find_visual_guide_target', 'open_floating_view', 'close_floating_view']
             };
           });
 
@@ -1022,6 +1022,12 @@ jobs:
               child.on('error', () => {});
               child.unref();
               return { ok: true, launched: appId, label: target.label };
+            }
+            if (request.action === 'clipboard_write') {
+              const text = String(request.payload?.text || '');
+              if (!text || text.length > 12000) throw new Error('Clipboard text must contain between 1 and 12000 characters.');
+              clipboard.writeText(text);
+              return { ok: true, characters: text.length };
             }
             if (request.action === 'open_external_url') {
               const rawUrl = String(request.payload?.url || '');

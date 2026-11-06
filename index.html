@@ -1042,6 +1042,20 @@ document.addEventListener("DOMContentLoaded",()=>{
   frame?.addEventListener("load",()=>{if(hint)hint.textContent="The hosted page responded. If it shows an embedding restriction or sign-in issue, open it separately to continue in the same Lovable app."});
   panel.dataset.viewerReady="true";
  }
+ // Register dock renderers before the rest of the large application bootstrap.
+ // A later optional feature must not prevent the core workspace panels from rendering.
+ window.BosleyPanelRenderers=window.BosleyPanelRenderers||Object.freeze({
+  workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},
+  appearance:()=>initFaceSettings(),
+  agents:()=>drawAgents(),
+  automation:()=>drawAutomation(),
+  activity:()=>renderActivity(),
+  skills:()=>renderBosleySkills(),
+  search:()=>renderBosleySearch(),
+  control:()=>renderBosleyControlCentre(),
+  universalInput:()=>renderUniversalInput(),
+  writingAssist:()=>renderBosleyWritingAssist()
+ });
  const views=[
   {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{const r=window.BosleyPanelRenderers?.workspace;if(typeof r!=="function")throw Error("Workspace renderer is not connected to the dock.");return r()}},
   {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{const r=window.BosleyPanelRenderers?.appearance;if(typeof r!=="function")throw Error("Appearance renderer is not connected to the dock.");return r()}},
@@ -1052,8 +1066,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   {button:"",panel:"lovable-bosley",label:"Lovable Bosley",init:initLovableBosleyViewer},
   {button:"",panel:"bosley-search",label:"Bosley Search",init:()=>window.BosleyPanelRenderers?.search?.()},
   {button:"",panel:"control-centre",label:"Control Centre",init:()=>window.BosleyPanelRenderers?.control?.()},
-  {button:"",panel:"universal-input",label:"Universal Input",init:()=>window.BosleyPanelRenderers?.universalInput?.()},
-  {button:"",panel:"writing-assist",label:"Writing Assist",init:()=>window.BosleyPanelRenderers?.writingAssist?.()}
+  {button:"",panel:"universal-input",label:"Universal Input",init:()=>{const r=window.BosleyPanelRenderers?.universalInput;if(typeof r!=="function")throw Error("Universal Input renderer is unavailable.");return r()}},
+  {button:"",panel:"writing-assist",label:"Writing Assist",init:()=>{const r=window.BosleyPanelRenderers?.writingAssist;if(typeof r!=="function")throw Error("Writing Studio renderer is unavailable.");return r()}}
  ];
  let active="";
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}

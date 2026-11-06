@@ -65,6 +65,10 @@ jobs:
           grep -Fq 'android.permission.SYSTEM_ALERT_WINDOW' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:name=".BosleyOverlayService"' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:name=".BosleyKeyboardService"' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android.permission.BIND_INPUT_METHOD' android/app/src/main/AndroidManifest.xml
+          test -s android/app/src/main/java/com/bosley/companion/BosleyKeyboardService.java
+          test -s android/app/src/main/res/xml/bosley_input_method.xml
           ! grep -Fq 'BIND_ACCESSIBILITY_SERVICE' android/app/src/main/AndroidManifest.xml
           ! grep -Fq 'BosleyTargetAccessibilityService' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION' android/app/src/main/AndroidManifest.xml

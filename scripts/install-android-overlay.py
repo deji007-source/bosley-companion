@@ -294,13 +294,13 @@ public class BosleyKeyboardService extends InputMethodService {
   private TextView keyView(String label,float weight,int height,boolean accent){
     TextView b=new TextView(this);b.setText(label);b.setTextColor(accent?Color.WHITE:Color.rgb(32,38,46));b.setTextSize(label.length()>2?12:17);b.setGravity(Gravity.CENTER);b.setTypeface(null,Typeface.BOLD);
     b.setBackground(bg(accent?Color.rgb(92,132,190):(weight<0.9f?Color.rgb(188,201,218):Color.WHITE),9));
-    b.setElevation(dp(weight<0.9f?0:1));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(height),weight);lp.setMargins(dp(2),dp(3),dp(2),dp(3));b.setLayoutParams(lp);
+    b.setElevation(dp(weight<0.9f?0:1));b.setMinHeight(dp(height));b.setMinimumWidth(dp(34));b.setIncludeFontPadding(false);b.setClickable(true);b.setGravity(Gravity.CENTER);b.setPadding(dp(2),dp(2),dp(2),dp(2));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(height),weight);lp.setMargins(dp(1),dp(2),dp(1),dp(2));b.setLayoutParams(lp);
     b.setOnClickListener(v->press(label));return b;
   }
   private void buildKeyboard(){
-    root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(4),dp(6),dp(4),dp(7));root.setBackground(bg(Color.rgb(218,224,232),14));
-    suggestions=new LinearLayout(this);suggestions.setOrientation(LinearLayout.HORIZONTAL);suggestions.setGravity(Gravity.CENTER);suggestions.setPadding(dp(4),0,dp(4),0);root.addView(suggestions,new LinearLayout.LayoutParams(-1,dp(39)));
-    for(int i=0;i<3;i++){final int index=i;TextView v=new TextView(this);v.setTextColor(Color.rgb(38,43,50));v.setTextSize(13);v.setTypeface(null,Typeface.BOLD);v.setGravity(Gravity.CENTER);v.setPadding(dp(6),0,dp(6),0);v.setBackground(bg(Color.rgb(230,234,240),8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-1,1);lp.setMargins(dp(2),dp(1),dp(2),dp(1));suggestions.addView(v,lp);suggestionKeys.add(v);suggestionActions.add(null);v.setOnClickListener(x->{Runnable action=suggestionActions.get(index);if(action!=null)action.run();});}
+    root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(3),dp(4),dp(3),dp(5));root.setBackground(bg(Color.rgb(218,224,232),14));root.setClipToPadding(false);root.setClipChildren(false);
+    suggestions=new LinearLayout(this);suggestions.setOrientation(LinearLayout.HORIZONTAL);suggestions.setGravity(Gravity.CENTER);suggestions.setPadding(dp(3),0,dp(3),0);root.addView(suggestions,new LinearLayout.LayoutParams(-1,dp(36)));
+    for(int i=0;i<3;i++){final int index=i;TextView v=new TextView(this);v.setTextColor(Color.rgb(38,43,50));v.setTextSize(13);v.setTypeface(null,Typeface.BOLD);v.setGravity(Gravity.CENTER);v.setPadding(dp(6),0,dp(6),0);v.setBackground(bg(Color.rgb(230,234,240),8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-1,1);lp.setMargins(dp(2),dp(1),dp(2),dp(1));v.setMinWidth(dp(34));v.setMinimumHeight(dp(36));v.setIncludeFontPadding(false);suggestions.addView(v,lp);suggestionKeys.add(v);suggestionActions.add(null);v.setOnClickListener(x->{Runnable action=suggestionActions.get(index);if(action!=null)action.run();});}
     buildRows();refreshSuggestions();
   }
   private void addRow(String[] keys,int height){

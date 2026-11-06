@@ -1564,6 +1564,22 @@ async function applyNativeQuickAction(action,plugin){
   }else note("Native voice input is unavailable in this build. You can type instead.");
  }else setTimeout(()=>$("#in").focus(),180);
 }
+async function openUniversalInputWithSharedText(sharedText){
+ const text=String(sharedText||"").trim().slice(0,12000);if(!text)return false;
+ const state=window.BosleyPanelState?.();
+ if(!state?.open||state.active!=="universal-input")window.BosleyOpenPanel?.("universal-input");
+ for(let attempt=0;attempt<30;attempt++){
+  const editor=$("#bue-editor");
+  if(editor){
+   editor.value=text;editor.dispatchEvent(new Event("input",{bubbles:true}));editor.focus();
+   const status=$("#bue-status");if(status)status.textContent="Text received from another app. Review or edit it here; nothing has been changed in the original app.";
+   return true;
+  }
+  await new Promise(resolve=>setTimeout(resolve,100));
+ }
+ note("Bosley received shared text, but the writing editor did not finish opening. Open Universal Input to continue.");
+ return false;
+}
 async function handleNativeQuickAction(){
  if(nativeActionBusy)return false;
  const plugin=window.Capacitor?.Plugins?.BosleyOverlay;
@@ -1572,8 +1588,10 @@ async function handleNativeQuickAction(){
  try{
   const result=await plugin.consumeLaunchAction();
   const action=String(result?.action||"");
+  const sharedText=String(result?.sharedText||"");
   if(action==="panel"||action==="voice")await applyNativeQuickAction(action,plugin);
-  return action==="panel"||action==="voice";
+  if(sharedText.trim())await openUniversalInputWithSharedText(sharedText);
+  return action==="panel"||action==="voice"||!!sharedText.trim();
  }catch(error){console.warn("Bosley quick action could not be read",error);return false}
  finally{nativeActionBusy=false}
 }

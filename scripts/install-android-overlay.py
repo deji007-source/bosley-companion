@@ -270,14 +270,15 @@ import android.widget.TextView;
 import java.util.Locale;
 public class BosleyKeyboardService extends InputMethodService {
   private LinearLayout root, suggestions;
-  private boolean shift=true, sensitive=false;
+  private boolean shift=true, sensitive=false, symbols=false;
   private static final String[][] ROWS={{"q","w","e","r","t","y","u","i","o","p"},{"a","s","d","f","g","h","j","k","l"},{"⇧","z","x","c","v","b","n","m","⌫"},{"?123",",","space",".","↵"}};
+  private static final String[][] SYMBOL_ROWS={{"1","2","3","4","5","6","7","8","9","0"},{"@","#","$","%","&","-","+","(",")"},{"=","*","\"","'",":",";","!","?","⌫"},{"ABC",",","space",".","↵"}};
   private int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   private GradientDrawable bg(int color){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(9));return d;}
   @Override public View onCreateInputView(){buildKeyboard();return root;}
   @Override public void onStartInput(EditorInfo info,boolean restarting){
     super.onStartInput(info,restarting);int cls=info==null?InputType.TYPE_CLASS_TEXT:info.inputType&InputType.TYPE_MASK_CLASS;int v=info==null?0:info.inputType&InputType.TYPE_MASK_VARIATION;
-    sensitive=(cls==InputType.TYPE_CLASS_NUMBER&&v==InputType.TYPE_NUMBER_VARIATION_PASSWORD)||(cls==InputType.TYPE_CLASS_TEXT&&(v==InputType.TYPE_TEXT_VARIATION_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));shift=true;refreshSuggestions();
+    sensitive=(cls==InputType.TYPE_CLASS_NUMBER&&v==InputType.TYPE_NUMBER_VARIATION_PASSWORD)||(cls==InputType.TYPE_CLASS_TEXT&&(v==InputType.TYPE_TEXT_VARIATION_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));symbols=cls==InputType.TYPE_CLASS_NUMBER;shift=true;buildKeyboard();refreshSuggestions();
   }
   private TextView makeKey(String label,int weight){
     TextView b=new TextView(this);b.setText(label);b.setTextColor(Color.rgb(25,31,40));b.setTextSize(17);b.setGravity(Gravity.CENTER);b.setTypeface(null,Typeface.BOLD);b.setBackground(bg(Color.rgb(247,248,250)));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(45),weight);lp.setMargins(dp(2),dp(3),dp(2),dp(3));b.setLayoutParams(lp);b.setOnClickListener(v->press(label));return b;
@@ -285,14 +286,14 @@ public class BosleyKeyboardService extends InputMethodService {
   private void buildKeyboard(){
     root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(4),dp(4),dp(4),dp(6));root.setBackgroundColor(Color.rgb(225,230,237));
     suggestions=new LinearLayout(this);suggestions.setGravity(Gravity.CENTER);root.addView(suggestions,new LinearLayout.LayoutParams(-1,dp(34)));
-    for(String[] row:ROWS){LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER);root.addView(line,new LinearLayout.LayoutParams(-1,dp(51)));for(String k:row){int w=("⇧".equals(k)||"⌫".equals(k)||"?123".equals(k))?14:("space".equals(k)?42:10);line.addView(makeKey(k,w));}}
+    for(String[] row:(symbols?SYMBOL_ROWS:ROWS)){LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER);root.addView(line,new LinearLayout.LayoutParams(-1,dp(51)));for(String k:row){int w=("⇧".equals(k)||"⌫".equals(k)||"?123".equals(k))?14:("space".equals(k)?42:10);line.addView(makeKey(k,w));}}
     TextView brand=new TextView(this);brand.setText("BOSLEY  ·  On-device suggestions");brand.setTextColor(Color.DKGRAY);brand.setTextSize(10);brand.setGravity(Gravity.CENTER);root.addView(brand,new LinearLayout.LayoutParams(-1,dp(18)));
   }
   private void press(String k){
     InputConnection ic=getCurrentInputConnection();if(ic==null)return;
     if("⌫".equals(k)){ic.deleteSurroundingText(1,0);refreshSuggestions();return;}
     if("⇧".equals(k)){shift=!shift;return;}
-    if("?123".equals(k)){return;}
+    if("?123".equals(k)){symbols=true;buildKeyboard();return;}\n    if("ABC".equals(k)){symbols=false;buildKeyboard();return;}
     if("space".equals(k)){ic.commitText(" ",1);shift=true;refreshSuggestions();return;}
     if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();if(e!=null)ic.performEditorAction(e.imeOptions&EditorInfo.IME_MASK_ACTION);else ic.commitText("\\n",1);return;}
     ic.commitText(shift?k.toUpperCase(Locale.ROOT):k,1);shift=false;refreshSuggestions();

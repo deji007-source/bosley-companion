@@ -245,6 +245,8 @@ public class BosleyTargetAccessibilityService extends AccessibilityService {
 
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;
 import android.content.Intent;
+import android.content.ClipboardManager;
+import android.content.ClipData;
 import android.net.Uri;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
@@ -268,6 +270,26 @@ import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
 @CapacitorPlugin(name="BosleyOverlay", permissions={@Permission(alias="microphone", strings={android.Manifest.permission.RECORD_AUDIO}), @Permission(alias="notifications", strings={android.Manifest.permission.POST_NOTIFICATIONS})})
 public class BosleyOverlayPlugin extends Plugin {
+  // Clipboard handoff is invoked only by the user's explicit Universal Input buttons.
+  // Android may restrict reads while Bosley is backgrounded; no background polling occurs.
+  @PluginMethod public void readClipboard(PluginCall call){
+    ClipboardManager manager=(ClipboardManager)getContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+    String value="";
+    if(manager!=null&&manager.hasPrimaryClip()&&manager.getPrimaryClip()!=null&&manager.getPrimaryClip().getItemCount()>0){
+      CharSequence text=manager.getPrimaryClip().getItemAt(0).coerceToText(getContext());
+      if(text!=null)value=text.toString();
+    }
+    if(value.length()>12000)value=value.substring(0,12000);
+    JSObject result=new JSObject();result.put("text",value);call.resolve(result);
+  }
+  @PluginMethod public void writeClipboard(PluginCall call){
+    String value=call.getString("text","");
+    if(value==null||value.trim().isEmpty()||value.length()>12000){call.reject("Clipboard text must contain between 1 and 12000 characters.");return;}
+    ClipboardManager manager=(ClipboardManager)getContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+    if(manager==null){call.reject("Clipboard is unavailable.");return;}
+    manager.setPrimaryClip(ClipData.newPlainText("Bosley Universal Input",value));
+    call.resolve();
+  }
   private android.speech.tts.TextToSpeech bosleyTts;
   private boolean bosleyTtsReady=false;
   private MediaProjection activeProjection;

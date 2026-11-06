@@ -1107,6 +1107,10 @@ document.addEventListener("DOMContentLoaded",()=>{
  const dock=document.getElementById("side-dock"),tabs=document.getElementById("dock-tabs"),body=document.getElementById("dock-body");
  if(!dock||!tabs||!body)return;
 
+ /* Keep dynamically created panel pages visible in browsers whose author CSS overrides the hidden attribute. */
+ const panelVisibilityStyle=document.createElement("style");
+ panelVisibilityStyle.textContent="#side-dock[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}#side-dock:not([hidden]){display:flex!important;visibility:visible!important;pointer-events:auto!important}#side-dock .dock-body>[hidden]{display:none!important}#side-dock .dock-body>#ws:not([hidden]),#side-dock .dock-body>#facepanel:not([hidden]),#side-dock .dock-body>#activity:not([hidden]),#side-dock .dock-body>#automation:not([hidden]),#side-dock .dock-body>#agents-panel:not([hidden]),#side-dock .dock-body>#skills-panel:not([hidden]),#side-dock .dock-body>#bosley-search:not([hidden]),#side-dock .dock-body>#control-centre:not([hidden]),#side-dock .dock-body>#universal-input:not([hidden]),#side-dock .dock-body>#writing-assist:not([hidden]){display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}";
+ document.head.appendChild(panelVisibilityStyle);
  const floatingView=new URLSearchParams(location.search).get("bosleyFloat");
  if(floatingView){
   document.body.classList.add("desktop-floating-view");
@@ -1143,7 +1147,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   writingAssist:()=>renderBosleyWritingAssist()
  });
  const views=[
-  {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{const r=window.BosleyPanelRenderers?.workspace;if(typeof r!=="function")throw Error("Workspace renderer is not connected to the dock.");return r()}},
+  {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{const r=window.BosleyPanelRenderers?.workspace;if(typeof r!=="function")throw Error("Workspace renderer is not connected to the dock.");const result=r();return Promise.resolve(result).then(()=>{const panel=document.getElementById("ws");if(!panel)throw Error("Workspace container is missing.");if(!panel.textContent.trim())drawWs();return undefined})}},
   {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{const r=window.BosleyPanelRenderers?.appearance;if(typeof r!=="function")throw Error("Appearance renderer is not connected to the dock.");return r()}},
   {button:"",panel:"agents-panel",label:"AI Agents",init:()=>{const r=window.BosleyPanelRenderers?.agents;if(typeof r==="function")return r();if(typeof drawAgents==="function")return drawAgents();throw Error("AI Agents renderer failed to initialise. Reload the page and retry.")}},
   {button:"autotoggle",panel:"automation",label:"Automation",init:()=>{const r=window.BosleyPanelRenderers?.automation;if(typeof r!=="function")throw Error("Automation renderer is not connected to the dock.");return r()}},
@@ -1215,11 +1219,11 @@ document.addEventListener("DOMContentLoaded",()=>{
   const wasActive=active===id&&!dock.hidden;
   if(wasActive){dock.hidden=true;active="";if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});return;}
   if(active==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});
-  dock.hidden=false;dock.style.removeProperty("display");dock.style.visibility="visible";dock.style.pointerEvents="auto";active=id;
+  dock.hidden=false;dock.removeAttribute("hidden");dock.style.setProperty("display","flex","important");dock.style.setProperty("visibility","visible","important");dock.style.setProperty("pointer-events","auto","important");active=id;
   if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:true});
   for(const x of views){
    const panel=document.getElementById(x.panel),tab=tabs.querySelector('[data-view="'+x.panel+'"]'),button=document.getElementById(x.button),launcher=document.querySelector('#dock-launcher [data-open-view="'+x.panel+'"]');
-   if(panel)panel.hidden=x.panel!==id;
+   if(panel){panel.hidden=x.panel!==id;if(x.panel===id){panel.removeAttribute("hidden");panel.style.setProperty("display","block","important");panel.style.setProperty("visibility","visible","important");panel.style.setProperty("pointer-events","auto","important")}else{panel.setAttribute("hidden","");panel.style.removeProperty("display");panel.style.removeProperty("visibility");panel.style.removeProperty("pointer-events")}}
    if(tab)tab.classList.toggle("on",x.panel===id);
    if(launcher)launcher.classList.toggle("on",x.panel===id);
    if(button)button.setAttribute("aria-expanded",String(x.panel===id));

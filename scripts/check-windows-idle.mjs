@@ -1,5 +1,5 @@
-const fs = require('node:fs');
-const vm = require('node:vm');
+import fs from 'node:fs';
+import vm from 'node:vm';
 
 const workflow = fs.readFileSync('.github/workflows/build-windows.yml', 'utf8');
 function extract(name, end) {

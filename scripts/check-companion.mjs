@@ -807,6 +807,11 @@ assert.ok(appScript.includes("list.slice(0,100)") && appScript.includes("items.s
 assert.ok(skillsPack.skills.some(skill=>skill.id==="cross-skill-orchestrator" && skill.workflow?.length>=5), "Skill pack must include a dependency-ordered cross-skill orchestrator");
 
 assert.ok(html.includes('id="bue-live-check"') && html.includes('Live writing check appears as you type.'), "Universal Input must provide a compact live writing-check surface");
+assert.ok(html.includes('data-action="clipboard-in"') && html.includes('data-action="clipboard-out"'), "Universal Input must offer explicit cross-app clipboard handoff");
+assert.ok(html.includes('action:"clipboard_read"') && html.includes('action:"clipboard_write"'), "Universal Input must use the desktop clipboard bridge when available");
+assert.ok(androidInstaller.includes('readClipboard(PluginCall call)') && androidInstaller.includes('writeClipboard(PluginCall call)'), "Android native bridge must support user-triggered clipboard import and export");
+assert.ok(readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8").includes("CommandOrControl+Shift+U"), "Windows build must register the system-wide Universal Input shortcut");
+
 assert.ok(html.includes('Possible typo') && html.includes('setRangeText(found.good,start,end,"end")'), "Live writing checks must offer explicit, non-destructive inline fixes");
 assert.ok(html.includes('.bue-editor{min-height:210px') && html.includes('.bue-layout{grid-template-columns:minmax(0,1fr) minmax(205px,.55fr)'), "Universal Input layout must stay compact and mobile responsive");
 assert.ok(html.includes('window.BosleyOpenUniversalInput=()=>window.BosleyOpenPanel?.("universal-input")'), "Universal Input launcher must target the registered dock panel");

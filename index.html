@@ -1740,6 +1740,46 @@ async function renderBosleySkills(){
  panel.querySelector("#bosley-skill-clear").onclick=()=>{if(confirm("Clear all imported Bosley skills stored on this device?")){saveBosleySkills([]);renderBosleySkills()}};
 }
 
+
+function detectChatEmailDraftIntent(raw){
+ const value=String(raw||"").trim();
+ if(!value||!/\\b(?:draft|write|create|compose|prepare|make)\\b[\\s\\S]{0,90}\\bemail\\b|\\bemail\\b[\\s\\S]{0,60}\\b(?:draft|write|create|compose|prepare)\\b/i.test(value))return null;
+ const recipient=value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i)?.[0]||"";
+ const subjectMatch=value.match(/\\bsubject(?:\\s+should\\s+be|\\s+is)?\\s*[:=-]?\\s*([^\\n.!?]{2,160})/i);
+ const subject=subjectMatch?subjectMatch[1].trim().replace(/[\\s,;:]+$/,""):"";
+ return {kind:"draft_email",recipient,subject,notes:value.slice(0,6000)};
+}
+function routeChatWorkspaceIntent(raw){
+ const value=String(raw||"").trim();
+ if(!/^(?:(?:bosley)[, ]*)?(?:please\\s+)?(?:open|show|take me to|go to|switch to|bring up|launch)\\b/i.test(value))return false;
+ const routes=[
+  {id:"writing-assist",pattern:/\\b(?:writing\\s+(?:studio|assist)|writing\\s+section|email\\s+writer)\\b/i,label:"Writing Studio"},
+  {id:"bosley-search",pattern:/\\b(?:bosley\\s+search|search\\s+page)\\b/i,label:"Bosley Search"},
+  {id:"universal-input",pattern:/\\b(?:universal\\s+input|type\\s+anywhere)\\b/i,label:"Universal Input"},
+  {id:"automation",pattern:/\\b(?:automation|automations|workflows)\\b/i,label:"Automation"},
+  {id:"agents-panel",pattern:/\\b(?:ai\\s+agents|agents\\s+page)\\b/i,label:"AI Agents"},
+  {id:"activity",pattern:/\\b(?:activity|planner|tasks)\\b/i,label:"Activity"}
+ ];
+ const target=routes.find(item=>item.pattern.test(value));
+ if(!target)return false;
+ addMsg("you",value);
+ const reply=addMsg("bosley","Opening "+target.label+" inside Bosley.");
+ try{persistChatMessage("user",value);persistChatMessage("assistant","Opening "+target.label+" inside Bosley.").catch(()=>{})}catch{}
+ show(target.id);
+ return true;
+}
+function openChatEmailDraft(raw){
+ const draft=detectChatEmailDraftIntent(raw);if(!draft)return false;
+ addMsg("you",raw);
+ history.push({role:"user",content:String(raw).slice(0,9000)});
+ const reply="I’ve sent your request to Writing Studio. It will prepare the email from the notes you pasted, carry over the subject and recipient when detected, and leave the draft open for your review. Nothing will be sent automatically.";
+ addMsg("bosley",reply);history.push({role:"assistant",content:reply});
+ try{localStorage.setItem("bosley-chat-writing-draft-v1",JSON.stringify({...draft,createdAt:Date.now()}))}catch(error){note("I couldn't pass the draft to Writing Studio on this device. Open Writing Studio and paste the notes manually.");return true}
+ persistChatExchange(raw,reply).catch(error=>console.warn("Email draft chat history could not be saved:",error));
+ show("writing-assist");
+ return true;
+}
+
 async function send(text,imageData=null,fileContext="",fileNames=[]){
  if(S.busy||(!text&&!imageData&&!fileContext))return;
  const originalUserText=String(text||"").trim();
@@ -1762,6 +1802,8 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
    await startBosleyGuide(task);return;
   }
  }
+ if(!imageData&&!fileContext&&openChatEmailDraft(originalUserText))return;
+ if(!imageData&&!fileContext&&routeChatWorkspaceIntent(originalUserText))return;
  if(createPlannerTaskFromCommand(text)){addMsg("you",text);return}
  const explicitNoSearch=/\b(?:don't|do not|without|skip)\s+(?:the\s+)?(?:web\s+)?search\b/i.test(String(text||""));
  const searchIntent=!explicitNoSearch&&!imageData&&!fileContext&&user&&/\b(?:look\s*up|look\s+into|search(?:\s+(?:the\s+)?(?:web|internet)|\s+for)?|google|find\s+online|find\s+out(?:\s+about)?|research|browse(?:\s+the)?\s+web|check\s+(?:the\s+)?(?:web|internet|online)|latest\s+(?:news|updates)|current\s+events)\b/i.test(String(text||""));
@@ -3042,6 +3084,15 @@ async function renderBosleyWritingAssist(){
  recorder.onstop=async()=>{stream.getTracks().forEach(x=>x.stop());activeRecorder=null;button.disabled=false;button.textContent="Dictate";try{const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});if(!blob.size)throw Error("No audio was captured.");const active=(await db.auth.getSession()).data.session;if(!active)throw Error("Your sign-in session expired.");const form=new FormData();form.append("audio",blob,"voice.webm");form.append("duration",String(Math.max(1,(Date.now()-started)/1000)));const response=await fetch(SUPABASE_URL+"/functions/v1/remote-transcribe",{method:"POST",headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:"Bearer "+active.access_token},body:form});const payload=await response.json().catch(()=>({}));if(!response.ok||!payload.transcript)throw Error(payload.error||"Voice transcription failed.");source.value=(source.value+" "+String(payload.transcript).trim()).trim();status.textContent="Voice notes transcribed. Review them, then create your draft."}catch(error){status.textContent=String(error?.message||"Voice transcription failed.")}};
  recorder.start();button.disabled=false;button.textContent="Stop dictation";status.textContent="Recording voice notes. Tap Stop dictation to finish.";button.onclick=()=>{if(activeRecorder?.state==="recording")activeRecorder.stop()};return;
  }catch(error){status.textContent=String(error?.message||"Voice input unavailable.").slice(0,200);button.disabled=false}};
+ const pendingDraft=(()=>{try{const raw=localStorage.getItem("bosley-chat-writing-draft-v1");if(!raw)return null;localStorage.removeItem("bosley-chat-writing-draft-v1");const parsed=JSON.parse(raw);return Date.now()-Number(parsed.createdAt||0)<10*60*1000?parsed:null}catch{return null}})();
+ if(pendingDraft?.kind==="draft_email"){
+  task.value="draft_email";updateTask();source.value=String(pendingDraft.notes||"").slice(0,6000);
+  $("#bosley-writing-recipient").value=String(pendingDraft.recipient||"").slice(0,180);
+  $("#bosley-writing-subject").value=String(pendingDraft.subject||"").slice(0,180);
+  status.textContent="Loaded from your Bosley chat. Preparing your email draft…";
+  setTimeout(()=>review.click(),120);
+ }
+
 }
 async function renderBosleyControlCentre(){
  const panel=$("#control-centre");if(!panel)return;

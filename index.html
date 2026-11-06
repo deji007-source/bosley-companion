@@ -3208,7 +3208,9 @@ async function renderUniversalInput(){
 }
 document.addEventListener("focusin",event=>{const target=event.target;if(target?.closest?.("#universal-input,#writing-assist,#bosley-search"))return;if(target&&(target.isContentEditable||target.matches?.("input:not([type=button]):not([type=submit]):not([type=hidden]),textarea,[contenteditable=true]")))window.__bosleyDictationTarget=target});
 window.__bosleyDictationTarget=window.__bosleyDictationTarget||$("#in");
-window.BosleyOpenUniversalInput=()=>window.BosleyOpenPanel?.("universal-input");\ndocument.addEventListener("keydown",event=>{if((event.ctrlKey||event.metaKey)&&event.shiftKey&&event.key.toLowerCase()==="u"){event.preventDefault();window.BosleyOpenUniversalInput?.()}});\nwindow.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),agents:()=>drawAgents(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills(),search:renderBosleySearch,control:renderBosleyControlCentre,universalInput:renderUniversalInput,writingAssist:renderBosleyWritingAssist});
+window.BosleyOpenUniversalInput=()=>window.BosleyOpenPanel?.("universal-input");
+document.addEventListener("keydown",event=>{if((event.ctrlKey||event.metaKey)&&event.shiftKey&&event.key.toLowerCase()==="u"){event.preventDefault();window.BosleyOpenUniversalInput?.()}});
+window.BosleyPanelRenderers=Object.freeze({workspace:()=>{drawWs();if(user&&typeof load==="function")return load()},appearance:()=>initFaceSettings(),agents:()=>drawAgents(),automation:()=>drawAutomation(),activity:()=>renderActivity(),skills:()=>renderBosleySkills(),search:renderBosleySearch,control:renderBosleyControlCentre,universalInput:renderUniversalInput,writingAssist:renderBosleyWritingAssist});
 renderBosleyKnowledgeGraph();
 renderOfflineCommandQueue();
 initializeContextEngine();

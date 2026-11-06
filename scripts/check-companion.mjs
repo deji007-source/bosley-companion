@@ -756,3 +756,13 @@ assert.ok(html.includes("native?.openExternalUrl){await native.openExternalUrl({
 assert.ok(html.includes('let voiceProfile="warm"') && html.includes('value="warm">Warm &amp; welcoming</option>'), "Bosley must default to a warm and welcoming voice profile");
 assert.ok(html.includes('voiceProfile==="warm"?0.96:1') && html.includes('voiceProfile==="warm"?1.04:1'), "Browser speech must use a relaxed, natural warm voice cadence");
 assert.ok(androidInstaller.includes('call.getString("profile","warm")') && androidInstaller.includes('"warm".equals(profile)?1.04f'), "Android native speech must support the warm welcoming profile too");
+
+assert.ok(html.includes("id=\"skills-panel\""), "Skills panel must exist");
+
+const skillsPack = JSON.parse(readText(new URL("../agent-pack/skills.json", import.meta.url), "utf8"));
+assert.ok(skillsPack.skills.length >= 30, "Official Bosley skill pack must contain at least 30 useful skills");
+assert.ok(new Set(skillsPack.skills.map(skill => skill.id)).size === skillsPack.skills.length, "Skill IDs must be unique");
+assert.ok(skillsPack.skills.every(skill => skill.id && skill.title && skill.triggers?.length && skill.capabilities?.length && skill.confirmation && skill.safety), "Every skill must define triggers, capabilities, confirmation and safety guidance");
+assert.ok(html.includes("#bosley-mascot .mascot-eye{fill:#050505;stroke:#050505"), "Main top ghost must render visible black eyes, not white eyes on a white face");
+const emailCompose = appScript.slice(appScript.indexOf("const openEmail=async(provider)"), appScript.indexOf('$("#bosley-writing-gmail")'));
+assert.ok(emailCompose.includes("https://mail.google.com/mail/?view=cm&fs=1&to=") && emailCompose.includes("https://outlook.office.com/mail/deeplink/compose?to=") && emailCompose.includes("encodeURIComponent(body)"), "Email buttons must open prefilled Gmail and Outlook compose windows");

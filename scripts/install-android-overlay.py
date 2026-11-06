@@ -233,18 +233,12 @@ public class BosleyOverlayService extends Service {
     scheduleBulbHide();
   }
   View writingCardOverlay; WindowManager.LayoutParams writingCardLp;
-  final class BosleyCardBridge {
-    @android.webkit.JavascriptInterface public String readClipboard(){
-      try{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);if(cm==null||!cm.hasPrimaryClip())return "";ClipData clip=cm.getPrimaryClip();if(clip==null||clip.getItemCount()==0)return "";CharSequence value=clip.getItemAt(0).coerceToText(BosleyOverlayService.this);return value==null?"":value.toString().substring(0,Math.min(6000,value.length()));}catch(Exception e){return "";}
-    }
-    @android.webkit.JavascriptInterface public void closeCard(){new Handler(Looper.getMainLooper()).post(()->removeWritingCardOverlay());}
-  }
   void showWritingCardOverlay(){
     if(writingCardOverlay!=null)return;
     android.webkit.WebView web=new android.webkit.WebView(this);
     web.setBackgroundColor(Color.TRANSPARENT);
-    android.webkit.WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setDatabaseEnabled(true);settings.setAllowFileAccess(true);settings.setLoadsImagesAutomatically(true);
-    web.addJavascriptInterface(new BosleyCardBridge(),"BosleyOverlayBridge");
+    android.webkit.WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setDatabaseEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(false);settings.setLoadsImagesAutomatically(true);
+    web.setWebViewClient(new android.webkit.WebViewClient(){boolean route(String url,android.webkit.WebView view){if("bosley://close-card".equals(url)){removeWritingCardOverlay();return true;}if("bosley://paste".equals(url)){String value="";try{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);if(cm!=null&&cm.hasPrimaryClip()){ClipData clip=cm.getPrimaryClip();if(clip!=null&&clip.getItemCount()>0){CharSequence v=clip.getItemAt(0).coerceToText(BosleyOverlayService.this);if(v!=null)value=v.toString().substring(0,Math.min(6000,v.length()));}}}catch(Exception ignored){}view.evaluateJavascript("window.BosleySetClipboardText("+org.json.JSONObject.quote(value)+")",null);return true;}return !url.startsWith("https://localhost/");}@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,android.webkit.WebResourceRequest request){return route(request.getUrl().toString(),view);}@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,String url){return route(url,view);}});
     writingCardOverlay=web;
     writingCardLp=new WindowManager.LayoutParams(dp(292),dp(520),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
     writingCardLp.gravity=Gravity.TOP|Gravity.START;DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);writingCardLp.x=Math.max(dp(6),(dm.widthPixels-dp(292))/2);writingCardLp.y=Math.max(dp(36),(int)(dm.heightPixels*.16f));writingCardLp.softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;

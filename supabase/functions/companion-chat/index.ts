@@ -10,22 +10,37 @@ const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const decodeBase64 = (value: string) => Uint8Array.from(atob(value), c => c.charCodeAt(0));
-function agentEncryptionKeyBytes() {
-  if (!AGENT_ENCRYPTION_KEY) throw new Error("Agent credential encryption is not configured.");
-  let raw: Uint8Array;
-  try {
-    raw = /^[a-f0-9]{64}$/i.test(AGENT_ENCRYPTION_KEY)
-      ? Uint8Array.from(AGENT_ENCRYPTION_KEY.match(/../g)!, x => parseInt(x, 16))
-      : decodeBase64(AGENT_ENCRYPTION_KEY);
-  } catch {
-    throw new Error("Agent credential encryption key has invalid encoding.");
+async function agentEncryptionKeyBytes() {
+  const configured = AGENT_ENCRYPTION_KEY.trim().replace(/^["\']|["\']$/g, "");
+  if (!configured) throw new Error("Agent credential encryption is not configured.");
+  let raw: Uint8Array | null = null;
+  if (/^[a-f0-9]{64}$/i.test(configured)) {
+    raw = Uint8Array.from(configured.match(/../g)!, x => parseInt(x, 16));
+  } else if (configured.length === 32 && /^[\\x20-\\x7e]{32}$/.test(configured)) {
+    raw = new TextEncoder().encode(configured);
+  } else {
+    const base64 = configured.replace(/-/g, "+").replace(/_/g, "/").replace(/\\s/g, "");
+    if (/^[A-Za-z0-9+/]+={0,2}$/.test(base64) && base64.length % 4 !== 1) {
+      try {
+        const decoded = decodeBase64(base64 + "=".repeat((4 - base64.length % 4) % 4));
+        if (decoded.length === 32) raw = decoded;
+      } catch { /* Fall through to stable text-key derivation. */ }
+    }
   }
-  if (raw.length !== 32) throw new Error("Agent credential encryption key must decode to 32 bytes.");
+  if (!raw) {
+    const textBytes = new TextEncoder().encode(configured);
+    if (textBytes.length < 32) throw new Error("Agent credential encryption key must contain at least 32 characters or decode to exactly 32 bytes.");
+    raw = new Uint8Array(await crypto.subtle.digest("SHA-256", textBytes));
+  }
+  if (raw.length !== 32) throw new Error("Agent credential encryption key must resolve to exactly 32 bytes.");
   return raw;
 }
 async function decryptSavedAgentKey(ciphertext: string, iv: string) {
-  const key = await crypto.subtle.importKey("raw", agentEncryptionKeyBytes(), "AES-GCM", false, ["decrypt"]);
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: decodeBase64(iv) }, key, decodeBase64(ciphertext));
+  const keyBytes = await agentEncryptionKeyBytes();
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["decrypt"]);
+  const ivBytes = decodeBase64(iv);
+  const cipherBytes = decodeBase64(ciphertext);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ivBytes }, key, cipherBytes);
   return new TextDecoder().decode(plain);
 }
 const hits = new Map<string, number[]>();

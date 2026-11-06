@@ -3,17 +3,16 @@ import vm from 'node:vm';
 
 const workflow = fs.readFileSync('.github/workflows/build-windows.yml', 'utf8');
 function extract(name, end) {
-  // The workflow's YAML block scalar indents shell commands. Match the command
-  // text without assuming a particular indentation level.
-  const marker = \`cat > desktop/\${name} <<'\${end}'\`;
+  // Match the shell heredoc without assuming YAML indentation.
+  const marker = "cat > desktop/" + name + " <<'" + end + "'";
   const start = workflow.indexOf(marker);
-  if (start < 0) throw new Error(\`Missing generated desktop/\${name} heredoc.\`);
+  if (start < 0) throw new Error('Missing generated desktop/' + name + ' heredoc.');
   const bodyStart = workflow.indexOf('\n', start) + 1;
-  if (!bodyStart) throw new Error(\`Missing body for desktop/\${name}.\`);
+  if (!bodyStart) throw new Error('Missing body for desktop/' + name + '.');
   const tail = workflow.slice(bodyStart);
-  const terminator = new RegExp(\`^[\\\\t ]*\${end}[\\\\t ]*$\`, 'm');
+  const terminator = new RegExp('^[\\t ]*' + end + '[\\t ]*$', 'm');
   const finish = terminator.exec(tail);
-  if (!finish) throw new Error(\`Unterminated desktop/\${name} heredoc.\`);
+  if (!finish) throw new Error('Unterminated desktop/' + name + ' heredoc.');
   const lines = tail.slice(0, finish.index).replace(/\n$/, '').split('\n');
   const indents = lines.filter(line => line.trim()).map(line => (line.match(/^[\t ]*/) || [''])[0].length);
   const strip = indents.length ? Math.min(...indents) : 0;
@@ -35,6 +34,6 @@ const required = [
   ['idle timeout hides rather than destroys the panel', 'panel.hide();']
 ];
 for (const [label, needle] of required) {
-  if (!main.includes(needle) && !preload.includes(needle)) throw new Error(\`Windows idle-close check failed: \${label}\`);
+  if (!main.includes(needle) && !preload.includes(needle)) throw new Error('Windows idle-close check failed: ' + label);
 }
 console.log('Windows panel inactivity checks passed (15-second idle timeout, scoped activity events, hide/restore lifecycle).');

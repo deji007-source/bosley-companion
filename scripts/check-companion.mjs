@@ -32,6 +32,8 @@ assert.ok(html.includes("installDockWritingAssistant"), "Floating writing review
 assert.ok(html.includes("__bosleySupabaseClient"), "Floating writing review must use the authenticated Supabase client");
 assert.ok(html.includes("Final layer correction: keep the ghost and its tools above the open workspace"), "Floating ghost must render above the workspace panel");
 assert.ok(html.includes("document.body.appendChild(floatingLauncher)") && html.includes('id="bosley-floating-layer-fix"'), "Floating ghost launcher must be portalled to the document body above workspace stacking contexts");
+assert.ok(html.includes('id="bosley-launcher-final-visibility"') && html.includes("body.panel-open #dock-launcher{display:block!important") && html.includes("top:32%!important"), "Floating ghost menu must remain visible above the chat and workspace while panels are open");
+assert.ok(html.includes('data-open-view="universal-input"') && html.includes("window.BosleyOpenUniversalInput"), "Universal Input must be available from the shared floating menu and global shortcut on every build");
 assert.ok(html.includes("Bosley cross-device dock and compact mobile overlay refinements"), "Mobile workspace panel must use compact responsive dock positioning");
 assert.match(html,/Keep the floating tool launcher out of the active conversation/);
 assert.ok(androidInstaller.includes("Color.rgb(92,132,190)"), "Bosley keyboard should use a distinct Gboard-style action key");

@@ -842,6 +842,43 @@ jobs:
             };
           });
 
+          let pendingScreenCaptureResolve = null;
+          function showScreenCaptureConfirmation() {
+            return new Promise(resolve => {
+              if (pendingScreenCaptureResolve) { resolve(false); return; }
+              let settled = false;
+              let confirmation = null;
+              const finish = value => {
+                if (settled) return;
+                settled = true;
+                pendingScreenCaptureResolve = null;
+                if (confirmation && !confirmation.isDestroyed()) confirmation.close();
+                resolve(value);
+              };
+              confirmation = new BrowserWindow({
+                width: 92, height: 48, frame: false, transparent: true, resizable: false,
+                movable: true, alwaysOnTop: true, skipTaskbar: true, hasShadow: false,
+                backgroundColor: '#00000000',
+                webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }
+              });
+              pendingScreenCaptureResolve = finish;
+              confirmation.setAlwaysOnTop(true, 'screen-saver');
+              const prompt = '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}body{display:grid;place-items:center;-webkit-app-region:drag}button{-webkit-app-region:no-drag;width:76px;height:36px;border:1px solid #333;border-radius:11px;background:#fff;color:#080808;font:700 13px system-ui;box-shadow:0 4px 18px #0008;cursor:pointer}</style></head><body><button type="button" onclick="window.bosleyDesktop.confirmScreenCapture()">OK</button></body></html>';
+              confirmation.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(prompt)).then(() => {
+                if (!confirmation.isDestroyed()) {
+                  const area = screen.getPrimaryDisplay().workArea;
+                  confirmation.setPosition(area.x + area.width - 112, area.y + Math.round(area.height * .42));
+                  confirmation.setAlwaysOnTop(true, 'screen-saver');
+                  confirmation.showInactive();
+                }
+              }).catch(() => finish(false));
+              confirmation.on('closed', () => finish(false));
+            });
+          }
+          ipcMain.on('bosley:capture-confirmed', () => {
+            if (pendingScreenCaptureResolve) pendingScreenCaptureResolve(true);
+          });
+
           const floatingViewWindows = new Map();
           const floatingViewBoundsFile = path.join(app.getPath('userData'), 'floating-view-bounds.json');
           function saveFloatingViewBounds(viewId, target) {
@@ -998,16 +1035,9 @@ jobs:
               if (process.platform !== 'win32') {
                 throw new Error('Screen capture is currently supported by the Windows desktop build only.');
               }
-              const choice = await dialog.showMessageBox(panel, {
-                type: 'question',
-                buttons: ['Cancel', 'Capture screen'],
-                defaultId: 0,
-                cancelId: 0,
-                title: 'Bosley Companion — Screen access',
-                message: 'Allow Bosley to capture your primary screen?',
-                detail: 'The screenshot will be attached to this chat for your review. It will not be sent until you press Send.'
-              });
-              if (choice.response !== 1) return { ok: false, cancelled: true };
+              const confirmed = await showScreenCaptureConfirmation();
+              if (!confirmed) return { ok: false, cancelled: true };
+              await new Promise(resolve => setTimeout(resolve, 180));
               const primaryDisplay = screen.getPrimaryDisplay();
               const primaryId = String(primaryDisplay.id);
               const captureWidth = 1280;
@@ -1196,6 +1226,7 @@ jobs:
             openWritingAssistant: () => ipcRenderer.send('bosley:open-writing'),
             getCapabilities: () => ipcRenderer.invoke('bosley:capabilities'),
             request: request => ipcRenderer.invoke('bosley:request', request),
+            confirmScreenCapture: () => ipcRenderer.send('bosley:capture-confirmed'),
             setCompanionState: state => {
               const allowed = ['idle','listening','thinking','speaking','working','waiting','success','error','walk'];
               if (allowed.includes(state)) ipcRenderer.send('bosley:companion-state', state);

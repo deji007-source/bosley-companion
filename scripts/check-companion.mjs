@@ -637,6 +637,9 @@ assert.ok(html.includes('const tested=await gateway("test",{provider})'), "Newly
 assert.ok(html.includes('role="menuitem" data-open-view="agents-panel">AI Agents</button>'), "The page dropdown must expose a dedicated AI Agents entry");
 assert.ok(html.includes('label:"AI Agents"')&&html.includes('label:"Automation"'), "AI Agents and Automation must have separate dock tabs");
 assert.ok(html.includes('id="attach-automation" role="menuitem"'), "Plus menu must expose the AI agents and automation entry");
+assert.ok(androidInstaller.includes("android.intent.action.SEND") && androidInstaller.includes("android.intent.action.PROCESS_TEXT") && androidInstaller.includes('android:mimeType="text/plain"'), "Android must expose explicit Share and Process Text integration for selected text");
+assert.ok(androidInstaller.includes("EXTRA_PROCESS_TEXT") && androidInstaller.includes("EXTRA_TEXT") && androidInstaller.includes('r.put("sharedText",sharedText)'), "Android native bridge must pass explicitly shared text to the writing editor");
+assert.ok(html.includes("openUniversalInputWithSharedText") && html.includes("Text received from another app"), "Shared Android text must open Universal Input with a clear, non-destructive handoff");
 assert.ok(html.includes("let nativeActionBusy=false"), "Android native launch action handling must guard duplicate intent delivery");
 assert.ok(html.includes('window.addEventListener("bosleyNativeAction"'), "Android existing-activity taps must be forwarded into the live WebView");
 assert.ok(html.includes("if(++attempts<12)setTimeout(retry,250)"), "Android cold-start launch action must retry until the Capacitor plugin is ready");

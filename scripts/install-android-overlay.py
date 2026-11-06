@@ -96,9 +96,9 @@ import android.util.DisplayMetrics;
 
 public class BosleyOverlayService extends Service {
   static final String ACTION_BULB_SHOW="com.bosley.companion.BULB_SHOW", ACTION_BULB_ACTIVE="com.bosley.companion.BULB_ACTIVE", ACTION_BULB_IDLE="com.bosley.companion.BULB_IDLE", ACTION_BULB_HIDE="com.bosley.companion.BULB_HIDE";
-  static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE", ACTION_CAPTURE_START="com.bosley.companion.CAPTURE_START", ACTION_CAPTURE_STOP="com.bosley.companion.CAPTURE_STOP";
+  static final String ACTION_CAPTURE_PROMPT="com.bosley.companion.CAPTURE_PROMPT", ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE", ACTION_CAPTURE_START="com.bosley.companion.CAPTURE_START", ACTION_CAPTURE_STOP="com.bosley.companion.CAPTURE_STOP";
   int widgetWidth=44,widgetHeight=44,cornerDp=18,borderDp=1,eyeWidth=9,eyeHeight=17,eyeGapDp=8; String eyeShape="soft-square";
-  WindowManager wm; View bar,bulb; Handler bulbHandler=new Handler(Looper.getMainLooper()); boolean bulbInUse=false; Runnable hideBulbTask=()->{if(!bulbInUse)hideBulb();}; WindowManager.LayoutParams lp,bulbLp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
+  WindowManager wm; View bar,bulb,capturePrompt; WindowManager.LayoutParams capturePromptLp; Handler bulbHandler=new Handler(Looper.getMainLooper()); boolean bulbInUse=false; Runnable hideBulbTask=()->{if(!bulbInUse)hideBulb();}; WindowManager.LayoutParams lp,bulbLp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
   static final String CHANNEL_ID="bosley_floating_companion";
   void promoteToForeground(){
     if(Build.VERSION.SDK_INT>=26){
@@ -141,6 +141,7 @@ public class BosleyOverlayService extends Service {
   }
   @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);promoteToForeground();}
   @Override public int onStartCommand(Intent i,int flags,int id){
+    if(i!=null && ACTION_CAPTURE_PROMPT.equals(i.getAction())){showCapturePrompt();return START_STICKY;}
     if(i!=null && ACTION_BULB_SHOW.equals(i.getAction())){showBulb();return START_STICKY;}
     if(i!=null && ACTION_BULB_ACTIVE.equals(i.getAction())){bulbInUse=true;bulbHandler.removeCallbacks(hideBulbTask);if(bulb==null)showBulb();return START_STICKY;}
     if(i!=null && ACTION_BULB_IDLE.equals(i.getAction())){bulbInUse=false;scheduleBulbHide();return START_STICKY;}
@@ -194,6 +195,18 @@ public class BosleyOverlayService extends Service {
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
   }
+  void showCapturePrompt(){
+    if(capturePrompt!=null)return;
+    if(!Settings.canDrawOverlays(this)){openCompanion("capture-screen");return;}
+    TextView ok=new TextView(this);ok.setText("OK");ok.setTextColor(Color.BLACK);ok.setTextSize(13);ok.setTypeface(null,android.graphics.Typeface.BOLD);ok.setGravity(Gravity.CENTER);
+    GradientDrawable bg=new GradientDrawable();bg.setColor(Color.WHITE);bg.setCornerRadius(dp(12));bg.setStroke(dp(1),Color.rgb(35,35,35));ok.setBackground(bg);ok.setElevation(dp(10));ok.setContentDescription("Tap OK to capture the screen currently visible behind Bosley.");
+    capturePrompt=ok;
+    capturePromptLp=new WindowManager.LayoutParams(dp(72),dp(42),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+    capturePromptLp.gravity=Gravity.TOP|Gravity.END;capturePromptLp.x=dp(18);capturePromptLp.y=dp(132);
+    ok.setOnClickListener(v->{removeCapturePrompt();openCompanion("capture-screen");});
+    try{wm.addView(capturePrompt,capturePromptLp);}catch(Exception e){capturePrompt=null;}
+  }
+  void removeCapturePrompt(){if(wm!=null&&capturePrompt!=null){try{wm.removeView(capturePrompt);}catch(Exception ignored){}capturePrompt=null;}}
   void showBulb(){
     if(bulb!=null){scheduleBulbHide();return;}
     TextView writingBulb=new TextView(this);writingBulb.setText("💡");writingBulb.setTextSize(19);writingBulb.setGravity(Gravity.CENTER);
@@ -465,6 +478,7 @@ public class BosleyOverlayPlugin extends Plugin {
     call.resolve();
   }
   @PluginMethod public void setWritingBulbActive(PluginCall call){boolean active=call.getBoolean("active",false);Intent intent=new Intent(getContext(),BosleyOverlayService.class).setAction(active?BosleyOverlayService.ACTION_BULB_ACTIVE:BosleyOverlayService.ACTION_BULB_IDLE);if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(intent);else getContext().startService(intent);call.resolve();}
+  @PluginMethod public void showScreenCapturePrompt(PluginCall call){Intent intent=new Intent(getContext(),BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CAPTURE_PROMPT);if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(intent);else getContext().startService(intent);call.resolve();}
   private android.speech.tts.TextToSpeech bosleyTts;
   private boolean bosleyTtsReady=false;
   private MediaProjection activeProjection;
@@ -530,6 +544,7 @@ public class BosleyOverlayPlugin extends Plugin {
     try{
       Intent foreground=new Intent(getContext(),BosleyOverlayService.class).setAction(BosleyOverlayService.ACTION_CAPTURE_START);
       if(Build.VERSION.SDK_INT>=26)getContext().startForegroundService(foreground);else getContext().startService(foreground);
+      getActivity().runOnUiThread(()->getActivity().moveTaskToBack(true));
       captureHandler.postDelayed(()->{
         try{
           MediaProjectionManager manager=(MediaProjectionManager)getContext().getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE);
@@ -550,7 +565,10 @@ public class BosleyOverlayPlugin extends Plugin {
               int max=1280;if(Math.max(width,height)>max){float scale=(float)max/Math.max(width,height);Bitmap scaled=Bitmap.createScaledBitmap(bitmap,Math.max(1,Math.round(width*scale)),Math.max(1,Math.round(height*scale)),true);bitmap.recycle();bitmap=scaled;}
               ByteArrayOutputStream out=new ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);
               JSObject response=new JSObject();response.put("ok",true);response.put("dataUrl","data:image/jpeg;base64,"+Base64.encodeToString(out.toByteArray(),Base64.NO_WRAP));
-              cleanupScreenCapture();call.resolve(response);
+              cleanupScreenCapture();
+              Intent returnToBosley=new Intent(getContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+              getContext().startActivity(returnToBosley);
+              call.resolve(response);
             }catch(Exception e){cleanupScreenCapture();call.reject("Screen capture failed: "+String.valueOf(e.getMessage()),e);}
             finally{if(image!=null)image.close();if(bitmap!=null&&!bitmap.isRecycled())bitmap.recycle();}
           },captureHandler);
@@ -679,7 +697,7 @@ if "BosleyOverlayPlugin" not in a:
     setIntent(intent);
     String action=intent.getStringExtra("bosley_quick_action");
     boolean hasSharedText=intent.getCharSequenceExtra(android.content.Intent.EXTRA_PROCESS_TEXT)!=null||intent.getCharSequenceExtra(android.content.Intent.EXTRA_TEXT)!=null;
-    if((action!=null && ("panel".equals(action)||"voice".equals(action)||"writing".equals(action)))||hasSharedText){
+    if((action!=null && ("panel".equals(action)||"voice".equals(action)||"writing".equals(action)||"capture-screen".equals(action)))||hasSharedText){
       String js="window.dispatchEvent(new Event(String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)))";
       getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));
     }

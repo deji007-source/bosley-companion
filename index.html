@@ -1743,22 +1743,22 @@ async function renderBosleySkills(){
 
 function detectChatEmailDraftIntent(raw){
  const value=String(raw||"").trim();
- if(!value||!/\\b(?:draft|write|create|compose|prepare|make)\\b[\\s\\S]{0,90}\\bemail\\b|\\bemail\\b[\\s\\S]{0,60}\\b(?:draft|write|create|compose|prepare)\\b/i.test(value))return null;
- const recipient=value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i)?.[0]||"";
- const subjectMatch=value.match(/\\bsubject(?:\\s+should\\s+be|\\s+is)?\\s*[:=-]?\\s*([^\\n.!?]{2,160})/i);
- const subject=subjectMatch?subjectMatch[1].trim().replace(/[\\s,;:]+$/,""):"";
+ if(!value||!/\b(?:draft|write|create|compose|prepare|make)\b[\s\S]{0,90}\bemail\b|\bemail\b[\s\S]{0,60}\b(?:draft|write|create|compose|prepare)\b/i.test(value))return null;
+ const recipient=value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]||"";
+ const subjectMatch=value.match(/\bsubject(?:\s+should\s+be|\s+is)?\s*[:=-]?\s*([^\n.!?]{2,160})/i);
+ const subject=subjectMatch?subjectMatch[1].trim().replace(/[\s,;:]+$/,""):"";
  return {kind:"draft_email",recipient,subject,notes:value.slice(0,6000)};
 }
 function routeChatWorkspaceIntent(raw){
  const value=String(raw||"").trim();
- if(!/^(?:(?:bosley)[, ]*)?(?:please\\s+)?(?:open|show|take me to|go to|switch to|bring up|launch)\\b/i.test(value))return false;
+ if(!/^(?:(?:bosley)[, ]*)?(?:please\s+)?(?:open|show|take me to|go to|switch to|bring up|launch)\b/i.test(value))return false;
  const routes=[
-  {id:"writing-assist",pattern:/\\b(?:writing\\s+(?:studio|assist)|writing\\s+section|email\\s+writer)\\b/i,label:"Writing Studio"},
-  {id:"bosley-search",pattern:/\\b(?:bosley\\s+search|search\\s+page)\\b/i,label:"Bosley Search"},
-  {id:"universal-input",pattern:/\\b(?:universal\\s+input|type\\s+anywhere)\\b/i,label:"Universal Input"},
-  {id:"automation",pattern:/\\b(?:automation|automations|workflows)\\b/i,label:"Automation"},
-  {id:"agents-panel",pattern:/\\b(?:ai\\s+agents|agents\\s+page)\\b/i,label:"AI Agents"},
-  {id:"activity",pattern:/\\b(?:activity|planner|tasks)\\b/i,label:"Activity"}
+  {id:"writing-assist",pattern:/\b(?:writing\s+(?:studio|assist)|writing\s+section|email\s+writer)\b/i,label:"Writing Studio"},
+  {id:"bosley-search",pattern:/\b(?:bosley\s+search|search\s+page)\b/i,label:"Bosley Search"},
+  {id:"universal-input",pattern:/\b(?:universal\s+input|type\s+anywhere)\b/i,label:"Universal Input"},
+  {id:"automation",pattern:/\b(?:automation|automations|workflows)\b/i,label:"Automation"},
+  {id:"agents-panel",pattern:/\b(?:ai\s+agents|agents\s+page)\b/i,label:"AI Agents"},
+  {id:"activity",pattern:/\b(?:activity|planner|tasks)\b/i,label:"Activity"}
  ];
  const target=routes.find(item=>item.pattern.test(value));
  if(!target)return false;

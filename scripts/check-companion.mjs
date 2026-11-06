@@ -26,8 +26,11 @@ assert.ok(html.includes("syncBosleyContacts"), "Saved contacts must hydrate from
 assert.ok(html.includes("universal_input_draft"), "Universal Input drafts must persist to the shared account sync record");
 assert.ok(html.includes("bosley-draft-") && html.includes("postgres_changes"), "Universal Input drafts must receive cross-device updates without overwriting active typing");
 assert.ok(html.includes("postgres_changes"), "Contact changes must refresh across signed-in devices");
-assert.ok(html.includes("composer-writing-review"), "Companion composer must expose its in-chat writing assistant");
-assert.ok(html.includes("installComposerWritingAssistant"), "In-chat writing assistant must be wired to the writing-assist function");
+assert.ok(!html.includes('id="composer-writing-review"'), "Do not add a space-consuming pencil control to the chat composer");
+assert.ok(html.includes("data-review-composer"), "The floating Bosley menu must expose chat writing review");
+assert.ok(html.includes("installDockWritingAssistant"), "Floating writing review must be wired to the writing-assist function");
+assert.ok(html.includes("__bosleySupabaseClient"), "Floating writing review must use the authenticated Supabase client");
+assert.ok(html.includes("Final layer correction: keep the ghost and its tools above the open workspace"), "Floating ghost must render above the workspace panel");
 assert.ok(html.includes("Bosley cross-device dock and compact mobile overlay refinements"), "Mobile workspace panel must use compact responsive dock positioning");
 assert.match(html,/Keep the floating tool launcher out of the active conversation/);
 assert.ok(androidInstaller.includes("Color.rgb(66,133,244)"), "Bosley keyboard should use a distinct Gboard-style action key");

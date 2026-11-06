@@ -126,8 +126,8 @@ jobs:
               .ghost-shape{fill:#fff;stroke:#101820;stroke-width:4;stroke-linejoin:round;stroke-linecap:round}
               .ghost-edge{fill:none;stroke:#55c6e8;stroke-width:2;opacity:.72}
               .ghost-eye{fill:#050505;transform-box:fill-box;transform-origin:center;animation:ghost-blink 5.1s ease-in-out infinite}
-              .ghost-mouth{fill:#050505;transform-box:fill-box;transform-origin:center}
-              body[data-state="speaking"] .ghost-mouth{animation:ghost-talk .16s ease-in-out infinite alternate}
+               .ghost-mouth{fill:none;stroke:#050505;stroke-width:3.2;stroke-linecap:round;transform-box:fill-box;transform-origin:center}
+              body[data-state="speaking"] .ghost-mouth{stroke-width:3.2}
               #eye-R{animation-delay:.035s}
               body[data-state="listening"] #ghost{animation:ghost-listen .7s ease-in-out infinite alternate}
               body[data-state="thinking"] #ghost,body[data-state="working"] #ghost{animation:ghost-think .8s ease-in-out infinite alternate}
@@ -150,7 +150,7 @@ jobs:
                 <path class="ghost-edge" d="M22 111V76c0-34 22-60 53-60"/>
                 <ellipse id="eye-L" class="ghost-eye" cx="56" cy="78" rx="10.5" ry="14.5"/>
                 <ellipse id="eye-R" class="ghost-eye" cx="94" cy="78" rx="10.5" ry="14.5"/>
-                <ellipse id="ghost-mouth" class="ghost-mouth" cx="75" cy="108" rx="7" ry="2.5"/>
+                <path id="ghost-mouth" class="ghost-mouth" d="M68 108 Q75 110 82 108"/>
               </g>
             </svg>
             <script src="./assets/companion.js"></script>
@@ -445,7 +445,7 @@ jobs:
             if (process.platform !== 'win32' || (walkingCompanion && !walkingCompanion.isDestroyed())) return;
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            const width = 112, height = 138;
+            const width = 92, height = 114;
             const fallbackX = area.x + Math.round((area.width - width) / 2);
             const fallbackY = area.y + 8;
             const x = Math.max(area.x, Math.min(walkingCompanionPreference.x ?? fallbackX, area.x + area.width - width));
@@ -843,6 +843,17 @@ jobs:
           });
 
           const floatingViewWindows = new Map();
+          const floatingViewBoundsFile = path.join(app.getPath('userData'), 'floating-view-bounds.json');
+          function saveFloatingViewBounds(viewId, target) {
+            if (!target || target.isDestroyed() || target.isMaximized() || target.isMinimized()) return;
+            try {
+              let all = {};
+              try { all = JSON.parse(fs.readFileSync(floatingViewBoundsFile, 'utf8')) || {}; } catch {}
+              all[viewId] = target.getBounds();
+              fs.mkdirSync(path.dirname(floatingViewBoundsFile), { recursive: true });
+              fs.writeFileSync(floatingViewBoundsFile, JSON.stringify(all, null, 2), 'utf8');
+            } catch (error) { logStartup('FLOATING VIEW BOUNDS SAVE FAILED', viewId, error.message); }
+          }
           const FLOATING_VIEW_IDS = ['lovable-bosley','ws','facepanel','agents-panel','automation','activity','skills-panel','bosley-search','control-centre','universal-input','writing-assist'];
           function openFloatingView(viewId) {
             if (!FLOATING_VIEW_IDS.includes(viewId)) throw new Error('Unknown Bosley side view.');
@@ -854,19 +865,27 @@ jobs:
               return { ok: true, reused: true, view: viewId };
             }
             const index = FLOATING_VIEW_IDS.indexOf(viewId);
-            const displays = screen.getAllDisplays();
-            const display = displays[index % displays.length] || screen.getPrimaryDisplay();
+            const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            const width = Math.min(460, Math.max(340, area.width - 24));
-            const height = Math.min(620, Math.max(400, area.height - 48));
-            const column = index % 3;
-            const row = Math.floor(index / 3);
+            const width = Math.min(960, Math.max(560, area.width - 32));
+            const height = Math.min(820, Math.max(480, area.height - 56));
             const maxX = Math.max(area.x + 8, area.x + area.width - width - 8);
             const maxY = Math.max(area.y + 8, area.y + area.height - height - 8);
-            const x = Math.max(area.x + 8, Math.min(maxX, area.x + 12 + column * (width + 14)));
-            const y = Math.max(area.y + 8, Math.min(maxY, area.y + 42 + row * 84));
+            const savedBounds = (() => {
+              try {
+                const all = JSON.parse(fs.readFileSync(floatingViewBoundsFile, 'utf8'));
+                const b = all && all[viewId];
+                if (b && Number.isFinite(b.x) && Number.isFinite(b.y) && Number.isFinite(b.width) && Number.isFinite(b.height)) return b;
+              } catch {}
+              return null;
+            })();
+            const offset = index % 7;
+            const x = Math.max(area.x + 8, Math.min(maxX, savedBounds?.x ?? (area.x + 14 + offset * 38)));
+            const y = Math.max(area.y + 8, Math.min(maxY, savedBounds?.y ?? (area.y + 42 + offset * 34)));
+            const startWidth = Math.min(area.width - 16, Math.max(560, savedBounds?.width ?? width));
+            const startHeight = Math.min(area.height - 16, Math.max(480, savedBounds?.height ?? height));
             const win = new BrowserWindow({
-              x, y, width, height, minWidth: 320, minHeight: 360,
+              x, y, width: startWidth, height: startHeight, minWidth: 520, minHeight: 420,
               frame: false, show: false, resizable: true, movable: true,
               alwaysOnTop: false, skipTaskbar: false, backgroundColor: '#050505',
               title: 'Bosley — ' + viewId,
@@ -876,6 +895,10 @@ jobs:
               }
             });
             floatingViewWindows.set(viewId, win);
+            const persistBounds = () => saveFloatingViewBounds(viewId, win);
+            win.on('move', persistBounds);
+            win.on('resize', persistBounds);
+            win.on('close', persistBounds);
             win.on('closed', () => {
               if (floatingViewWindows.get(viewId) === win) floatingViewWindows.delete(viewId);
             });
@@ -911,6 +934,18 @@ jobs:
               const ownedWindow = [...floatingViewWindows.values()].includes(senderWindow);
               if (ownedWindow && !senderWindow.isDestroyed()) senderWindow.close();
               return { ok: ownedWindow };
+            }
+            if (request.action === 'floating_view_control') {
+              const senderWindow = BrowserWindow.fromWebContents(event.sender);
+              const ownedEntry = [...floatingViewWindows.entries()].find(([, target]) => target === senderWindow);
+              if (!ownedEntry || senderWindow.isDestroyed()) return { ok: false };
+              const command = String(request.payload?.command || '');
+              if (command === 'minimize') senderWindow.minimize();
+              else if (command === 'maximize') { if (!senderWindow.isMaximized()) senderWindow.maximize(); }
+              else if (command === 'restore') { if (senderWindow.isMaximized() || senderWindow.isMinimized()) senderWindow.restore(); }
+              else if (command === 'close') senderWindow.close();
+              else throw new Error('Unsupported floating window command.');
+              return { ok: true, command };
             }
             if (request.action === 'open_visual_guide') {
               const payload = request.payload || {};

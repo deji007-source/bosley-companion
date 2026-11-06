@@ -296,7 +296,7 @@ public class BosleyKeyboardService extends InputMethodService {
     if("?123".equals(k)){symbols=true;buildKeyboard();return;}
     if("ABC".equals(k)){symbols=false;buildKeyboard();return;}
     if("space".equals(k)){ic.commitText(" ",1);shift=true;refreshSuggestions();return;}
-    if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();if(e!=null)ic.performEditorAction(e.imeOptions&EditorInfo.IME_MASK_ACTION);else{ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_ENTER));ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP,android.view.KeyEvent.KEYCODE_ENTER));}return;}
+    if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();int action=e==null?0:e.imeOptions&EditorInfo.IME_MASK_ACTION;if(action!=0)ic.performEditorAction(action);else{ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_ENTER));ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP,android.view.KeyEvent.KEYCODE_ENTER));}return;}
     ic.commitText(shift?k.toUpperCase(Locale.ROOT):k,1);shift=false;refreshSuggestions();
   }
   private String correction(String w){

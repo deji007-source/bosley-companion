@@ -886,5 +886,9 @@ assert.ok(html.includes('if(typeof r!=="function")throw Error("Writing Studio re
 
 assert.ok(html.includes("user_second_brain_entries") && html.includes("brain-cloud-form") && html.includes("loadCloudSecondBrain"), "Second Brain must save, search, delete and load account-scoped cloud entries");
 assert.ok(html.includes("bosley-second-brain:") && html.includes("postgres_changes") && html.includes("cloudBrainRows"), "Second Brain must refresh from account-scoped realtime changes and feed the knowledge graph");
+assert.ok(html.includes("brain-learning-enabled") && html.includes("BRAIN_LEARNING_KEY"), "Second Brain must expose a persistent user-controlled continuous-learning setting");
+assert.ok(html.includes("learnExplicitSecondBrainInstruction") && html.includes('category:"instruction"') && html.includes('"user-instruction","learning"'), "Second Brain must learn only explicitly requested user instructions and avoid duplicate saves");
+assert.ok(html.includes("buildBosleyInstructionContext") && html.includes("USER-APPROVED PERSISTENT PREFERENCES AND INSTRUCTIONS") && html.includes("buildBosleyInstructionContext()"), "Approved Second Brain instructions must be retrieved for every signed-in chat");
+assert.ok(html.includes("Ordinary chats are not automatically saved") && html.includes("password|passcode|one[- ]time code"), "Continuous learning must be transparent, opt-out and avoid automatically saving credentials");
 assert.ok(html.includes("Agent Command Centre") && html.includes("agent-centre-devices") && html.includes("agent-centre-runs") && html.includes("agent-centre-commands"), "Agent Command Centre must display device presence, automation runs and device command status");
 assert.ok(html.includes("bosley-agent-centre:") && html.includes("agent_device_commands"), "Agent Command Centre must refresh from authenticated device and automation activity");

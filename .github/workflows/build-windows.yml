@@ -221,6 +221,14 @@ jobs:
             const area = display.workArea;
             const bounds = display.bounds;
 
+            if (writingBulb && !writingBulb.isDestroyed()) {
+              const bulbBounds = writingBulb.getBounds();
+              const x = Math.max(area.x, Math.min(bulbBounds.x, area.x + area.width - bulbBounds.width));
+              const y = Math.max(area.y, Math.min(bulbBounds.y, area.y + area.height - bulbBounds.height));
+              writingBulb.setBounds({ x, y, width: bulbBounds.width, height: bulbBounds.height });
+              writingBulb.setAlwaysOnTop(true, 'screen-saver');
+            }
+
             if (bubble && !bubble.isDestroyed()) {
               const dimensions = WIDGET_SIZES[widgetAppearance.size] || WIDGET_SIZES.default;
               const bubbleWidth = dimensions.width;

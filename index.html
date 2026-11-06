@@ -1612,6 +1612,7 @@ async function handleNativeQuickAction(){
   const sharedText=String(result?.sharedText||"");
   if(action==="panel"||action==="voice")await applyNativeQuickAction(action,plugin);
   if(action==="writing")await openUniversalInputFromOverlay();
+  if(action==="capture-screen"){const capture=$("#screen");if(capture){capture.dataset.nativeCaptureConfirmed="true";capture.click();}}
   if(sharedText.trim())await openUniversalInputWithSharedText(sharedText);
   return action==="panel"||action==="voice"||action==="writing"||!!sharedText.trim();
  }catch(error){console.warn("Bosley quick action could not be read",error);return false}
@@ -2168,6 +2169,12 @@ if(screenButton){
 }
 if(screenButton)screenButton.onclick=async()=>{
  if(screenButton.disabled)return;
+ if(androidCapture()&&screenButton.dataset.nativeCaptureConfirmed!=="true"){
+  try{await window.Capacitor.Plugins.BosleyOverlay.showScreenCapturePrompt();note("A small OK button is now floating above your apps. Switch to the screen you want, then tap OK.");}
+  catch(error){note("Could not show the capture button: "+String(error?.message||error).slice(0,180));}
+  return;
+ }
+ delete screenButton.dataset.nativeCaptureConfirmed;
  screenButton.disabled=true;
  try{
   let result;

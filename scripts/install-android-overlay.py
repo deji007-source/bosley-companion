@@ -293,9 +293,10 @@ public class BosleyKeyboardService extends InputMethodService {
     InputConnection ic=getCurrentInputConnection();if(ic==null)return;
     if("⌫".equals(k)){ic.deleteSurroundingText(1,0);refreshSuggestions();return;}
     if("⇧".equals(k)){shift=!shift;return;}
-    if("?123".equals(k)){symbols=true;buildKeyboard();return;}\n    if("ABC".equals(k)){symbols=false;buildKeyboard();return;}
+    if("?123".equals(k)){symbols=true;buildKeyboard();return;}
+    if("ABC".equals(k)){symbols=false;buildKeyboard();return;}
     if("space".equals(k)){ic.commitText(" ",1);shift=true;refreshSuggestions();return;}
-    if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();if(e!=null)ic.performEditorAction(e.imeOptions&EditorInfo.IME_MASK_ACTION);else ic.commitText("\\n",1);return;}
+    if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();if(e!=null)ic.performEditorAction(e.imeOptions&EditorInfo.IME_MASK_ACTION);else{ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_ENTER));ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP,android.view.KeyEvent.KEYCODE_ENTER));}return;}
     ic.commitText(shift?k.toUpperCase(Locale.ROOT):k,1);shift=false;refreshSuggestions();
   }
   private String correction(String w){

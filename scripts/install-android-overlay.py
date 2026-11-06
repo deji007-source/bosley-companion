@@ -653,6 +653,7 @@ public class BosleyOverlayPlugin extends Plugin {
     if(sharedText.length()>12000)sharedText=sharedText.substring(0,12000);
     intent.removeExtra(android.content.Intent.EXTRA_PROCESS_TEXT);
     intent.removeExtra(android.content.Intent.EXTRA_TEXT);
+    // Keep the fallback expression valid Java and return an empty action when absent.
     JSObject r=new JSObject();r.put("action",action==null?"":action);r.put("sharedText",sharedText);call.resolve(r);
   }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}

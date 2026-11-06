@@ -31,6 +31,7 @@ assert.ok(html.includes("data-review-composer"), "The floating Bosley menu must 
 assert.ok(html.includes("installDockWritingAssistant"), "Floating writing review must be wired to the writing-assist function");
 assert.ok(html.includes("__bosleySupabaseClient"), "Floating writing review must use the authenticated Supabase client");
 assert.ok(html.includes("Final layer correction: keep the ghost and its tools above the open workspace"), "Floating ghost must render above the workspace panel");
+assert.ok(html.includes("document.body.appendChild(floatingLauncher)") && html.includes('id="bosley-floating-layer-fix"'), "Floating ghost launcher must be portalled to the document body above workspace stacking contexts");
 assert.ok(html.includes("Bosley cross-device dock and compact mobile overlay refinements"), "Mobile workspace panel must use compact responsive dock positioning");
 assert.match(html,/Keep the floating tool launcher out of the active conversation/);
 assert.ok(androidInstaller.includes("Color.rgb(66,133,244)"), "Bosley keyboard should use a distinct Gboard-style action key");
@@ -829,8 +830,10 @@ assert.ok(androidInstaller.includes('readClipboard(PluginCall call)') && android
 assert.ok(androidInstaller.includes("BosleyKeyboardService") && androidInstaller.includes("android.permission.BIND_INPUT_METHOD") && androidInstaller.includes("bosley_input_method.xml"), "Android build must install the optional native Bosley keyboard service");
 assert.ok(androidInstaller.includes("TYPE_TEXT_VARIATION_PASSWORD") && androidInstaller.includes("sensitive||w==null"), "Android keyboard suggestions must be disabled for password fields");
 assert.ok(androidInstaller.includes("showKeyboardPicker") && html.includes('data-action="keyboard-setup"'), "Universal Input must expose Android keyboard setup");
-assert.ok(androidInstaller.includes("On-device suggestions") && androidInstaller.includes("ic.commitText"), "Android keyboard must provide local text entry and on-device correction suggestions");
-assert.ok(androidInstaller.includes("private static final String[] WORDS") && androidInstaller.includes("setOnLongClickListener") && androidInstaller.includes("shift=!shift;buildKeyboard()"), "Bosley Keyboard must provide Gboard-style local word suggestions, long-press delete and a visible shift state");
+assert.ok(androidInstaller.includes("private static final String[] WORDS") && androidInstaller.includes("ic.commitText") && androidInstaller.includes("private String correction"), "Android keyboard must provide local text entry, word suggestions and autocorrection");
+assert.ok(androidInstaller.includes("private static final String[] WORDS") && androidInstaller.includes("setOnLongClickListener") && androidInstaller.includes("shift=!shift;updateLetterCase()"), "Bosley Keyboard must provide Gboard-style local word suggestions, fast shift updates and long-press delete");
+assert.ok(androidInstaller.includes("private static final String[] EMOJIS") && androidInstaller.includes("emojiMode") && androidInstaller.includes("new String[]{\"1\",\"2\",\"3\""), "Bosley Keyboard must include emoji access and a dedicated number row");
+assert.ok(androidInstaller.includes("String fix=correction(word)") && androidInstaller.includes("ic.commitText(\" \",1)"), "Bosley Keyboard must autocorrect known typos on space without a per-keystroke layout rebuild");
 
 assert.ok(readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8").includes("CommandOrControl+Shift+U"), "Windows build must register the system-wide Universal Input shortcut");
 

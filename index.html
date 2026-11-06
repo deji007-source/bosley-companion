@@ -915,6 +915,14 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 #side-dock:not([hidden]){display:flex!important;visibility:visible!important;pointer-events:auto!important;z-index:2147483000!important}
 @media(max-width:760px){body.panel-open:not(.desktop-panel) #dock-launcher{display:block!important;visibility:visible!important;pointer-events:auto!important;bottom:auto!important;top:30%!important;right:8px!important;transform:translateY(-50%)!important}}
 </style>
+<style id="bosley-dock-final-interaction-fix">
+#dock-launcher,#dock-launcher *{pointer-events:auto!important}
+#dock-launcher{touch-action:manipulation!important}
+#dock-launcher-menu{display:grid!important}
+#dock-launcher-menu[hidden]{display:none!important}
+#side-dock[hidden]{display:none!important}
+#side-dock:not([hidden]){display:flex!important;visibility:visible!important;pointer-events:auto!important}
+</style>
 </head>
 <body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><script>
 /* Independent splash failsafe: keep the launch overlay from trapping users if app boot code fails. */
@@ -1051,6 +1059,15 @@ document.addEventListener("DOMContentLoaded",()=>{
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
  const floatingLauncher=document.getElementById("dock-launcher");if(floatingLauncher&&floatingLauncher.parentElement!==document.body)document.body.appendChild(floatingLauncher);
  const dockMenu=document.getElementById("dock-launcher-menu"),dockToggle=document.getElementById("dock-menu-toggle");
+ // Window-capture router runs before document-level handlers and owns launcher interactions.
+ window.addEventListener("click",event=>{
+  const target=event.target instanceof Element?event.target:null;if(!target)return;
+  const toggle=target.closest("#dock-menu-toggle");
+  if(toggle){event.preventDefault();event.stopImmediatePropagation();if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}return;}
+  const item=target.closest("#dock-launcher-menu [data-open-view]");
+  if(item){event.preventDefault();event.stopImmediatePropagation();const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");if(typeof window.BosleyOpenPanel==="function")window.BosleyOpenPanel(id);return;}
+  if(target.closest("#dock-launcher-menu")){event.stopImmediatePropagation();}
+ },true);
  // Delegated capture handlers keep the launcher functional after it is portalled to body.
  document.addEventListener("click",event=>{
   const target=event.target instanceof Element?event.target:null;if(!target)return;

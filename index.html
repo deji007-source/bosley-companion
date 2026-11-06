@@ -1080,6 +1080,7 @@ const CHAT_URL=SUPABASE_URL+"/functions/v1/companion-chat";
 const $=s=>document.querySelector(s),H=document.documentElement;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const db=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+window.__bosleySupabaseClient=db;
 const gate=$("#auth-gate"),gateForm=$("#gate-auth"),gateEmail=$("#gate-email"),gatePassword=$("#gate-password"),gateSubmit=$("#gate-submit"),gateSwitch=$("#gate-switch"),gateFeedback=$("#gate-feedback");
 let gateMode="in",authResolved=false;
 function renderAuthGate(){
@@ -3306,10 +3307,10 @@ window.__bosleyDictationTarget=window.__bosleyDictationTarget||$("#in");
  trigger.addEventListener("click",async()=>{
   menu.hidden=true;const draft=input.value.trim();card.hidden=false;position();
   if(!draft){body.textContent="Type your message in the chat box first, then open Bosley and choose Review chat draft.";return}
-  if(!window.supabaseClient&&!window.db&&!window.bosleyDb){body.textContent="The writing service is not ready yet. Your draft is unchanged.";return}
+  if(!window.__bosleySupabaseClient){body.textContent="The writing service is not ready yet. Your draft is unchanged.";return}
   trigger.disabled=true;body.textContent="Checking grammar, clarity and tone…";
   try{
-   const client=window.supabaseClient||window.db||window.bosleyDb;
+   const client=window.__bosleySupabaseClient;
    const {data,error}=await client.functions.invoke("bosley-writing-assist",{body:{text:draft,mode:"analyze",preferences:{goal:"message",tone:"preserve my voice",audience:"general reader",dialect:"Nigerian English; preserve natural local expressions"}}});
    if(error)throw error;
    body.replaceChildren();const summary=document.createElement("p");summary.textContent=String(data?.summary||"Review complete. Apply only the changes you want.");body.append(summary);

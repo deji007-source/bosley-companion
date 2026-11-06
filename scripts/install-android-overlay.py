@@ -206,7 +206,7 @@ public class BosleyOverlayService extends Service {
     try{wm.addView(bulb,bulbLp);}catch(Exception e){bulb=null;}
     scheduleBulbHide();
   }
-  void scheduleBulbHide(){bulbHandler.removeCallbacks(hideBulbTask);if(!bulbInUse&&bulb!=null)bulbHandler.postDelayed(hideBulbTask,10000);}
+  void scheduleBulbHide(){bulbHandler.removeCallbacks(hideBulbTask);if(!bulbInUse&&bulb!=null)bulbHandler.postDelayed(hideBulbTask,5000);}
   void hideBulb(){bulbHandler.removeCallbacks(hideBulbTask);if(wm!=null&&bulb!=null){try{wm.removeView(bulb);}catch(Exception ignored){}bulb=null;}}
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
   void showGuide(){

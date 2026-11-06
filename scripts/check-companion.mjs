@@ -661,6 +661,8 @@ assert.ok(appScript.includes("window.BosleyPanelState?.()") && appScript.include
 assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('value="draft_email"') && appScript.includes('value="draft_message"'), "Writing Assist must support email and message drafting as well as editing");
 assert.ok(appScript.includes('id="bosley-writing-gmail"') && appScript.includes('id="bosley-writing-outlook"'), "Writing Assist must hand off prefilled drafts to Gmail and Outlook without sending them");
 assert.ok(appScript.includes('id="bosley-writing-channel"') && appScript.includes('id="bosley-writing-destination"'), "Writing Studio must collect a destination and messaging channel");
+assert.ok(appScript.includes("bosley-writing-contacts-v1") && appScript.includes('id="bosley-writing-contact-save"') && appScript.includes('id="bosley-writing-contact-load"'), "Writing Studio must save and reuse named email and messaging contacts locally");
+assert.ok(appScript.includes("S.busy=true;\\n if(!alreadyDisplayed)addMsg") && appScript.includes("nativeOverlayHiddenForPanel") && appScript.includes("native.hide()"), "Chat must guard duplicate submissions and tuck the Android floating widget away while the panel is open");
 assert.ok(appScript.includes('https://wa.me/') && appScript.includes('https://t.me/share/url?url=&text=') && appScript.includes('"sms:"'), "Writing Studio must prepare WhatsApp, Telegram and SMS handoffs");
 assert.ok(appScript.includes('bosley-writing-destination-v1') && appScript.includes('id="bosley-writing-remember"'), "Writing Studio must only remember a destination on-device when explicitly selected");
 assert.ok(appScript.includes('const openPrepared=async(url,label)') && appScript.includes('await bosleyCopyText(body)'), "External app handoff must copy the reviewed draft before opening the destination");
@@ -814,6 +816,7 @@ assert.ok(androidInstaller.includes("BosleyKeyboardService") && androidInstaller
 assert.ok(androidInstaller.includes("TYPE_TEXT_VARIATION_PASSWORD") && androidInstaller.includes("sensitive||w==null"), "Android keyboard suggestions must be disabled for password fields");
 assert.ok(androidInstaller.includes("showKeyboardPicker") && html.includes('data-action="keyboard-setup"'), "Universal Input must expose Android keyboard setup");
 assert.ok(androidInstaller.includes("On-device suggestions") && androidInstaller.includes("ic.commitText"), "Android keyboard must provide local text entry and on-device correction suggestions");
+assert.ok(androidInstaller.includes("private static final String[] WORDS") && androidInstaller.includes("setOnLongClickListener") && androidInstaller.includes("shift=!shift;buildKeyboard()"), "Bosley Keyboard must provide Gboard-style local word suggestions, long-press delete and a visible shift state");
 
 assert.ok(readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8").includes("CommandOrControl+Shift+U"), "Windows build must register the system-wide Universal Input shortcut");
 

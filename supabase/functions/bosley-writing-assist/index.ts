@@ -2,8 +2,29 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const admin=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false,autoRefreshToken:false}});
-const apiKey=Deno.env.get("GROQ_API_KEY");
-const model=Deno.env.get("COMPANION_MODEL")??"openai/gpt-oss-120b";
+const SERVER_API_KEY=Deno.env.get("GROQ_API_KEY")||"";
+const DEFAULT_MODEL=Deno.env.get("COMPANION_MODEL")??"openai/gpt-oss-120b";
+const ENCRYPTION_KEY=Deno.env.get("AGENT_CREDENTIALS_ENCRYPTION_KEY")||"";
+const b64=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes));
+const unb64=(value:string)=>Uint8Array.from(atob(value),c=>c.charCodeAt(0));
+async function encryptionKey(){
+ const configured=ENCRYPTION_KEY.trim().replace(/^["']|["']$/g,"");
+ if(!configured)throw new Error("Missing credential encryption setting.");
+ let raw:Uint8Array|null=null;
+ if(/^[a-f0-9]{64}$/i.test(configured))raw=Uint8Array.from(configured.match(/../g)!,x=>parseInt(x,16));
+ else if(configured.length===32&&/^[\x20-\x7e]{32}$/.test(configured))raw=new TextEncoder().encode(configured);
+ else{
+  const encoded=configured.replace(/-/g,"+").replace(/_/g,"/").replace(/\s/g,"");
+  if(/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)&&encoded.length%4!==1){try{const decoded=unb64(encoded+"=".repeat((4-encoded.length%4)%4));if(decoded.length===32)raw=decoded}catch{}}
+ }
+ if(!raw){const bytes=new TextEncoder().encode(configured);if(bytes.length<32)throw new Error("Credential encryption setting is invalid.");raw=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes))}
+ if(raw.length!==32)throw new Error("Credential encryption setting is invalid.");
+ return crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+}
+async function decryptSavedKey(ciphertext:string,iv:string){
+ const key=await encryptionKey(),plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(iv)},key,unb64(ciphertext));
+ return new TextDecoder().decode(plain);
+}
 const calls=new Map<string,number[]>();
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,content-type,apikey,x-client-info","Access-Control-Allow-Methods":"POST,OPTIONS","Cache-Control":"no-store"};
 const json=(value:unknown,status=200)=>new Response(JSON.stringify(value),{status,headers:{...cors,"Content-Type":"application/json"}});
@@ -14,7 +35,14 @@ Deno.serve(async(req:Request)=>{
  if(!token)return json({error:"Sign in to use Writing Assist."},401);
  const {data:auth,error:authError}=await admin.auth.getUser(token);
  if(authError||!auth.user)return json({error:"Your session expired. Sign in again."},401);
- if(!apiKey)return json({error:"Writing Assist needs AI provider configuration."},503);
+ let apiKey=SERVER_API_KEY,model=DEFAULT_MODEL;
+ const {data:saved,error:savedError}=await admin.from("agent_provider_connections").select("api_key_ciphertext,api_key_iv,model,enabled").eq("user_id",auth.user.id).eq("provider","groq").maybeSingle();
+ if(savedError&&!apiKey)return json({error:"Could not load your saved Groq connection. Check Bosley Agents and retry."},503);
+ if(saved?.enabled){
+  try{apiKey=await decryptSavedKey(saved.api_key_ciphertext,saved.api_key_iv);model=saved.model||DEFAULT_MODEL}
+  catch(error){console.error("Writing Assist could not decrypt saved provider credentials:",String(error).slice(0,120));return json({error:"Your saved Groq connection needs its credential encryption setting checked. Reconnect Groq in Bosley Agents."},503)}
+ }
+ if(!apiKey)return json({error:"Connect Groq in Bosley Agents or configure the server GROQ_API_KEY before using Writing Studio."},503);
  const now=Date.now(),recent=(calls.get(auth.user.id)??[]).filter(t=>now-t<60_000);
  if(recent.length>=12)return json({error:"Writing Assist is busy. Try again shortly."},429);
  recent.push(now);calls.set(auth.user.id,recent);

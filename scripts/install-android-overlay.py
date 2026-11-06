@@ -210,7 +210,7 @@ public class BosleyOverlayService extends Service {
   void showBulb(){
     if(bulb!=null){scheduleBulbHide();return;}
     TextView writingBulb=new TextView(this);writingBulb.setText("💡");writingBulb.setTextSize(19);writingBulb.setGravity(Gravity.CENTER);
-    writingBulb.setContentDescription("Bosley writing assistant. Tap to open Universal Input.");
+    writingBulb.setContentDescription("Bosley Writing and Ideas. Tap to open the compact writing assistant card.");
     GradientDrawable bulbBg=new GradientDrawable();bulbBg.setColor(Color.WHITE);bulbBg.setShape(GradientDrawable.OVAL);bulbBg.setStroke(dp(1),Color.rgb(20,20,20));writingBulb.setBackground(bulbBg);
     writingBulb.setElevation(dp(8));bulb=writingBulb;
     bulbLp=new WindowManager.LayoutParams(dp(40),dp(40),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);

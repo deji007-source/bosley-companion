@@ -69,6 +69,66 @@ res = root / "app/src/main/res"
 
 src = root / "app/src/main/java/com/bosley/companion"
 src.mkdir(parents=True, exist_ok=True)
+(src / "BosleyTargetAccessibilityService.java").write_text(r'''package com.bosley.companion;
+
+import android.accessibilityservice.AccessibilityService;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.text.InputType;
+import java.util.function.Consumer;
+
+/**
+ * Read-only, user-triggered access to the currently focused editable field.
+ * No text-change events are subscribed to and no gestures or input are performed.
+ */
+public final class BosleyTargetAccessibilityService extends AccessibilityService {
+  private static volatile BosleyTargetAccessibilityService instance;
+  private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+  @Override public void onServiceConnected() {
+    super.onServiceConnected();
+    instance = this;
+  }
+
+  @Override public void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent event) {
+    // Intentionally do not inspect events or collect text in the background.
+  }
+
+  @Override public void onInterrupt() { }
+
+  @Override public void onDestroy() {
+    if (instance == this) instance = null;
+    super.onDestroy();
+  }
+
+  public static void readFocusedText(Consumer<String> callback) {
+    BosleyTargetAccessibilityService service = instance;
+    if (service == null) {
+      callback.accept(null);
+      return;
+    }
+    service.mainHandler.post(() -> {
+      String result = null;
+      AccessibilityNodeInfo field = null;
+      try {
+        field = service.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
+        if (field != null && field.isEditable() && !field.isPassword()) {
+          CharSequence value = field.getText();
+          if (value != null) result = value.toString();
+          if (result != null && result.length() > 6000) result = result.substring(0, 6000);
+        }
+      } catch (Exception ignored) {
+        result = null;
+      } finally {
+        if (field != null) field.recycle();
+      }
+      callback.accept(result);
+    });
+  }
+}
+''')
+
 (src / "BosleyOverlayService.java").write_text(r'''package com.bosley.companion;
 import android.app.*;
 import android.content.*;

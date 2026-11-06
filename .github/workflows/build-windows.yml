@@ -1035,8 +1035,8 @@ jobs:
               try { target = new URL(rawUrl); } catch {
                 throw new Error('A valid HTTPS URL is required');
               }
-              if (target.protocol !== 'https:') {
-                throw new Error('Only HTTPS links can be opened');
+              if (!['https:', 'mailto:', 'sms:'].includes(target.protocol)) {
+                throw new Error('Only HTTPS, email and SMS composer links can be opened');
               }
               const choice = await dialog.showMessageBox(panel, {
                 type: 'question',

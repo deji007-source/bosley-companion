@@ -704,6 +704,18 @@ html.blink #bosley-mascot .mascot-eye{transform:scaleY(.08)}
 }
 #composer-writing-card[hidden]{display:none!important}
 #composer-writing-card button{font:inherit;cursor:pointer}
+
+/* Portal the floating launcher out of app/workspace stacking contexts. */
+#dock-launcher{position:fixed!important;z-index:2147483647!important;isolation:isolate!important;display:block!important;width:max-content!important;height:max-content!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;overflow:visible!important;flex:none!important;right:10px!important;top:48%!important;bottom:auto!important;left:auto!important;transform:translateY(-50%)!important;padding:5px!important;pointer-events:auto!important}
+#dock-launcher>#dock-menu-toggle{display:grid!important;position:relative!important;z-index:2!important;place-items:center!important;width:48px!important;height:48px!important;margin:0!important;padding:4px!important}
+#dock-launcher-menu{position:absolute!important;z-index:2147483647!important;right:calc(100% + 10px)!important;left:auto!important;top:50%!important;bottom:auto!important;transform:translateY(-50%)!important;display:grid!important;pointer-events:auto!important;max-height:min(72dvh,620px)!important}
+#dock-launcher-menu[hidden]{display:none!important}
+#side-dock:not([hidden]){z-index:2147483000!important}
+@media(max-width:760px){
+ #dock-launcher{right:8px!important;top:42%!important;width:max-content!important;height:max-content!important;max-height:none!important;transform:translateY(-50%)!important}
+ #dock-launcher>#dock-menu-toggle{width:46px!important;height:46px!important}
+ #dock-launcher-menu{right:calc(100% + 8px)!important;top:50%!important;max-height:min(68dvh,560px)!important;width:min(180px,calc(100vw - 82px))!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
 </style><style>
 /* Detached Windows views must occupy the Electron client area edge-to-edge. */
 html,body{width:100%;height:100%;min-width:0;min-height:0;margin:0}
@@ -1017,6 +1029,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  ];
  let active="";
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
+ const floatingLauncher=document.getElementById("dock-launcher");if(floatingLauncher&&floatingLauncher.parentElement!==document.body)document.body.appendChild(floatingLauncher);
  const dockMenu=document.getElementById("dock-launcher-menu"),dockToggle=document.getElementById("dock-menu-toggle");
  dockToggle?.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(!dockMenu)return;dockMenu.hidden=!dockMenu.hidden;dockToggle.setAttribute("aria-expanded",String(!dockMenu.hidden))});
  document.addEventListener("click",event=>{if(!event.target.closest("#dock-launcher")&&dockToggle?.getAttribute("aria-expanded")==="true"){dockMenu.hidden=true;dockToggle.setAttribute("aria-expanded","false")}});

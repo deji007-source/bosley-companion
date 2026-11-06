@@ -106,6 +106,9 @@ assert.ok(html.includes('gateway("chat",{provider,messages:[{role:"user",content
 assert.ok(html.includes('type="password" autocomplete="off" maxlength="500"'), "Provider API keys must use masked non-persistent password inputs");
 assert.ok(html.includes('gateway("disconnect",{provider:button.dataset.agentDisconnect})'), "AI Agents must support deleting a provider connection");
 
+assert.ok(html.includes("function scrollChatToLatest()") && html.includes("chat.scrollTop=chat.scrollHeight"), "Restored and selected conversations must open scrolled to their latest message");
+assert.ok(html.includes('.order("created_at",{ascending:false}).limit(100)') && html.includes("(rows||[]).slice().reverse()"), "Latest conversation restore must fetch newest messages and render them chronologically");
+assert.ok(html.includes('.order("created_at",{ascending:false}).limit(500)') && html.includes("(messages||[]).slice().reverse()"), "Manually selected conversations must also load newest messages chronologically");
 assert.ok(html.includes('id="plus"'), "Main chat composer must expose the Bosley plus button");
 assert.ok(html.includes('id="attach-menu"'), "Plus button must open the attachment and tools menu");
 assert.ok(html.includes('id="attach-files"'), "Attachment menu must allow photo and file selection");

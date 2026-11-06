@@ -34,8 +34,8 @@ assert.ok(html.includes("Final layer correction: keep the ghost and its tools ab
 assert.ok(html.includes("document.body.appendChild(floatingLauncher)") && html.includes('id="bosley-floating-layer-fix"'), "Floating ghost launcher must be portalled to the document body above workspace stacking contexts");
 assert.ok(html.includes("Bosley cross-device dock and compact mobile overlay refinements"), "Mobile workspace panel must use compact responsive dock positioning");
 assert.match(html,/Keep the floating tool launcher out of the active conversation/);
-assert.ok(androidInstaller.includes("Color.rgb(66,133,244)"), "Bosley keyboard should use a distinct Gboard-style action key");
-assert.ok(androidInstaller.includes("Bosley Keyboard  ·  On-device suggestions"), "Bosley keyboard should show its refined suggestion-strip footer");
+assert.ok(androidInstaller.includes("Color.rgb(92,132,190)"), "Bosley keyboard should use a distinct Gboard-style action key");
+assert.ok(androidInstaller.includes("private static final String[] EMOJIS") && androidInstaller.includes("emojiMode"), "Bosley keyboard should expose its emoji strip and quick-access mode");
 assert.ok(!androidInstaller.includes('android.permission.CAMERA'), "Android build must not request camera permission; image capture uses the system picker");
 assert.ok(androidInstaller.includes('"android.permission.MODIFY_AUDIO_SETTINGS"') && androidInstaller.includes('"android.permission.RECORD_AUDIO"'), "Android WebView Live Talk must declare both audio permissions required by Capacitor microphone capture");
 assert.ok(androidInstaller.includes('"mailto".equalsIgnoreCase(scheme)') && androidInstaller.includes('"sms".equalsIgnoreCase(scheme)'), "Android native bridge must allow reviewed email and SMS composer links");

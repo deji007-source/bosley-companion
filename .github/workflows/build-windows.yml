@@ -405,7 +405,12 @@ jobs:
               if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
               writingBulbHideTimer = null;
               writingBulbVisibleUntil = 0;
-              togglePanel();
+              if (!panel || panel.isDestroyed()) createPanel();
+              if (bubble && !bubble.isDestroyed()) bubble.hide();
+              panel.show();
+              panel.focus();
+              panel.setAlwaysOnTop(true, 'screen-saver');
+              armPanelIdleClose();
               logStartup('GHOST TAPPED AGAIN: OPENED BOSLEY COMPANION');
               return;
             }

@@ -1015,6 +1015,7 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
   <label class="mute"><input id="brain-cloud-pinned" type="checkbox"> Pin this entry</label>
   <button class="primary" type="submit">Save to Second Brain</button>
  </form>
+ <div class="form" style="margin-top:10px"><label for="brain-document-file">Import a document into Second Brain</label><input id="brain-document-file" type="file" accept=".txt,.md,.markdown,.json,.csv,.log,.xml,.yaml,.yml,.html,.htm,text/plain,text/markdown,application/json,text/csv"><button type="button" id="brain-document-import">Import and index document</button><small class="mute" id="brain-document-status" role="status" aria-live="polite">Text-based files up to 1 MB; indexed in searchable chunks. Nothing is imported until you press the button.</small></div>
  <input id="brain-cloud-search" maxlength="120" placeholder="Search your cloud knowledge…" aria-label="Search cloud knowledge">
  <div id="brain-cloud-items" class="items"></div>
 </section><h3 style="margin-top:14px">Local knowledge graph</h3><p class="mute">Explore links between your saved tasks, memories and workflows. This index is generated on this device and is not uploaded.</p><input id="knowledge-search" maxlength="120" placeholder="Search linked items…" aria-label="Search knowledge graph"><p class="status" id="knowledge-status" aria-live="polite">Local index ready.</p><div id="knowledge-items" class="items"></div><div class="actions"><button type="button" id="memoryclear">Clear saved memory</button><button type="button" id="activityclear">Clear activity log</button></div></section>
@@ -1336,6 +1337,48 @@ $("#brain-cloud-form")?.addEventListener("submit",async event=>{
   $("#brain-cloud-title").value="";$("#brain-cloud-content").value="";$("#brain-cloud-url").value="";$("#brain-cloud-tags").value="";$("#brain-cloud-pinned").checked=false;
   status.textContent="SAVED · Refreshing your cloud vault…";await loadCloudSecondBrain();
  }catch(error){status.textContent="SAVE FAILED · "+String(error?.message||error).slice(0,180)}
+ finally{button.disabled=false}
+});
+$("#brain-document-import")?.addEventListener("click",async()=>{
+ const file=$("#brain-document-file")?.files?.[0],status=$("#brain-document-status"),button=$("#brain-document-import");
+ if(!file){if(status)status.textContent="Choose a document first.";return}
+ if(!db||!user){if(status)status.textContent="Sign in before importing to your cloud vault.";return}
+ if(file.size>1024*1024){if(status)status.textContent="This file exceeds the 1 MB import limit. Split it into smaller documents.";return}
+ const ext=file.name.split(".").pop().toLowerCase(),supported=["txt","md","markdown","json","csv","log","xml","yaml","yml","html","htm"];
+ if(!supported.includes(ext)){if(status)status.textContent="Supported formats: TXT, Markdown, JSON, CSV, LOG, XML, YAML and HTML.";return}
+ const uid=user.id;button.disabled=true;if(status)status.textContent="READING DOCUMENT…";
+ try{
+  let content=await file.text();
+  if(ext==="html"||ext==="htm"){const parsed=new DOMParser().parseFromString(content,"text/html");parsed.querySelectorAll("script,style,iframe,object,form,svg,nav,footer").forEach(node=>node.remove());content=parsed.body.innerText||parsed.body.textContent||""}
+  if(ext==="json"){try{content=JSON.stringify(JSON.parse(content),null,2)}catch{throw Error("The JSON file is not valid.")}}
+  content=String(content||"").replace(/\r\n?/g,"\n").trim();
+  if(!content)throw Error("No readable text was found in this document.");
+  if(content.length>36000)throw Error("This document contains more than 36,000 characters. Split it into smaller files.");
+  const fileTitle=file.name.replace(/\.[^.]+$/,"").replace(/\s+/g," ").trim().slice(0,125)||"Imported document";
+  const firstTitle=fileTitle+" · Part 1";
+  const duplicate=await db.from("user_second_brain_entries").select("id").eq("user_id",uid).eq("category","document").eq("title",firstTitle).limit(1);
+  if(duplicate.error)throw duplicate.error;
+  if(duplicate.data?.length)throw Error("A document with this filename is already indexed. Delete its existing chunks before importing it again.");
+  const chunks=[];let cursor=0;
+  while(cursor<content.length&&chunks.length<12){
+   let end=Math.min(content.length,cursor+3200);
+   if(end<content.length){const boundary=content.lastIndexOf("\n",end);if(boundary>cursor+1800)end=boundary}
+   const part=content.slice(cursor,end).trim();if(part)chunks.push(part);
+   if(end>=content.length)break;
+   cursor=Math.max(cursor+1,end-220);
+  }
+  if(cursor<content.length)throw Error("The document could not be safely divided into the supported number of chunks.");
+  const docId=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10)).replace(/-/g,"").slice(0,24);
+  const source=$("#brain-cloud-url")?.value.trim()||null;
+  if(source){const parsed=new URL(source);if(!["http:","https:"].includes(parsed.protocol))throw Error("The source URL must use HTTPS or HTTP.")}
+  const rows=chunks.map((part,index)=>({user_id:uid,category:"document",title:fileTitle+" · Part "+(index+1),content:part,url:source,tags:["document-import","doc-"+docId,"chunk-"+(index+1)+"-of-"+chunks.length,file.name.slice(0,40)],pinned:false}));
+  if(status)status.textContent="INDEXING "+chunks.length+" CHUNK"+(chunks.length===1?"":"S")+"…";
+  const saved=await db.from("user_second_brain_entries").insert(rows);if(saved.error)throw saved.error;
+  if(user?.id!==uid)return;
+  $("#brain-document-file").value="";
+  await loadCloudSecondBrain();
+  if(status)status.textContent="IMPORTED · "+file.name+" · "+chunks.length+" searchable chunk"+(chunks.length===1?"":"s")+".";
+ }catch(error){if(status)status.textContent="IMPORT FAILED · "+String(error?.message||error).slice(0,190)}
  finally{button.disabled=false}
 });
 $("#brain-cloud-search")?.addEventListener("input",renderCloudSecondBrain);

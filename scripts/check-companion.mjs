@@ -653,8 +653,8 @@ assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist"'), "Wr
 assert.ok(appScript.includes("function detectChatEmailDraftIntent(raw)") && appScript.includes("function openChatEmailDraft(raw)"), "Natural chat email requests must route into Writing Studio");
 assert.ok(appScript.includes("bosley-chat-writing-draft-v1") && appScript.includes("Loaded from your Bosley chat"), "Writing Studio must load pending email notes and recipient metadata from chat");
 assert.ok(appScript.includes("setTimeout(()=>review.click(),120)"), "Chat-routed email requests must start draft generation when Writing Studio opens");
-assert.ok(appScript.includes("function routeChatWorkspaceIntent(raw)") && appScript.includes('show(target.id)'), "Natural chat navigation requests must open the requested Bosley workspace page");
-assert.ok(appScript.includes("if(!(active===target.id&&!dock.hidden))show(target.id)"), "Chat navigation must not close an already-open destination page");
+assert.ok(appScript.includes("function routeChatWorkspaceIntent(raw)") && appScript.includes("window.BosleyOpenPanel?.(target.id)") && html.includes("window.BosleyOpenPanel=(id)=>show(id)"), "Natural chat navigation requests must open workspace pages through the exported dock controller");
+assert.ok(appScript.includes("window.BosleyPanelState?.()") && appScript.includes("panelState?.active===target.id&&panelState?.open"), "Chat navigation must not close an already-open destination page");
 
 assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('value="draft_email"') && appScript.includes('value="draft_message"'), "Writing Assist must support email and message drafting as well as editing");
 assert.ok(appScript.includes('id="bosley-writing-gmail"') && appScript.includes('id="bosley-writing-outlook"'), "Writing Assist must hand off prefilled drafts to Gmail and Outlook without sending them");

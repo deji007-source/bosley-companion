@@ -1294,7 +1294,7 @@ setBrainLearningEnabled(brainLearningEnabled());
 async function learnExplicitSecondBrainInstruction(message){
  const textValue=String(message||"").trim();
  if(!brainLearningEnabled()||!db||!user||textValue.length<12||textValue.length>3000)return false;
- const explicit=/\b(?:remember (?:that|this|to|my|i)|please remember|from now on|going forward|always (?:use|do|keep|make|call|treat|prefer|avoid)|never (?:use|do|call|share|assume)|my preference is|i prefer|i want you to|don't forget|do not forget|when i say|if i ask you to)\b/i.test(textValue);
+ const explicit=/\b(?:remember (?:that|this|to|my|i)|please remember|from now on|going forward|always (?:use|do|keep|make|call|treat|prefer|avoid)|never (?:use|do|call|share|assume)|my preference is|i prefer|i want you to|don't forget|do not forget|when i say|if i ask you to|correction:|what i meant is|that's not what i meant)\b/i.test(textValue);
  if(!explicit)return false;
  if(/\b(?:password|passcode|one[- ]time code|otp|recovery code|secret key|api key|private key|bank account|card number|cvv|national id|passport number)\b/i.test(textValue))return false;
  const uid=user.id,content=textValue.slice(0,3000),title="Instruction · "+content.replace(/\s+/g," ").slice(0,105);

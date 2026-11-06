@@ -1829,7 +1829,7 @@ async function openUniversalInputFromOverlay(){
  if(!state?.open||state.active!=="universal-input")window.BosleyOpenPanel?.("universal-input");
  for(let attempt=0;attempt<30;attempt++){
   const editor=$("#bue-editor");
-  if(editor){editor.focus();const status=$("#bue-status");if(status)status.textContent="Bosley writing assistant is ready. Paste or type text, or use Share / Process Text from another app.";return true;}
+  if(editor){editor.focus();const status=$("#bue-status");if(status)status.textContent="Bosley Writing & Ideas is ready. Choose an edit or idea action; your draft stays here until you decide to use it.";window.BosleyOpenWritingIdeasCard?.();return true;}
   await new Promise(resolve=>setTimeout(resolve,100));
  }
  note("Bosley writing assistant could not finish opening. Open Universal Input from the tools menu.");

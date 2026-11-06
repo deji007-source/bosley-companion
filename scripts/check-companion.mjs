@@ -778,6 +778,9 @@ assert.ok(androidInstaller.includes('call.getString("profile","warm")') && andro
 assert.ok(html.includes("id=\"skills-panel\""), "Skills panel must exist");
 
 assert.ok(appScript.includes("Your writing workspace") && appScript.includes("bue-editor") && appScript.includes("Review writing"), "Universal Input must provide a writing workspace and review action");
+assert.ok(appScript.includes('data-action="ocr"') && appScript.includes("Tesseract") && appScript.includes("tesseract.createWorker") && appScript.includes("Math.min(pdf.numPages,5)"), "Universal Input must offer bounded, on-device OCR for scanned PDFs");
+assert.ok(appScript.includes('data-action="snapshot"') && appScript.includes('data-action="compare"') && appScript.includes("bosley-universal-input-history-v1:"), "Universal Input must support local version snapshots and comparisons");
+assert.ok(appScript.includes('data-action="preview"') && appScript.includes('id="bue-preview"'), "Universal Input must provide a document preview panel");
 assert.ok(appScript.includes('data-format="bold"') && appScript.includes('data-format="italic"') && appScript.includes('data-format="heading"') && appScript.includes('data-format="bullet"') && appScript.includes('data-format="number"') && appScript.includes('data-format="quote"'), "Universal Input must provide working Markdown formatting controls");
 assert.ok(appScript.includes('bosley-universal-input-draft-v2:') && appScript.includes("localStorage.setItem(draftKey") && appScript.includes("localStorage.getItem(draftKey"), "Universal Input must restore and autosave a private, account-scoped local draft");
 assert.ok(appScript.includes("BosleyOpenUniversalInput") && appScript.includes('event.key.toLowerCase()==="u"'), "Universal Input must be directly launchable and support Ctrl/Cmd+Shift+U");

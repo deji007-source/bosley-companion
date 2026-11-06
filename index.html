@@ -1284,7 +1284,7 @@ function renderCloudSecondBrain(){
  const list=$("#brain-cloud-items"),status=$("#brain-cloud-status");if(!list||!status)return;
  const q=String($("#brain-cloud-search")?.value||"").trim().toLowerCase();
  const rows=cloudBrainRows.filter(x=>!q||[x.title,x.content,x.category,x.url,(x.tags||[]).join(" ")].join(" ").toLowerCase().includes(q));
- list.innerHTML=rows.map(x=>'<article class="item"><main><div class="actions" style="justify-content:space-between"><strong>'+esc(x.title)+'</strong><span class="status">'+esc(String(x.category||"note").toUpperCase())+(x.pinned?" · PINNED":"")+'</span></div><p>'+esc(x.content||"")+'</p>'+(x.url?'<p><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a></p>':"")+'<small>'+esc((x.tags||[]).join(" · "))+' · CLOUD SYNC · '+esc(new Date(x.updated_at||x.created_at).toLocaleString())+'</small></main><button type="button" data-brain-delete="'+esc(x.id)+'" aria-label="Delete Second Brain entry">Delete</button></article>').join("")||'<p class="mute">No matching cloud entries. Save a note or reference above to start building your vault.</p>';
+ list.innerHTML=rows.map(x=>'<article class="item"><main><div class="actions" style="justify-content:space-between"><strong>'+esc(x.title)+'</strong><span class="status">'+esc(String(x.category||"note").toUpperCase())+(x.pinned?" · PINNED":"")+'</span></div><p>'+esc(x.content||"")+'</p>'+(x.url?'<p><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a></p>':"")+'<small>'+esc((x.tags||[]).join(" · "))+' · CLOUD SYNC · '+esc(new Date(x.updated_at||x.created_at).toLocaleString())+'</small></main>'+((x.tags||[]).some(tag=>/^chunk-1-of-/.test(tag))?'<button type="button" data-brain-delete-document="'+esc((x.tags||[]).find(tag=>String(tag).startsWith("doc-"))||"")+'" aria-label="Delete entire imported document">Delete document</button>':"")+'<button type="button" data-brain-delete="'+esc(x.id)+'" aria-label="Delete Second Brain entry">Delete</button></article>').join("")||'<p class="mute">No matching cloud entries. Save a note or reference above to start building your vault.</p>';
 }
 const BRAIN_LEARNING_KEY="bosley_second_brain_learning_v1";
 function brainLearningEnabled(){try{return localStorage.getItem(BRAIN_LEARNING_KEY)!=="false"}catch{return true}}
@@ -1398,9 +1398,20 @@ $("#brain-document-import")?.addEventListener("click",async()=>{
 });
 $("#brain-cloud-search")?.addEventListener("input",renderCloudSecondBrain);
 $("#brain-cloud-items")?.addEventListener("click",async event=>{
- const button=event.target.closest("[data-brain-delete]");if(!button||!db||!user)return;
- if(!confirm("Delete this entry from your synced Second Brain?"))return;
- const uid=user.id;button.disabled=true;
+ const groupButton=event.target.closest("[data-brain-delete-document]"),button=event.target.closest("[data-brain-delete]");
+ if((!groupButton&&!button)||!db||!user)return;
+ const uid=user.id;
+ if(groupButton){
+  const tag=String(groupButton.dataset.brainDeleteDocument||"");
+  if(!/^doc-[a-z0-9]{1,24}$/i.test(tag))return;
+  if(!confirm("Delete this entire imported document and all its indexed chunks?"))return;
+  groupButton.disabled=true;
+  try{const {error}=await db.from("user_second_brain_entries").delete().eq("user_id",uid).contains("tags",[tag]);if(error)throw error;await loadCloudSecondBrain()}
+  catch(error){const status=$("#brain-cloud-status");if(status)status.textContent="DOCUMENT DELETE FAILED · "+String(error?.message||error).slice(0,150);groupButton.disabled=false}
+  return;
+ }
+ if(!button||!confirm("Delete this entry from your synced Second Brain?"))return;
+ button.disabled=true;
  try{const {error}=await db.from("user_second_brain_entries").delete().eq("id",button.dataset.brainDelete).eq("user_id",uid);if(error)throw error;await loadCloudSecondBrain()}
  catch(error){const status=$("#brain-cloud-status");if(status)status.textContent="DELETE FAILED · "+String(error?.message||error).slice(0,150);button.disabled=false}
 });

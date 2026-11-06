@@ -397,6 +397,24 @@ jobs:
           // Dedicated Windows writing bulb: a native, always-on-top overlay available
           // above other applications. It opens Bosley's own editor; it never reads other apps.
           let writingBulb = null;
+          let writingBulbHideTimer = null;
+          let writingBulbVisibleUntil = 0;
+          function showWritingBulbForFiveSeconds() {
+            writingBulbVisibleUntil = Date.now() + 5000;
+            if (!writingBulb || writingBulb.isDestroyed()) createWritingBulb();
+            if (writingBulb && !writingBulb.isDestroyed()) {
+              writingBulb.setAlwaysOnTop(true, 'screen-saver');
+              writingBulb.showInactive();
+            }
+            if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
+            writingBulbHideTimer = setTimeout(() => {
+              writingBulbHideTimer = null;
+              if (writingBulb && !writingBulb.isDestroyed() && Date.now() >= writingBulbVisibleUntil) {
+                writingBulb.hide();
+                logStartup('WINDOWS WRITING BULB AUTO-HIDDEN AFTER FIVE SECONDS');
+              }
+            }, 5000);
+          }
           function createWritingBulb() {
             if (process.platform !== 'win32' || (writingBulb && !writingBulb.isDestroyed())) return;
             const display = screen.getPrimaryDisplay();
@@ -414,10 +432,18 @@ jobs:
             writingBulb.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html)).then(() => {
               if (!writingBulb || writingBulb.isDestroyed()) return;
               writingBulb.setAlwaysOnTop(true, 'screen-saver');
+              if (Date.now() >= writingBulbVisibleUntil) {
+                writingBulb.hide();
+                return;
+              }
               writingBulb.showInactive();
               logStartup('WINDOWS WRITING BULB VISIBLE', writingBulb.getBounds());
             }).catch(error => logStartup('WINDOWS WRITING BULB LOAD FAILED', error.message));
-            writingBulb.on('closed', () => { writingBulb = null; });
+            writingBulb.on('closed', () => {
+              writingBulb = null;
+              if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
+              writingBulbHideTimer = null;
+            });
           }
           function toggleWritingBulb() {
             if (writingBulb && !writingBulb.isDestroyed()) { writingBulb.close(); logStartup('WINDOWS WRITING BULB HIDDEN'); return; }
@@ -1239,6 +1265,7 @@ jobs:
 
             ipcMain.on('toggle-panel', togglePanel);
             ipcMain.on('bosley:open-writing', openWritingAssistantFromBulb);
+            ipcMain.on('bosley:show-writing-bulb', showWritingBulbForFiveSeconds);
             ipcMain.on('bosley:panel-activity', event => {
               if (panel && !panel.isDestroyed() && event.sender === panel.webContents && panel.isVisible()) armPanelIdleClose();
             });
@@ -1273,6 +1300,7 @@ jobs:
           const desktopBridge = Object.freeze({
             togglePanel: () => ipcRenderer.send('toggle-panel'),
             openWritingAssistant: () => ipcRenderer.send('bosley:open-writing'),
+            showWritingBulb: () => ipcRenderer.send('bosley:show-writing-bulb'),
             getCapabilities: () => ipcRenderer.invoke('bosley:capabilities'),
             request: request => ipcRenderer.invoke('bosley:request', request),
             confirmScreenCapture: () => ipcRenderer.send('bosley:capture-confirmed'),
@@ -1425,7 +1453,7 @@ jobs:
                 window.bosleyDesktop.onWidgetAppearance(applyAppearance);
               }
               document.querySelector('button').addEventListener('click', () => {
-                window.bosleyDesktop.togglePanel();
+                window.bosleyDesktop.showWritingBulb();
               });
             </script>
           </body>

@@ -272,6 +272,7 @@ public class BosleyKeyboardService extends InputMethodService {
   private LinearLayout root, suggestions;
   private boolean shift=true, sensitive=false, symbols=false;
   private static final String[][] ROWS={{"q","w","e","r","t","y","u","i","o","p"},{"a","s","d","f","g","h","j","k","l"},{"⇧","z","x","c","v","b","n","m","⌫"},{"?123",",","space",".","↵"}};
+  private static final String[] WORDS={"about","after","again","also","because","before","can","could","day","dear","doing","good","hello","help","here","how","just","know","like","make","message","more","much","need","please","really","right","should","thanks","that","the","their","there","this","today","tomorrow","want","was","what","when","with","would","you","your"};
   private static final String[][] SYMBOL_ROWS={{"1","2","3","4","5","6","7","8","9","0"},{"@","#","$","%","&","-","+","(",")"},{"=","*","\"","'",":",";","!","?","⌫"},{"ABC",",","space",".","↵"}};
   private int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   private GradientDrawable bg(int color){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(9));return d;}
@@ -281,7 +282,7 @@ public class BosleyKeyboardService extends InputMethodService {
     sensitive=(cls==InputType.TYPE_CLASS_NUMBER&&v==InputType.TYPE_NUMBER_VARIATION_PASSWORD)||(cls==InputType.TYPE_CLASS_TEXT&&(v==InputType.TYPE_TEXT_VARIATION_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));symbols=cls==InputType.TYPE_CLASS_NUMBER;shift=true;buildKeyboard();refreshSuggestions();
   }
   private TextView makeKey(String label,int weight){
-    TextView b=new TextView(this);b.setText(label);b.setTextColor(Color.rgb(25,31,40));b.setTextSize(17);b.setGravity(Gravity.CENTER);b.setTypeface(null,Typeface.BOLD);b.setBackground(bg(Color.rgb(247,248,250)));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(45),weight);lp.setMargins(dp(2),dp(3),dp(2),dp(3));b.setLayoutParams(lp);b.setOnClickListener(v->press(label));return b;
+    TextView b=new TextView(this);b.setText(("⇧".equals(label)?(shift?"⬆":"⇧"):("space".equals(label)?"English":(shift&&!symbols&&label.length()==1?label.toUpperCase(Locale.ROOT):label))));b.setTextColor(Color.rgb(25,31,40));b.setTextSize(("space".equals(label)||"↵".equals(label)||"?123".equals(label)||"ABC".equals(label))?12:17);b.setGravity(Gravity.CENTER);b.setTypeface(null,Typeface.BOLD);b.setBackground(bg(("⇧".equals(label)||"⌫".equals(label)||"?123".equals(label)||"ABC".equals(label)||"↵".equals(label))?Color.rgb(190,202,216):Color.rgb(250,251,253)));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(45),weight);lp.setMargins(dp(2),dp(3),dp(2),dp(3));b.setLayoutParams(lp);b.setOnClickListener(v->press(label));if("⌫".equals(label))b.setOnLongClickListener(v->{InputConnection ic=getCurrentInputConnection();if(ic!=null)ic.deleteSurroundingText(40,0);refreshSuggestions();return true;});return b;
   }
   private void buildKeyboard(){
     root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(4),dp(4),dp(4),dp(6));root.setBackgroundColor(Color.rgb(225,230,237));
@@ -292,12 +293,12 @@ public class BosleyKeyboardService extends InputMethodService {
   private void press(String k){
     InputConnection ic=getCurrentInputConnection();if(ic==null)return;
     if("⌫".equals(k)){ic.deleteSurroundingText(1,0);refreshSuggestions();return;}
-    if("⇧".equals(k)){shift=!shift;return;}
+    if("⇧".equals(k)){shift=!shift;buildKeyboard();return;}
     if("?123".equals(k)){symbols=true;buildKeyboard();return;}
     if("ABC".equals(k)){symbols=false;buildKeyboard();return;}
-    if("space".equals(k)){ic.commitText(" ",1);shift=true;refreshSuggestions();return;}
+    if("space".equals(k)){ic.commitText(" ",1);shift=true;buildKeyboard();refreshSuggestions();return;}
     if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();int action=e==null?0:e.imeOptions&EditorInfo.IME_MASK_ACTION;if(action!=0)ic.performEditorAction(action);else{ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_ENTER));ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP,android.view.KeyEvent.KEYCODE_ENTER));}return;}
-    ic.commitText(shift?k.toUpperCase(Locale.ROOT):k,1);shift=false;refreshSuggestions();
+    String value=shift?k.toUpperCase(Locale.ROOT):k;ic.commitText(value,1);shift=false;buildKeyboard();refreshSuggestions();
   }
   private String correction(String w){
     if(sensitive||w==null)return null;switch(w.toLowerCase(Locale.ROOT)){
@@ -307,7 +308,7 @@ public class BosleyKeyboardService extends InputMethodService {
   private void refreshSuggestions(){
     if(suggestions==null)return;suggestions.removeAllViews();InputConnection ic=getCurrentInputConnection();if(sensitive||ic==null){suggestion("Bosley Keyboard",null);return;}
     CharSequence before=ic.getTextBeforeCursor(80,0);String t=before==null?"":before.toString();int end=t.length(),start=end;while(start>0&&Character.isLetter(t.charAt(start-1)))start--;String word=t.substring(start,end);String fix=correction(word);
-    if(fix==null){suggestion("Bosley Keyboard",null);suggestion("Local suggestions",null);}else{suggestion("Fix",null);suggestion(fix,()->{ic.deleteSurroundingText(word.length(),0);ic.commitText(fix,1);refreshSuggestions();});}
+    if(fix!=null){suggestion(fix,()->{ic.deleteSurroundingText(word.length(),0);ic.commitText(fix,1);refreshSuggestions();});}else if(word.length()>0){int count=0;for(String candidate:WORDS){if(candidate.startsWith(word.toLowerCase(Locale.ROOT))&&!candidate.equalsIgnoreCase(word)){suggestion(candidate,()->{ic.deleteSurroundingText(word.length(),0);ic.commitText(candidate+" ",1);refreshSuggestions();});if(++count==2)break;}}if(count==0)suggestion("Bosley",null);}else{suggestion("English",null);suggestion("·",null);suggestion("Bosley",null);}
   }
   private void suggestion(String value,Runnable action){TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.rgb(25,31,40));v.setTextSize(13);v.setGravity(Gravity.CENTER);v.setPadding(dp(8),0,dp(8),0);suggestions.addView(v,new LinearLayout.LayoutParams(0,-1,1));if(action!=null)v.setOnClickListener(x->action.run());}
 }

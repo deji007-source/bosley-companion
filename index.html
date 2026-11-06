@@ -1082,7 +1082,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const toggle=target.closest("#dock-menu-toggle"),item=target.closest("#dock-launcher-menu [data-open-view]");
   if(!toggle&&!item)return;
   event.preventDefault();event.stopImmediatePropagation();dockPointerHandledAt=Date.now();
-  if(toggle&&dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));return;}
+  if(toggle&&dockMenu){if(window.BosleyOpenInlineWriting?.())return;dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));return;}
   if(item){const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");show(id);}
  },true);
  // Window-capture router runs before document-level handlers and owns launcher interactions.
@@ -1090,7 +1090,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const target=event.target instanceof Element?event.target:null;if(!target)return;
   if(Date.now()-dockPointerHandledAt<900&&target.closest("#dock-launcher"))return;
   const toggle=target.closest("#dock-menu-toggle");
-  if(toggle){event.preventDefault();event.stopImmediatePropagation();if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}return;}
+  if(toggle){event.preventDefault();event.stopImmediatePropagation();if(window.BosleyOpenInlineWriting?.())return;if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}return;}
   const item=target.closest("#dock-launcher-menu [data-open-view]");
   if(item){event.preventDefault();event.stopImmediatePropagation();const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");if(typeof window.BosleyOpenPanel==="function")window.BosleyOpenPanel(id);return;}
   if(target.closest("#dock-launcher-menu")){event.stopImmediatePropagation();}
@@ -1872,11 +1872,18 @@ function detectChatEmailDraftIntent(raw){
  if(!value)return null;
  const emailIntent=/\b(?:draft|write|create|compose|prepare|make)\b[\s\S]{0,90}\bemail\b|\bemail\b[\s\S]{0,60}\b(?:draft|write|create|compose|prepare)\b/i.test(value);
  const messageIntent=/\b(?:draft|write|create|compose|prepare|make)\b[\s\S]{0,90}\b(?:message|text|whatsapp|telegram|sms)\b|\b(?:message|text)\b[\s\S]{0,60}\b(?:draft|write|create|compose|prepare)\b/i.test(value);
- if(!emailIntent&&!messageIntent)return null;
- const recipient=value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]||"";
- const subjectMatch=emailIntent?value.match(/\bsubject(?:\s+should\s+be|\s+is)?\s*[:=-]?\s*([^\n.!?]{2,160})/i):null;
+ const directIntent=/\b(?:text|message|whatsapp|sms|email|mail)\b/i.test(value);
+ const contacts=(()=>{try{const rows=JSON.parse(localStorage.getItem("bosley-writing-contacts-v1")||"[]");return Array.isArray(rows)?rows.filter(x=>x&&typeof x.name==="string"&&typeof x.value==="string"):[]}catch{return []}})();
+ let matched=null,matchedAt=-1;
+ for(const contact of contacts){const name=contact.name.trim();if(!name)continue;const at=value.toLowerCase().indexOf(name.toLowerCase());if(at>=0&&(!matched||name.length>matched.name.length)){matched={...contact};matchedAt=at}}
+ if(!emailIntent&&!messageIntent&&!(directIntent&&matched))return null;
+ const isEmail=emailIntent||Boolean(matched?.kind==="email"&&/\b(?:email|mail)\b/i.test(value));
+ const recipient=(isEmail?(matched?.kind==="email"?matched.value:""):value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0])||"";
+ const subjectMatch=isEmail?value.match(/\bsubject(?:\s+should\s+be|\s+is)?\s*[:=-]?\s*([^\n.!?]{2,160})/i):null;
  const subject=subjectMatch?subjectMatch[1].trim().replace(/[\s,;:]+$/,""):"";
- return {kind:emailIntent?"draft_email":"draft_message",recipient,subject,notes:value.slice(0,6000)};
+ let notes=value;
+ if(matched&&matchedAt>=0){notes=value.slice(matchedAt+matched.name.length).replace(/^\s*(?:and\s+)?(?:send|write|compose|prepare)?\s*(?:him|her|them)?\s*(?:a|an)?\s*(?:message|text|email)?\s*(?:saying|that\s+says|with|to\s+say|about)?\s*[:,-]?\s*/i,"").trim();if(!notes)notes="Please write an appropriate message based on this request: "+value}
+ return {kind:isEmail?"draft_email":"draft_message",recipient,subject,notes:matched?notes:value.slice(0,6000),contactName:matched?.name||"",destination:matched&&matched.kind!=="email"?matched.value:"",channel:matched?.kind==="telegram"?"telegram":"whatsapp"};
 }
 function routeChatWorkspaceIntent(raw){
  const value=String(raw||"").trim();
@@ -3073,8 +3080,9 @@ function installInlineWritingSuggestions(){
  pop.querySelector("[data-bwp-apply]").onclick=()=>{if(!target?.isConnected||!revised)return;const next=revised;if(target.isContentEditable){target.focus();const selection=window.getSelection();const range=selection?.rangeCount?selection.getRangeAt(0):null;if(range&&target.contains(range.commonAncestorContainer)){range.deleteContents();range.insertNode(document.createTextNode(next));range.collapse(false);selection.removeAllRanges();selection.addRange(range)}else target.textContent=next}else{target.focus();if(typeof target.setRangeText==="function"){const start=target.selectionStart??0,end=target.selectionEnd??0;target.setRangeText(next,start,end,"end")}else target.value=next}target.dispatchEvent(new InputEvent("input",{bubbles:true,inputType:"insertText",data:next}));target.dispatchEvent(new Event("change",{bubbles:true}));say("Suggestion applied. Review your updated text.");revised="";pop.querySelector("[data-bwp-apply]").disabled=true;pop.querySelector("[data-bwp-preview]").textContent="Applied. You can continue editing."};
  document.addEventListener("focusin",event=>{if(!editable(event.target)){launcher.hidden=true;pop.hidden=true;return}target=event.target;launcher.hidden=false;place()});
  document.addEventListener("input",event=>{if(event.target===target){revised="";pop.querySelector("[data-bwp-apply]").disabled=true;if(!pop.hidden)say("Text changed. Request a fresh suggestion.")}});
- document.addEventListener("focusout",event=>{if(event.target===target){setTimeout(()=>{if(!pop.matches(":hover")&&!launcher.matches(":hover")&&document.activeElement!==target){launcher.hidden=true;pop.hidden=true}},220)}});
+ document.addEventListener("focusout",event=>{if(event.target===target){setTimeout(()=>{if(document.activeElement?.closest?.("#dock-launcher"))return;if(!pop.matches(":hover")&&!launcher.matches(":hover")&&document.activeElement!==target){launcher.hidden=true;pop.hidden=true}},260)}});
  document.addEventListener("pointerdown",event=>{if(!pop.hidden&&!pop.contains(event.target)&&event.target!==launcher){if(!target?.contains?.(event.target)){pop.hidden=true}}});
+ window.BosleyOpenInlineWriting=()=>{if(!target?.isConnected)return false;const current=read(target).trim();if(!current)return false;pop.hidden=false;place();say("Editing the focused text. Choose an action; your original stays unchanged until you apply it.");return true};
  window.addEventListener("resize",place);window.addEventListener("scroll",place,true);
 }
 
@@ -3214,7 +3222,7 @@ async function renderBosleyWritingAssist(){
  drawContacts();
  syncBosleyContacts().catch(error=>console.warn("Initial Bosley contact sync failed:",error));
  const updateChannel=()=>{const c=channel.value;$("#bosley-writing-destination-label").textContent=c==="telegram"?"Telegram username or phone (optional)":"Phone number (include country code)";destination.placeholder=c==="telegram"?"@username (optional)":"+2348012345678";$("#bosley-writing-channel-note").textContent=c==="telegram"?"Enter a Telegram @username to open that chat (your draft is copied for pasting), or leave it blank to open Telegram’s share composer and choose a recipient. Telegram does not permit reliably pre-filling a private chat by phone number.":c==="sms"?"Your default SMS app opens with the number and message filled in.":"WhatsApp opens the selected number with your draft already filled in."};channel.addEventListener("change",updateChannel);updateChannel();
- $("#bosley-writing-load").onclick=()=>{source.value=$("#in")?.value||"";status.textContent=source.value?"Loaded the current chat draft.":"There is no text in the chat composer yet."};
+ $("#bosley-writing-load").onclick=()=>{let pending=null;try{pending=JSON.parse(localStorage.getItem("bosley-chat-writing-draft-v1")||"null")}catch{}if(pending&&typeof pending==="object"){task.value=pending.kind==="draft_email"?"draft_email":"draft_message";updateTask();source.value=String(pending.notes||"");if(pending.kind==="draft_email"){$("#bosley-writing-recipient").value=String(pending.recipient||"");$("#bosley-writing-subject").value=String(pending.subject||"")}else{channel.value=["whatsapp","telegram","sms"].includes(pending.channel)?pending.channel:"whatsapp";updateChannel();destination.value=String(pending.destination||"");if(pending.contactName)$("#bosley-writing-contact-name").value=String(pending.contactName)}status.textContent=(pending.contactName?"Loaded saved contact "+pending.contactName+". ":"")+"Loaded your chat request. Review the recipient and draft before opening the app.";return}source.value=$("#in")?.value||"";status.textContent=source.value?"Loaded the current chat draft.":"There is no text in the chat composer yet."};
  $("#bosley-writing-clear").onclick=()=>{source.value="";result.value="";refreshCount();status.textContent="Draft cleared. Nothing has been sent."};
  review.onclick=async()=>{const raw=source.value.trim(),kind=task.value;if(raw.length<2){status.textContent="Add some text or rough notes first.";return}const session=db?(await db.auth.getSession()).data.session:null;if(!session||!user){status.textContent="Sign in to use Writing Assist.";return}let prompt=raw;
  if(kind==="draft_email"){const recipient=$("#bosley-writing-recipient").value.trim(),subject=$("#bosley-writing-subject").value.trim();prompt="Create the body of a clear, complete email. Recipient: "+(recipient||"[recipient not specified]")+". Subject: "+(subject||"[suggest a suitable subject if needed]")+". Use the notes below. Do not invent facts, dates, commitments or attachments. Use square-bracket placeholders for missing specifics. Return only the email body, not a subject line.\n\nNOTES:\n"+raw}
@@ -3621,9 +3629,9 @@ body.panel-open #dock-launcher{display:block!important;visibility:visible!import
 #dock-launcher>#dock-menu-toggle{display:grid!important;place-items:center!important;width:48px!important;height:48px!important;pointer-events:auto!important;touch-action:manipulation!important}
 #dock-launcher-menu{z-index:2147483647!important;pointer-events:auto!important;right:calc(100% + 9px)!important;top:50%!important;left:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
 #dock-launcher-menu[hidden]{display:none!important}
-#composer-writing-card{z-index:2147483647!important;pointer-events:auto!important}
+#composer-writing-card{z-index:2147483647!important;pointer-events:auto!important}#bosley-writing-launch{display:none!important}
 @media(max-width:760px){
- #dock-launcher{right:8px!important;top:32%!important;bottom:auto!important}
+ #dock-launcher{right:8px!important;top:24%!important;bottom:auto!important}
  #dock-launcher>#dock-menu-toggle{width:46px!important;height:46px!important}
  #dock-launcher-menu{width:min(174px,calc(100vw - 76px))!important;max-height:62dvh!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }

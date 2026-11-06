@@ -651,6 +651,12 @@ assert.ok(appScript.includes("renderBosleyWritingAssist"), "Writing Assist must 
 assert.ok(appScript.includes('window.SpeechRecognition||window.webkitSpeechRecognition'), "Voice input must prefer live interim speech recognition when supported");
 assert.ok(appScript.includes("window.__bosleyControlTimer=setInterval"), "Control Centre must refresh its live status periodically");
 assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist"'), "Writing Assist must call the authenticated editing service");
+assert.ok(appScript.includes("function detectChatEmailDraftIntent(raw)") && appScript.includes("function openChatEmailDraft(raw)"), "Natural chat email requests must route into Writing Studio");
+assert.ok(appScript.includes("bosley-chat-writing-draft-v1") && appScript.includes("Loaded from your Bosley chat"), "Writing Studio must load pending email notes and recipient metadata from chat");
+assert.ok(appScript.includes("setTimeout(()=>review.click(),120)"), "Chat-routed email requests must start draft generation when Writing Studio opens");
+assert.ok(appScript.includes("function routeChatWorkspaceIntent(raw)") && appScript.includes('show(target.id)'), "Natural chat navigation requests must open the requested Bosley workspace page");
+assert.ok(appScript.includes("if(!(active===target.id&&!dock.hidden))show(target.id)"), "Chat navigation must not close an already-open destination page");
+
 assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('value="draft_email"') && appScript.includes('value="draft_message"'), "Writing Assist must support email and message drafting as well as editing");
 assert.ok(appScript.includes('id="bosley-writing-gmail"') && appScript.includes('id="bosley-writing-outlook"'), "Writing Assist must hand off prefilled drafts to Gmail and Outlook without sending them");
 assert.ok(appScript.includes('id="bosley-writing-channel"') && appScript.includes('id="bosley-writing-destination"'), "Writing Studio must collect a destination and messaging channel");

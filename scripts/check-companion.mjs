@@ -23,6 +23,8 @@ for (const [index, source] of inlineScripts.entries()) {
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 assert.ok(html.includes("bosley_contacts"), "Writing Studio contacts must sync through the signed-in Bosley account");
 assert.ok(html.includes("syncBosleyContacts"), "Saved contacts must hydrate from the shared cloud contact table");
+assert.ok(html.includes("universal_input_draft"), "Universal Input drafts must persist to the shared account sync record");
+assert.ok(html.includes("bosley-draft-") && html.includes("postgres_changes"), "Universal Input drafts must receive cross-device updates without overwriting active typing");
 assert.ok(html.includes("postgres_changes"), "Contact changes must refresh across signed-in devices");
 assert.ok(html.includes("composer-writing-review"), "Companion composer must expose its in-chat writing assistant");
 assert.ok(html.includes("installComposerWritingAssistant"), "In-chat writing assistant must be wired to the writing-assist function");

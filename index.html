@@ -1381,9 +1381,13 @@ $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#
 const widgetMode=new URLSearchParams(location.search).get("widget")==="1"||!!window.BosleyDesktop||!!window.BosleyAndroidWidget;
 if(widgetMode)H.classList.add("widget-mode");
 if(window.BosleyDesktop&&typeof window.BosleyDesktop.request==="function")document.body.classList.add("desktop-panel");
+let nativeOverlayHiddenForPanel=false;
 function notifyWidgetSize(open){
  try{if(window.BosleyDesktop&&typeof window.BosleyDesktop.widgetResize==="function")window.BosleyDesktop.widgetResize(!!open); }catch(e){console.warn("Bosley desktop resize failed",e)}
  try{if(window.BosleyAndroidWidget&&typeof window.BosleyAndroidWidget.resize==="function")window.BosleyAndroidWidget.resize(!!open); }catch(e){console.warn("Bosley Android resize failed",e)}
+ const native=window.Capacitor?.Plugins?.BosleyOverlay;
+ if(open&&native&&typeof native.hide==="function"&&!nativeOverlayHiddenForPanel){nativeOverlayHiddenForPanel=true;native.hide().catch(e=>console.warn("Could not tuck the Android floating widget behind the open panel",e));}
+ else if(!open&&native&&nativeOverlayHiddenForPanel&&typeof native.show==="function"){nativeOverlayHiddenForPanel=false;native.show().catch(e=>console.warn("Could not restore the Android floating widget",e));}
 }
 function toggle(open){
  const p=$("#panel");open=open??p.hidden;p.hidden=!open;document.body.classList.toggle("panel-open",!!open);

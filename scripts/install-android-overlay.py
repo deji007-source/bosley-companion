@@ -340,8 +340,8 @@ public class BosleyKeyboardService extends InputMethodService {
       ic.commitText(" ",1);shift=true;refreshSuggestions();return;
     }
     if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();int action=e==null?0:e.imeOptions&EditorInfo.IME_MASK_ACTION;if(action!=0)ic.performEditorAction(action);else{ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_ENTER));ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP,android.view.KeyEvent.KEYCODE_ENTER));}return;}
-    if(k.length()==1&&Character.isLetter(k.charAt(0))){ic.commitText(shift?k.toUpperCase(Locale.ROOT):k.toLowerCase(Locale.ROOT),1);shift=false;updateLetterCase();refreshSuggestions();return;}
-    ic.commitText(k,1);refreshSuggestions();
+    if(k.length()==1&&Character.isLetter(k.charAt(0))){ic.commitText(shift?k.toUpperCase(Locale.ROOT):k.toLowerCase(Locale.ROOT),1);shift=ic.getCursorCapsMode(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES)!=0;updateLetterCase();refreshSuggestions();return;}
+    ic.commitText(k,1);if(".".equals(k)||"!".equals(k)||"?".equals(k))shift=true;updateLetterCase();refreshSuggestions();
   }
   private String lastWord(String text){int i=text.length();while(i>0&&Character.isLetter(text.charAt(i-1)))i--;return text.substring(i);}
   private String correction(String w){

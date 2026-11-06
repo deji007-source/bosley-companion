@@ -1082,7 +1082,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const toggle=target.closest("#dock-menu-toggle"),item=target.closest("#dock-launcher-menu [data-open-view]");
   if(!toggle&&!item)return;
   event.preventDefault();event.stopImmediatePropagation();dockPointerHandledAt=Date.now();
-  if(toggle&&dockMenu){if(window.BosleyOpenInlineWriting?.())return;dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));return;}
+  if(toggle&&dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));return;}
   if(item){const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");show(id);}
  },true);
  // Window-capture router runs before document-level handlers and owns launcher interactions.
@@ -1090,7 +1090,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const target=event.target instanceof Element?event.target:null;if(!target)return;
   if(Date.now()-dockPointerHandledAt<900&&target.closest("#dock-launcher"))return;
   const toggle=target.closest("#dock-menu-toggle");
-  if(toggle){event.preventDefault();event.stopImmediatePropagation();if(window.BosleyOpenInlineWriting?.())return;if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}return;}
+  if(toggle){event.preventDefault();event.stopImmediatePropagation();if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}return;}
   const item=target.closest("#dock-launcher-menu [data-open-view]");
   if(item){event.preventDefault();event.stopImmediatePropagation();const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");if(typeof window.BosleyOpenPanel==="function")window.BosleyOpenPanel(id);return;}
   if(target.closest("#dock-launcher-menu")){event.stopImmediatePropagation();}

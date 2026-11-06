@@ -209,7 +209,19 @@ public class BosleyOverlayService extends Service {
   void removeCapturePrompt(){if(wm!=null&&capturePrompt!=null){try{wm.removeView(capturePrompt);}catch(Exception ignored){}capturePrompt=null;}}
   void showBulb(){
     if(bulb!=null){scheduleBulbHide();return;}
-    TextView writingBulb=new TextView(this);writingBulb.setText("💡︎");writingBulb.setTextSize(19);writingBulb.setGravity(Gravity.CENTER);
+    View writingBulb=new View(this){
+      final Paint iconPaint=new Paint(Paint.ANTI_ALIAS_FLAG);
+      @Override protected void onDraw(Canvas canvas){
+        super.onDraw(canvas);
+        float scale=Math.min(getWidth(),getHeight())/40f;
+        canvas.save();canvas.translate((getWidth()-40f*scale)/2f,(getHeight()-40f*scale)/2f);canvas.scale(scale,scale);
+        Path bulbPath=new Path();bulbPath.moveTo(12,22);bulbPath.cubicTo(5,14,10,4,20,4);bulbPath.cubicTo(30,4,35,14,28,22);bulbPath.cubicTo(26,24,25,26,25,28);bulbPath.lineTo(15,28);bulbPath.cubicTo(15,26,14,24,12,22);bulbPath.close();
+        iconPaint.setStyle(Paint.Style.FILL);iconPaint.setColor(Color.WHITE);canvas.drawPath(bulbPath,iconPaint);
+        iconPaint.setStyle(Paint.Style.STROKE);iconPaint.setStrokeWidth(1.8f);iconPaint.setStrokeCap(Paint.Cap.ROUND);iconPaint.setStrokeJoin(Paint.Join.ROUND);iconPaint.setColor(Color.BLACK);canvas.drawPath(bulbPath,iconPaint);
+        iconPaint.setStrokeWidth(1.6f);canvas.drawLine(15,31,25,31,iconPaint);canvas.drawLine(16,34,24,34,iconPaint);canvas.drawLine(20,0,20,2,iconPaint);canvas.drawLine(5,7,7,9,iconPaint);canvas.drawLine(33,7,35,5,iconPaint);
+        canvas.restore();
+      }
+    };
     writingBulb.setContentDescription("Bosley Writing and Ideas. Tap to open the compact writing assistant card.");
     GradientDrawable bulbBg=new GradientDrawable();bulbBg.setColor(Color.WHITE);bulbBg.setShape(GradientDrawable.OVAL);bulbBg.setStroke(dp(1),Color.rgb(20,20,20));writingBulb.setBackground(bulbBg);
     writingBulb.setElevation(dp(8));bulb=writingBulb;

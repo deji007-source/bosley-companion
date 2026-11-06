@@ -641,7 +641,7 @@ assert.ok(androidInstaller.includes("int w=44,h=44;"), "Android floating ghost w
 assert.ok(androidInstaller.includes("int w=44,h=44;"), "Android floating ghost height must stay tiny on every saved size preset");
 
 assert.ok(androidInstaller.includes("widgetWidth=44,widgetHeight=44"), "Android overlay service fallback dimensions must stay tiny and ghost-sized");
-assert.ok(html.includes('aria-label="Open AI Agents"')&&html.includes('data-open-view="agents-panel"'), "AI agents must remain directly accessible from the side rail");
+assert.ok(html.includes('role="menuitem" data-open-view="agents-panel">AI Agents</button>'), "AI agents must remain directly accessible from the page dropdown");
 assert.ok(html.includes('aria-label="Open attachments and tools"'), "The main composer plus button must remain available");
 
 

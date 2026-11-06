@@ -650,6 +650,13 @@ assert.ok(appScript.includes("window.__bosleyControlTimer=setInterval"), "Contro
 assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist"'), "Writing Assist must call the authenticated editing service");
 assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('value="draft_email"') && appScript.includes('value="draft_message"'), "Writing Assist must support email and message drafting as well as editing");
 assert.ok(appScript.includes('id="bosley-writing-gmail"') && appScript.includes('id="bosley-writing-outlook"'), "Writing Assist must hand off prefilled drafts to Gmail and Outlook without sending them");
+assert.ok(appScript.includes('id="bosley-writing-channel"') && appScript.includes('id="bosley-writing-destination"'), "Writing Studio must collect a destination and messaging channel");
+assert.ok(appScript.includes('https://wa.me/') && appScript.includes('https://t.me/share/url?url=&text=') && appScript.includes('"sms:"'), "Writing Studio must prepare WhatsApp, Telegram and SMS handoffs");
+assert.ok(appScript.includes('bosley-writing-destination-v1') && appScript.includes('id="bosley-writing-remember"'), "Writing Studio must only remember a destination on-device when explicitly selected");
+assert.ok(appScript.includes('const openPrepared=async(url,label)') && appScript.includes('await bosleyCopyText(body)'), "External app handoff must copy the reviewed draft before opening the destination");
+assert.ok(appScript.includes('id="dock-ghost-mascot"') && appScript.includes('class="dock-ghost-eye"'), "Workspace launcher must use the animated Bosley ghost instead of a generic menu glyph");
+assert.ok(windowsWorkflow.includes('viewBox="0 0 150 180"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating widget must retain the reference ghost silhouette and eyes");
+
 assert.ok(appScript.includes("async function bosleyCopyText") && appScript.includes("clipboard_write"), "Writing Assist and Universal Input must support native Windows clipboard handoff");
 assert.ok(appScript.includes('#universal-input,#writing-assist,#bosley-search'), "Universal Input focus tracking must not steal its own destination field");
 assert.ok(appScript.includes('id="bosley-search-google"') && appScript.includes('id="bosley-search-bing"') && appScript.includes('id="bosley-search-duck"'), "Bosley Search must provide multiple public search engine fallbacks");

@@ -97,7 +97,7 @@ import android.util.DisplayMetrics;
 public class BosleyOverlayService extends Service {
   static final String ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE", ACTION_CAPTURE_START="com.bosley.companion.CAPTURE_START", ACTION_CAPTURE_STOP="com.bosley.companion.CAPTURE_STOP";
   int widgetWidth=44,widgetHeight=44,cornerDp=18,borderDp=1,eyeWidth=9,eyeHeight=17,eyeGapDp=8; String eyeShape="soft-square";
-  WindowManager wm; View bar; WindowManager.LayoutParams lp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
+  WindowManager wm; View bar,bulb; WindowManager.LayoutParams lp,bulbLp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
   static final String CHANNEL_ID="bosley_floating_companion";
   void promoteToForeground(){
     if(Build.VERSION.SDK_INT>=26){
@@ -188,6 +188,17 @@ public class BosleyOverlayService extends Service {
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
+    // A separate writing bulb stays available above other apps without taking
+    // over the ghost's existing tap-to-chat and hold-to-talk gestures.
+    TextView writingBulb=new TextView(this);
+    writingBulb.setText("💡");writingBulb.setTextSize(19);writingBulb.setGravity(Gravity.CENTER);
+    writingBulb.setContentDescription("Bosley writing assistant. Tap to open Universal Input.");
+    GradientDrawable bulbBg=new GradientDrawable();bulbBg.setColor(Color.WHITE);bulbBg.setShape(GradientDrawable.OVAL);bulbBg.setStroke(dp(1),Color.rgb(20,20,20));writingBulb.setBackground(bulbBg);
+    writingBulb.setElevation(dp(8));bulb=writingBulb;
+    bulbLp=new WindowManager.LayoutParams(dp(40),dp(40),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+    bulbLp.gravity=Gravity.TOP|Gravity.START;bulbLp.x=Math.max(0,screenWidth-widgetSize-dp(58));bulbLp.y=lp.y+dp(2);
+    writingBulb.setOnClickListener(v->openCompanion("writing"));
+    try{wm.addView(bulb,bulbLp);}catch(Exception e){bulb=null;}
   }
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
   void showGuide(){
@@ -216,7 +227,7 @@ public class BosleyOverlayService extends Service {
   GradientDrawable circleTarget(){GradientDrawable d=new GradientDrawable();d.setShape(GradientDrawable.OVAL);d.setColor(Color.WHITE);d.setStroke(dp(3),Color.BLACK);return d;}
   void updateGuideTarget(Intent result){if(!result.getBooleanExtra("found",false)){if(guideStatusView!=null)guideStatusView.setText("No matching control found. Keep the target app visible and try a more specific instruction.");return;}guideTargetX=Math.max(0f,Math.min(1f,result.getFloatExtra("x",guideTargetX)));guideTargetY=Math.max(0f,Math.min(1f,result.getFloatExtra("y",guideTargetY)));guideTargetLabel=result.getStringExtra("label")!=null?result.getStringExtra("label"):"matching control";if(guideTarget!=null&&guideTargetLp!=null){DisplayMetrics dm=getResources().getDisplayMetrics();guideTargetLp.x=Math.max(0,(int)(dm.widthPixels*guideTargetX)-dp(21));guideTargetLp.y=Math.max(0,(int)(dm.heightPixels*guideTargetY)-dp(21));try{wm.updateViewLayout(guideTarget,guideTargetLp);}catch(Exception ignored){}}if(guideLine!=null)guideLine.invalidate();if(guideStatusView!=null)guideStatusView.setText("Target found: "+guideTargetLabel+". Visual guidance only; Bosley will not click or type.");}
   void removeGuide(){guideStatusView=null;if(wm!=null&&guideTarget!=null){try{wm.removeView(guideTarget);}catch(Exception ignored){}guideTarget=null;}if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
-  void removeBar(){if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
+  void removeBar(){if(wm!=null&&bulb!=null){try{wm.removeView(bulb);}catch(Exception ignored){}bulb=null;}if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
   @Override public void onDestroy(){removeBar();removeGuide();super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
@@ -658,7 +669,7 @@ if "BosleyOverlayPlugin" not in a:
     setIntent(intent);
     String action=intent.getStringExtra("bosley_quick_action");
     boolean hasSharedText=intent.getCharSequenceExtra(android.content.Intent.EXTRA_PROCESS_TEXT)!=null||intent.getCharSequenceExtra(android.content.Intent.EXTRA_TEXT)!=null;
-    if((action!=null && ("panel".equals(action)||"voice".equals(action)))||hasSharedText){
+    if((action!=null && ("panel".equals(action)||"voice".equals(action)||"writing".equals(action)))||hasSharedText){
       String js="window.dispatchEvent(new Event(String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)))";
       getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));
     }

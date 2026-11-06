@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const workflow = fs.readFileSync('.github/workflows/build-windows.yml', 'utf8');
+const html = fs.readFileSync('index.html', 'utf8');
 function extract(name, end) {
   // Match the shell heredoc without assuming YAML indentation.
   const marker = "cat > desktop/" + name + " <<'" + end + "'";
@@ -31,6 +32,9 @@ const required = [
   ['Windows main workspace keeps its established responsive dimensions', 'Math.round(area.width * 0.78)'],
   ['Windows bulb appears on the shortcut and stays visible until explicitly toggled', 'writingBulbVisibleUntil = Number.POSITIVE_INFINITY'],
   ['Windows bulb shortcut hides the existing bulb without destroying its window', "writingBulb.hide();"],
+  ['Windows bulb shortcut can reopen an existing hidden bulb', 'writingBulb.isVisible()'],
+  ['Windows side dock restores compact established width', 'width:min(330px,calc(100vw - 470px))'],
+  ['Windows side dock restores established desktop width and height', 'width:360px!important;height:min(600px,calc(100dvh - 24px))!important']
   ['Windows bulb remains assigned to Ctrl+Shift+I', "globalShortcut.register('CommandOrControl+Shift+I', toggleWritingBulb)"],
   ['Windows Writing Ideas card uses the bundled shared interface', "writingCard.loadFile(path.join(__dirname, 'index.html'), { query: { bosleyWritingCard: '1' } })"],
   ['Writing Ideas card is a movable always-on-top overlay', 'resizable: true, movable: true'],
@@ -45,4 +49,5 @@ for (const [label, needle] of required) {
     throw new Error('Windows workspace check failed: ' + label);
   }
 }
-console.log('Windows workspace checks passed (persistent panel, responsive layout, draggable local Writing Ideas overlay, Ctrl+Shift+I shortcut).');
+if (!html.includes('width:min(330px,calc(100vw - 470px))') || !html.includes('width:360px!important;height:min(600px,calc(100dvh - 24px))!important') || html.includes('width:min(640px,calc(100vw - 24px))')) throw new Error('Windows side dock dimensions did not return to the compact established layout.');
+console.log('Windows workspace checks passed (compact side dock, persistent panel, draggable local Writing Ideas overlay, Ctrl+Shift+I shortcut).');

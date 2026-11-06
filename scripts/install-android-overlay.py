@@ -287,7 +287,7 @@ public class BosleyTargetAccessibilityService extends AccessibilityService {
   public static void readFocusedText(java.util.function.Consumer<String> callback){
     BosleyTargetAccessibilityService service=activeService;
     if(service==null){callback.accept(null);return;}
-    service.runOnUiThread(()->{
+    new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
       String result=null;
       try{
         for(AccessibilityWindowInfo window:service.getWindows()){

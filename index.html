@@ -1366,6 +1366,7 @@ $("#brain-document-import")?.addEventListener("click",async()=>{
   if(ext==="html"||ext==="htm"){const parsed=new DOMParser().parseFromString(content,"text/html");parsed.querySelectorAll("script,style,iframe,object,form,svg,nav,footer").forEach(node=>node.remove());content=parsed.body.innerText||parsed.body.textContent||""}
   if(ext==="json"){try{content=JSON.stringify(JSON.parse(content),null,2)}catch{throw Error("The JSON file is not valid.")}}
   content=String(content||"").replace(/\r\n?/g,"\n").trim();
+  if(!content&&ext==="pdf")throw Error("This PDF appears to be scanned or image-only. Run OCR in Universal Input first, then save the extracted text to Second Brain.");
   if(!content)throw Error("No readable text was found in this document.");
   if(content.length>36000)throw Error("This document contains more than 36,000 characters. Split it into smaller files.");
   const fileTitle=file.name.replace(/\.[^.]+$/,"").replace(/\s+/g," ").trim().slice(0,125)||"Imported document";

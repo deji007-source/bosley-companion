@@ -703,6 +703,14 @@ assert.ok(windowsWorkflow.includes("'writing-assist'"), "Windows must register W
 const writingAssistFunction = readText(new URL("../supabase/functions/bosley-writing-assist/index.ts", import.meta.url), "utf8");
 assert.ok(writingAssistFunction.includes("admin.auth.getUser(token)"), "Writing Assist must authenticate the caller");
 assert.ok(writingAssistFunction.includes("Preserve intent and voice"), "Writing Assist must preserve the author’s meaning and voice");
+const writingEdgeSource = readText(new URL("../supabase/functions/bosley-writing-assist/index.ts", import.meta.url), "utf8");
+const searchEdgeSource = readText(new URL("../supabase/functions/bosley-search/index.ts", import.meta.url), "utf8");
+assert.ok(writingEdgeSource.includes("apikey,x-client-info") && searchEdgeSource.includes("apikey, content-type, x-client-info"), "Writing Assist and Bosley Search CORS must allow the Supabase JS x-client-info request header");
+assert.ok(writingEdgeSource.includes("return json({revised,mode,model})") && writingEdgeSource.includes("draft_message"), "Writing Assist must support both email and message drafting through its deployed edge endpoint");
+assert.ok(html.includes('aria-label="Search" title="Search">⌕</button>') && html.includes('<span aria-hidden="true">⌕</span><input id="bosley-search-query"'), "Bosley Search must use a compact search icon so the input remains usable on narrow screens");
+assert.ok(html.includes('aria-label="Bosley white ghost with blinking black eyes"') && !html.slice(html.indexOf('id="dock-menu-toggle"'),html.indexOf("</nav>",html.indexOf('id="dock-menu-toggle"'))).includes("ghost-mouth") && !html.slice(html.indexOf('id="dock-menu-toggle"'),html.indexOf("</nav>",html.indexOf('id="dock-menu-toggle"'))).includes('cx="75" cy="108"'), "Bosley dropdown ghost must have eyes and outline but no mouth");
+assert.ok(!html.slice(html.indexOf('<svg id="bosley-mascot"'),html.indexOf("</svg>",html.indexOf('<svg id="bosley-mascot"'))).includes("Q60 89") && html.slice(html.indexOf('<svg id="bosley-mascot"'),html.indexOf("</svg>",html.indexOf('<svg id="bosley-mascot"'))).includes('stroke="#101820"'), "Top-centre companion mascot must match the monochrome Windows ghost without a mouth");
+
 assert.ok(writingAssistFunction.includes("Your original text is safe"), "Writing Assist failures must not imply drafts were changed");
 const companionChatFunction = readText(new URL("../supabase/functions/companion-chat/index.ts", import.meta.url), "utf8");
 assert.ok(companionChatFunction.includes("const minimalMessages ="), "Chat must make a compact last-resort retry before reporting oversized provider requests");

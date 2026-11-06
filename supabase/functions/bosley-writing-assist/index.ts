@@ -5,7 +5,7 @@ const admin=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SE
 const apiKey=Deno.env.get("GROQ_API_KEY");
 const model=Deno.env.get("COMPANION_MODEL")??"openai/gpt-oss-120b";
 const calls=new Map<string,number[]>();
-const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,content-type,apikey","Access-Control-Allow-Methods":"POST,OPTIONS","Cache-Control":"no-store"};
+const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,content-type,apikey,x-client-info","Access-Control-Allow-Methods":"POST,OPTIONS","Cache-Control":"no-store"};
 const json=(value:unknown,status=200)=>new Response(JSON.stringify(value),{status,headers:{...cors,"Content-Type":"application/json"}});
 Deno.serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response(null,{headers:cors});

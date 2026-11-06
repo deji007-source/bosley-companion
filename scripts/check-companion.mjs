@@ -908,3 +908,6 @@ assert.ok(androidInstaller.includes('writingBulb.setText("💡︎")') && android
 assert.ok(androidInstaller.includes("ACTION_MOVE") && androidInstaller.includes("wm.updateViewLayout(bulb,bulbLp)"), "Android Writing bulb must support drag repositioning");
 assert.ok(windowsWorkflow.includes("let writingCard = null") && windowsWorkflow.includes("bosleyWritingCard"), "Windows bulb must open a separate standalone Writing and Ideas card window");
 assert.ok(windowsWorkflow.includes("<svg viewBox=\"0 0 24 24\"") && windowsWorkflow.includes("const width = 60, height = 60"), "Windows bulb must use a monochrome vector icon with a practical drag margin");
+assert.ok(html.includes('id="activityinsights"') && html.includes("Suggested next focus"), "Activity planner must surface proactive task focus suggestions");
+assert.ok(html.includes("Based only on tasks you chose to track") && html.includes("will not reschedule, complete or send anything automatically"), "Proactive task insights must be transparent and never take consequential actions automatically");
+assert.ok(html.includes("data-idea-copy") && html.includes("navigator.clipboard.writeText"), "Standalone Writing and Ideas card must provide a copy action");

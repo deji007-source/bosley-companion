@@ -270,47 +270,98 @@ import android.widget.TextView;
 import java.util.Locale;
 public class BosleyKeyboardService extends InputMethodService {
   private LinearLayout root, suggestions;
-  private boolean shift=true, sensitive=false, symbols=false;
-  private static final String[][] ROWS={{"q","w","e","r","t","y","u","i","o","p"},{"a","s","d","f","g","h","j","k","l"},{"⇧","z","x","c","v","b","n","m","⌫"},{"?123",",","space",".","↵"}};
-  private static final String[] WORDS={"about","after","again","also","because","before","can","could","day","dear","doing","good","hello","help","here","how","just","know","like","make","message","more","much","need","please","really","right","should","thanks","that","the","their","there","this","today","tomorrow","want","was","what","when","with","would","you","your"};
-  private static final String[][] SYMBOL_ROWS={{"1","2","3","4","5","6","7","8","9","0"},{"@","#","$","%","&","-","+","(",")"},{"=","*","\"","'",":",";","!","?","⌫"},{"ABC",",","space",".","↵"}};
+  private boolean shift=true, sensitive=false, symbols=false, emojiMode=false;
+  private final java.util.ArrayList<TextView> letterKeys=new java.util.ArrayList<>();
+  private TextView shiftKey;
+  private static final String[] LETTERS={"q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"};
+  private static final String[] WORDS={"about","above","after","again","also","always","amazing","and","any","are","because","before","being","best","better","can","chat","could","day","dear","did","do","doing","dont","each","even","every","feel","find","first","for","from","get","give","going","good","great","had","has","have","hello","help","here","hey","how","i","if","important","into","is","it","just","know","like","make","message","more","much","my","need","new","not","now","of","on","one","only","or","our","out","please","really","right","said","see","should","so","some","something","thanks","that","the","their","there","they","this","time","today","tomorrow","too","was","we","well","what","when","where","which","who","will","with","would","yes","you","your"};
+  private static final String[] EMOJIS={"😀","😂","🥹","😊","😍","🙏","❤️","👍","🔥","🎉","😭","🤝","✨","😎","🥰","💯","👏","🤔"};
+  private static final String[][] SYMBOL_ROWS={{"1","2","3","4","5","6","7","8","9","0"},{"@","#","$","%","&","-","+","(",")"},{"=","*","\"","'",":",";","!","?","⌫"},{"ABC","😀",",","space",".","↵"}};
   private int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-  private GradientDrawable bg(int color){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(9));return d;}
+  private GradientDrawable bg(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
   @Override public View onCreateInputView(){buildKeyboard();return root;}
   @Override public void onStartInput(EditorInfo info,boolean restarting){
-    super.onStartInput(info,restarting);int cls=info==null?InputType.TYPE_CLASS_TEXT:info.inputType&InputType.TYPE_MASK_CLASS;int v=info==null?0:info.inputType&InputType.TYPE_MASK_VARIATION;
-    sensitive=(cls==InputType.TYPE_CLASS_NUMBER&&v==InputType.TYPE_NUMBER_VARIATION_PASSWORD)||(cls==InputType.TYPE_CLASS_TEXT&&(v==InputType.TYPE_TEXT_VARIATION_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));symbols=cls==InputType.TYPE_CLASS_NUMBER;shift=true;buildKeyboard();refreshSuggestions();
+    super.onStartInput(info,restarting);
+    int cls=info==null?InputType.TYPE_CLASS_TEXT:info.inputType&InputType.TYPE_MASK_CLASS;
+    int v=info==null?0:info.inputType&InputType.TYPE_MASK_VARIATION;
+    sensitive=(cls==InputType.TYPE_CLASS_NUMBER&&v==InputType.TYPE_NUMBER_VARIATION_PASSWORD)||(cls==InputType.TYPE_CLASS_TEXT&&(v==InputType.TYPE_TEXT_VARIATION_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));
+    symbols=cls==InputType.TYPE_CLASS_NUMBER;emojiMode=false;shift=true;
+    if(root==null)buildKeyboard();else{buildRows();updateLetterCase();refreshSuggestions();}
   }
-  private TextView makeKey(String label,int weight){
-    TextView b=new TextView(this);b.setText(("⇧".equals(label)?(shift?"⬆":"⇧"):("space".equals(label)?"English":(shift&&!symbols&&label.length()==1?label.toUpperCase(Locale.ROOT):label))));b.setTextColor(("space".equals(label)||"↵".equals(label))?Color.WHITE:Color.rgb(32,36,42));b.setTextSize(("space".equals(label)||"↵".equals(label)||"?123".equals(label)||"ABC".equals(label))?12:17);b.setGravity(Gravity.CENTER);b.setTypeface(null,Typeface.BOLD);b.setElevation(dp(("⇧".equals(label)||"⌫".equals(label)||"?123".equals(label)||"ABC".equals(label)||"↵".equals(label))?0:2));b.setBackground(bg(("↵".equals(label))?Color.rgb(66,133,244):(("⇧".equals(label)||"⌫".equals(label)||"?123".equals(label)||"ABC".equals(label))?Color.rgb(190,202,216):Color.WHITE)));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(48),weight);lp.setMargins(dp(2),dp(3),dp(2),dp(3));b.setLayoutParams(lp);b.setOnClickListener(v->press(label));if("⌫".equals(label))b.setOnLongClickListener(v->{InputConnection ic=getCurrentInputConnection();if(ic!=null)ic.deleteSurroundingText(40,0);refreshSuggestions();return true;});return b;
+  private TextView keyView(String label,float weight,int height,boolean accent){
+    TextView b=new TextView(this);b.setText(label);b.setTextColor(accent?Color.WHITE:Color.rgb(32,38,46));b.setTextSize(label.length()>2?12:17);b.setGravity(Gravity.CENTER);b.setTypeface(null,Typeface.BOLD);
+    b.setBackground(bg(accent?Color.rgb(92,132,190):(weight<0.9f?Color.rgb(188,201,218):Color.WHITE),9));
+    b.setElevation(dp(weight<0.9f?0:1));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(height),weight);lp.setMargins(dp(2),dp(3),dp(2),dp(3));b.setLayoutParams(lp);
+    b.setOnClickListener(v->press(label));return b;
   }
   private void buildKeyboard(){
-    root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(5),dp(7),dp(5),dp(8));root.setBackgroundColor(Color.rgb(218,224,232));
-    suggestions=new LinearLayout(this);suggestions.setGravity(Gravity.CENTER);suggestions.setPadding(dp(8),0,dp(8),dp(2));root.addView(suggestions,new LinearLayout.LayoutParams(-1,dp(40)));
-    for(String[] row:(symbols?SYMBOL_ROWS:ROWS)){LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER);root.addView(line,new LinearLayout.LayoutParams(-1,dp(55)));for(String k:row){int w=("⇧".equals(k)||"⌫".equals(k)||"?123".equals(k))?14:("space".equals(k)?42:10);line.addView(makeKey(k,w));}}
-    TextView brand=new TextView(this);brand.setText("Bosley Keyboard  ·  On-device suggestions");brand.setTextColor(Color.rgb(90,98,110));brand.setTextSize(9);brand.setGravity(Gravity.CENTER);root.addView(brand,new LinearLayout.LayoutParams(-1,dp(18)));
+    root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(4),dp(6),dp(4),dp(7));root.setBackground(bg(Color.rgb(218,224,232),14));
+    suggestions=new LinearLayout(this);suggestions.setOrientation(LinearLayout.HORIZONTAL);suggestions.setGravity(Gravity.CENTER);suggestions.setPadding(dp(4),0,dp(4),0);root.addView(suggestions,new LinearLayout.LayoutParams(-1,dp(39)));
+    buildRows();refreshSuggestions();
   }
+  private void addRow(String[] keys,int height){
+    LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER);root.addView(line,new LinearLayout.LayoutParams(-1,dp(height)));
+    for(String k:keys){
+      float w=("space".equals(k)?4.2f:("⇧".equals(k)||"⌫".equals(k)||"?123".equals(k)||"ABC".equals(k)||"↵".equals(k)?1.45f:("😀".equals(k)?1.3f:1f)));
+      boolean accent="↵".equals(k)||"⇧".equals(k)||"⌫".equals(k)||"?123".equals(k)||"ABC".equals(k);
+      TextView v=keyView(k,w,height-3,accent);line.addView(v);
+      if(LETTERS.length>0&&k.length()==1&&Character.isLetter(k.charAt(0)))letterKeys.add(v);
+      if("⇧".equals(k))shiftKey=v;
+      if("⌫".equals(k))v.setOnLongClickListener(x->{InputConnection ic=getCurrentInputConnection();if(ic!=null)ic.deleteSurroundingText(40,0);refreshSuggestions();return true;});
+    }
+  }
+  private void buildRows(){
+    if(root==null)return;
+    root.removeViews(1,Math.max(0,root.getChildCount()-1));letterKeys.clear();shiftKey=null;
+    if(!symbols&&!emojiMode)addRow(new String[]{"1","2","3","4","5","6","7","8","9","0"},39);
+    String[][] rows=symbols?SYMBOL_ROWS:new String[][]{{"q","w","e","r","t","y","u","i","o","p"},{"a","s","d","f","g","h","j","k","l"},{"⇧","z","x","c","v","b","n","m","⌫"},{"?123","😀",",","space",".","↵"}};
+    if(emojiMode){
+      addRow(new String[]{"ABC","😀","⌫"},42);
+      for(int i=0;i<EMOJIS.length;i+=9){String[] part=java.util.Arrays.copyOfRange(EMOJIS,i,Math.min(i+9,EMOJIS.length));addRow(part,42);}
+      addRow(new String[]{"ABC",",","space",".","↵"},45);
+    }else for(String[] row:rows)addRow(row,44);
+    updateLetterCase();
+  }
+  private void updateLetterCase(){for(TextView v:letterKeys){String k=v.getText().toString();v.setText(shift?k.toUpperCase(Locale.ROOT):k.toLowerCase(Locale.ROOT));}if(shiftKey!=null)shiftKey.setText(shift?"⬆":"⇧");}
   private void press(String k){
     InputConnection ic=getCurrentInputConnection();if(ic==null)return;
     if("⌫".equals(k)){ic.deleteSurroundingText(1,0);refreshSuggestions();return;}
-    if("⇧".equals(k)){shift=!shift;buildKeyboard();return;}
-    if("?123".equals(k)){symbols=true;buildKeyboard();return;}
-    if("ABC".equals(k)){symbols=false;buildKeyboard();return;}
-    if("space".equals(k)){ic.commitText(" ",1);shift=true;buildKeyboard();refreshSuggestions();return;}
+    if("⇧".equals(k)){shift=!shift;updateLetterCase();return;}
+    if("?123".equals(k)){symbols=true;emojiMode=false;buildRows();refreshSuggestions();return;}
+    if("ABC".equals(k)){symbols=false;emojiMode=false;shift=true;buildRows();refreshSuggestions();return;}
+    if("😀".equals(k)){emojiMode=!emojiMode;symbols=false;buildRows();refreshSuggestions();return;}
+    if("space".equals(k)){
+      String before=String.valueOf(ic.getTextBeforeCursor(48,0));String word=lastWord(before);String fix=correction(word);
+      if(fix!=null){ic.deleteSurroundingText(word.length(),0);ic.commitText(fix,1);}
+      ic.commitText(" ",1);shift=true;refreshSuggestions();return;
+    }
     if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();int action=e==null?0:e.imeOptions&EditorInfo.IME_MASK_ACTION;if(action!=0)ic.performEditorAction(action);else{ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_ENTER));ic.sendKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP,android.view.KeyEvent.KEYCODE_ENTER));}return;}
-    String value=shift?k.toUpperCase(Locale.ROOT):k;ic.commitText(value,1);shift=false;buildKeyboard();refreshSuggestions();
+    if(k.length()==1&&Character.isLetter(k.charAt(0))){ic.commitText(shift?k.toUpperCase(Locale.ROOT):k.toLowerCase(Locale.ROOT),1);shift=false;updateLetterCase();refreshSuggestions();return;}
+    ic.commitText(k,1);refreshSuggestions();
   }
+  private String lastWord(String text){int i=text.length();while(i>0&&Character.isLetter(text.charAt(i-1)))i--;return text.substring(i);}
   private String correction(String w){
-    if(sensitive||w==null)return null;switch(w.toLowerCase(Locale.ROOT)){
-      case "teh":return "the";case "adn":return "and";case "thier":return "their";case "recieve":return "receive";case "definately":return "definitely";case "seperate":return "separate";case "occured":return "occurred";case "becuase":return "because";case "dont":return "don't";case "cant":return "can't";case "wont":return "won't";case "im":return "I'm";case "ive":return "I've";case "youre":return "you're";default:return null;
+    if(sensitive||w==null)return null;
+    switch(w.toLowerCase(Locale.ROOT)){
+      case "teh":return "the";case "adn":return "and";case "thier":return "their";case "recieve":return "receive";case "definately":return "definitely";case "seperate":return "separate";case "occured":return "occurred";case "becuase":return "because";case "dont":return "don't";case "cant":return "can't";case "wont":return "won't";case "im":return "I'm";case "ive":return "I've";case "youre":return "you're";case "doesnt":return "doesn't";case "didnt":return "didn't";case "isnt":return "isn't";case "thats":return "that's";case "whats":return "what's";case "wheres":return "where's";default:return null;
     }
   }
   private void refreshSuggestions(){
-    if(suggestions==null)return;suggestions.removeAllViews();InputConnection ic=getCurrentInputConnection();if(sensitive||ic==null){suggestion("Bosley Keyboard",null);return;}
-    CharSequence before=ic.getTextBeforeCursor(80,0);String t=before==null?"":before.toString();int end=t.length(),start=end;while(start>0&&Character.isLetter(t.charAt(start-1)))start--;String word=t.substring(start,end);String fix=correction(word);
-    if(fix!=null){suggestion(fix,()->{ic.deleteSurroundingText(word.length(),0);ic.commitText(fix,1);refreshSuggestions();});}else if(word.length()>0){int count=0;for(String candidate:WORDS){if(candidate.startsWith(word.toLowerCase(Locale.ROOT))&&!candidate.equalsIgnoreCase(word)){suggestion(candidate,()->{ic.deleteSurroundingText(word.length(),0);ic.commitText(candidate+" ",1);refreshSuggestions();});if(++count==2)break;}}if(count==0)suggestion("Bosley",null);}else{suggestion("English",null);suggestion("·",null);suggestion("Bosley",null);}
+    if(suggestions==null)return;suggestions.removeAllViews();
+    if(emojiMode){for(int i=0;i<Math.min(EMOJIS.length,6);i++){final String emoji=EMOJIS[i];suggestion(emoji,()->{InputConnection ic=getCurrentInputConnection();if(ic!=null)ic.commitText(emoji,1);});}return;}
+    InputConnection ic=getCurrentInputConnection();if(sensitive||ic==null){suggestion("Bosley",null);return;}
+    CharSequence before=ic.getTextBeforeCursor(48,0);String text=before==null?"":before.toString();String word=lastWord(text);String fix=correction(word);
+    if(fix!=null)suggestion(fix,()->{InputConnection current=getCurrentInputConnection();if(current!=null){current.deleteSurroundingText(word.length(),0);current.commitText(fix,1);refreshSuggestions();}});
+    else if(word.length()>0){
+      int count=0;String lower=word.toLowerCase(Locale.ROOT);
+      for(String candidate:WORDS){if(candidate.startsWith(lower)&&!candidate.equalsIgnoreCase(word)){final String pick=candidate;suggestion(pick,()->{InputConnection current=getCurrentInputConnection();if(current!=null){current.deleteSurroundingText(word.length(),0);current.commitText(pick+" ",1);refreshSuggestions();}});if(++count==2)break;}}
+      if(count==0)suggestion(word,null);
+    }else{suggestion("English",null);suggestion("Bosley",null);suggestion("😀",()->{emojiMode=true;buildRows();refreshSuggestions();});}
   }
-  private void suggestion(String value,Runnable action){TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.rgb(38,43,50));v.setTextSize(13);v.setTypeface(null,Typeface.BOLD);v.setBackground(bg(Color.rgb(230,234,240)));v.setGravity(Gravity.CENTER);v.setPadding(dp(8),0,dp(8),0);suggestions.addView(v,new LinearLayout.LayoutParams(0,-1,1));if(action!=null)v.setOnClickListener(x->action.run());}
+  private void suggestion(String value,Runnable action){
+    TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.rgb(38,43,50));v.setTextSize(13);v.setTypeface(null,Typeface.BOLD);v.setGravity(Gravity.CENTER);v.setPadding(dp(6),0,dp(6),0);v.setBackground(bg(Color.rgb(230,234,240),8));
+    LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-1,1);lp.setMargins(dp(2),dp(1),dp(2),dp(1));suggestions.addView(v,lp);if(action!=null)v.setOnClickListener(x->action.run());
+  }
 }
 """)
 

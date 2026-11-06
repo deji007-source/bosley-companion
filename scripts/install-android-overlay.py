@@ -190,7 +190,7 @@ public class BosleyOverlayService extends Service {
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
         case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>8||Math.abs(e.getRawY()-sy)>8){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(0,Math.min(screenHeight-widgetSize,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
-        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480){showBulb();}return true;
+        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480){bulbInUse=false;showBulb();}return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}

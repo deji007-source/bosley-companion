@@ -1765,7 +1765,7 @@ function routeChatWorkspaceIntent(raw){
  addMsg("you",value);
  const reply=addMsg("bosley","Opening "+target.label+" inside Bosley.");
  try{persistChatMessage("user",value);persistChatMessage("assistant","Opening "+target.label+" inside Bosley.").catch(()=>{})}catch{}
- show(target.id);
+ if(!(active===target.id&&!dock.hidden))show(target.id);
  return true;
 }
 function openChatEmailDraft(raw){
@@ -1776,7 +1776,7 @@ function openChatEmailDraft(raw){
  addMsg("bosley",reply);history.push({role:"assistant",content:reply});
  try{localStorage.setItem("bosley-chat-writing-draft-v1",JSON.stringify({...draft,createdAt:Date.now()}))}catch(error){note("I couldn't pass the draft to Writing Studio on this device. Open Writing Studio and paste the notes manually.");return true}
  persistChatExchange(raw,reply).catch(error=>console.warn("Email draft chat history could not be saved:",error));
- show("writing-assist");
+ if(active==="writing-assist"&&!dock.hidden){Promise.resolve(window.BosleyPanelRenderers?.writingAssist?.()).catch(error=>console.warn("Writing Studio refresh failed:",error))}else show("writing-assist");
  return true;
 }
 

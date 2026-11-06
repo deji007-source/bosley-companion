@@ -562,7 +562,7 @@ assert.ok(html.includes("Open separately"), "Hosted app must provide a browser f
 assert.ok(html.includes("initLovableBosleyViewer"), "Lovable viewer must initialize when its dock page is opened");
 assert.ok(html.includes("bosley-side-dock-position"), "Windows side dock position must persist after dragging");
 
-assert.ok(html.includes('dock.hidden=false;active=id;if(document.body.classList.contains("desktop-panel"))'), "Windows side dock must apply its restored position only after it becomes visible");
+assert.ok(html.includes('dock.hidden=false;active=id;if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:true}).catch(()=>{});if(document.body.classList.contains("desktop-panel"))'), "Windows side dock must apply its restored position only after it becomes visible");
 assert.ok(html.includes('dock.offsetWidth||Math.min(380,window.innerWidth-28)'), "Windows side dock must measure its actual visible width before restoring a saved position");
 assert.ok(html.includes('window.innerWidth-width-8'), "Windows side dock saved horizontal position must be clamped inside its current app window");
 assert.ok(html.includes('window.innerHeight-height-8'), "Windows side dock saved vertical position must be clamped inside its current app window");

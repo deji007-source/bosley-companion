@@ -759,6 +759,14 @@ assert.ok(androidInstaller.includes('call.getString("profile","warm")') && andro
 
 assert.ok(html.includes("id=\"skills-panel\""), "Skills panel must exist");
 
+assert.ok(appScript.includes("Your writing workspace") && appScript.includes("bue-editor") && appScript.includes("Review writing"), "Universal Input must provide a writing workspace and review action");
+assert.ok(appScript.includes('data-action="grammar"') && appScript.includes('data-rewrite="summarize"') && appScript.includes("bue-tone") && appScript.includes("bue-audience"), "Universal Input must expose grammar, rewriting, tone and audience controls");
+assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist",{body:{text,mode,preferences}})'), "Universal Input must send writing preferences to Writing Assist");
+assert.ok(appScript.includes("Accept suggestion") && appScript.includes("Your original text stays unchanged until you accept"), "Writing suggestions must be individually reviewable and user-controlled");
+assert.ok(writingGateway.includes('analyze:') && writingGateway.includes('mode==="analyze"') && writingGateway.includes("text.includes(item.original)"), "Writing Assist must return validated, source-grounded review suggestions");
+assert.ok(companionChat.includes("function selectBosleySkills(input: string)") && companionChat.includes("Bosley automatic skill orchestration"), "Companion chat must automatically select and coordinate relevant skills");
+
+
 const skillsPack = JSON.parse(readText(new URL("../agent-pack/skills.json", import.meta.url), "utf8"));
 assert.ok(skillsPack.skills.length >= 30, "Official Bosley skill pack must contain at least 30 useful skills");
 assert.ok(new Set(skillsPack.skills.map(skill => skill.id)).size === skillsPack.skills.length, "Skill IDs must be unique");

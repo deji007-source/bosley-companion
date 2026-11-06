@@ -766,3 +766,10 @@ assert.ok(skillsPack.skills.every(skill => skill.id && skill.title && skill.trig
 assert.ok(html.includes("#bosley-mascot .mascot-eye{fill:#050505;stroke:#050505"), "Main top ghost must render visible black eyes, not white eyes on a white face");
 const emailCompose = appScript.slice(appScript.indexOf("const openEmail=async(provider)"), appScript.indexOf('$("#bosley-writing-gmail")'));
 assert.ok(emailCompose.includes("https://mail.google.com/mail/?view=cm&fs=1&to=") && emailCompose.includes("https://outlook.office.com/mail/deeplink/compose?to=") && emailCompose.includes("encodeURIComponent(body)"), "Email buttons must open prefilled Gmail and Outlook compose windows");
+
+assert.ok(appScript.includes("function normalizeBosleyPhoneNumber(value)") && appScript.includes('international="234"+digits.slice(1)'), "Nigerian local phone numbers must normalize to +234 and replace the leading zero");
+assert.ok(appScript.includes('url="sms:"+number+"?body="') && appScript.includes('"https://wa.me/"+number.slice(1)'), "WhatsApp and SMS must use normalized international numbers");
+assert.ok(appScript.includes("Context sharing checked. Saving a planner handoff") && appScript.includes("saveHandoffSnapshot().then"), "Enabling Context Engine must automatically save a planner handoff");
+assert.ok(appScript.includes("if(contextEngineEnabled())return saveHandoffSnapshot()"), "Planner task updates must refresh the handoff while Context Engine is enabled");
+assert.ok(appScript.includes("list.slice(0,100)") && appScript.includes("items.slice(0,100)"), "Skill import and storage limits must preserve the full expanded pack");
+assert.ok(skillsPack.skills.some(skill=>skill.id==="cross-skill-orchestrator" && skill.workflow?.length>=5), "Skill pack must include a dependency-ordered cross-skill orchestrator");

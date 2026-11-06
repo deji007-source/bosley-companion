@@ -833,7 +833,7 @@ jobs:
             // opens Universal Input and presses its clipboard-import control.
             setTimeout(() => {
               if (!panel || panel.isDestroyed()) return;
-              panel.webContents.executeJavaScript('window.BosleyOpenUniversalInput?.();document.querySelector("#bue-editor")?.focus();').catch(error => logStartup('UNIVERSAL INPUT SHORTCUT FAILED', error));
+              panel.webContents.executeJavaScript('(async()=>{window.BosleyOpenUniversalInput?.();for(let attempt=0;attempt<30;attempt++){if(window.BosleyOpenWritingIdeasCard?.())return;await new Promise(resolve=>setTimeout(resolve,100));}})();').catch(error => logStartup('UNIVERSAL INPUT SHORTCUT FAILED', error));
             }, 350);
           }
 

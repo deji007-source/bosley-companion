@@ -25,15 +25,20 @@ new vm.Script(main, { filename: 'desktop/main.cjs' });
 new vm.Script(preload, { filename: 'desktop/preload.cjs' });
 
 const required = [
-  ['15-second timeout', 'const PANEL_IDLE_TIMEOUT_MS = 15000;'],
-  ['idle timer is armed on panel show', "panel.on('show', () => armPanelIdleClose());"],
-  ['idle timer is cleared when panel hides', "panel.on('hide', () => {"],
-  ['idle timer cleanup exists', 'clearPanelIdleClose();'],
-  ['only the panel renderer can reset its timer', 'event.sender === panel.webContents'],
-  ['user activity is observed in preload', "['pointerdown','keydown','input','change','scroll','wheel','touchstart']"],
-  ['idle timeout hides rather than destroys the panel', 'panel.hide();']
+  ['no inactivity timeout closes the companion', "function armPanelIdleClose() {}"],
+  ['panel has no auto-hide-on-idle handler', "!main.includes('PANEL AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY')"],
+  ['panel remains open until explicit user action', "panel.on('close', event =>"],
+  ['expanded workspace uses responsive desktop dimensions', 'Math.round(area.width * 0.78)'],
+  ['Windows Writing Ideas card uses the bundled shared interface', "writingCard.loadFile(path.join(__dirname, 'index.html'), { query: { bosleyWritingCard: '1' } })"],
+  ['Writing Ideas card is a movable always-on-top overlay', 'resizable: true, movable: true'],
+  ['Writing Ideas card fits within the desktop work area', 'Math.min(700, Math.max(560, cardArea.height - 24))'],
+  ['floating bulb remains on Ctrl+Shift+I', "globalShortcut.register('CommandOrControl+Shift+I', toggleWritingBulb)"]
 ];
 for (const [label, needle] of required) {
-  if (!main.includes(needle) && !preload.includes(needle)) throw new Error('Windows idle-close check failed: ' + label);
+  if (label.startsWith('no inactivity') || label.startsWith('panel has')) {
+    if (!eval(needle)) throw new Error('Windows workspace check failed: ' + label);
+  } else if (!main.includes(needle) && !preload.includes(needle)) {
+    throw new Error('Windows workspace check failed: ' + label);
+  }
 }
-console.log('Windows panel inactivity checks passed (15-second idle timeout, scoped activity events, hide/restore lifecycle).');
+console.log('Windows workspace checks passed (persistent panel, responsive layout, draggable local Writing Ideas overlay, Ctrl+Shift+I shortcut).');

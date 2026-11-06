@@ -23,6 +23,9 @@ for (const [index, source] of inlineScripts.entries()) {
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 assert.ok(!androidInstaller.includes('android.permission.CAMERA'), "Android build must not request camera permission; image capture uses the system picker");
 assert.ok(androidInstaller.includes('"android.permission.MODIFY_AUDIO_SETTINGS"') && androidInstaller.includes('"android.permission.RECORD_AUDIO"'), "Android WebView Live Talk must declare both audio permissions required by Capacitor microphone capture");
+assert.ok(androidInstaller.includes('"mailto".equalsIgnoreCase(scheme)') && androidInstaller.includes('"sms".equalsIgnoreCase(scheme)'), "Android native bridge must allow reviewed email and SMS composer links");
+assert.ok(appScript.includes('window.Capacitor?.Plugins?.BosleyOverlay') && appScript.includes('native?.openExternalUrl'), "Android communication handoffs must use the native external-app bridge");
+
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
 const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
 assert.ok(appScript.includes('connectButton.disabled=false'), "Agents Connect buttons must remain available so server configuration errors can be shown and corrected");
@@ -661,6 +664,8 @@ assert.ok(appScript.includes("async function bosleyCopyText") && appScript.inclu
 assert.ok(appScript.includes('#universal-input,#writing-assist,#bosley-search'), "Universal Input focus tracking must not steal its own destination field");
 assert.ok(appScript.includes('id="bosley-search-google"') && appScript.includes('id="bosley-search-bing"') && appScript.includes('id="bosley-search-duck"'), "Bosley Search must provide multiple public search engine fallbacks");
 assert.ok(windowsWorkflow.includes("clipboard_write") && windowsWorkflow.includes("clipboard.writeText(text)"), "Windows must expose a validated native clipboard action");
+assert.ok(windowsWorkflow.includes("'mailto:'") && windowsWorkflow.includes("'sms:'"), "Windows native bridge must allow reviewed email and SMS composer links");
+
 const writingGateway = readText(new URL("../supabase/functions/bosley-writing-assist/index.ts", import.meta.url), "utf8");
 assert.ok(writingGateway.includes('draft_email:') && writingGateway.includes('draft_message:'), "Writing Assist service must support email and message generation modes");
 assert.ok(appScript.includes("new MediaRecorder(stream") && appScript.includes('functions/v1/remote-transcribe'), "Writing Assist must support recorded voice transcription when live browser speech recognition is unavailable");

@@ -664,6 +664,8 @@ assert.ok(appScript.includes('id="bosley-writing-channel"') && appScript.include
 assert.ok(appScript.includes('https://wa.me/') && appScript.includes('https://t.me/share/url?url=&text=') && appScript.includes('"sms:"'), "Writing Studio must prepare WhatsApp, Telegram and SMS handoffs");
 assert.ok(appScript.includes('bosley-writing-destination-v1') && appScript.includes('id="bosley-writing-remember"'), "Writing Studio must only remember a destination on-device when explicitly selected");
 assert.ok(appScript.includes('const openPrepared=async(url,label)') && appScript.includes('await bosleyCopyText(body)'), "External app handoff must copy the reviewed draft before opening the destination");
+const preparedHandoff = appScript.slice(appScript.indexOf("const openPrepared=async(url,label)"), appScript.indexOf("const openEmail=async(provider)"));
+assert.ok(preparedHandoff.includes('popup=window.open(url,"_blank")') && !preparedHandoff.includes('window.open("about:blank"') && preparedHandoff.includes("let copied=false"), "Writing Studio must open the actual destination synchronously and must not let clipboard failure leave a blank tab.");
 assert.ok(html.includes('class="dock-ghost-mascot"') && html.includes('class="dock-ghost-eye"'), "Workspace launcher must use the animated Bosley ghost instead of a generic menu glyph");
 assert.ok(windowsWorkflow.includes('viewBox="0 0 150 180"') && windowsWorkflow.includes('class="ghost-eye"'), "Windows floating widget must retain the reference ghost silhouette and eyes");
 

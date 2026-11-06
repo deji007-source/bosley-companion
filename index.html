@@ -895,7 +895,20 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 #bosley-splash[data-leaving="true"]{opacity:0;transition:opacity .55s ease}
 #bosley-splash:focus-visible{outline:2px solid #fff;outline-offset:-8px}
 @media(prefers-reduced-motion:reduce){#bosley-splash:before,#bosley-splash:after,#bosley-splash .bs-orbit:after,#bosley-splash .bs-enter b:after{animation:none!important}}
-</style></head>
+</style>
+<style id="bosley-floating-layer-fix">
+#dock-launcher{position:fixed!important;z-index:2147483647!important;isolation:isolate!important;display:block!important;width:max-content!important;height:max-content!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;overflow:visible!important;flex:none!important;right:10px!important;top:48%!important;bottom:auto!important;left:auto!important;transform:translateY(-50%)!important;padding:5px!important;pointer-events:auto!important}
+#dock-launcher>#dock-menu-toggle{display:grid!important;position:relative!important;z-index:2!important;place-items:center!important;width:48px!important;height:48px!important;margin:0!important;padding:4px!important}
+#dock-launcher-menu{position:absolute!important;z-index:2147483647!important;right:calc(100% + 10px)!important;left:auto!important;top:50%!important;bottom:auto!important;transform:translateY(-50%)!important;display:grid!important;pointer-events:auto!important;max-height:min(72dvh,620px)!important}
+#dock-launcher-menu[hidden]{display:none!important}
+#side-dock:not([hidden]){z-index:2147483000!important}
+@media(max-width:760px){
+ #dock-launcher{right:8px!important;top:42%!important;width:max-content!important;height:max-content!important;max-height:none!important;transform:translateY(-50%)!important}
+ #dock-launcher>#dock-menu-toggle{width:46px!important;height:46px!important}
+ #dock-launcher-menu{right:calc(100% + 8px)!important;top:50%!important;max-height:min(68dvh,560px)!important;width:min(180px,calc(100vw - 82px))!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+</style>
+</head>
 <body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><script>
 /* Independent splash failsafe: keep the launch overlay from trapping users if app boot code fails. */
 (()=>{const splash=document.getElementById("bosley-splash");if(!splash)return;

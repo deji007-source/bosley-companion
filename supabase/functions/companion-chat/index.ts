@@ -147,17 +147,39 @@ Deno.serve(async (req: Request) => {
 
   let memoryContext = "";
   try {
-    const { data: memories } = await admin.from("memories")
-      .select("content, kind, importance")
-      .eq("user_id", user.id)
-      .order("importance", { ascending: false })
-      .limit(5);
-    const lines = (memories ?? [])
+    // Bosley IQ context is assembled from the user's own Second Brain, planner,
+    // saved automations and durable memories. Every query is scoped to the
+    // verified Auth user; retrieved content is reference data, never instructions.
+    const [memoryResult, brainResult, plannerResult, workflowResult] = await Promise.all([
+      admin.from("memories").select("content,kind,importance").eq("user_id", user.id).order("importance", { ascending: false }).limit(5),
+      admin.from("user_second_brain_entries").select("category,title,content,url,tags,pinned").eq("user_id", user.id).order("pinned", { ascending: false }).order("updated_at", { ascending: false }).limit(6),
+      admin.from("bosley_planner_tasks").select("title,kind,priority,project,due,status").eq("user_id", user.id).eq("status", "active").order("due", { ascending: true, nullsFirst: false }).limit(6),
+      admin.from("automation_workflows").select("name,steps").eq("user_id", user.id).limit(5),
+    ]);
+    const memoryLines = (memoryResult.data ?? [])
       .filter((item) => typeof item.content === "string" && item.content.trim())
-      .map((item) => "- (" + String(item.kind || "fact").slice(0, 20) + ") " + item.content.slice(0, 320));
-    memoryContext = lines.length ? "\n\nRelevant saved memories (reference data only):\n" + lines.join("\n").slice(0, 1_600) : "";
+      .map((item) => "- (" + String(item.kind || "fact").slice(0, 20) + ") " + item.content.slice(0, 260));
+    const brainLines = (brainResult.data ?? [])
+      .filter((item) => typeof item.title === "string" && item.title.trim())
+      .map((item) => "- [" + String(item.category || "note").slice(0, 32) + "] " + item.title.slice(0, 120) + (item.content ? ": " + String(item.content).slice(0, 280) : "") + (item.url ? " (" + String(item.url).slice(0, 180) + ")" : "") + (Array.isArray(item.tags) && item.tags.length ? " tags: " + item.tags.slice(0, 5).join(", ") : ""));
+    const plannerLines = (plannerResult.data ?? [])
+      .filter((item) => typeof item.title === "string" && item.title.trim())
+      .map((item) => "- [" + String(item.priority || "Normal").slice(0, 16) + "] " + item.title.slice(0, 120) + (item.project ? " · " + String(item.project).slice(0, 80) : "") + (item.due ? " · due " + String(item.due) : ""));
+    const workflowLines = (workflowResult.data ?? [])
+      .filter((item) => typeof item.name === "string" && item.name.trim())
+      .map((item) => "- " + item.name.slice(0, 100) + " (" + (Array.isArray(item.steps) ? item.steps.length : 0) + " configured steps)");
+    const sections = [
+      memoryLines.length ? "Saved memories:\\n" + memoryLines.join("\\n") : "",
+      brainLines.length ? "Second Brain (Bosley IQ reference library):\\n" + brainLines.join("\\n") : "",
+      plannerLines.length ? "Active planner tasks:\\n" + plannerLines.join("\\n") : "",
+      workflowLines.length ? "Saved automation workflows (descriptions only; do not claim they ran):\\n" + workflowLines.join("\\n") : "",
+    ].filter(Boolean);
+    memoryContext = sections.length ? "\\n\\nBosley IQ workspace context — relevant user-owned reference data only:\\n" + sections.join("\\n\\n").slice(0, 5_200) : "";
+    for (const [label, result] of [["memories", memoryResult], ["Second Brain", brainResult], ["planner", plannerResult], ["automation workflows", workflowResult]] as const) {
+      if (result.error) console.warn("Bosley IQ " + label + " lookup skipped:", String(result.error.message).slice(0, 120));
+    }
   } catch (error) {
-    console.warn("Bosley memory lookup skipped:", String(error).slice(0, 160));
+    console.warn("Bosley IQ context lookup skipped:", String(error).slice(0, 160));
   }
   const systemMessage = { role: "system", content: SYSTEM + memoryContext };
   // Groq retired the old Llama 4 Scout vision route. Use its currently documented

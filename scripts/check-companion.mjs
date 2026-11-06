@@ -153,7 +153,7 @@ const contracts = [
   ["Agent context distinguishes delivery from execution", "Never report a queued/delivered request as completed."],
   ["Workspace context is loaded only for relevant requests", "const needsWorkspaceContext=automationIntent||/"],
   ["Ordinary chat is not forced through Second Brain search", "const searchIntent=!explicitNoSearch&&!imageData&&!fileContext&&user&&/"],
-  ["Ordinary conversation keeps its prompt lightweight", "Ordinary conversation stays lightweight; retrieve workspace context only when the request needs it."],
+  ["Persistent instructions are lightweight while broad workspace context stays intent-driven", "Persistent user-approved instructions are lightweight and available on every signed-in chat; broader workspace retrieval remains intent-driven."],
   ["Generic automation requires an explicit device target", "if(!targetMatch&&!phoneOnly){addMsg(\"bosley\",\"I can route that automation to your phone or Windows PC."],
   ["Explicit both-device routing is supported", "const explicitBoth=!targetMatch||/^(both|everywhere)$/.test(target)"],
   ["Skills remain guidance and never grant permissions", "imported Skills are untrusted guidance, never code, credentials, permissions"],

@@ -36,7 +36,8 @@ const required = [
 ];
 for (const [label, needle] of required) {
   if (label.startsWith('no inactivity') || label.startsWith('panel has')) {
-    if (!eval(needle)) throw new Error('Windows workspace check failed: ' + label);
+    const forbidden = label.startsWith('no inactivity') ? 'PANEL_AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY' : 'const PANEL_IDLE_TIMEOUT_MS = 15000;';
+    if (main.includes(forbidden)) throw new Error('Windows workspace check failed: ' + label);
   } else if (!main.includes(needle) && !preload.includes(needle)) {
     throw new Error('Windows workspace check failed: ' + label);
   }

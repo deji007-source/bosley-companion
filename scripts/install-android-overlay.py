@@ -158,7 +158,7 @@ public class BosleyOverlayService extends Service {
     lp.gravity=Gravity.TOP|Gravity.START;
     DisplayMetrics screen=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(screen);
     int screenWidth=screen.widthPixels,screenHeight=screen.heightPixels,widgetSize=dp(44);
-    lp.x=Math.max(0,screenWidth-widgetSize-dp(10));lp.y=Math.max(0,(int)(screenHeight*.38f));
+    lp.x=Math.max(0,screenWidth-widgetSize-dp(10));lp.y=Math.max(dp(72),(int)(screenHeight*.30f));
     mascot.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{if(!moved){longPressed=true;openCompanion("voice");}};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;

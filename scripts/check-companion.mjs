@@ -21,6 +21,9 @@ for (const [index, source] of inlineScripts.entries()) {
 }
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
+assert.match(html,/Keep the floating tool launcher out of the active conversation/);
+assert.ok(androidInstaller.includes("Color.rgb(66,133,244)"), "Bosley keyboard should use a distinct Gboard-style action key");
+assert.ok(androidInstaller.includes("Bosley Keyboard  ·  On-device suggestions"), "Bosley keyboard should show its refined suggestion-strip footer");
 assert.ok(!androidInstaller.includes('android.permission.CAMERA'), "Android build must not request camera permission; image capture uses the system picker");
 assert.ok(androidInstaller.includes('"android.permission.MODIFY_AUDIO_SETTINGS"') && androidInstaller.includes('"android.permission.RECORD_AUDIO"'), "Android WebView Live Talk must declare both audio permissions required by Capacitor microphone capture");
 assert.ok(androidInstaller.includes('"mailto".equalsIgnoreCase(scheme)') && androidInstaller.includes('"sms".equalsIgnoreCase(scheme)'), "Android native bridge must allow reviewed email and SMS composer links");

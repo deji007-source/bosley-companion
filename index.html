@@ -1073,9 +1073,22 @@ document.addEventListener("DOMContentLoaded",()=>{
  for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
  const floatingLauncher=document.getElementById("dock-launcher");if(floatingLauncher&&floatingLauncher.parentElement!==document.body)document.body.appendChild(floatingLauncher);
  const dockMenu=document.getElementById("dock-launcher-menu"),dockToggle=document.getElementById("dock-menu-toggle");
+ // Android touch browsers can delay/suppress synthetic click after long-press/scroll gestures.
+ // Handle the completed tap directly, then ignore its follow-up synthetic click.
+ let dockPointerHandledAt=0;
+ window.addEventListener("pointerup",event=>{
+  if(event.pointerType!=="touch"&&event.pointerType!=="pen")return;
+  const target=event.target instanceof Element?event.target:null;if(!target)return;
+  const toggle=target.closest("#dock-menu-toggle"),item=target.closest("#dock-launcher-menu [data-open-view]");
+  if(!toggle&&!item)return;
+  event.preventDefault();event.stopImmediatePropagation();dockPointerHandledAt=Date.now();
+  if(toggle&&dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));return;}
+  if(item){const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");show(id);}
+ },true);
  // Window-capture router runs before document-level handlers and owns launcher interactions.
  window.addEventListener("click",event=>{
   const target=event.target instanceof Element?event.target:null;if(!target)return;
+  if(Date.now()-dockPointerHandledAt<900&&target.closest("#dock-launcher"))return;
   const toggle=target.closest("#dock-menu-toggle");
   if(toggle){event.preventDefault();event.stopImmediatePropagation();if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}return;}
   const item=target.closest("#dock-launcher-menu [data-open-view]");

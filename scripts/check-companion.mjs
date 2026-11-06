@@ -904,7 +904,7 @@ assert.ok(html.includes("bosley-agent-centre:") && html.includes("agent_device_c
 assert.ok(html.includes('data-idea-input') && html.includes('bosley-card-only'), "Writing and Ideas must own a standalone input and card-only presentation mode");
 assert.ok(html.includes('get("bosleyWritingCard")==="1"'), "Windows standalone Writing and Ideas window must auto-open the card without opening the companion workspace");
 assert.ok(html.includes('action==="writing-card"') && html.includes('Universal Input was not opened'), "Android Writing bulb quick action must open the card without routing through Universal Input");
-assert.ok(androidInstaller.includes("iconPaint.setColor(Color.WHITE)") && androidInstaller.includes("iconPaint.setColor(Color.BLACK)") && androidInstaller.includes('openCompanion("writing-card")'), "Android Writing bulb must use monochrome text presentation and the dedicated card action");
+assert.ok(androidInstaller.includes("iconPaint.setColor(Color.WHITE)") && androidInstaller.includes("iconPaint.setColor(Color.BLACK)") && androidInstaller.includes("showWritingCardOverlay()"), "Android Writing bulb must use a monochrome icon and open the standalone floating card directly");
 assert.ok(androidInstaller.includes("ACTION_MOVE") && androidInstaller.includes("wm.updateViewLayout(bulb,bulbLp)"), "Android Writing bulb must support drag repositioning");
 assert.ok(windowsWorkflow.includes("let writingCard = null") && windowsWorkflow.includes("bosleyWritingCard"), "Windows bulb must open a separate standalone Writing and Ideas card window");
 assert.ok(windowsWorkflow.includes("<svg viewBox=\"0 0 24 24\"") && windowsWorkflow.includes("const width = 60, height = 60"), "Windows bulb must use a monochrome vector icon with a practical drag margin");

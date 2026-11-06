@@ -198,23 +198,9 @@ jobs:
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;
           let panel = null;
-          let panelIdleTimer = null;
-          const PANEL_IDLE_TIMEOUT_MS = 15000;
-          function clearPanelIdleClose() {
-            if (panelIdleTimer) clearTimeout(panelIdleTimer);
-            panelIdleTimer = null;
-          }
-          function armPanelIdleClose() {
-            clearPanelIdleClose();
-            if (!panel || panel.isDestroyed() || !panel.isVisible()) return;
-            panelIdleTimer = setTimeout(() => {
-              panelIdleTimer = null;
-              if (panel && !panel.isDestroyed() && panel.isVisible()) {
-                logStartup('PANEL AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY');
-                panel.hide();
-              }
-            }, PANEL_IDLE_TIMEOUT_MS);
-          }
+          // Keep the companion open until the user closes or hides it explicitly.
+          function clearPanelIdleClose() {}
+          function armPanelIdleClose() {}
           let usingHostedFallback = false;
           let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
           // Slim bezel-connected Dynamic Island sizes; keep the island centered on the physical display edge.
@@ -263,12 +249,12 @@ jobs:
             }
 
             if (panel && !panel.isDestroyed()) {
-              // Keep the expanded companion compact and attached to the top-center bezel.
-              const width = Math.min(420, Math.max(320, area.width - 16));
-              const height = Math.min(480, Math.max(300, Math.round(area.height * 0.52)));
-              const x = bounds.x + Math.round((bounds.width - width) / 2);
-              const y = bounds.y;
-
+              // Give workspace pages enough room; preserve user-moved position while clamping to the work area.
+              const current = panel.getBounds();
+              const width = Math.min(900, Math.max(620, Math.round(area.width * 0.78)), area.width);
+              const height = Math.min(860, Math.max(560, Math.round(area.height * 0.88)), area.height);
+              const x = Math.max(area.x, Math.min(current.x, area.x + area.width - width));
+              const y = Math.max(area.y, Math.min(current.y, area.y + area.height - height));
               panel.setBounds({ x, y, width, height });
             }
           }
@@ -475,17 +461,20 @@ jobs:
               writingCard.setAlwaysOnTop(true, 'screen-saver');
               return;
             }
+            const cardArea = screen.getPrimaryDisplay().workArea;
+            const cardWidth = Math.min(340, Math.max(300, cardArea.width - 24));
+            const cardHeight = Math.min(700, Math.max(560, cardArea.height - 24));
             writingCard = new BrowserWindow({
-              width: 380, height: 520, minWidth: 320, minHeight: 420,
-              frame: false, transparent: false, resizable: true, movable: true,
-              show: false, alwaysOnTop: true, skipTaskbar: false, hasShadow: true,
-              backgroundColor: '#050505',
+              x: cardArea.x + cardArea.width - cardWidth - 18,
+              y: cardArea.y + Math.max(12, Math.round((cardArea.height - cardHeight) * 0.35)),
+              width: cardWidth, height: cardHeight, minWidth: Math.min(300, cardWidth), minHeight: Math.min(480, cardHeight),
+              frame: false, transparent: true, resizable: true, movable: true,
+              show: false, alwaysOnTop: true, skipTaskbar: true, hasShadow: true,
+              backgroundColor: '#00000000',
               webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }
             });
             writingCard.setAlwaysOnTop(true, 'screen-saver');
-            const cardUrl = new URL(SITE);
-            cardUrl.searchParams.set('bosleyWritingCard', '1');
-            writingCard.loadURL(cardUrl.toString()).then(() => {
+            writingCard.loadFile(path.join(__dirname, 'index.html'), { query: { bosleyWritingCard: '1' } }).then(() => {
               if (!writingCard || writingCard.isDestroyed()) return;
               writingCard.show();
               writingCard.focus();
@@ -733,11 +722,14 @@ jobs:
           }
 
           function createPanel() {
+            const workArea = screen.getPrimaryDisplay().workArea;
+            const panelWidth = Math.min(900, Math.max(620, Math.round(workArea.width * 0.78)), workArea.width);
+            const panelHeight = Math.min(860, Math.max(560, Math.round(workArea.height * 0.88)), workArea.height);
             panel = new BrowserWindow({
-              width: 420,
-              height: 460,
-              minWidth: 320,
-              minHeight: 300,
+              width: panelWidth,
+              height: panelHeight,
+              minWidth: Math.min(560, panelWidth),
+              minHeight: Math.min(480, panelHeight),
               resizable: true,
               show: false,
               backgroundColor: '#000000',
@@ -857,7 +849,7 @@ jobs:
               }
             });
 
-            panel.on('show', () => armPanelIdleClose());
+            // No inactivity timer: the companion stays open until the user closes it.
 
             panel.on('hide', () => {
               clearPanelIdleClose();

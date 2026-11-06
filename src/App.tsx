@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createClient, type User } from "@supabase/supabase-js";
-import { CircleHelp, Command, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut } from "lucide-react";
+import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut } from "lucide-react";
 
 const SUPABASE_URL = "https://ywwfqisbmlkjcfoqehph.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwicmVmIjoieXd3ZnFpc2JtbGtqY2ZvcWVwaHAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3OTU4MDYwOSwiZXhwIjoyMDk1MTU2NjA5fQ.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
@@ -45,10 +45,13 @@ export default function App() {
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [authBusy, setAuthBusy] = useState(false);
   const [sending, setSending] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const recognitionRef = useRef<Recognition | null>(null);
   const nextId = useRef(2);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const conversationRef = useRef<HTMLElement>(null);
   const historyRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const userRef = useRef<User | null>(null);
 
@@ -62,7 +65,35 @@ export default function App() {
     return () => { alive = false; listener.subscription.unsubscribe(); };
   }, []);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages]);
+  useEffect(() => {
+    if (!showJumpToLatest) bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, showJumpToLatest]);
+
+  function handleConversationScroll() {
+    const viewport = conversationRef.current;
+    if (!viewport) return;
+    setShowJumpToLatest(viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight > 100);
+  }
+  function jumpToLatest() {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    setShowJumpToLatest(false);
+  }
+  async function copyMessage(message: Message) {
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(message.text);
+      else {
+        const area = document.createElement("textarea");
+        area.value = message.text; area.style.position = "fixed"; area.style.opacity = "0";
+        document.body.appendChild(area); area.select();
+        if (!document.execCommand("copy")) throw new Error("Clipboard unavailable");
+        area.remove();
+      }
+      setCopiedMessageId(message.id);
+      window.setTimeout(() => setCopiedMessageId(current => current === message.id ? null : current), 1500);
+    } catch {
+      setNotice("Couldn't copy that message. Check clipboard permission and try again.");
+    }
+  }
 
   useEffect(() => {
     if (!user) {
@@ -274,12 +305,13 @@ export default function App() {
       <button type="button" className="auth-switch" onClick={() => setAuthMode(current => current === "signin" ? "signup" : "signin")}>{authMode === "signin" ? "Need an account? Create one" : "Already have an account? Sign in"}</button>
     </form>}
     {user && <div className="account-strip"><span>{user.email ?? "Signed in"}</span><button onClick={async () => { await supabase.auth.signOut(); setNotice("Signed out."); }} aria-label="Sign out"><LogOut size={13}/> Sign out</button></div>}
-    <section className="conversation" aria-live="polite"><div className="day-label"><span/> SESSION STARTED <span/></div>
+    <section ref={conversationRef} onScroll={handleConversationScroll} className="conversation" aria-live="polite"><div className="day-label"><span/> SESSION STARTED <span/></div>
       {messages.map(message => <article className={`message ${message.role === "you" ? "user-message" : "bosley-message"}`} key={message.id}>
         {message.role === "bosley" && <div className="avatar"><PencilMascot status={status} compact/></div>}
-        <div className="message-body"><div className="message-meta">{message.role === "you" ? "YOU" : "BOSLEY"} <span>{message.role === "you" ? "LOCAL INPUT" : "COMPANION"}</span></div><div className="message-bubble">{message.text}</div></div>
+        <div className="message-body"><div className="message-meta">{message.role === "you" ? "YOU" : "BOSLEY"} <span>{message.role === "you" ? "LOCAL INPUT" : "COMPANION"}</span></div><div className="message-bubble">{message.text}</div><button type="button" className="message-copy" onClick={() => void copyMessage(message)} aria-label={copiedMessageId === message.id ? "Message copied" : "Copy message"} title="Copy message">{copiedMessageId === message.id ? <Check size={12}/> : <Copy size={12}/>}<span>{copiedMessageId === message.id ? "Copied" : "Copy"}</span></button></div>
       </article>)}
       {transcript && <div className="transcript-preview"><Mic size={13}/> HEARD: “{transcript}”</div>}<div ref={bottomRef}/>
+      {showJumpToLatest && <button type="button" className="conversation-jump" onClick={jumpToLatest} aria-label="Jump to latest message" title="Jump to latest message"><ArrowDown size={17}/></button>}
     </section>
     {notice && <div className="notice">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss notice"><X size={13}/></button></div>}
     <form className="composer" onSubmit={event => { event.preventDefault(); void sendMessage(); }}>

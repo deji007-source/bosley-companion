@@ -401,7 +401,7 @@ jobs:
             if (process.platform !== 'win32' || (writingBulb && !writingBulb.isDestroyed())) return;
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            const width = 48, height = 48;
+            const width = 60, height = 60;
             writingBulb = new BrowserWindow({
               x: area.x + area.width - width - 18, y: area.y + Math.round(area.height * 0.34),
               width, height, frame: false, transparent: true, resizable: false, movable: true,

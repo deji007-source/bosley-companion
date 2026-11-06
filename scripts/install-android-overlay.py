@@ -209,13 +209,13 @@ public class BosleyOverlayService extends Service {
   void removeCapturePrompt(){if(wm!=null&&capturePrompt!=null){try{wm.removeView(capturePrompt);}catch(Exception ignored){}capturePrompt=null;}}
   void showBulb(){
     if(bulb!=null){scheduleBulbHide();return;}
-    TextView writingBulb=new TextView(this);writingBulb.setText("💡");writingBulb.setTextSize(19);writingBulb.setGravity(Gravity.CENTER);
+    TextView writingBulb=new TextView(this);writingBulb.setText("💡︎");writingBulb.setTextSize(19);writingBulb.setGravity(Gravity.CENTER);
     writingBulb.setContentDescription("Bosley Writing and Ideas. Tap to open the compact writing assistant card.");
     GradientDrawable bulbBg=new GradientDrawable();bulbBg.setColor(Color.WHITE);bulbBg.setShape(GradientDrawable.OVAL);bulbBg.setStroke(dp(1),Color.rgb(20,20,20));writingBulb.setBackground(bulbBg);
     writingBulb.setElevation(dp(8));bulb=writingBulb;
     bulbLp=new WindowManager.LayoutParams(dp(40),dp(40),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     bulbLp.gravity=Gravity.TOP|Gravity.START;bulbLp.x=lp!=null?Math.max(0,lp.x-dp(48)):dp(12);bulbLp.y=lp!=null?lp.y+dp(2):dp(72);
-    writingBulb.setOnClickListener(v->{bulbInUse=true;bulbHandler.removeCallbacks(hideBulbTask);openCompanion("writing");});
+    writingBulb.setOnTouchListener(new View.OnTouchListener(){float downX,downY;int startX,startY;boolean dragged;@Override public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getActionMasked()){case android.view.MotionEvent.ACTION_DOWN:downX=e.getRawX();downY=e.getRawY();startX=bulbLp.x;startY=bulbLp.y;dragged=false;return true;case android.view.MotionEvent.ACTION_MOVE:int dx=(int)(e.getRawX()-downX),dy=(int)(e.getRawY()-downY);if(Math.abs(dx)+Math.abs(dy)>dp(7))dragged=true;if(dragged){DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);bulbLp.x=Math.max(0,Math.min(dm.widthPixels-dp(40),startX+dx));bulbLp.y=Math.max(dp(24),Math.min(dm.heightPixels-dp(40),startY+dy));try{wm.updateViewLayout(bulb,bulbLp);}catch(Exception ignored){}}return true;case android.view.MotionEvent.ACTION_UP:if(!dragged){bulbInUse=true;bulbHandler.removeCallbacks(hideBulbTask);openCompanion("writing-card");}return true;case android.view.MotionEvent.ACTION_CANCEL:return true;default:return true;}}});
     try{wm.addView(bulb,bulbLp);}catch(Exception e){bulb=null;}
     scheduleBulbHide();
   }

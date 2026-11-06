@@ -845,3 +845,5 @@ assert.ok(readText(new URL("../.github/workflows/build-windows.yml", import.meta
 assert.ok(html.includes('Possible typo') && html.includes('setRangeText(found.good,start,end,"end")'), "Live writing checks must offer explicit, non-destructive inline fixes");
 assert.ok(html.includes('.bue-editor{min-height:210px') && html.includes('.bue-layout{grid-template-columns:minmax(0,1fr) minmax(205px,.55fr)'), "Universal Input layout must stay compact and mobile responsive");
 assert.ok(html.includes('window.BosleyOpenUniversalInput=()=>window.BosleyOpenPanel?.("universal-input")'), "Universal Input launcher must target the registered dock panel");
+assert.ok(html.includes("Register dock renderers before the rest of the large application bootstrap") && html.includes("writingAssist:()=>renderBosleyWritingAssist()"), "Core workspace renderers must be registered before optional startup code can fail");
+assert.ok(html.includes('if(typeof r!=="function")throw Error("Writing Studio renderer is unavailable.")'), "Writing Studio must report missing renderer wiring instead of silently opening a blank panel");

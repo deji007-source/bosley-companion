@@ -159,7 +159,7 @@ html[data-face-preset=alert] .launch .eyes{gap:12px}
 .fb{font-size:10px;line-height:1.5;margin:7px 0;color:#ddd}
 .items{display:grid;gap:7px;margin-top:10px}.activity .form{display:grid;gap:7px;margin-top:9px}.activity .form input{min-width:0;width:100%;border:1px solid #333;border-radius:8px;background:#050505;color:#fff;padding:9px;font-size:11px}.activity .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.activity .actions button,.activity .item button{padding:6px 8px;border:1px solid #333;border-radius:7px;background:#080808;color:#ccc;font-size:10px}.activity .item .status{font:9px monospace;color:#aaa}.activity .item .status.pending{color:#e7c88d}.activity .item .status.done{color:#b7e6b7}.item{display:flex;gap:8px;padding:9px;border:1px solid #222;border-radius:8px}.item main{flex:1;min-width:0}.item strong{font-size:11px;overflow-wrap:anywhere}.item p{margin:5px 0;color:#aaa;font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere}.item small{color:var(--mute);font:8px 'DM Mono',monospace}.item button{border:1px solid #333;border-radius:6px;background:none;color:#aaa}.item.done strong{text-decoration:line-through;color:#777}
 .chat{flex:1;min-height:90px;overflow:auto;padding:16px}
-.msg{margin-bottom:16px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}.msg b{display:block;font:9px 'DM Mono',monospace;margin-bottom:4px}.msg p{margin:0;color:#d8d8d8;white-space:pre-wrap}
+.msg{margin-bottom:16px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}.msg b{display:block;font:9px 'DM Mono',monospace;margin-bottom:4px}.msg p{margin:0;color:#d8d8d8;white-space:pre-wrap}.msg.bosley p{font-weight:600}.msg-actions{display:flex;justify-content:flex-start;margin-top:5px}.msg.you .msg-actions{justify-content:flex-end}.msg-copy{display:inline-flex;align-items:center;gap:5px;min-height:25px;padding:3px 8px;border:1px solid #303030;border-radius:7px;background:#0b0b0b;color:#9b9b9b;font:9px 'DM Mono',monospace;cursor:pointer}.msg-copy:hover{border-color:#666;color:#fff}.msg-copy:focus-visible,#chat-jump-latest:focus-visible{outline:2px solid #fff;outline-offset:2px}.chat{position:relative}.chat-jump{position:sticky;z-index:8;bottom:9px;left:50%;transform:translateX(-50%);display:grid;place-items:center;width:34px;height:34px;margin:4px auto 0;border:1px solid #555;border-radius:50%;background:#191919;color:#fff;box-shadow:0 4px 18px #000b;font-size:18px;cursor:pointer}.chat-jump[hidden]{display:none!important}
 .msg.you{text-align:right}.msg.you p{display:inline-block;text-align:left;padding:9px 12px;border:1px solid #303030;border-radius:12px 4px 12px 12px;background:#080808}
 .msg.sys p{color:var(--mute);font-style:italic}.msg p.err{padding:8px 10px;border:1px dashed #666;border-radius:10px;color:#eee}
 .composer{display:flex;align-items:center;gap:8px;margin:0 14px;padding:8px;border:1px solid #333;border-radius:18px;background:linear-gradient(145deg,#0c0c0c,#030303);box-shadow:0 8px 26px #0008,inset 0 1px #ffffff08}.composer #plus{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #383838;border-radius:50%;background:#171717;color:#fff;font-size:25px;font-weight:400;line-height:1}.composer #plus:hover{background:#242424;border-color:#777}.composer #mic{border-radius:50%;min-width:38px;min-height:38px}.composer #send{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:50%;font-size:18px;font-weight:800}.composer input{font-size:13px}.attach-menu{position:absolute;z-index:40;left:18px;bottom:82px;width:min(270px,calc(100% - 36px));padding:7px;border:1px solid #3b3b3b;border-radius:16px;background:linear-gradient(145deg,#171717,#070707);box-shadow:0 18px 48px #000c}.attach-menu button{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:0;border-radius:10px;background:transparent;color:#eee;text-align:left;font-size:12px;font-weight:700}.attach-menu button:hover{background:#252525}.attach-menu button span{display:grid;place-items:center;width:27px;height:27px;border:1px solid #383838;border-radius:8px;color:#fff;font-size:15px}.file-attachment{margin:0 14px 8px;padding:8px 11px;border:1px solid #343434;border-radius:11px;background:#090909;color:#ddd;font-size:10px}.file-attachment strong{font-weight:800}.file-attachment button{float:right;border:0;background:none;color:#aaa;font-size:16px}
@@ -1019,7 +1019,7 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
  <input id="brain-cloud-search" maxlength="120" placeholder="Search your cloud knowledge…" aria-label="Search cloud knowledge">
  <div id="brain-cloud-items" class="items"></div>
 </section><h3 style="margin-top:14px">Local knowledge graph</h3><p class="mute">Explore links between your saved tasks, memories and workflows. This index is generated on this device and is not uploaded.</p><input id="knowledge-search" maxlength="120" placeholder="Search linked items…" aria-label="Search knowledge graph"><p class="status" id="knowledge-status" aria-live="polite">Local index ready.</p><div id="knowledge-items" class="items"></div><div class="actions"><button type="button" id="memoryclear">Clear saved memory</button><button type="button" id="activityclear">Clear activity log</button></div></section>
- <section class="chat" id="chat" role="log" aria-live="off"></section>
+ <section class="chat" id="chat" role="log" aria-live="off"><button type="button" class="chat-jump" id="chat-jump-latest" aria-label="Jump to latest message" title="Jump to latest message" hidden>↓</button></section>
  <div class="image-attachment" id="imageattachment" hidden><img id="imagepreview" alt="Image ready to send to Bosley"><div><strong>Image attached</strong><small>Sent only when you press send</small></div><button type="button" id="removeimage" aria-label="Remove attached image">×</button></div><div class="file-attachment" id="file-attachment" hidden><strong id="file-attachment-label">Files attached</strong><button type="button" id="remove-files" aria-label="Remove attached files">×</button></div><input id="file-input" type="file" accept="image/*,.txt,.md,.json,.csv,.log,.xml,.yaml,.yml,.html,.css,.js,.ts" multiple hidden><input id="camera-input" type="file" accept="image/*" capture="environment" hidden><div class="attach-menu" id="attach-menu" role="menu" aria-label="Add to message" hidden><button type="button" id="attach-files" role="menuitem"><span>＋</span> Photos &amp; files</button><button type="button" id="camera" role="menuitem"><span>▧</span> Take a photo</button><button type="button" id="screen" role="menuitem" hidden><span>▣</span> Capture screen</button><button type="button" id="attach-workspace" role="menuitem"><span>▤</span> Open workspace</button><button type="button" id="attach-automation" role="menuitem"><span>✦</span> Open AI agents &amp; automations</button><button type="button" id="attach-skills" role="menuitem"><span>✳</span> Open skills</button></div><form class="composer" id="form"><button type="button" id="plus" aria-label="Open attachments and tools" aria-expanded="false" title="Add files or tools">+</button><button type="button" id="mic" aria-label="Start voice input" title="Voice input">🎙</button><input id="in" placeholder="Message Bosley…" autocomplete="off" maxlength="2000" aria-label="Message"><button id="send" aria-label="Send message">↑</button></form>
  <footer class="bottom"><span>CTRL/ALT+SHIFT+B</span><span><button id="stop" hidden>■ STOP</button><button id="voice">VOICE ON</button><button type="button" id="live-talk-start" title="Start a live voice conversation">◉ LIVE TALK</button><button id="new">NEW CHAT</button></span></footer>
 </section>
@@ -1800,9 +1800,30 @@ $("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
 
 /* ---------- chat ---------- */
 const chat=$("#chat");
+const chatJump=$("#chat-jump-latest");
+const chatNearBottom=()=>chat.scrollHeight-chat.scrollTop-chat.clientHeight<100;
+function updateChatJump(){if(chatJump)chatJump.hidden=chatNearBottom()}
+chat.addEventListener("scroll",updateChatJump,{passive:true});
+chatJump?.addEventListener("click",()=>{chat.scrollTo({top:chat.scrollHeight,behavior:"smooth"});chatJump.hidden=true});
+function copyChatMessage(text,button){
+ const value=String(text||"");
+ const done=()=>{button.textContent="✓ Copied";button.setAttribute("aria-label","Message copied");setTimeout(()=>{button.textContent="Copy";button.setAttribute("aria-label","Copy message")},1400)};
+ const fallback=()=>{const area=document.createElement("textarea");area.value=value;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();try{document.execCommand("copy");done()}catch{button.textContent="Select and copy manually"}area.remove()};
+ if(navigator.clipboard?.writeText)navigator.clipboard.writeText(value).then(done).catch(fallback);else fallback();
+}
 function addMsg(role,text,cls=""){
+ const follow=chatNearBottom();
  const a=document.createElement("article");a.className="msg "+role+" "+cls;
- a.innerHTML='<b>'+(role==="you"?"YOU":"BOSLEY")+'</b><p></p>';a.lastChild.textContent=text;chat.appendChild(a);chat.scrollTop=chat.scrollHeight;return a.lastChild;
+ a.innerHTML='<b>'+(role==="you"?"YOU":role==="sys"?"NOTICE":"BOSLEY")+'</b><p></p>';
+ const p=a.querySelector("p");p.textContent=text;
+ if(role==="you"||role==="bosley"){
+  const actions=document.createElement("div");actions.className="msg-actions";
+  const copy=document.createElement("button");copy.type="button";copy.className="msg-copy";copy.textContent="Copy";copy.setAttribute("aria-label","Copy message");copy.title="Copy message";
+  copy.addEventListener("click",()=>copyChatMessage(p.textContent,copy));actions.appendChild(copy);a.appendChild(actions);
+ }
+ chat.insertBefore(a,chatJump||null);
+ if(follow)chat.scrollTop=chat.scrollHeight;
+ updateChatJump();return p;
 }
 const note=t=>addMsg("sys",t);
 async function ensureChatConversation(title){
@@ -2251,7 +2272,7 @@ async function send(text,imageData=null,fileContext="",fileNames=[]){
     try{packet=JSON.parse(d)}catch(parseError){console.warn("Ignoring malformed AI stream event",parseError);continue}
     if(packet.error){streamError=packet.error.message||"AI provider reported a stream error";continue}
     const token=packet.choices?.[0]?.delta?.content;
-    if(typeof token==="string"&&token){if(!out){setPhase("Composing your response","writing");activityEvent("Bosley is composing a response using the available workspace context.","working")}out+=token;p.textContent=out;chat.scrollTop=chat.scrollHeight}
+    if(typeof token==="string"&&token){if(!out){setPhase("Composing your response","writing");activityEvent("Bosley is composing a response using the available workspace context.","working")}out+=token;p.textContent=out;if(chatNearBottom())chat.scrollTop=chat.scrollHeight;updateChatJump()}
    }
   }
   if(streamError&&!out)throw Error(streamError);

@@ -21,6 +21,12 @@ for (const [index, source] of inlineScripts.entries()) {
 }
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
+assert.ok(html.includes("bosley_contacts"), "Writing Studio contacts must sync through the signed-in Bosley account");
+assert.ok(html.includes("syncBosleyContacts"), "Saved contacts must hydrate from the shared cloud contact table");
+assert.ok(html.includes("postgres_changes"), "Contact changes must refresh across signed-in devices");
+assert.ok(html.includes("composer-writing-review"), "Companion composer must expose its in-chat writing assistant");
+assert.ok(html.includes("installComposerWritingAssistant"), "In-chat writing assistant must be wired to the writing-assist function");
+assert.ok(html.includes("Bosley cross-device dock and compact mobile overlay refinements"), "Mobile workspace panel must use compact responsive dock positioning");
 assert.match(html,/Keep the floating tool launcher out of the active conversation/);
 assert.ok(androidInstaller.includes("Color.rgb(66,133,244)"), "Bosley keyboard should use a distinct Gboard-style action key");
 assert.ok(androidInstaller.includes("Bosley Keyboard  ·  On-device suggestions"), "Bosley keyboard should show its refined suggestion-strip footer");

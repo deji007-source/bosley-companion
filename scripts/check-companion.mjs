@@ -778,6 +778,9 @@ assert.ok(androidInstaller.includes('call.getString("profile","warm")') && andro
 assert.ok(html.includes("id=\"skills-panel\""), "Skills panel must exist");
 
 assert.ok(appScript.includes("Your writing workspace") && appScript.includes("bue-editor") && appScript.includes("Review writing"), "Universal Input must provide a writing workspace and review action");
+assert.ok(appScript.includes('data-format="bold"') && appScript.includes('data-format="italic"') && appScript.includes('data-format="heading"') && appScript.includes('data-format="bullet"') && appScript.includes('data-format="number"') && appScript.includes('data-format="quote"'), "Universal Input must provide working Markdown formatting controls");
+assert.ok(appScript.includes('bosley-universal-input-draft-v2:') && appScript.includes("localStorage.setItem(draftKey") && appScript.includes("localStorage.getItem(draftKey"), "Universal Input must restore and autosave a private, account-scoped local draft");
+assert.ok(appScript.includes("BosleyOpenUniversalInput") && appScript.includes('event.key.toLowerCase()==="u"'), "Universal Input must be directly launchable and support Ctrl/Cmd+Shift+U");
 assert.ok(appScript.includes('data-action="grammar"') && appScript.includes('data-rewrite="summarize"') && appScript.includes("bue-tone") && appScript.includes("bue-audience"), "Universal Input must expose grammar, rewriting, tone and audience controls");
 assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist",{body:{text,mode,preferences}})'), "Universal Input must send writing preferences to Writing Assist");
 assert.ok(appScript.includes("Accept suggestion") && appScript.includes("Your original text stays unchanged until you accept"), "Writing suggestions must be individually reviewable and user-controlled");

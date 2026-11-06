@@ -3013,7 +3013,9 @@ function setBosleyCompanionState(state){const allowed=["idle","thinking","workin
 async function runWorkflow(wf){
  if(automationBusy)throw Error("An automation workflow is already running.");
  const plan=validateWorkflowForExecution(wf);
- const autoEligible=lowRiskAutonomyEnabled()&&wf.steps.every(isLowRiskAutonomyStep);\n const approved=autoEligible?true:confirm("Review Bosley automation plan: "+wf.name+"\\n\\n"+plan+"\\n\\nContinue with these "+wf.steps.length+" step(s)?");\n if(autoEligible){autoLog("success","Pre-authorized low-risk workflow: "+wf.name);activityEvent("Low-risk workflow ran under saved autonomy permission: "+wf.name,"autonomous")}
+ const autoEligible=lowRiskAutonomyEnabled()&&wf.steps.every(isLowRiskAutonomyStep);
+ const approved=autoEligible?true:confirm("Review Bosley automation plan: "+wf.name+"\\n\\n"+plan+"\\n\\nContinue with these "+wf.steps.length+" step(s)?");
+ if(autoEligible){autoLog("success","Pre-authorized low-risk workflow: "+wf.name);activityEvent("Low-risk workflow ran under saved autonomy permission: "+wf.name,"autonomous")}
  if(!approved){setBosleyCompanionState("idle");autoLog("cancelled","Workflow cancelled before execution: "+wf.name);activityEvent("Plan declined: "+wf.name,"cancelled");return {cancelled:true,completed:0,total:wf.steps.length}}
  setBosleyCompanionState("working");automationBusy=true;
  const btn=$("#autorun");if(btn)btn.disabled=true;

@@ -677,6 +677,13 @@ assert.ok(windowsWorkflow.includes("'mailto:'") && windowsWorkflow.includes("'sm
 
 const writingGateway = readText(new URL("../supabase/functions/bosley-writing-assist/index.ts", import.meta.url), "utf8");
 assert.ok(writingGateway.includes('draft_email:') && writingGateway.includes('draft_message:'), "Writing Assist service must support email and message generation modes");
+
+assert.ok(appScript.includes('id="bosley-writing-launch"') && appScript.includes('Bosley Writing Assistant'), "A Grammarly-style writing launcher must appear beside focused editable fields throughout the companion");
+assert.ok(appScript.includes('data-bwp-mode="grammar"') && appScript.includes('data-bwp-mode="clearer"') && appScript.includes('data-bwp-apply'), "Inline Writing Assistant must offer review actions and require explicit acceptance");
+assert.ok(appScript.includes('id="bue-file"') && appScript.includes('data-action="import"') && appScript.includes('data-action="export"') && appScript.includes('data-action="print"'), "Universal Input must support safe document import, export and PDF print handoff");
+assert.ok(appScript.includes('data-action="vocabulary"') && appScript.includes('data-bue-file')===false, "Universal Input must expose vocabulary suggestions");
+assert.ok(writingGateway.includes('vocabulary:') && writingGateway.includes('mode==="analyze"||mode==="vocabulary"'), "Writing Assist must return validated vocabulary and sentence-level suggestions");
+
 assert.ok(appScript.includes("new MediaRecorder(stream") && appScript.includes('functions/v1/remote-transcribe'), "Writing Assist must support recorded voice transcription when live browser speech recognition is unavailable");
 
 assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('value="draft_email"') && appScript.includes('value="draft_message"'), "Writing Assist must support email and message drafting as well as editing");

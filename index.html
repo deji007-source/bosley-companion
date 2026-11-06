@@ -3207,21 +3207,36 @@ async function renderBosleyWritingAssist(){
  async function syncBosleyContacts(){
   if(!user||!db)return;
   try{
-   const {data:remote,error}=await db.from("bosley_contacts").select("id,name,value,kind,updated_at").eq("user_id",user.id).order("updated_at",{ascending:false}).limit(80);
+   const syncUserId=user.id;
+   const {data:remote,error}=await db.from("bosley_contacts").select("id,name,value,kind,updated_at").eq("user_id",syncUserId).order("updated_at",{ascending:false}).limit(80);
    if(error)throw error;
-   const cloud=Array.isArray(remote)?remote:[];
+   const cloud=Array.isArray(remote)?remote.slice():[];
+   const keyOf=x=>String(x.name||"").trim().toLocaleLowerCase()+"|"+x.kind;
+   const cloudByKey=new Map(cloud.map(row=>[keyOf(row),row]));
    for(const item of readContacts()){
-    if(cloud.some(row=>row.name.toLowerCase()===item.name.toLowerCase()&&row.kind===item.kind))continue;
-    const {data,error:insertError}=await db.from("bosley_contacts").insert({user_id:user.id,name:item.name,value:item.value,kind:item.kind}).select("id,name,value,kind,updated_at").single();
-    if(insertError)throw insertError;if(data)cloud.unshift(data);
+    if(user?.id!==syncUserId)return;
+    const key=keyOf(item),existing=cloudByKey.get(key),localTime=Date.parse(item.updated_at||0)||0,cloudTime=Date.parse(existing?.updated_at||0)||0;
+    if(!existing){
+     const {data,error:insertError}=await db.from("bosley_contacts").insert({user_id:syncUserId,name:item.name,value:item.value,kind:item.kind}).select("id,name,value,kind,updated_at").single();
+     if(insertError)throw insertError;if(data){cloud.unshift(data);cloudByKey.set(key,data)}
+    }else if(localTime>cloudTime&&item.value!==existing.value){
+     const stamp=new Date().toISOString();
+     const {data,error:updateError}=await db.from("bosley_contacts").update({value:item.value,updated_at:stamp}).eq("id",existing.id).eq("user_id",syncUserId).select("id,name,value,kind,updated_at").single();
+     if(updateError)throw updateError;if(data){Object.assign(existing,data)}
+    }
    }
-   writeContacts(cloud.slice(0,80).map(row=>({id:row.id,name:row.name,value:row.value,kind:row.kind})));drawContacts();
-   if(!window.__bosleyContactsChannel&&db.channel)window.__bosleyContactsChannel=db.channel("bosley-contacts-"+user.id).on("postgres_changes",{event:"*",schema:"public",table:"bosley_contacts",filter:"user_id=eq."+user.id},()=>syncBosleyContacts().catch(error=>console.warn("Contact sync refresh failed:",error))).subscribe();
-  }catch(error){console.warn("Bosley contact cloud sync unavailable:",error);status.textContent="Contacts remain saved on this device. Cloud sync will retry when connected."}
+   if(user?.id!==syncUserId)return;
+   const merged=new Map();
+   for(const row of cloud){const key=keyOf(row),prev=merged.get(key);if(!prev||(Date.parse(row.updated_at||0)||0)>(Date.parse(prev.updated_at||0)||0))merged.set(key,row)}
+   writeContacts([...merged.values()].sort((a,b)=>(Date.parse(b.updated_at||0)||0)-(Date.parse(a.updated_at||0)||0)).slice(0,80).map(row=>({id:row.id,name:row.name,value:row.value,kind:row.kind,updated_at:row.updated_at})));drawContacts();
+   const channel=window.__bosleyContactsChannel;
+   if(channel&&window.__bosleyContactsUserId!==syncUserId){await db.removeChannel(channel);window.__bosleyContactsChannel=null}
+   if(!window.__bosleyContactsChannel&&db.channel){window.__bosleyContactsUserId=syncUserId;window.__bosleyContactsChannel=db.channel("bosley-contacts-"+syncUserId).on("postgres_changes",{event:"*",schema:"public",table:"bosley_contacts",filter:"user_id=eq."+syncUserId},()=>syncBosleyContacts().catch(error=>console.warn("Contact sync refresh failed:",error))).subscribe()}
+  }catch(error){console.warn("Bosley contact cloud sync unavailable:",error);status.textContent="Contacts are saved locally. Cloud sync will retry when connected."}
  }
  const drawContacts=()=>{const keep=contactSelect.value;contactSelect.innerHTML='<option value="">Choose a saved contact…</option>';readContacts().forEach((c,n)=>{const option=document.createElement("option");option.value=String(n);option.textContent=c.name+" · "+(c.kind==="email"?"Email":c.kind==="telegram"?"Telegram":"Phone");contactSelect.appendChild(option)});if(keep)contactSelect.value=keep};
  const contactKind=()=>task.value==="draft_email"?"email":channel.value==="telegram"?"telegram":"phone";
- $("#bosley-writing-contact-save").onclick=()=>{const kind=contactKind(),value=(kind==="email"?$("#bosley-writing-recipient").value:destination.value).trim(),name=$("#bosley-writing-contact-name").value.trim();if(!name||!value){status.textContent="Enter a contact name and recipient address or number first.";return}if(kind==="email"&&!/^\\S+@\\S+\\.\\S+$/.test(value)){status.textContent="Enter a valid email address.";return}if(kind==="phone"&&!normalizeBosleyPhoneNumber(value)){status.textContent="Enter a valid phone number first.";return}const items=readContacts().filter(c=>!(c.name.toLowerCase()===name.toLowerCase()&&c.kind===kind));items.unshift({name,value,kind});try{writeContacts(items);drawContacts();status.textContent="Saved "+name+" on this device.";if(user&&db){status.textContent="Syncing "+name+" to your Bosley account…";(async()=>{const {data:existing,error:lookupError}=await db.from("bosley_contacts").select("id").eq("user_id",user.id).eq("name",name).eq("kind",kind).limit(1);if(lookupError)throw lookupError;const row=existing?.[0];const result=row?await db.from("bosley_contacts").update({value,updated_at:new Date().toISOString()}).eq("id",row.id).eq("user_id",user.id):await db.from("bosley_contacts").insert({user_id:user.id,name,value,kind});if(result.error)throw result.error;await syncBosleyContacts();status.textContent="Saved "+name+" to your Bosley account. It will sync across your signed-in builds."})().catch(error=>{console.warn("Contact cloud save failed:",error);status.textContent="Saved on this device; cloud sync failed. Check your connection and try again."})}}catch{status.textContent="Could not save this contact in device storage."}};
+ $("#bosley-writing-contact-save").onclick=()=>{const kind=contactKind(),value=(kind==="email"?$("#bosley-writing-recipient").value:destination.value).trim(),name=$("#bosley-writing-contact-name").value.trim();if(!name||!value){status.textContent="Enter a contact name and recipient address or number first.";return}if(kind==="email"&&!/^\\S+@\\S+\\.\\S+$/.test(value)){status.textContent="Enter a valid email address.";return}if(kind==="phone"&&!normalizeBosleyPhoneNumber(value)){status.textContent="Enter a valid phone number first.";return}const items=readContacts().filter(c=>!(c.name.toLowerCase()===name.toLowerCase()&&c.kind===kind));items.unshift({name,value,kind,updated_at:new Date().toISOString()});try{writeContacts(items);drawContacts();status.textContent="Saved "+name+" on this device.";if(user&&db){status.textContent="Syncing "+name+" to your Bosley account…";(async()=>{const {data:existing,error:lookupError}=await db.from("bosley_contacts").select("id").eq("user_id",user.id).eq("name",name).eq("kind",kind).limit(1);if(lookupError)throw lookupError;const row=existing?.[0];const result=row?await db.from("bosley_contacts").update({value,updated_at:new Date().toISOString()}).eq("id",row.id).eq("user_id",user.id):await db.from("bosley_contacts").insert({user_id:user.id,name,value,kind});if(result.error)throw result.error;await syncBosleyContacts();status.textContent="Saved "+name+" to your Bosley account. It will sync across your signed-in builds."})().catch(error=>{console.warn("Contact cloud save failed:",error);status.textContent="Saved on this device; cloud sync failed. Check your connection and try again."})}}catch{status.textContent="Could not save this contact in device storage."}};
  $("#bosley-writing-contact-load").onclick=()=>{const index=Number(contactSelect.value),contact=readContacts()[index];if(!contact){status.textContent="Choose a saved contact first.";return}if(contact.kind==="email"){task.value="draft_email";updateTask();$("#bosley-writing-recipient").value=contact.value}else{task.value="draft_message";updateTask();if(contact.kind==="telegram"){channel.value="telegram";updateChannel();destination.value=contact.value}else{channel.value="whatsapp";updateChannel();destination.value=contact.value}}status.textContent="Loaded "+contact.name+". Review the destination before opening the draft."};
  drawContacts();
  syncBosleyContacts().catch(error=>console.warn("Initial Bosley contact sync failed:",error));

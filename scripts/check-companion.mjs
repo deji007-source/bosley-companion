@@ -679,6 +679,12 @@ const writingGateway = readText(new URL("../supabase/functions/bosley-writing-as
 assert.ok(writingGateway.includes('draft_email:') && writingGateway.includes('draft_message:'), "Writing Assist service must support email and message generation modes");
 
 assert.ok(appScript.includes('id="bosley-writing-launch"') && appScript.includes('Bosley Writing Assistant'), "A Grammarly-style writing launcher must appear beside focused editable fields throughout the companion");
+
+assert.ok(appScript.includes('<ellipse cx="15.3" cy="19"') && appScript.includes('<ellipse cx="24.7" cy="19"'), "The global writing launcher must use the Bosley ghost icon with two black eyes");
+assert.ok(appScript.includes('data-bwp-mode="simplify"') && appScript.includes('data-bwp-mode="summarize"'), "The global writing assistant must offer simplify and summarize actions");
+assert.ok(appScript.includes('target.setRangeText(next,start,end,"end")') && appScript.includes('range.insertNode(document.createTextNode(next))'), "Inline writing acceptance must preserve input selection and contenteditable structure where possible");
+assert.ok(appScript.includes('document.addEventListener("focusin"') && appScript.includes('isContentEditable||el.matches?.("textarea'), "Global writing assistant must attach to editable fields throughout the companion");
+
 assert.ok(appScript.includes('data-bwp-mode="grammar"') && appScript.includes('data-bwp-mode="clearer"') && appScript.includes('data-bwp-apply'), "Inline Writing Assistant must offer review actions and require explicit acceptance");
 assert.ok(appScript.includes('id="bue-file"') && appScript.includes('data-action="import"') && appScript.includes('data-action="export"') && appScript.includes('data-action="print"'), "Universal Input must support safe document import, export and PDF print handoff");
 assert.ok(appScript.includes('data-action="vocabulary"') && appScript.includes('data-bue-file')===false, "Universal Input must expose vocabulary suggestions");

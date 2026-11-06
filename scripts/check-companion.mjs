@@ -651,6 +651,8 @@ assert.ok(appScript.includes('window.SpeechRecognition||window.webkitSpeechRecog
 assert.ok(appScript.includes("window.__bosleyControlTimer=setInterval"), "Control Centre must refresh its live status periodically");
 assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist"'), "Writing Assist must call the authenticated editing service");
 assert.ok(appScript.includes("function detectChatEmailDraftIntent(raw)") && appScript.includes("function openChatEmailDraft(raw)"), "Natural chat email requests must route into Writing Studio");
+assert.ok(appScript.includes('messageIntent=/\\b(?:draft|write|create|compose|prepare|make)\\b') && appScript.includes('pendingDraft?.kind==="draft_message"'), "Natural chat message requests must also open Writing Studio with notes preloaded");
+
 assert.ok(appScript.includes("bosley-chat-writing-draft-v1") && appScript.includes("Loaded from your Bosley chat"), "Writing Studio must load pending email notes and recipient metadata from chat");
 assert.ok(appScript.includes("setTimeout(()=>review.click(),120)"), "Chat-routed email requests must start draft generation when Writing Studio opens");
 assert.ok(appScript.includes("function routeChatWorkspaceIntent(raw)") && appScript.includes("window.BosleyOpenPanel?.(target.id)") && html.includes("window.BosleyOpenPanel=(id)=>show(id)"), "Natural chat navigation requests must open workspace pages through the exported dock controller");

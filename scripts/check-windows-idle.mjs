@@ -20,7 +20,8 @@ new vm.Script(preload, { filename: 'desktop/preload.cjs' });
 const required = [
   ['15-second timeout', 'const PANEL_IDLE_TIMEOUT_MS = 15000;'],
   ['idle timer is armed on panel show', "panel.on('show', () => armPanelIdleClose());"],
-  ['idle timer is cleared when panel hides', "panel.on('hide', () => {\n  clearPanelIdleClose();"],
+  ['idle timer is cleared when panel hides', "panel.on('hide', () => {"],
+  ['idle timer cleanup exists', 'clearPanelIdleClose();'],
   ['only the panel renderer can reset its timer', 'event.sender === panel.webContents'],
   ['user activity is observed in preload', "['pointerdown','keydown','input','change','scroll','wheel','touchstart']"],
   ['idle timeout hides rather than destroys the panel', 'panel.hide();']

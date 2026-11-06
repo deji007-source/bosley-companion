@@ -185,12 +185,12 @@ public class BosleyOverlayService extends Service {
     lp.gravity=Gravity.TOP|Gravity.START;
     DisplayMetrics screen=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(screen);
     int screenWidth=screen.widthPixels,screenHeight=screen.heightPixels,widgetSize=dp(44);
-    lp.x=Math.max(0,screenWidth-widgetSize-dp(10));lp.y=Math.max(dp(72),(int)(screenHeight*.30f));
+    lp.x=Math.max(0,screenWidth-widgetSize-dp(10));lp.y=Math.max(dp(72),(int)(screenHeight*.36f));
     mascot.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{if(!moved){longPressed=true;openCompanion("voice");}};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
         case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>8||Math.abs(e.getRawY()-sy)>8){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(0,Math.min(screenHeight-widgetSize,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
-        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480){bulbInUse=false;showBulb();}return true;
+        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480){if(bulb!=null){bulbInUse=false;hideBulb();openCompanion("panel");}else{bulbInUse=false;showBulb();}}return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
@@ -227,10 +227,32 @@ public class BosleyOverlayService extends Service {
     writingBulb.setElevation(dp(8));bulb=writingBulb;
     bulbLp=new WindowManager.LayoutParams(dp(40),dp(40),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     bulbLp.gravity=Gravity.TOP|Gravity.START;bulbLp.x=lp!=null?Math.max(0,lp.x-dp(48)):dp(12);bulbLp.y=lp!=null?lp.y+dp(2):dp(72);
-    writingBulb.setOnTouchListener(new View.OnTouchListener(){float downX,downY;int startX,startY;boolean dragged;@Override public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getActionMasked()){case android.view.MotionEvent.ACTION_DOWN:downX=e.getRawX();downY=e.getRawY();startX=bulbLp.x;startY=bulbLp.y;dragged=false;return true;case android.view.MotionEvent.ACTION_MOVE:int dx=(int)(e.getRawX()-downX),dy=(int)(e.getRawY()-downY);if(Math.abs(dx)+Math.abs(dy)>dp(7))dragged=true;if(dragged){DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);bulbLp.x=Math.max(0,Math.min(dm.widthPixels-dp(40),startX+dx));bulbLp.y=Math.max(dp(24),Math.min(dm.heightPixels-dp(40),startY+dy));try{wm.updateViewLayout(bulb,bulbLp);}catch(Exception ignored){}}return true;case android.view.MotionEvent.ACTION_UP:if(!dragged){bulbInUse=true;bulbHandler.removeCallbacks(hideBulbTask);openCompanion("writing-card");}return true;case android.view.MotionEvent.ACTION_CANCEL:return true;default:return true;}}});
+    writingBulb.setOnTouchListener(new View.OnTouchListener(){float downX,downY;int startX,startY;boolean dragged;@Override public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getActionMasked()){case android.view.MotionEvent.ACTION_DOWN:downX=e.getRawX();downY=e.getRawY();startX=bulbLp.x;startY=bulbLp.y;dragged=false;return true;case android.view.MotionEvent.ACTION_MOVE:int dx=(int)(e.getRawX()-downX),dy=(int)(e.getRawY()-downY);if(Math.abs(dx)+Math.abs(dy)>dp(7))dragged=true;if(dragged){DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);bulbLp.x=Math.max(0,Math.min(dm.widthPixels-dp(40),startX+dx));bulbLp.y=Math.max(dp(24),Math.min(dm.heightPixels-dp(40),startY+dy));try{wm.updateViewLayout(bulb,bulbLp);}catch(Exception ignored){}}return true;case android.view.MotionEvent.ACTION_UP:if(!dragged){bulbInUse=true;bulbHandler.removeCallbacks(hideBulbTask);hideBulb();showWritingCardOverlay();}return true;case android.view.MotionEvent.ACTION_CANCEL:return true;default:return true;}}});
     try{wm.addView(bulb,bulbLp);}catch(Exception e){bulb=null;}
     scheduleBulbHide();
   }
+  View writingCardOverlay; WindowManager.LayoutParams writingCardLp;
+  void showWritingCardOverlay(){
+    if(writingCardOverlay!=null)return;
+    LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(14),dp(12),dp(14),dp(12));card.setElevation(dp(18));
+    GradientDrawable shell=new GradientDrawable();shell.setColor(Color.rgb(12,12,12));shell.setCornerRadius(dp(18));shell.setStroke(dp(1),Color.rgb(110,110,110));card.setBackground(shell);
+    LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
+    TextView title=new TextView(this);title.setText("Writing & Ideas");title.setTextColor(Color.WHITE);title.setTextSize(15);title.setTypeface(null,android.graphics.Typeface.BOLD);header.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+    TextView close=new TextView(this);close.setText("×");close.setTextColor(Color.WHITE);close.setTextSize(25);close.setGravity(Gravity.CENTER);header.addView(close,new LinearLayout.LayoutParams(dp(36),dp(36)));card.addView(header);
+    TextView hint=new TextView(this);hint.setText("Write or paste text here. Your draft stays in this floating card.");hint.setTextColor(Color.LTGRAY);hint.setTextSize(11);LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(-1,-2);hp.topMargin=dp(4);card.addView(hint,hp);
+    EditText editor=new EditText(this);editor.setTextColor(Color.WHITE);editor.setHintTextColor(Color.GRAY);editor.setHint("Start writing…");editor.setTextSize(14);editor.setGravity(Gravity.TOP|Gravity.START);editor.setPadding(dp(10),dp(10),dp(10),dp(10));editor.setMinLines(6);editor.setMaxLines(10);editor.setBackgroundColor(Color.rgb(30,30,30));LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(-1,dp(190));ep.topMargin=dp(10);card.addView(editor,ep);
+    LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.CENTER_VERTICAL);actions.setOrientation(LinearLayout.HORIZONTAL);
+    Button copy=new Button(this);copy.setText("Copy");copy.setOnClickListener(v->{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);cm.setPrimaryClip(ClipData.newPlainText("Bosley writing",editor.getText().toString()));Toast.makeText(this,"Text copied",Toast.LENGTH_SHORT).show();});
+    Button clear=new Button(this);clear.setText("Clear");clear.setOnClickListener(v->editor.setText(""));
+    Button expand=new Button(this);expand.setText("Open Bosley");expand.setOnClickListener(v->{removeWritingCardOverlay();openCompanion("writing-card");});
+    actions.addView(copy,new LinearLayout.LayoutParams(0,dp(44),1));actions.addView(clear,new LinearLayout.LayoutParams(0,dp(44),1));actions.addView(expand,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,-2);ap.topMargin=dp(8);card.addView(actions,ap);
+    writingCardOverlay=card;writingCardLp=new WindowManager.LayoutParams(dp(320),WindowManager.LayoutParams.WRAP_CONTENT,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
+    writingCardLp.gravity=Gravity.TOP|Gravity.START;DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);writingCardLp.x=Math.max(dp(8),(dm.widthPixels-dp(320))/2);writingCardLp.y=Math.max(dp(42),(int)(dm.heightPixels*.20f));
+    header.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;public boolean onTouch(View v,MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){sx=e.getRawX();sy=e.getRawY();ox=writingCardLp.x;oy=writingCardLp.y;return true;}if(e.getAction()==MotionEvent.ACTION_MOVE){writingCardLp.x=Math.max(0,Math.min(dm.widthPixels-dp(320),ox+(int)(e.getRawX()-sx)));writingCardLp.y=Math.max(0,Math.min(dm.heightPixels-dp(120),oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(writingCardOverlay,writingCardLp);}catch(Exception ignored){}return true;}return true;}});
+    close.setOnClickListener(v->removeWritingCardOverlay());
+    try{wm.addView(writingCardOverlay,writingCardLp);editor.requestFocus();}catch(Exception e){writingCardOverlay=null;}
+  }
+  void removeWritingCardOverlay(){if(wm!=null&&writingCardOverlay!=null){try{wm.removeView(writingCardOverlay);}catch(Exception ignored){}writingCardOverlay=null;}}
   void scheduleBulbHide(){bulbHandler.removeCallbacks(hideBulbTask);if(!bulbInUse&&bulb!=null)bulbHandler.postDelayed(hideBulbTask,5000);}
   void hideBulb(){bulbHandler.removeCallbacks(hideBulbTask);if(wm!=null&&bulb!=null){try{wm.removeView(bulb);}catch(Exception ignored){}bulb=null;}}
   void openCompanion(String action){Intent a=new Intent(BosleyOverlayService.this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);a.putExtra("bosley_quick_action",action);startActivity(a);}
@@ -260,9 +282,9 @@ public class BosleyOverlayService extends Service {
   GradientDrawable circleTarget(){GradientDrawable d=new GradientDrawable();d.setShape(GradientDrawable.OVAL);d.setColor(Color.WHITE);d.setStroke(dp(3),Color.BLACK);return d;}
   void updateGuideTarget(Intent result){if(!result.getBooleanExtra("found",false)){if(guideStatusView!=null)guideStatusView.setText("No matching control found. Keep the target app visible and try a more specific instruction.");return;}guideTargetX=Math.max(0f,Math.min(1f,result.getFloatExtra("x",guideTargetX)));guideTargetY=Math.max(0f,Math.min(1f,result.getFloatExtra("y",guideTargetY)));guideTargetLabel=result.getStringExtra("label")!=null?result.getStringExtra("label"):"matching control";if(guideTarget!=null&&guideTargetLp!=null){DisplayMetrics dm=getResources().getDisplayMetrics();guideTargetLp.x=Math.max(0,(int)(dm.widthPixels*guideTargetX)-dp(21));guideTargetLp.y=Math.max(0,(int)(dm.heightPixels*guideTargetY)-dp(21));try{wm.updateViewLayout(guideTarget,guideTargetLp);}catch(Exception ignored){}}if(guideLine!=null)guideLine.invalidate();if(guideStatusView!=null)guideStatusView.setText("Target found: "+guideTargetLabel+". Visual guidance only; Bosley will not click or type.");}
   void removeGuide(){guideStatusView=null;if(wm!=null&&guideTarget!=null){try{wm.removeView(guideTarget);}catch(Exception ignored){}guideTarget=null;}if(wm!=null&&guideLine!=null){try{wm.removeView(guideLine);}catch(Exception ignored){}guideLine=null;}if(wm!=null&&guideCard!=null){try{wm.removeView(guideCard);}catch(Exception ignored){}guideCard=null;}}
-  void removeBar(){hideBulb();if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
+  void removeBar(){hideBulb();removeWritingCardOverlay();if(wm!=null&&bar!=null){try{wm.removeView(bar);}catch(Exception ignored){}bar=null;}}
   int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-  @Override public void onDestroy(){removeBar();removeGuide();super.onDestroy();}
+  @Override public void onDestroy(){removeBar();removeWritingCardOverlay();removeGuide();super.onDestroy();}
   @Override public android.os.IBinder onBind(Intent i){return null;}
 }''')
 (src / "BosleyTargetAccessibilityService.java").write_text(r'''package com.bosley.companion;

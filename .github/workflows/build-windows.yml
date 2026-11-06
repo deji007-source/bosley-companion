@@ -401,6 +401,10 @@ jobs:
             }).catch(error => logStartup('WINDOWS WRITING BULB LOAD FAILED', error.message));
             writingBulb.on('closed', () => { writingBulb = null; });
           }
+          function toggleWritingBulb() {
+            if (writingBulb && !writingBulb.isDestroyed()) { writingBulb.close(); logStartup('WINDOWS WRITING BULB HIDDEN'); return; }
+            createWritingBulb();
+          }
           function openWritingAssistantFromBulb() {
             openUniversalInput();
           }
@@ -1113,12 +1117,13 @@ jobs:
           app.whenReady().then(() => {
             createBubble();
             createPanel();
-            createWritingBulb();
             if (walkingCompanionEnabled) createWalkingCompanion();
             const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+B', toggleWalkingCompanion);
             if (!shortcutRegistered) logStartup('COMPANION SHORTCUT REGISTRATION FAILED');
             const writingShortcutRegistered = globalShortcut.register('CommandOrControl+Shift+U', openUniversalInput);
             if (!writingShortcutRegistered) logStartup('UNIVERSAL INPUT SHORTCUT REGISTRATION FAILED');
+            const floatingBulbShortcutRegistered = globalShortcut.register('CommandOrControl+Shift+I', toggleWritingBulb);
+            if (!floatingBulbShortcutRegistered) logStartup('FLOATING WRITING BULB SHORTCUT REGISTRATION FAILED');
             positionWindows();
 
             ipcMain.on('toggle-panel', togglePanel);

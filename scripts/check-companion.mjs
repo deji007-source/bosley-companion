@@ -541,7 +541,7 @@ assert.ok(html.includes("border-radius:50%;background:#fff"), "Bosley presence e
 assert.ok(html.includes("@keyframes bosley-holo-teleport"), "Holographic Bosley must have a teleport-style arrival animation");
 assert.ok(html.includes("@keyframes bosley-holo-float"), "Holographic avatar must have subtle idle movement");
 
-assert.ok(html.includes('<ellipse class="mascot-eye" cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/>') && html.includes('<ellipse class="mascot-eye" cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/>'), "Main Bosley ghost must render two large black eyes");
+assert.ok(html.includes('<ellipse class="mascot-eye" cx="56" cy="78" rx="10.5" ry="14.5" fill="#050505"/>') && html.includes('<ellipse class="mascot-eye" cx="94" cy="78" rx="10.5" ry="14.5" fill="#050505"/>'), "Main Bosley ghost must render two large black eyes");
 
 assert.ok(html.includes('id="remote-mode-card" hidden'), "Remote Mode control must be hidden by default");
 assert.ok(html.includes('window.BosleyAndroidBridge||window.AndroidBridge'), "Remote Mode must detect supported native Android bridge runtimes");

@@ -828,6 +828,7 @@ jobs:
             panel.show();
             panel.focus();
             panel.setAlwaysOnTop(true, 'screen-saver');
+            armPanelIdleClose();
             // The shortcut is global, but text is only read after the user explicitly
             // opens Universal Input and presses its clipboard-import control.
             setTimeout(() => {

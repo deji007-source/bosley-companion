@@ -41,6 +41,7 @@ assert.ok(html.includes("window.BosleyOpenInlineWriting") && html.includes("Edit
 assert.ok(html.includes('target.setRangeText(next,0,target.value.length,"end")') && html.includes('target.textContent=next'), "Applying an inline writing suggestion must replace the full draft rather than insert at the cursor");
 assert.ok(html.includes('id:"control-centre"') && html.includes('id:"skills-panel"') && html.includes('contact\\s+book'), "Chat commands must navigate to workspace, settings, skills and the saved-contact studio");
 assert.ok(html.includes("bosley-writing-contacts-v1") && html.includes("contactName") && html.includes("Loaded saved contact"), "Chat commands must resolve saved contacts and prefill a reviewable Writing Studio draft");
+assert.ok(html.includes("localTime>cloudTime") && html.includes("bosleyContactsUserId") && html.includes("updated_at:new Date().toISOString()"), "Saved contacts must reconcile newer local edits with cloud records and subscribe per signed-in account");
 assert.ok(html.includes("Bosley cross-device dock and compact mobile overlay refinements"), "Mobile workspace panel must use compact responsive dock positioning");
 assert.match(html,/Keep the floating tool launcher out of the active conversation/);
 assert.ok(androidInstaller.includes("Color.rgb(92,132,190)"), "Bosley keyboard should use a distinct Gboard-style action key");

@@ -20,6 +20,27 @@ if "BosleyOverlayService" not in text:
     text = text.replace("</application>", '        <service android:name=".BosleyOverlayService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="specialUse|mediaProjection"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion and visual guide" /></service>\n    </application>')
 else:
     text = re.sub(r'<service([^>]*android:name="\.BosleyOverlayService"[^>]*)/>', r'<service\1 android:stopWithTask="false" android:foregroundServiceType="specialUse|mediaProjection"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating Bosley companion, visual guide and screen capture" /></service>', text)
+# Bosley text sharing intent filters: users explicitly choose Bosley from Android's
+# Share or Process Text menu. The app receives only the selected/shared text.
+if "Bosley text sharing intent filters" not in text:
+    main_activity = re.search(r'<activity\\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>[\\s\\S]*?</activity>', text)
+    if not main_activity:
+        raise SystemExit("MainActivity manifest entry not found; cannot safely register text sharing")
+    activity_block = main_activity.group(0)
+    share_filters = """
+            <intent-filter android:label="Bosley">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter android:label="Bosley">
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>"""
+    activity_block = activity_block.replace("</activity>", share_filters + "\\n        </activity>")
+    text = text[:main_activity.start()] + activity_block + text[main_activity.end():]
+    text = text.replace("<application", '<application', 1)
 manifest.write_text(text)
 accessibility_service = '''        <service android:name=".BosleyTargetAccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/bosley_accessibility_label"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/bosley_accessibility_service" /></service>'''
 if "BosleyTargetAccessibilityService" not in text:
@@ -615,7 +636,13 @@ public class BosleyOverlayPlugin extends Plugin {
     android.content.Intent intent=getActivity().getIntent();
     String action=intent.getStringExtra("bosley_quick_action");
     intent.removeExtra("bosley_quick_action");
-    JSObject r=new JSObject();r.put("action",action==null?"":action);call.resolve(r);
+    CharSequence shared=intent.getCharSequenceExtra(android.content.Intent.EXTRA_PROCESS_TEXT);
+    if(shared==null)shared=intent.getCharSequenceExtra(android.content.Intent.EXTRA_TEXT);
+    String sharedText=shared==null?"":shared.toString().trim();
+    if(sharedText.length()>12000)sharedText=sharedText.substring(0,12000);
+    intent.removeExtra(android.content.Intent.EXTRA_PROCESS_TEXT);
+    intent.removeExtra(android.content.Intent.EXTRA_TEXT);
+    JSObject r=new JSObject();r.put("action",action==null?"");r.put("sharedText",sharedText);call.resolve(r);
   }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}
 }''')
@@ -630,7 +657,8 @@ if "BosleyOverlayPlugin" not in a:
     super.onNewIntent(intent);
     setIntent(intent);
     String action=intent.getStringExtra("bosley_quick_action");
-    if((action!=null && ("panel".equals(action)||"voice".equals(action)))){
+    boolean hasSharedText=intent.getCharSequenceExtra(android.content.Intent.EXTRA_PROCESS_TEXT)!=null||intent.getCharSequenceExtra(android.content.Intent.EXTRA_TEXT)!=null;
+    if((action!=null && ("panel".equals(action)||"voice".equals(action)))||hasSharedText){
       String js="window.dispatchEvent(new Event(String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)))";
       getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));
     }

@@ -246,6 +246,7 @@ public class BosleyOverlayService extends Service {
     try{
       wm.addView(writingCardOverlay,writingCardLp);
       StringBuilder html=new StringBuilder();try(java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(getAssets().open("public/index.html"),java.nio.charset.StandardCharsets.UTF_8))){String line;while((line=reader.readLine())!=null)html.append(line).append('\n');}
+      html.append("<script>(function(){function activateBosleyCard(){document.documentElement.classList.add('bosley-card-only');document.body.classList.add('bosley-card-only');var card=document.getElementById('bosley-idea-pop');if(card){card.hidden=false;card.setAttribute('aria-hidden','false');var close=card.querySelector('[data-idea-close]');if(close){close.hidden=false;close.style.display='grid';close.setAttribute('aria-label','Close Writing and Ideas');}}}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',activateBosleyCard,{once:true});}else{activateBosleyCard();}})();</script>");
       web.loadDataWithBaseURL("https://localhost/",html.toString(),"text/html","UTF-8",null);
     }catch(Exception e){removeWritingCardOverlay();Toast.makeText(this,"Bosley Writing & Ideas could not open. Open the main app and try again.",Toast.LENGTH_LONG).show();}
   }

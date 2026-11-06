@@ -446,7 +446,19 @@ jobs:
             });
           }
           function toggleWritingBulb() {
-            if (writingBulb && !writingBulb.isDestroyed()) { writingBulb.close(); logStartup('WINDOWS WRITING BULB HIDDEN'); return; }
+            if (writingBulb && !writingBulb.isDestroyed()) {
+              writingBulb.hide();
+              writingBulbVisibleUntil = 0;
+              if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
+              writingBulbHideTimer = null;
+              logStartup('WINDOWS WRITING BULB HIDDEN');
+              return;
+            }
+            // The Windows bulb is shown only on the user's Ctrl+Shift+I shortcut.
+            // Keep it visible until clicked or toggled off; do not use the Android 5s timer here.
+            writingBulbVisibleUntil = Number.POSITIVE_INFINITY;
+            if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
+            writingBulbHideTimer = null;
             createWritingBulb();
           }
           let writingCard = null;

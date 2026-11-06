@@ -65,17 +65,13 @@ jobs:
           grep -Fq 'android.permission.SYSTEM_ALERT_WINDOW' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.FOREGROUND_SERVICE_SPECIAL_USE' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:name=".BosleyOverlayService"' android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android:name=".BosleyKeyboardService"' android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android.permission.BIND_INPUT_METHOD' android/app/src/main/AndroidManifest.xml
-          test -s android/app/src/main/java/com/bosley/companion/BosleyKeyboardService.java
-          test -s android/app/src/main/res/xml/bosley_input_method.xml
           ! grep -Fq 'BIND_ACCESSIBILITY_SERVICE' android/app/src/main/AndroidManifest.xml
           ! grep -Fq 'BosleyTargetAccessibilityService' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android:foregroundServiceType="specialUse|mediaProjection"' android/app/src/main/AndroidManifest.xml
           grep -Fq 'ACTION_CAPTURE_START' android/app/src/main/java/com/bosley/companion/BosleyOverlayService.java
           grep -Fq 'registerCallback(new MediaProjection.Callback()' android/app/src/main/java/com/bosley/companion/BosleyOverlayPlugin.java
-          echo "Floating companion, visual guide and user-consented one-shot screen capture declarations verified."
+          echo "Floating companion and user-consented one-shot screen capture declarations verified; no Bosley keyboard is packaged."
 
       - name: Generate Bosley launcher icon
         run: |

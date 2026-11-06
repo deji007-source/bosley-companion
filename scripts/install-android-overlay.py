@@ -45,6 +45,7 @@ manifest.write_text(text)
 accessibility_service = '''        <service android:name=".BosleyTargetAccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/bosley_accessibility_label"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/bosley_accessibility_service" /></service>'''
 if "BosleyTargetAccessibilityService" not in text:
     text = text.replace("</application>", accessibility_service + "\n    </application>")
+manifest.write_text(text)
 # The guide target finder is explicitly user-enabled in Android Accessibility settings.
 # It inspects visible control labels and bounds only after the user taps Find target.
 res = root / "app/src/main/res"
@@ -62,7 +63,7 @@ res = root / "app/src/main/res"
 (res / "values/bosley_accessibility_strings.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="bosley_accessibility_label">Bosley visual guide</string>
-    <string name="bosley_accessibility_description">When you tap Find target in the Bosley guide, reads visible control labels and screen positions to point out the relevant button or field. It does not record your screen, click, type, or run actions.</string>
+    <string name="bosley_accessibility_description">Only reads the currently focused editable text field when you tap Read active text in the floating card. Password fields are excluded. It does not monitor typing, record screen content, click, or type.</string>
 </resources>
 """)
 

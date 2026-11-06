@@ -23,7 +23,7 @@ else:
 # Bosley text sharing intent filters: users explicitly choose Bosley from Android's
 # Share or Process Text menu. The app receives only the selected/shared text.
 if "Bosley text sharing intent filters" not in text:
-    main_activity = re.search(r'<activity\\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>[\\s\\S]*?</activity>', text)
+    main_activity = re.search(r'<activity\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>[\s\S]*?</activity>', text)
     if not main_activity:
         raise SystemExit("MainActivity manifest entry not found; cannot safely register text sharing")
     activity_block = main_activity.group(0)
@@ -38,7 +38,7 @@ if "Bosley text sharing intent filters" not in text:
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>"""
-    activity_block = activity_block.replace("</activity>", share_filters + "\\n        </activity>")
+    activity_block = activity_block.replace("</activity>", share_filters + "\n        </activity>")
     text = text[:main_activity.start()] + activity_block + text[main_activity.end():]
     text = text.replace("<application", '<application', 1)
 manifest.write_text(text)

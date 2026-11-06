@@ -648,6 +648,12 @@ assert.ok(appScript.includes("renderBosleyWritingAssist"), "Writing Assist must 
 assert.ok(appScript.includes('window.SpeechRecognition||window.webkitSpeechRecognition'), "Voice input must prefer live interim speech recognition when supported");
 assert.ok(appScript.includes("window.__bosleyControlTimer=setInterval"), "Control Centre must refresh its live status periodically");
 assert.ok(appScript.includes('db.functions.invoke("bosley-writing-assist"'), "Writing Assist must call the authenticated editing service");
+assert.ok(appScript.includes('id="bosley-writing-task"') && appScript.includes('value="draft_email"') && appScript.includes('value="draft_message"'), "Writing Assist must support email and message drafting as well as editing");
+assert.ok(appScript.includes('id="bosley-writing-gmail"') && appScript.includes('id="bosley-writing-outlook"'), "Writing Assist must hand off prefilled drafts to Gmail and Outlook without sending them");
+assert.ok(appScript.includes("async function bosleyCopyText") && appScript.includes("clipboard_write"), "Writing Assist and Universal Input must support native Windows clipboard handoff");
+assert.ok(appScript.includes('#universal-input,#writing-assist,#bosley-search'), "Universal Input focus tracking must not steal its own destination field");
+assert.ok(windowsWorkflow.includes("clipboard_write") && windowsWorkflow.includes("clipboard.writeText(text)"), "Windows must expose a validated native clipboard action");
+
 assert.ok(html.includes('data-open-view="writing-assist"'), "Writing Assist must be reachable from the dock launcher");
 assert.ok(appScript.includes("look\\s*up"), "Natural-language search command must use a real whitespace matcher");
 assert.ok(appScript.includes("insertDictationAtFocus"), "Universal Input must insert dictated text into the focused editable field");

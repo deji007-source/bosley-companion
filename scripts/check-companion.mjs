@@ -616,7 +616,7 @@ assert.ok(remoteActionFunction.includes('onConflict: "user_id,device"'), "Window
 assert.ok(windowsWorkflow.includes('aria-label="Bosley white ghost with blinking eyes and an animated speaking mouth"') && windowsWorkflow.includes("ghost-blink"), "Windows companion window must render the blinking ghost mascot");
 assert.ok(windowsWorkflow.includes('class="ghost-eye"') && windowsWorkflow.includes('.ghost-eye{fill:#050505;'), "Windows ghost must have two large black eyes");
 assert.ok(!windowsWorkflow.includes("hat-group") && !windowsWorkflow.includes("THREE.WebGLRenderer"), "Windows ghost replacement must remove the fedora and 3D character renderer");
-assert.ok(windowsWorkflow.includes("const width = 112, height = 138;"), "Windows floating ghost must use the smaller compact footprint");
+assert.ok(windowsWorkflow.includes("const width = 92, height = 114;") && windowsWorkflow.includes('d="M68 108 Q75 110 82 108"'), "Windows floating ghost must use the smaller compact footprint");
 assert.ok(windowsWorkflow.includes("title: ' '") && windowsWorkflow.includes("walkingCompanion.setTitle('')") && windowsWorkflow.includes("<title></title>"), "Windows floating ghost must not expose a desktop filename/title label");
 assert.ok(windowsWorkflow.includes('rx="10.5" ry="14.5"'), "Windows ghost must use larger oval eyes");
 assert.ok(windowsWorkflow.includes("v43c0 5 2 8 6 8 4 0 8-4 12-9 4-5 8-7 12-7"), "Windows ghost must restore four inward scalloped base curves");

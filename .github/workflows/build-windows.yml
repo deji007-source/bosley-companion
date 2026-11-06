@@ -400,6 +400,15 @@ jobs:
           let writingBulbHideTimer = null;
           let writingBulbVisibleUntil = 0;
           function showWritingBulbForFiveSeconds() {
+            if (writingBulb && !writingBulb.isDestroyed() && writingBulb.isVisible()) {
+              writingBulb.hide();
+              if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
+              writingBulbHideTimer = null;
+              writingBulbVisibleUntil = 0;
+              togglePanel();
+              logStartup('GHOST TAPPED AGAIN: OPENED BOSLEY COMPANION');
+              return;
+            }
             writingBulbVisibleUntil = Date.now() + 5000;
             if (!writingBulb || writingBulb.isDestroyed()) createWritingBulb();
             if (writingBulb && !writingBulb.isDestroyed()) {
@@ -451,6 +460,10 @@ jobs:
           }
           let writingCard = null;
           function openWritingAssistantFromBulb() {
+            if (writingBulb && !writingBulb.isDestroyed()) writingBulb.hide();
+            if (writingBulbHideTimer) clearTimeout(writingBulbHideTimer);
+            writingBulbHideTimer = null;
+            writingBulbVisibleUntil = 0;
             if (writingCard && !writingCard.isDestroyed()) {
               writingCard.show();
               writingCard.focus();

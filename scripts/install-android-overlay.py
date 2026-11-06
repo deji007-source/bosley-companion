@@ -24,6 +24,12 @@ manifest.write_text(text)
 accessibility_service = '''        <service android:name=".BosleyTargetAccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/bosley_accessibility_label"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/bosley_accessibility_service" /></service>'''
 if "BosleyTargetAccessibilityService" not in text:
     text = text.replace("</application>", accessibility_service + "\n    </application>")
+ime_service = '''        <service android:name=".BosleyKeyboardService" android:label="Bosley Keyboard" android:permission="android.permission.BIND_INPUT_METHOD" android:exported="true">
+            <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/bosley_input_method" />
+        </service>'''
+if "BosleyKeyboardService" not in text:
+    text = text.replace("</application>", ime_service + "\\n    </application>")
 manifest.write_text(text)
 
 # The guide target finder is explicitly user-enabled in Android Accessibility settings.
@@ -31,6 +37,12 @@ manifest.write_text(text)
 res = root / "app/src/main/res"
 (res / "xml").mkdir(parents=True, exist_ok=True)
 (res / "values").mkdir(parents=True, exist_ok=True)
+(res / "xml/bosley_input_method.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<input-method xmlns:android="http://schemas.android.com/apk/res/android">
+    <subtype android:label="English" android:imeSubtypeLocale="en" android:imeSubtypeMode="keyboard" />
+</input-method>
+""")
+
 (res / "xml/bosley_accessibility_service.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
@@ -243,6 +255,62 @@ public class BosleyTargetAccessibilityService extends AccessibilityService {
   @Override public void onDestroy(){if(receiver!=null){try{unregisterReceiver(receiver);}catch(Exception ignored){}}super.onDestroy();}
 }''')
 
+(src / "BosleyKeyboardService.java").write_text(r"""package com.bosley.companion;
+import android.inputmethodservice.InputMethodService;
+import android.view.View;
+import android.view.Gravity;
+import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.EditorInfo;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.text.InputType;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import java.util.Locale;
+public class BosleyKeyboardService extends InputMethodService {
+  private LinearLayout root, suggestions;
+  private boolean shift=true, sensitive=false;
+  private static final String[][] ROWS={{"q","w","e","r","t","y","u","i","o","p"},{"a","s","d","f","g","h","j","k","l"},{"⇧","z","x","c","v","b","n","m","⌫"},{"?123",",","space",".","↵"}};
+  private int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
+  private GradientDrawable bg(int color){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(9));return d;}
+  @Override public View onCreateInputView(){buildKeyboard();return root;}
+  @Override public void onStartInput(EditorInfo info,boolean restarting){
+    super.onStartInput(info,restarting);int cls=info==null?InputType.TYPE_CLASS_TEXT:info.inputType&InputType.TYPE_MASK_CLASS;int v=info==null?0:info.inputType&InputType.TYPE_MASK_VARIATION;
+    sensitive=(cls==InputType.TYPE_CLASS_NUMBER&&v==InputType.TYPE_NUMBER_VARIATION_PASSWORD)||(cls==InputType.TYPE_CLASS_TEXT&&(v==InputType.TYPE_TEXT_VARIATION_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));shift=true;refreshSuggestions();
+  }
+  private TextView makeKey(String label,int weight){
+    TextView b=new TextView(this);b.setText(label);b.setTextColor(Color.rgb(25,31,40));b.setTextSize(17);b.setGravity(Gravity.CENTER);b.setTypeface(null,Typeface.BOLD);b.setBackground(bg(Color.rgb(247,248,250)));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(45),weight);lp.setMargins(dp(2),dp(3),dp(2),dp(3));b.setLayoutParams(lp);b.setOnClickListener(v->press(label));return b;
+  }
+  private void buildKeyboard(){
+    root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(4),dp(4),dp(4),dp(6));root.setBackgroundColor(Color.rgb(225,230,237));
+    suggestions=new LinearLayout(this);suggestions.setGravity(Gravity.CENTER);root.addView(suggestions,new LinearLayout.LayoutParams(-1,dp(34)));
+    for(String[] row:ROWS){LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER);root.addView(line,new LinearLayout.LayoutParams(-1,dp(51)));for(String k:row){int w=("⇧".equals(k)||"⌫".equals(k)||"?123".equals(k))?14:("space".equals(k)?42:10);line.addView(makeKey(k,w));}}
+    TextView brand=new TextView(this);brand.setText("BOSLEY  ·  On-device suggestions");brand.setTextColor(Color.DKGRAY);brand.setTextSize(10);brand.setGravity(Gravity.CENTER);root.addView(brand,new LinearLayout.LayoutParams(-1,dp(18)));
+  }
+  private void press(String k){
+    InputConnection ic=getCurrentInputConnection();if(ic==null)return;
+    if("⌫".equals(k)){ic.deleteSurroundingText(1,0);refreshSuggestions();return;}
+    if("⇧".equals(k)){shift=!shift;return;}
+    if("?123".equals(k)){return;}
+    if("space".equals(k)){ic.commitText(" ",1);shift=true;refreshSuggestions();return;}
+    if("↵".equals(k)){EditorInfo e=getCurrentInputEditorInfo();if(e!=null)ic.performEditorAction(e.imeOptions&EditorInfo.IME_MASK_ACTION);else ic.commitText("\\n",1);return;}
+    ic.commitText(shift?k.toUpperCase(Locale.ROOT):k,1);shift=false;refreshSuggestions();
+  }
+  private String correction(String w){
+    if(sensitive||w==null)return null;switch(w.toLowerCase(Locale.ROOT)){
+      case "teh":return "the";case "adn":return "and";case "thier":return "their";case "recieve":return "receive";case "definately":return "definitely";case "seperate":return "separate";case "occured":return "occurred";case "becuase":return "because";case "dont":return "don't";case "cant":return "can't";case "wont":return "won't";case "im":return "I'm";case "ive":return "I've";case "youre":return "you're";default:return null;
+    }
+  }
+  private void refreshSuggestions(){
+    if(suggestions==null)return;suggestions.removeAllViews();InputConnection ic=getCurrentInputConnection();if(sensitive||ic==null){suggestion("Bosley Keyboard",null);return;}
+    CharSequence before=ic.getTextBeforeCursor(80,0);String t=before==null?"":before.toString();int end=t.length(),start=end;while(start>0&&Character.isLetter(t.charAt(start-1)))start--;String word=t.substring(start,end);String fix=correction(word);
+    if(fix==null){suggestion("Bosley Keyboard",null);suggestion("Local suggestions",null);}else{suggestion("Fix",null);suggestion(fix,()->{ic.deleteSurroundingText(word.length(),0);ic.commitText(fix,1);refreshSuggestions();});}
+  }
+  private void suggestion(String value,Runnable action){TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.rgb(25,31,40));v.setTextSize(13);v.setGravity(Gravity.CENTER);v.setPadding(dp(8),0,dp(8),0);suggestions.addView(v,new LinearLayout.LayoutParams(0,-1,1));if(action!=null)v.setOnClickListener(x->action.run());}
+}
+""")
+
 (src / "BosleyOverlayPlugin.java").write_text(r'''package com.bosley.companion;
 import android.content.Intent;
 import android.content.ClipboardManager;
@@ -281,6 +349,14 @@ public class BosleyOverlayPlugin extends Plugin {
     }
     if(value.length()>12000)value=value.substring(0,12000);
     JSObject result=new JSObject();result.put("text",value);call.resolve(result);
+  }
+  @PluginMethod public void showKeyboardPicker(PluginCall call){
+    try{((android.view.inputmethod.InputMethodManager)getContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE)).showInputMethodPicker();call.resolve();}
+    catch(Exception e){call.reject("Could not open keyboard picker.",e);}
+  }
+  @PluginMethod public void openKeyboardSettings(PluginCall call){
+    try{Intent i=new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);getContext().startActivity(i);call.resolve();}
+    catch(Exception e){call.reject("Could not open keyboard settings.",e);}
   }
   @PluginMethod public void writeClipboard(PluginCall call){
     String value=call.getString("text","");

@@ -368,6 +368,35 @@ jobs:
             });
           }
 
+          // Dedicated Windows writing bulb: a native, always-on-top overlay available
+          // above other applications. It opens Bosley's own editor; it never reads other apps.
+          let writingBulb = null;
+          function createWritingBulb() {
+            if (process.platform !== 'win32' || (writingBulb && !writingBulb.isDestroyed())) return;
+            const display = screen.getPrimaryDisplay();
+            const area = display.workArea;
+            const width = 48, height = 48;
+            writingBulb = new BrowserWindow({
+              x: area.x + area.width - width - 18, y: area.y + Math.round(area.height * 0.34),
+              width, height, frame: false, transparent: true, resizable: false, movable: true,
+              show: false, alwaysOnTop: true, skipTaskbar: true, hasShadow: false,
+              backgroundColor: '#00000000',
+              webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }
+            });
+            writingBulb.setAlwaysOnTop(true, 'screen-saver');
+            const html = '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}body{display:grid;place-items:center;-webkit-app-region:drag}button{-webkit-app-region:no-drag;width:42px;height:42px;border-radius:50%;border:1px solid #202020;background:#fff;color:#111;font:22px Segoe UI Symbol,Segoe UI,sans-serif;box-shadow:0 3px 14px #0007;cursor:pointer}button:focus-visible{outline:2px solid #111;outline-offset:2px}</style></head><body><button title="Open Bosley writing assistant" aria-label="Open Bosley writing assistant">💡</button><script>document.querySelector("button").addEventListener("click",()=>window.bosleyDesktop.openWritingAssistant())</script></body></html>';
+            writingBulb.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html)).then(() => {
+              if (!writingBulb || writingBulb.isDestroyed()) return;
+              writingBulb.setAlwaysOnTop(true, 'screen-saver');
+              writingBulb.showInactive();
+              logStartup('WINDOWS WRITING BULB VISIBLE', writingBulb.getBounds());
+            }).catch(error => logStartup('WINDOWS WRITING BULB LOAD FAILED', error.message));
+            writingBulb.on('closed', () => { writingBulb = null; });
+          }
+          function openWritingAssistantFromBulb() {
+            openUniversalInput();
+          }
+
           // Persist the walking companion preference locally; never sync desktop visibility to the cloud.
           const companionPreferenceFile = path.join(app.getPath('userData'), 'walking-companion.json');
           let walkingCompanionPreference = { version: 2, enabled: true, x: null, y: null };
@@ -1076,6 +1105,7 @@ jobs:
           app.whenReady().then(() => {
             createBubble();
             createPanel();
+            createWritingBulb();
             if (walkingCompanionEnabled) createWalkingCompanion();
             const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+B', toggleWalkingCompanion);
             if (!shortcutRegistered) logStartup('COMPANION SHORTCUT REGISTRATION FAILED');
@@ -1084,6 +1114,7 @@ jobs:
             positionWindows();
 
             ipcMain.on('toggle-panel', togglePanel);
+            ipcMain.on('bosley:open-writing', openWritingAssistantFromBulb);
             ipcMain.on('bosley:companion-state', (_event, state) => {
               const allowedStates = new Set(['idle','listening','thinking','speaking','working','waiting','success','error','walk']);
               if (!allowedStates.has(state)) return;
@@ -1114,6 +1145,7 @@ jobs:
 
           const desktopBridge = Object.freeze({
             togglePanel: () => ipcRenderer.send('toggle-panel'),
+            openWritingAssistant: () => ipcRenderer.send('bosley:open-writing'),
             getCapabilities: () => ipcRenderer.invoke('bosley:capabilities'),
             request: request => ipcRenderer.invoke('bosley:request', request),
             setCompanionState: state => {
@@ -1271,6 +1303,10 @@ jobs:
           test -s desktop/main.cjs
           test -s desktop/preload.cjs
           test -s desktop/bubble.html
+          grep -Fq 'function createWritingBulb()' desktop/main.cjs
+          grep -Fq 'WINDOWS WRITING BULB VISIBLE' desktop/main.cjs
+          grep -Fq 'openWritingAssistant: () => ipcRenderer.send' desktop/preload.cjs
+          grep -Fq 'bosley:open-writing' desktop/main.cjs
           test -s desktop/companion.html
           test -s desktop/assets/companion.js
           test -s desktop/index.html

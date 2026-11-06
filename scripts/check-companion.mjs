@@ -810,6 +810,11 @@ assert.ok(html.includes('id="bue-live-check"') && html.includes('Live writing ch
 assert.ok(html.includes('data-action="clipboard-in"') && html.includes('data-action="clipboard-out"'), "Universal Input must offer explicit cross-app clipboard handoff");
 assert.ok(html.includes('action:"clipboard_read"') && html.includes('action:"clipboard_write"'), "Universal Input must use the desktop clipboard bridge when available");
 assert.ok(androidInstaller.includes('readClipboard(PluginCall call)') && androidInstaller.includes('writeClipboard(PluginCall call)'), "Android native bridge must support user-triggered clipboard import and export");
+assert.ok(androidInstaller.includes("BosleyKeyboardService") && androidInstaller.includes("android.permission.BIND_INPUT_METHOD") && androidInstaller.includes("bosley_input_method.xml"), "Android build must install the optional native Bosley keyboard service");
+assert.ok(androidInstaller.includes("TYPE_TEXT_VARIATION_PASSWORD") && androidInstaller.includes("sensitive||w==null"), "Android keyboard suggestions must be disabled for password fields");
+assert.ok(androidInstaller.includes("showKeyboardPicker") && html.includes('data-action="keyboard-setup"'), "Universal Input must expose Android keyboard setup");
+assert.ok(androidInstaller.includes("On-device suggestions") && androidInstaller.includes("ic.commitText"), "Android keyboard must provide local text entry and on-device correction suggestions");
+
 assert.ok(readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8").includes("CommandOrControl+Shift+U"), "Windows build must register the system-wide Universal Input shortcut");
 
 assert.ok(html.includes('Possible typo') && html.includes('setRangeText(found.good,start,end,"end")'), "Live writing checks must offer explicit, non-destructive inline fixes");

@@ -622,7 +622,7 @@ html[data-agent-state=working] .launch #bosley-mascot .mascot-eye{filter:drop-sh
 body.desktop-floating-view,body.desktop-floating-view #root{width:100%;height:100%;min-height:100%;overflow:hidden;background:#050505}
 body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop-floating-view #dock-launcher{display:none!important}
 body.desktop-floating-view #side-dock{position:fixed!important;inset:0!important;left:0!important;top:0!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-height:none!important;border:1px solid #333!important;border-radius:14px!important;box-shadow:0 12px 36px #0009!important}
-body.desktop-floating-view #side-dock .dock-head{-webkit-app-region:drag;cursor:move}
+body.desktop-floating-view #side-dock .dock-head{-webkit-app-region:drag;cursor:move;min-height:48px;user-select:none}body.desktop-floating-view #side-dock .dock-head .dock-title{font-size:11px}body.desktop-floating-view .floating-window-controls{display:flex;gap:5px;margin-left:auto;-webkit-app-region:no-drag}body.desktop-floating-view .floating-window-controls button{width:30px;height:28px;border:1px solid #383838;border-radius:7px;background:#101010;color:#eee;font:16px/1 system-ui;cursor:pointer}body.desktop-floating-view .floating-window-controls button:hover{background:#252525;border-color:#666}body.desktop-floating-view .floating-window-controls [data-window-command=close]:hover{background:#4a1717;border-color:#8c4444}
 body.desktop-floating-view #side-dock .dock-head button,body.desktop-floating-view #side-dock .dock-tabs,body.desktop-floating-view #side-dock .dock-body{-webkit-app-region:no-drag}
 body.desktop-floating-view #side-dock .dock-body{height:calc(100% - 48px);overflow:auto}
 
@@ -1042,7 +1042,16 @@ document.addEventListener("DOMContentLoaded",()=>{
  if(!dock||!tabs||!body)return;
  dock.querySelector("#dock-close")?.addEventListener("click",()=>window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false}).catch(()=>{}));
  const floatingView=new URLSearchParams(location.search).get("bosleyFloat");
- if(floatingView)document.body.classList.add("desktop-floating-view");
+ if(floatingView){
+  document.body.classList.add("desktop-floating-view");
+  const head=dock?.querySelector(".dock-head");
+  if(head&&!head.querySelector(".floating-window-controls")){
+   const controls=document.createElement("div");controls.className="floating-window-controls";controls.setAttribute("role","toolbar");controls.setAttribute("aria-label","Window controls");
+   controls.innerHTML='<button type="button" data-window-command="minimize" title="Minimize" aria-label="Minimize">—</button><button type="button" data-window-command="maximize" title="Maximize" aria-label="Maximize">□</button><button type="button" data-window-command="restore" title="Restore previous size" aria-label="Restore previous size">◇</button><button type="button" data-window-command="close" title="Close window" aria-label="Close window">×</button>';
+   head.appendChild(controls);
+   controls.addEventListener("click",event=>{const button=event.target.closest("[data-window-command]");if(!button)return;event.preventDefault();event.stopPropagation();window.BosleyDesktop?.request?.({action:"floating_view_control",payload:{command:button.dataset.windowCommand}}).catch(error=>console.error("Window control failed",error));});
+  }
+ }
  function initLovableBosleyViewer(){
   const panel=document.getElementById("lovable-bosley");
   if(!panel)throw Error("Hosted Bosley viewer container is missing.");

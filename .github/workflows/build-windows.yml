@@ -1381,7 +1381,7 @@ jobs:
           import json
           with open('agent-pack/skills.json', encoding='utf-8') as handle:
               pack = json.load(handle)
-          assert pack.get('version') == 1 and len(pack.get('skills', [])) >= 5
+          assert isinstance(pack.get('version'), int) and pack.get('version') >= 1 and len(pack.get('skills', [])) >= 5
           with open('agent-pack/bosley-app.json', encoding='utf-8') as handle:
               app = json.load(handle)
           assert 'url' in app

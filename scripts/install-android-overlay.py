@@ -272,6 +272,9 @@ public class BosleyKeyboardService extends InputMethodService {
   private LinearLayout root, suggestions;
   private boolean shift=true, sensitive=false, symbols=false, emojiMode=false;
   private final java.util.ArrayList<TextView> letterKeys=new java.util.ArrayList<>();
+  private final java.util.ArrayList<TextView> suggestionKeys=new java.util.ArrayList<>();
+  private final java.util.ArrayList<Runnable> suggestionActions=new java.util.ArrayList<>();
+  private int suggestionCount=0;
   private TextView shiftKey;
   private static final String[] LETTERS={"q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"};
   private static final String[] WORDS={"about","above","after","again","also","always","amazing","and","any","are","because","before","being","best","better","can","chat","could","day","dear","did","do","doing","dont","each","even","every","feel","find","first","for","from","get","give","going","good","great","had","has","have","hello","help","here","hey","how","i","if","important","into","is","it","just","know","like","make","message","more","much","my","need","new","not","now","of","on","one","only","or","our","out","please","really","right","said","see","should","so","some","something","thanks","that","the","their","there","they","this","time","today","tomorrow","too","was","we","well","what","when","where","which","who","will","with","would","yes","you","your"};
@@ -297,6 +300,7 @@ public class BosleyKeyboardService extends InputMethodService {
   private void buildKeyboard(){
     root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(4),dp(6),dp(4),dp(7));root.setBackground(bg(Color.rgb(218,224,232),14));
     suggestions=new LinearLayout(this);suggestions.setOrientation(LinearLayout.HORIZONTAL);suggestions.setGravity(Gravity.CENTER);suggestions.setPadding(dp(4),0,dp(4),0);root.addView(suggestions,new LinearLayout.LayoutParams(-1,dp(39)));
+    for(int i=0;i<3;i++){final int index=i;TextView v=new TextView(this);v.setTextColor(Color.rgb(38,43,50));v.setTextSize(13);v.setTypeface(null,Typeface.BOLD);v.setGravity(Gravity.CENTER);v.setPadding(dp(6),0,dp(6),0);v.setBackground(bg(Color.rgb(230,234,240),8));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-1,1);lp.setMargins(dp(2),dp(1),dp(2),dp(1));suggestions.addView(v,lp);suggestionKeys.add(v);suggestionActions.add(null);v.setOnClickListener(x->{Runnable action=suggestionActions.get(index);if(action!=null)action.run();});}
     buildRows();refreshSuggestions();
   }
   private void addRow(String[] keys,int height){
@@ -347,20 +351,20 @@ public class BosleyKeyboardService extends InputMethodService {
     }
   }
   private void refreshSuggestions(){
-    if(suggestions==null)return;suggestions.removeAllViews();
-    if(emojiMode){for(int i=0;i<Math.min(EMOJIS.length,6);i++){final String emoji=EMOJIS[i];suggestion(emoji,()->{InputConnection ic=getCurrentInputConnection();if(ic!=null)ic.commitText(emoji,1);});}return;}
+    if(suggestions==null)return;suggestionCount=0;for(int i=0;i<suggestionKeys.size();i++){suggestionKeys.get(i).setVisibility(View.INVISIBLE);suggestionActions.set(i,null);}
+    if(emojiMode){for(int i=0;i<Math.min(EMOJIS.length,3);i++){final String emoji=EMOJIS[i];suggestion(emoji,()->{InputConnection ic=getCurrentInputConnection();if(ic!=null)ic.commitText(emoji,1);});}return;}
     InputConnection ic=getCurrentInputConnection();if(sensitive||ic==null){suggestion("Bosley",null);return;}
     CharSequence before=ic.getTextBeforeCursor(48,0);String text=before==null?"":before.toString();String word=lastWord(text);String fix=correction(word);
     if(fix!=null)suggestion(fix,()->{InputConnection current=getCurrentInputConnection();if(current!=null){current.deleteSurroundingText(word.length(),0);current.commitText(fix,1);refreshSuggestions();}});
     else if(word.length()>0){
       int count=0;String lower=word.toLowerCase(Locale.ROOT);
-      for(String candidate:WORDS){if(candidate.startsWith(lower)&&!candidate.equalsIgnoreCase(word)){final String pick=candidate;suggestion(pick,()->{InputConnection current=getCurrentInputConnection();if(current!=null){current.deleteSurroundingText(word.length(),0);current.commitText(pick+" ",1);refreshSuggestions();}});if(++count==2)break;}}
+      for(String candidate:WORDS){if(candidate.startsWith(lower)&&!candidate.equalsIgnoreCase(word)){final String pick=candidate;suggestion(pick,()->{InputConnection current=getCurrentInputConnection();if(current!=null){current.deleteSurroundingText(word.length(),0);current.commitText(pick+" ",1);refreshSuggestions();}});if(++count==3)break;}}
       if(count==0)suggestion(word,null);
     }else{suggestion("English",null);suggestion("Bosley",null);suggestion("😀",()->{emojiMode=true;buildRows();refreshSuggestions();});}
   }
   private void suggestion(String value,Runnable action){
-    TextView v=new TextView(this);v.setText(value);v.setTextColor(Color.rgb(38,43,50));v.setTextSize(13);v.setTypeface(null,Typeface.BOLD);v.setGravity(Gravity.CENTER);v.setPadding(dp(6),0,dp(6),0);v.setBackground(bg(Color.rgb(230,234,240),8));
-    LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-1,1);lp.setMargins(dp(2),dp(1),dp(2),dp(1));suggestions.addView(v,lp);if(action!=null)v.setOnClickListener(x->action.run());
+    if(suggestionCount>=suggestionKeys.size())return;
+    int index=suggestionCount++;TextView v=suggestionKeys.get(index);v.setText(value);v.setVisibility(View.VISIBLE);suggestionActions.set(index,action);
   }
 }
 """)

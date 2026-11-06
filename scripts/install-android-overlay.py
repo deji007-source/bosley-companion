@@ -29,7 +29,7 @@ ime_service = '''        <service android:name=".BosleyKeyboardService" android:
             <meta-data android:name="android.view.im" android:resource="@xml/bosley_input_method" />
         </service>'''
 if "BosleyKeyboardService" not in text:
-    text = text.replace("</application>", ime_service + "\\n    </application>")
+    text = text.replace("</application>", ime_service + "\n    </application>")
 manifest.write_text(text)
 
 # The guide target finder is explicitly user-enabled in Android Accessibility settings.

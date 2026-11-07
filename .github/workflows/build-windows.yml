@@ -198,9 +198,25 @@ jobs:
           const SITE = 'https://bosley-companion.vercel.app/';
           let bubble = null;
           let panel = null;
-          // Keep the companion open until the user closes or hides it explicitly.
-          function clearPanelIdleClose() {}
-          function armPanelIdleClose() {}
+          // Hide the compact workspace after 20 seconds without interaction.
+          // Any click, key press, typing, scroll or touch in the panel resets this timer.
+          const PANEL_IDLE_TIMEOUT_MS = 20000;
+          let panelIdleTimer = null;
+          function clearPanelIdleClose() {
+            if (panelIdleTimer) clearTimeout(panelIdleTimer);
+            panelIdleTimer = null;
+          }
+          function armPanelIdleClose() {
+            clearPanelIdleClose();
+            if (!panel || panel.isDestroyed() || !panel.isVisible()) return;
+            panelIdleTimer = setTimeout(() => {
+              panelIdleTimer = null;
+              if (panel && !panel.isDestroyed() && panel.isVisible()) {
+                panel.hide();
+                logStartup('WORKSPACE PANEL AUTO-HIDDEN AFTER 20 SECONDS OF INACTIVITY');
+              }
+            }, PANEL_IDLE_TIMEOUT_MS);
+          }
           let usingHostedFallback = false;
           let widgetAppearance = { size: 'default', edge: 'sharp', border: 'thin' };
           // Slim bezel-connected Dynamic Island sizes; keep the island centered on the physical display edge.
@@ -873,7 +889,7 @@ jobs:
               }
             });
 
-            // No inactivity timer: the companion stays open until the user closes it.
+            panel.on('show', () => armPanelIdleClose());
 
             panel.on('hide', () => {
               clearPanelIdleClose();
@@ -903,6 +919,7 @@ jobs:
               panel.show();
               panel.focus();
               panel.setAlwaysOnTop(true, 'screen-saver');
+              armPanelIdleClose();
             }
           }
 

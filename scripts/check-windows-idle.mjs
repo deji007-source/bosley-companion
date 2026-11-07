@@ -53,7 +53,7 @@ for (const [label, needle] of required) {
   if (label.startsWith('no inactivity') || label.startsWith('panel has')) {
     const forbidden = label.startsWith('no inactivity') ? 'PANEL_AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY' : 'const PANEL_IDLE_TIMEOUT_MS = 15000;';
     if (main.includes(forbidden)) throw new Error('Windows workspace check failed: ' + label);
-  } else if (label.startsWith('Windows floating page')) {
+  } else if (label.startsWith('Windows floating page') || label.startsWith('Windows detached page')) {
     if (!html.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
   } else if (label.startsWith('Windows top widget')) {
     const bubbleStart = workflow.indexOf("cat > desktop/bubble.html <<'BUBBLE_EOF'");

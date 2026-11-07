@@ -1350,7 +1350,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 
 
- function renderMoneyLearning(){
+ function renderTradingLab(){
   const panel=document.getElementById("money-learning");if(!panel)throw Error("Trading Lab page is missing.");
   const key="bosley-paper-trading-v1";
   const markets=[["BTC/USDT",67420.15,1.42],["ETH/USDT",3520.80,.86],["EUR/USD",1.0842,-.24],["XAU/USD",2368.40,.31],["BNB/USDT",612.50,.52]];
@@ -1396,7 +1396,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   {button:"",panel:"control-centre",label:"Control Centre",init:()=>window.BosleyPanelRenderers?.control?.()},
   {button:"",panel:"universal-input",label:"Universal Input",init:()=>{const r=window.BosleyPanelRenderers?.universalInput;if(typeof r!=="function")throw Error("Universal Input renderer is unavailable.");return r()}},
   {button:"",panel:"writing-assist",label:"Writing Assist",init:()=>{const r=window.BosleyPanelRenderers?.writingAssist;if(typeof r!=="function")throw Error("Writing Studio renderer is unavailable.");return r()}},
-  {button:"",panel:"money-learning",label:"Money Skills",init:()=>renderMoneyLearning()}
+  {button:"",panel:"money-learning",label:"Money Skills",init:()=>renderTradingLab()}
  ];
  if(floatingView){const title=dock.querySelector(".dock-title");const selected=views.find(v=>v.panel===floatingView);if(title&&selected)title.textContent="BOSLEY · "+selected.label.toUpperCase();}
  let active="";

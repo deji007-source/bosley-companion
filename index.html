@@ -4149,5 +4149,38 @@ body.panel-open #dock-launcher{display:block!important;visibility:visible!import
  #dock-launcher>#dock-menu-toggle{width:46px!important;height:46px!important}
  #dock-launcher-menu{width:min(174px,calc(100vw - 76px))!important;max-height:62dvh!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
+
+/* Windows detached pages: compact square workspace, top-centred by the native window manager. */
+body.desktop-floating-view #side-dock{
+ position:relative!important;inset:auto!important;display:flex!important;flex:1 1 auto!important;
+ width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;
+ max-width:100%!important;max-height:100%!important;margin:0!important;
+ border:1px solid #30343a!important;border-radius:13px!important;overflow:hidden!important;
+}
+body.desktop-floating-view #side-dock .dock-head{flex:0 0 44px!important;min-height:44px!important;padding:7px 10px!important}
+body.desktop-floating-view #side-dock .dock-tabs{flex:0 0 auto!important;max-width:100%!important;min-width:0!important;overflow-x:auto!important;overflow-y:hidden!important;padding:6px!important}
+body.desktop-floating-view #side-dock .dock-tabs button{flex:0 0 auto!important;min-height:30px!important;padding:5px 8px!important;font-size:10px!important}
+body.desktop-floating-view #side-dock .dock-body{
+ display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
+ width:100%!important;height:auto!important;min-width:0!important;min-height:0!important;
+ max-width:100%!important;max-height:none!important;padding:9px!important;overflow:auto!important;
+}
+body.desktop-floating-view #side-dock .dock-body>*{
+ box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;
+ margin-left:0!important;margin-right:0!important;
+}
+body.desktop-floating-view #side-dock .dock-body>.workspace:not([hidden]),
+body.desktop-floating-view #side-dock .dock-body>.automation:not([hidden]){
+ display:block!important;flex:0 0 auto!important;width:100%!important;max-width:100%!important;
+ min-width:0!important;min-height:0!important;height:auto!important;max-height:none!important;
+ overflow:visible!important;
+}
+body.desktop-floating-view #side-dock .dock-body input,
+body.desktop-floating-view #side-dock .dock-body textarea,
+body.desktop-floating-view #side-dock .dock-body select,
+body.desktop-floating-view #side-dock .dock-body button{max-width:100%;box-sizing:border-box}
+body.desktop-floating-view #side-dock .dock-body img,
+body.desktop-floating-view #side-dock .dock-body iframe,
+body.desktop-floating-view #side-dock .dock-body video{max-width:100%}
 </style>
 </body></html>

@@ -1027,10 +1027,10 @@ jobs:
             const index = FLOATING_VIEW_IDS.indexOf(viewId);
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            // Detached workspace pages open as full-page windows while remaining
-            // movable, resizable, minimizable and closable.
-            const width = Math.max(400, area.width - 32);
-            const height = Math.max(420, area.height - 48);
+            // Each workspace opens in its own comfortable, fully usable window.
+            // Keep it deliberately smaller than the desktop; users can maximize it.
+            const width = Math.max(360, Math.min(860, area.width - 48));
+            const height = Math.max(400, Math.min(700, area.height - 64));
             const savedBounds = (() => {
               try {
                 const all = JSON.parse(fs.readFileSync(floatingViewBoundsFile, 'utf8'));
@@ -1039,8 +1039,8 @@ jobs:
               } catch {}
               return null;
             })();
-            const savedWidth = Math.min(area.width - 16, Math.max(Math.round(area.width * 0.88), savedBounds?.width ?? width));
-            const savedHeight = Math.min(area.height - 16, Math.max(Math.round(area.height * 0.88), savedBounds?.height ?? height));
+            const savedWidth = Math.max(Math.min(360, area.width - 16), Math.min(area.width - 16, savedBounds?.width ?? width));
+            const savedHeight = Math.max(Math.min(400, area.height - 16), Math.min(area.height - 16, savedBounds?.height ?? height));
             const maxX = Math.max(area.x + 8, area.x + area.width - savedWidth - 8);
             const maxY = Math.max(area.y + 8, area.y + area.height - savedHeight - 8);
             const x = Math.max(area.x + 8, Math.min(maxX, savedBounds?.x ?? (area.x + Math.round((area.width - savedWidth) / 2))));
@@ -1048,7 +1048,7 @@ jobs:
             const startWidth = savedWidth;
             const startHeight = savedHeight;
             const win = new BrowserWindow({
-              x, y, width: startWidth, height: startHeight, minWidth: 360, minHeight: 360,
+              x, y, width: startWidth, height: startHeight, minWidth: Math.min(360, startWidth), minHeight: Math.min(360, startHeight),
               frame: false, show: false, resizable: true, movable: true,
               alwaysOnTop: false, skipTaskbar: false, backgroundColor: '#050505',
               title: 'Bosley — ' + viewId,

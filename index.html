@@ -1471,7 +1471,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     rows.push(...(batch||[]).map(row=>({date:row.candle_date,open:Number(row.open),high:row.high===null?NaN:Number(row.high),low:row.low===null?NaN:Number(row.low),close:Number(row.close),volume:row.volume===null?NaN:Number(row.volume)})));
    }
    if(rows.length!==meta.row_count){cloudStatus("Dataset row count mismatch. Expected "+meta.row_count+", loaded "+rows.length+".");return}
-   state.data=rows;state.dataName=meta.name+" ("+meta.symbol+")";state.dataMode="ohlcv-csv";state.dataSourceName=meta.source_name||"Saved CSV source";state.dataSourceReference=meta.metadata?.sourceReference||"";state.marketCategory=meta.metadata?.marketCategory||"general";state.lastRun=null;save();updateDataInfo();
+   state.data=rows;state.dataName=meta.name+" ("+meta.symbol+")";state.dataMode="ohlcv-csv";state.dataSourceName=meta.source_name||"Saved CSV source";state.dataSourceReference=meta.metadata?.sourceReference||"";state.marketCategory=meta.metadata?.marketCategory||"general";state.lastRun=null;el("td-dataset-name").value=meta.name||"";el("td-symbol").value=meta.symbol||"";el("td-source-name").value=state.dataSourceName;el("td-source-reference").value=state.dataSourceReference;el("td-market-category").value=state.marketCategory;save();updateDataInfo();
    el("td-data-info").textContent+=" · loaded from your private Bosley research library";
    el("td-report-tag").textContent="DATA LOADED";el("td-report").textContent="Historical observations loaded. Review the dataset quality profile before drawing conclusions.";
    cloudStatus("Loaded "+rows.length.toLocaleString()+" rows for "+meta.symbol+".");

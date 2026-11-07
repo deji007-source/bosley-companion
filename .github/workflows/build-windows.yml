@@ -743,17 +743,18 @@ jobs:
           function createPanel() {
             const display = screen.getPrimaryDisplay();
             const bounds = display.bounds;
-            // Compact square workspace island: slightly wider than the top floating widget,
-            // centred horizontally and physically attached to the display's top edge.
-            const panelWidth = Math.min(340, bounds.width);
-            const panelHeight = Math.min(panelWidth, bounds.height);
+            // Give the actual chat workspace enough room to remain readable.
+            // Keep it centred at the top, but do not constrain the conversation to a 340px square.
+            const area = display.workArea;
+            const panelWidth = Math.min(620, Math.max(460, area.width - 40));
+            const panelHeight = Math.min(720, Math.max(520, area.height - 36));
             panel = new BrowserWindow({
               x: bounds.x + Math.round((bounds.width - panelWidth) / 2),
-              y: bounds.y,
+              y: area.y + 10,
               width: panelWidth,
               height: panelHeight,
-              minWidth: Math.min(300, panelWidth),
-              minHeight: Math.min(300, panelHeight),
+              minWidth: Math.min(460, panelWidth),
+              minHeight: Math.min(520, panelHeight),
               resizable: true,
               show: false,
               backgroundColor: '#000000',

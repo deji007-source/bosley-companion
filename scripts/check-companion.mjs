@@ -899,7 +899,7 @@ assert.ok(html.includes("Agent Command Centre") && html.includes("agent-centre-d
 assert.ok(html.includes("bosley-agent-centre:") && html.includes("agent_device_commands"), "Agent Command Centre must refresh from authenticated device and automation activity");
 
 assert.ok(html.includes('data-idea-input') && html.includes('bosley-card-only'), "Writing and Ideas must own a standalone input and card-only presentation mode");
-assert.ok(html.includes('get("bosleyWritingCard")==="1"')&&html.includes('get("bosleyWritingCard")==="1")&&html.includes('window.BosleyOpenWritingIdeasCard?.();')&&!html.includes('setTimeout(()=>window.BosleyOpenWritingIdeasCard?.(),450)'), "Windows standalone Writing and Ideas window must show the card immediately without a splash delay");
+assert.ok(html.includes('get("bosleyWritingCard")==="1"') && html.includes('window.BosleyOpenWritingIdeasCard?.();') && !html.includes('setTimeout(()=>window.BosleyOpenWritingIdeasCard?.(),450)'), "Windows standalone Writing and Ideas window must show the card immediately without a splash delay");
 assert.ok(html.includes('action==="writing-card"') && html.includes('Universal Input was not opened'), "Android Writing bulb quick action must open the card without routing through Universal Input");
 assert.ok(androidInstaller.includes("iconPaint.setColor(Color.WHITE)") && androidInstaller.includes("iconPaint.setColor(Color.BLACK)") && androidInstaller.includes("showWritingCardOverlay()"), "Android Writing bulb must use a monochrome icon and open the standalone floating card directly");
 assert.ok(androidInstaller.includes("ACTION_MOVE") && androidInstaller.includes("wm.updateViewLayout(bulb,bulbLp)"), "Android Writing bulb must support drag repositioning");

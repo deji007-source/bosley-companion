@@ -249,13 +249,15 @@ jobs:
             }
 
             if (panel && !panel.isDestroyed()) {
-              // Give workspace pages enough room; preserve user-moved position while clamping to the work area.
-              const current = panel.getBounds();
-              const width = Math.min(900, Math.max(620, Math.round(area.width * 0.78)), area.width);
-              const height = Math.min(860, Math.max(560, Math.round(area.height * 0.88)), area.height);
-              const x = Math.max(area.x, Math.min(current.x, area.x + area.width - width));
-              const y = Math.max(area.y, Math.min(current.y, area.y + area.height - height));
-              panel.setBounds({ x, y, width, height });
+              // Keep the workspace island snapped to the top bezel and centred above the desktop.
+              const islandWidth = Math.min(340, bounds.width);
+              const islandHeight = Math.min(islandWidth, bounds.height);
+              panel.setBounds({
+                x: bounds.x + Math.round((bounds.width - islandWidth) / 2),
+                y: bounds.y,
+                width: islandWidth,
+                height: islandHeight
+              });
             }
           }
 
@@ -739,14 +741,19 @@ jobs:
           }
 
           function createPanel() {
-            const workArea = screen.getPrimaryDisplay().workArea;
-            const panelWidth = Math.min(900, Math.max(620, Math.round(workArea.width * 0.78)), workArea.width);
-            const panelHeight = Math.min(860, Math.max(560, Math.round(workArea.height * 0.88)), workArea.height);
+            const display = screen.getPrimaryDisplay();
+            const bounds = display.bounds;
+            // Compact square workspace island: slightly wider than the top floating widget,
+            // centred horizontally and physically attached to the display's top edge.
+            const panelWidth = Math.min(340, bounds.width);
+            const panelHeight = Math.min(panelWidth, bounds.height);
             panel = new BrowserWindow({
+              x: bounds.x + Math.round((bounds.width - panelWidth) / 2),
+              y: bounds.y,
               width: panelWidth,
               height: panelHeight,
-              minWidth: Math.min(560, panelWidth),
-              minHeight: Math.min(480, panelHeight),
+              minWidth: Math.min(300, panelWidth),
+              minHeight: Math.min(300, panelHeight),
               resizable: true,
               show: false,
               backgroundColor: '#000000',

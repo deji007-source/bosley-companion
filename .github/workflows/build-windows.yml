@@ -746,7 +746,7 @@ jobs:
             // Compact workspace island: keep the original ~340px square footprint.
             // Improve clarity through responsive page layout, not a larger desktop window.
             const panelWidth = Math.min(340, bounds.width);
-            const panelHeight = Math.min(340, bounds.height);
+            const panelHeight = Math.min(panelWidth, bounds.height);
             panel = new BrowserWindow({
               x: bounds.x + Math.round((bounds.width - panelWidth) / 2),
               y: bounds.y,

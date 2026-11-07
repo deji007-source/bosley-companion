@@ -34,7 +34,7 @@ assert.ok(html.includes("Final layer correction: keep the ghost and its tools ab
 assert.ok(html.includes("document.body.appendChild(floatingLauncher)") && html.includes('id="bosley-floating-layer-fix"'), "Floating ghost launcher must be portalled to the document body above workspace stacking contexts");
 assert.ok(html.includes("One authoritative launcher router") && html.includes('window.addEventListener("click",event=>') && html.includes('#dock-launcher-menu [data-open-view]'), "Portalled launcher menu must use one delegated capture click router for reliable tool and panel activation");
 assert.ok(html.includes("const route=views.find(view=>view.panel===id)") && html.includes("show(route.panel).catch") && html.includes("window.BosleyOpenPanel=(id)=>show(id)"), "Launcher selections must resolve to a registered page and invoke the local panel controller");
-const viewRegistry=html.match(/const views=\\[([\\s\\S]*?)\\n \\];/);
+const viewRegistry=html.match(/const views=\[([\s\S]*?)\n \];/);
 assert.ok(viewRegistry, "Companion workspace must expose one explicit page registry");
 const registeredPages=[...viewRegistry[1].matchAll(/panel:"([^"]+)"/g)].map(match=>match[1]);
 assert.ok(registeredPages.length>=12, "All first-party Companion workspace pages must be registered for navigation");

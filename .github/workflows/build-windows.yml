@@ -1003,8 +1003,10 @@ jobs:
             const index = FLOATING_VIEW_IDS.indexOf(viewId);
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            const width = Math.min(960, Math.max(560, area.width - 32));
-            const height = Math.min(820, Math.max(480, area.height - 56));
+            // Detached pages are compact, near-square utility windows anchored at
+            // the top centre. They remain resizable; do not inherit old oversized bounds.
+            const width = Math.min(480, Math.max(400, area.width - 32));
+            const height = Math.min(520, Math.max(420, area.height - 56));
             const maxX = Math.max(area.x + 8, area.x + area.width - width - 8);
             const maxY = Math.max(area.y + 8, area.y + area.height - height - 8);
             const savedBounds = (() => {
@@ -1015,13 +1017,14 @@ jobs:
               } catch {}
               return null;
             })();
-            const offset = index % 7;
-            const x = Math.max(area.x + 8, Math.min(maxX, savedBounds?.x ?? (area.x + 14 + offset * 38)));
-            const y = Math.max(area.y + 8, Math.min(maxY, savedBounds?.y ?? (area.y + 42 + offset * 34)));
-            const startWidth = Math.min(area.width - 16, Math.max(560, savedBounds?.width ?? width));
-            const startHeight = Math.min(area.height - 16, Math.max(480, savedBounds?.height ?? height));
+            const savedWidth = Math.min(Math.min(area.width - 16, 680), Math.max(400, savedBounds?.width ?? width));
+            const savedHeight = Math.min(Math.min(area.height - 16, 720), Math.max(420, savedBounds?.height ?? height));
+            const x = Math.max(area.x + 8, Math.min(maxX, savedBounds?.x ?? (area.x + Math.round((area.width - savedWidth) / 2))));
+            const y = Math.max(area.y + 8, Math.min(maxY, savedBounds?.y ?? (area.y + 42)));
+            const startWidth = savedWidth;
+            const startHeight = savedHeight;
             const win = new BrowserWindow({
-              x, y, width: startWidth, height: startHeight, minWidth: 520, minHeight: 420,
+              x, y, width: startWidth, height: startHeight, minWidth: 360, minHeight: 360,
               frame: false, show: false, resizable: true, movable: true,
               alwaysOnTop: false, skipTaskbar: false, backgroundColor: '#050505',
               title: 'Bosley — ' + viewId,
@@ -1479,8 +1482,10 @@ jobs:
               if (window.bosleyDesktop.onWidgetAppearance) {
                 window.bosleyDesktop.onWidgetAppearance(applyAppearance);
               }
+              // The top floating widget opens the Companion window.
+              // The separate Writing & Ideas bulb is reserved for Ctrl+Shift+I only.
               document.querySelector('button').addEventListener('click', () => {
-                window.bosleyDesktop.showWritingBulb();
+                window.bosleyDesktop.togglePanel();
               });
             </script>
           </body>

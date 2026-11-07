@@ -1453,7 +1453,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   const v=views.find(x=>x.panel===id);if(!v)return;
   const p=document.getElementById(id);if(!p)return;
   if(document.body.classList.contains("desktop-panel")&&!document.body.classList.contains("desktop-floating-view")&&window.BosleyDesktop?.request){
-   window.BosleyDesktop.request({action:"open_floating_view",payload:{view:id}}).catch(error=>console.error("Could not open floating Bosley view",error));return;
+   try{
+    await window.BosleyDesktop.request({action:"open_floating_view",payload:{view:id}});
+    return;
+   }catch(error){
+    console.error("Could not open separate Bosley window; opening the page inside the companion instead.",error);
+   }
   }
   const wasActive=active===id&&!dock.hidden;
   if(wasActive){dock.hidden=true;active="";if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});return;}

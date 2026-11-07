@@ -1014,7 +1014,7 @@ jobs:
               fs.writeFileSync(floatingViewBoundsFile, JSON.stringify(all, null, 2), 'utf8');
             } catch (error) { logStartup('FLOATING VIEW BOUNDS SAVE FAILED', viewId, error.message); }
           }
-          const FLOATING_VIEW_IDS = ['lovable-bosley','ws','facepanel','agents-panel','automation','activity','skills-panel','bosley-search','control-centre','universal-input','writing-assist','trading-panel'];
+          const FLOATING_VIEW_IDS = ['lovable-bosley','ws','facepanel','agents-panel','automation','activity','skills-panel','bosley-search','control-centre','universal-input','writing-assist','money-learning'];
           function openFloatingView(viewId) {
             if (!FLOATING_VIEW_IDS.includes(viewId)) throw new Error('Unknown Bosley side view.');
             const existing = floatingViewWindows.get(viewId);

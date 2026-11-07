@@ -2123,7 +2123,7 @@ function addMsg(role,text,cls=""){
  const follow=chatNearBottom();
  const a=document.createElement("article");a.className="msg "+role+" "+cls;
  a.innerHTML='<b>'+(role==="you"?"YOU":role==="sys"?"NOTICE":"BOSLEY")+'</b><p></p>';
- const p=a.querySelector("p");p.textContent=text;
+ const p=a.querySelector("p");p.textContent=text;if(role==="you"||role==="bosley")p.style.setProperty("color","#fff","important");
  if(role==="you"||role==="bosley"){
   const actions=document.createElement("div");actions.className="msg-actions";
   const copy=document.createElement("button");copy.type="button";copy.className="msg-copy";copy.textContent="Copy";copy.setAttribute("aria-label","Copy message");copy.title="Copy message";

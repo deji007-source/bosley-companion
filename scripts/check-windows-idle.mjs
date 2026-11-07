@@ -55,7 +55,7 @@ for (const [label, needle] of required) {
     if (main.includes(forbidden)) throw new Error('Windows workspace check failed: ' + label);
   } else if (label.startsWith('Writing Ideas card opens')) {
     if (!html.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
-  } else if (label.startsWith('Windows floating page') || label.startsWith('Windows detached page')) {
+  } else if (label.startsWith('Windows floating page') || label.startsWith('Windows detached page content') || label.startsWith('Windows detached pages fill')) {
     if (!html.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
   } else if (label.startsWith('Windows top widget')) {
     const bubbleStart = workflow.indexOf("cat > desktop/bubble.html <<'BUBBLE_EOF'");

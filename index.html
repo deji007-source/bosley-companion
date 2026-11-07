@@ -1463,19 +1463,9 @@ document.addEventListener("DOMContentLoaded",()=>{
   dockToggle?.setAttribute("aria-expanded","false");
   const v=views.find(x=>x.panel===id);if(!v){console.warn("Unknown Bosley page requested:",id);return;}
   const p=document.getElementById(id);if(!p){dock.hidden=false;dock.removeAttribute("hidden");dock.style.setProperty("display","flex","important");const notice=document.createElement("p");notice.className="fb";notice.textContent=v.label+" is unavailable in this build. Reload Bosley and try again.";body.replaceChildren(notice);return;}
-  // Prefer the in-app side dock as the reliable default on every platform.
-  // A detached Windows view is considered handled only when the bridge explicitly
-  // confirms that a separate window was opened; an empty/negative response falls back.
-  if(document.body.classList.contains("desktop-panel")&&!document.body.classList.contains("desktop-floating-view")&&window.BosleyDesktop?.request){
-   try{
-    const result=await window.BosleyDesktop.request({action:"open_floating_view",payload:{view:id}});
-    if(result===true||result?.opened===true||result?.success===true)return;
-   }catch(error){
-    console.error("Could not open separate Bosley window; opening the page inside the companion instead.",error);
-   }
-  }
-  const wasActive=active===id&&!dock.hidden;
-  if(wasActive){dock.hidden=true;active="";if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});return;}
+  // Always reveal the in-app dock immediately. Do not wait on the optional
+  // Windows floating-window bridge: a pending native request must never block
+  // page navigation. Selecting an already-open page must keep it open.
   if(active==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});
   if(isAndroidNative||window.matchMedia("(max-width: 760px)").matches){document.body.classList.add("android-full-page-view");const back=dock.querySelector("#dock-close");if(back){back.textContent="← Chat";back.setAttribute("aria-label","Back to chat")}}
   dock.hidden=false;dock.removeAttribute("hidden");dock.style.setProperty("display","flex","important");dock.style.setProperty("visibility","visible","important");dock.style.setProperty("pointer-events","auto","important");active=id;

@@ -892,6 +892,7 @@ assert.ok(html.includes('.bue-editor{min-height:210px') && html.includes('.bue-l
 assert.ok(html.includes('window.BosleyOpenUniversalInput=()=>window.BosleyOpenPanel?.("universal-input")'), "Universal Input launcher must target the registered dock panel");
 assert.ok(html.includes("Register dock renderers before the rest of the large application bootstrap") && html.includes("writingAssist:()=>renderBosleyWritingAssist()"), "Core workspace renderers must be registered before optional startup code can fail");
 assert.ok(html.includes('window.addEventListener("pointerup"') && html.includes("dockPointerHandledAt=Date.now()"), "Android launcher and menu items must respond to touch release without relying on delayed synthetic click");
+assert.ok(html.includes("var dockPointerHandledAt=0;"), "Touch launcher guard must be initialized before navigation handlers run");
 assert.ok(html.includes('if(typeof r!=="function")throw Error("Writing Studio renderer is unavailable.")'), "Writing Studio must report missing renderer wiring instead of silently opening a blank panel");
 
 assert.ok(html.includes("user_second_brain_entries") && html.includes("brain-cloud-form") && html.includes("loadCloudSecondBrain"), "Second Brain must save, search, delete and load account-scoped cloud entries");

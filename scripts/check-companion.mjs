@@ -34,6 +34,13 @@ assert.ok(html.includes("Final layer correction: keep the ghost and its tools ab
 assert.ok(html.includes("document.body.appendChild(floatingLauncher)") && html.includes('id="bosley-floating-layer-fix"'), "Floating ghost launcher must be portalled to the document body above workspace stacking contexts");
 assert.ok(html.includes("One authoritative launcher router") && html.includes('window.addEventListener("click",event=>') && html.includes('#dock-launcher-menu [data-open-view]'), "Portalled launcher menu must use one delegated capture click router for reliable tool and panel activation");
 assert.ok(html.includes("const route=views.find(view=>view.panel===id)") && html.includes("show(route.panel).catch") && html.includes("window.BosleyOpenPanel=(id)=>show(id)"), "Launcher selections must resolve to a registered page and invoke the local panel controller");
+const viewRegistry=html.match(/const views=\\[([\\s\\S]*?)\\n \\];/);
+assert.ok(viewRegistry, "Companion workspace must expose one explicit page registry");
+const registeredPages=[...viewRegistry[1].matchAll(/panel:"([^"]+)"/g)].map(match=>match[1]);
+assert.ok(registeredPages.length>=12, "All first-party Companion workspace pages must be registered for navigation");
+for (const pageId of registeredPages) assert.ok(html.includes('id="'+pageId+'"') || html.includes("id='"+pageId+"'"), "Registered workspace page must have a matching container: "+pageId);
+assert.ok(html.includes('if(!p.innerHTML.trim())throw Error("The section opened but its renderer returned no content.') && html.includes('retry.addEventListener("click",()=>show(id))'), "Page navigation must detect blank renderers and expose a working retry action");
+assert.ok(html.includes('panel.hidden=x.panel!==id') && html.includes('panel.removeAttribute("hidden")') && html.includes('panel.setAttribute("hidden","")'), "Page navigation must show the selected workspace panel and hide the others");
 assert.ok(html.includes("Always reveal the in-app dock immediately") && !html.includes('await window.BosleyDesktop.request({action:"open_floating_view",payload:{view:id}})'), "Page navigation must not wait for the optional Windows window bridge before revealing the side dock");
 assert.ok(!/if\s*\(\s*isAndroidNative\s*\|\|/.test(html) && html.includes('window.Capacitor?.getPlatform?.()==="android"'), "Shared page navigation must use a safely scoped Android platform check so website clicks cannot fail before showing the dock");
 assert.ok(html.includes('dock.hidden=false;dock.removeAttribute("hidden")') && html.includes("Selecting an already-open page must keep it open"), "Selecting a launcher page must immediately show the dock and must not toggle the selected page closed");

@@ -12,6 +12,12 @@ assert.ok(inlineScripts.length > 0, "Expected the companion's inline application
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
+const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
+assert.ok(marketHistoryFunction.includes("Authorization") && marketHistoryFunction.includes("startsWith(\"Bearer \""), "Historical provider function must require an authenticated caller");
+assert.ok(marketHistoryFunction.includes("TIME_SERIES_DAILY") && marketHistoryFunction.includes("FX_DAILY") && marketHistoryFunction.includes("DIGITAL_CURRENCY_DAILY"), "Historical provider must use documented daily series endpoints for supported market categories");
+assert.ok(marketHistoryFunction.includes("isValidCalendarDate") && marketHistoryFunction.includes("candles.length < 60") && marketHistoryFunction.includes("candles.length > 10000"), "Provider data must validate calendar dates and enforce bounded backtest history");
+assert.ok(marketHistoryFunction.includes("gapsOverSevenDays") && marketHistoryFunction.includes("duplicateDates") && marketHistoryFunction.includes("rejected:"), "Provider response must include data-quality diagnostics");
+assert.ok(marketHistoryFunction.includes("This endpoint retrieves historical observations only") && !marketHistoryFunction.includes("placeOrder"), "Historical data integration must remain separate from broker execution");
 assert.ok(appScript && appScript.indexOf("function startLaptopCommandListener(activeUser)") < appScript.lastIndexOf("})();"), "Laptop listener must remain inside the application IIFE so it can access $ and other private helpers");
 for (const [index, source] of inlineScripts.entries()) {
   assert.doesNotThrow(

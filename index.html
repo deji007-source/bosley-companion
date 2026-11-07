@@ -1467,7 +1467,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   // Windows floating-window bridge: a pending native request must never block
   // page navigation. Selecting an already-open page must keep it open.
   if(active==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});
-  if(isAndroidNative||window.matchMedia("(max-width: 760px)").matches){document.body.classList.add("android-full-page-view");const back=dock.querySelector("#dock-close");if(back){back.textContent="← Chat";back.setAttribute("aria-label","Back to chat")}}
+  if(window.Capacitor?.getPlatform?.()==="android"||window.matchMedia("(max-width: 760px)").matches){document.body.classList.add("android-full-page-view");const back=dock.querySelector("#dock-close");if(back){back.textContent="← Chat";back.setAttribute("aria-label","Back to chat")}}
   dock.hidden=false;dock.removeAttribute("hidden");dock.style.setProperty("display","flex","important");dock.style.setProperty("visibility","visible","important");dock.style.setProperty("pointer-events","auto","important");active=id;
   if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:true});
   for(const x of views){

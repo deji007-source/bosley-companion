@@ -1404,49 +1404,53 @@ document.addEventListener("DOMContentLoaded",()=>{
  const floatingLauncher=document.getElementById("dock-launcher");if(floatingLauncher&&floatingLauncher.parentElement!==document.body)document.body.appendChild(floatingLauncher);
  const dockMenu=document.getElementById("dock-launcher-menu"),dockToggle=document.getElementById("dock-menu-toggle");
  const dockMenuStyle=document.createElement("style");dockMenuStyle.textContent="#dock-launcher-menu{display:flex!important;flex-direction:column!important;grid-template-columns:none!important;gap:2px!important;min-width:190px!important;max-width:min(240px,calc(100vw - 76px))!important;padding:7px!important}#dock-launcher-menu[hidden]{display:none!important}#dock-launcher-menu [role=menuitem]{display:block!important;width:100%!important;min-height:36px!important;height:auto!important;padding:8px 10px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:#eee!important;font:500 13px/1.25 system-ui!important;text-align:left!important;white-space:normal!important}#dock-launcher-menu [role=menuitem]:focus-visible,#dock-launcher-menu [role=menuitem]:active{background:#1b2930!important;outline:1px solid #54788a!important}";dockMenuStyle.textContent+="#dock-launcher-menu{display:flex!important;flex-direction:column!important;align-items:stretch!important;grid-template-columns:none!important;width:min(176px,calc(100vw - 76px))!important;max-height:min(54dvh,360px)!important;gap:2px!important;padding:5px!important;background:#07090c!important;backdrop-filter:none!important;isolation:isolate!important;z-index:2147483647!important;pointer-events:auto!important;box-shadow:0 16px 44px #000!important}#dock-launcher-menu[hidden]{display:none!important}#dock-launcher-menu button{display:block!important;width:100%!important;height:32px!important;min-height:32px!important;padding:5px 8px!important;font-size:11px!important;background:#11161b!important;color:#f3f5f7!important;pointer-events:auto!important;touch-action:manipulation!important}#dock-launcher-menu button::after{content:none!important}#dock-launcher{z-index:2147483646!important;isolation:isolate!important;pointer-events:auto!important}#dock-menu-toggle{touch-action:manipulation!important;pointer-events:auto!important}";document.head.appendChild(dockMenuStyle);
- // Android touch browsers can delay/suppress synthetic click after long-press/scroll gestures.
- var dockPointerHandledAt=0;
- // Handle the completed tap directly, then ignore its follow-up synthetic click.
- // Use the native click event for both mouse and touch. Do not cancel pointerdown:
- // cancelling it suppresses the browser's synthesized click on some Android WebViews.
+ // One authoritative launcher router. A completed native click is the single activation
+ // path for mouse, touch and keyboard; never also activate on pointerup.
  let dockClickGuardAt=0;
  window.addEventListener("click",event=>{
-  const node=event.target instanceof Element?event.target:null;if(!node)return;
-  const toggle=node.closest("#dock-menu-toggle"),item=node.closest("#dock-launcher-menu [data-open-view],#dock-launcher-menu [data-review-composer]");
-  if(toggle){event.preventDefault();event.stopImmediatePropagation();dockClickGuardAt=Date.now();if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}return;}
-  if(item){event.preventDefault();event.stopImmediatePropagation();dockClickGuardAt=Date.now();const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");if(item.hasAttribute("data-review-composer")){const composer=document.querySelector("[data-review-composer-action]");if(composer)composer.dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true}));return;}if(typeof window.BosleyOpenPanel==="function")window.BosleyOpenPanel(id);return;}
-  if(dockMenu&&!dockMenu.hidden&&Date.now()-dockClickGuardAt>80){event.preventDefault();event.stopImmediatePropagation();}
- },true);
- window.addEventListener("pointerup",event=>{if(Date.now()-dockPointerHandledAt<900)return;
-  if(event.pointerType!=="touch"&&event.pointerType!=="pen")return;
-  const target=event.target instanceof Element?event.target:null;if(!target)return;
-  const toggle=target.closest("#dock-menu-toggle"),item=target.closest("#dock-launcher-menu [data-open-view]");
-  if(!toggle&&!item)return;
-  event.preventDefault();event.stopImmediatePropagation();dockPointerHandledAt=Date.now();
-  if(toggle&&dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));return;}
-  if(item){const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");show(id);}
- },true);
- // Window-capture router runs before document-level handlers and owns launcher interactions.
- window.addEventListener("click",event=>{
-  const target=event.target instanceof Element?event.target:null;if(!target)return;
-  if(Date.now()-dockPointerHandledAt<900&&target.closest("#dock-launcher"))return;
+  const target=event.target instanceof Element?event.target:null;
+  if(!target)return;
   const toggle=target.closest("#dock-menu-toggle");
-  if(toggle){event.preventDefault();event.stopImmediatePropagation();if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}return;}
-  const item=target.closest("#dock-launcher-menu [data-open-view]");
-  if(item){event.preventDefault();event.stopImmediatePropagation();const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");if(typeof window.BosleyOpenPanel==="function")window.BosleyOpenPanel(id);return;}
-  if(target.closest("#dock-launcher-menu")){event.stopImmediatePropagation();}
+  const item=target.closest("#dock-launcher-menu [data-open-view],#dock-launcher-menu [data-review-composer]");
+  if(toggle){
+   event.preventDefault();event.stopImmediatePropagation();
+   dockClickGuardAt=Date.now();
+   if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}
+   return;
+  }
+  if(item){
+   event.preventDefault();event.stopImmediatePropagation();
+   dockClickGuardAt=Date.now();
+   const id=item.dataset.openView;
+   if(dockMenu)dockMenu.hidden=true;
+   dockToggle?.setAttribute("aria-expanded","false");
+   if(item.hasAttribute("data-review-composer")){
+    const composer=document.querySelector("[data-review-composer-action]");
+    if(composer)composer.dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true}));
+    return;
+   }
+   if(typeof window.BosleyOpenPanel==="function")window.BosleyOpenPanel(id);
+   else show(id);
+   return;
+  }
+  // Keep taps inside the open menu from reaching controls beneath it.
+  if(target.closest("#dock-launcher-menu")){
+   event.preventDefault();event.stopImmediatePropagation();
+   return;
+  }
+  // Outside taps dismiss the menu but retain the outside control's normal action.
+  if(dockMenu&&!dockMenu.hidden&&Date.now()-dockClickGuardAt>80){
+   dockMenu.hidden=true;
+   dockToggle?.setAttribute("aria-expanded","false");
+  }
  },true);
- // Delegated capture handlers keep the launcher functional after it is portalled to body.
- document.addEventListener("click",event=>{
-  const target=event.target instanceof Element?event.target:null;if(!target)return;
-  const toggle=target.closest("#dock-menu-toggle");
-  if(toggle){event.preventDefault();event.stopImmediatePropagation();if(!dockMenu)return;dockMenu.hidden=!dockMenu.hidden;dockToggle?.setAttribute("aria-expanded",String(!dockMenu.hidden));return;}
-  const item=target.closest("#dock-launcher-menu [data-open-view]");
-  if(item){event.preventDefault();event.stopImmediatePropagation();const id=item.dataset.openView;if(dockMenu)dockMenu.hidden=true;dockToggle?.setAttribute("aria-expanded","false");show(id);return;}
-  if(!target.closest("#dock-launcher")&&dockToggle?.getAttribute("aria-expanded")==="true"){if(dockMenu)dockMenu.hidden=true;dockToggle.setAttribute("aria-expanded","false");}
- },true);
- document.addEventListener("keydown",event=>{if(event.key==="Escape"&&dockToggle?.getAttribute("aria-expanded")==="true"){if(dockMenu)dockMenu.hidden=true;dockToggle.setAttribute("aria-expanded","false");dockToggle.focus()}});
-
+ document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&dockToggle?.getAttribute("aria-expanded")==="true"){
+   if(dockMenu)dockMenu.hidden=true;
+   dockToggle.setAttribute("aria-expanded","false");
+   dockToggle.focus();
+  }
+ });
  window.BosleyOpenPanel=(id)=>show(id);window.BosleyPanelState=()=>({active,open:!dock.hidden});
  async function show(id){
   if(dockMenu)dockMenu.hidden=true;

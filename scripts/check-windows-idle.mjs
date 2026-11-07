@@ -29,13 +29,17 @@ const required = [
   ['no inactivity timeout closes the companion', "function armPanelIdleClose() {}"],
   ['panel has no auto-hide-on-idle handler', "!main.includes('PANEL AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY')"],
   ['panel remains open until explicit user action', "panel.on('close', event =>"],
-  ['Windows main workspace keeps its established responsive dimensions', 'Math.round(area.width * 0.78)'],
+  ['Windows workspace panel is a compact square attached to the top bezel', 'const panelWidth = Math.min(340, bounds.width)'],
+  ['Windows workspace panel is centred against the physical screen edge', 'y: bounds.y'],
+  ['Windows workspace panel height matches its width', 'const panelHeight = Math.min(panelWidth, bounds.height)'],
   ['Windows bulb appears on the shortcut and stays visible until explicitly toggled', 'writingBulbVisibleUntil = Number.POSITIVE_INFINITY'],
   ['Windows bulb shortcut hides the existing bulb without destroying its window', "writingBulb.hide();"],
   ['Windows bulb shortcut can reopen an existing hidden bulb', 'writingBulb.isVisible()'],
   ['Windows detached pages use compact near-square defaults', 'Math.min(480, Math.max(400, area.width - 32))'],
   ['Windows detached pages open near the top-centre', 'area.x + Math.round((area.width - savedWidth) / 2)'],
   ['Windows detached pages remain comfortably resizable', 'minWidth: 360, minHeight: 360'],
+  ['Windows detached pages fill their client area when maximized', 'body.desktop-floating-view #side-dock .dock-body{'],
+  ['Windows detached page content grows to use available height', 'min-height:100%!important;max-height:none!important;'],
   ['Windows floating page content fits its own window', 'body.desktop-floating-view #side-dock .dock-body{'],
   ['Windows floating page children cannot overflow horizontally', 'max-width:100%!important;min-width:0!important;'],
   ['Windows top widget opens the Companion instead of the writing bulb', 'window.bosleyDesktop.togglePanel()'],
@@ -62,5 +66,6 @@ for (const [label, needle] of required) {
     throw new Error('Windows workspace check failed: ' + label);
   }
 }
-if (!html.includes('body.desktop-floating-view #side-dock .dock-body{') || !html.includes('body.desktop-floating-view #side-dock .dock-body>*')) throw new Error('Windows detached page layout is missing its compact responsive rules.');
-console.log('Windows workspace checks passed (compact top-centred detached pages, responsive page content, persistent panel, draggable Writing Ideas overlay, Ctrl+Shift+I-only bulb).');
+if (!html.includes('body.desktop-floating-view #side-dock .dock-body{') || !html.includes('body.desktop-floating-view #side-dock .dock-body>*') || !html.includes('height:100%!important;min-width:0!important;min-height:0!important;')) throw new Error('Windows detached page layout is missing its maximized responsive rules.');
+if (html.includes('setTimeout(()=>window.BosleyOpenWritingIdeasCard?.(),450)')) throw new Error('Writing Ideas card still waits through the splash delay.');
+console.log('Windows workspace checks passed (top-bezel square workspace island, compact resizable pages, maximized responsive content, instant Writing Ideas card, Ctrl+Shift+I-only bulb).');

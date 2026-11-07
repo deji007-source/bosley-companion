@@ -13,7 +13,7 @@ assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear aft
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
-assert.ok(marketHistoryFunction.includes("Authorization") && marketHistoryFunction.includes("startsWith(\"Bearer \""), "Historical provider function must require an authenticated caller");
+assert.ok(marketHistoryFunction.includes("authorization") && marketHistoryFunction.includes("startsWith(\"Bearer \""), "Historical provider function must require an authenticated caller");
 assert.ok(marketHistoryFunction.includes("TIME_SERIES_DAILY") && marketHistoryFunction.includes("FX_DAILY") && marketHistoryFunction.includes("DIGITAL_CURRENCY_DAILY"), "Historical provider must use documented daily series endpoints for supported market categories");
 assert.ok(marketHistoryFunction.includes("isValidCalendarDate") && marketHistoryFunction.includes("candles.length < 60") && marketHistoryFunction.includes("candles.length > 10000"), "Provider data must validate calendar dates and enforce bounded backtest history");
 assert.ok(marketHistoryFunction.includes("gapsOverSevenDays") && marketHistoryFunction.includes("duplicateDates") && marketHistoryFunction.includes("rejected:"), "Provider response must include data-quality diagnostics");

@@ -891,8 +891,8 @@ assert.ok(html.includes('Possible typo') && html.includes('setRangeText(found.go
 assert.ok(html.includes('.bue-editor{min-height:210px') && html.includes('.bue-layout{grid-template-columns:minmax(0,1fr) minmax(205px,.55fr)'), "Universal Input layout must stay compact and mobile responsive");
 assert.ok(html.includes('window.BosleyOpenUniversalInput=()=>window.BosleyOpenPanel?.("universal-input")'), "Universal Input launcher must target the registered dock panel");
 assert.ok(html.includes("Register dock renderers before the rest of the large application bootstrap") && html.includes("writingAssist:()=>renderBosleyWritingAssist()"), "Core workspace renderers must be registered before optional startup code can fail");
-assert.ok(html.includes('window.addEventListener("pointerup"') && html.includes("dockPointerHandledAt=Date.now()"), "Android launcher and menu items must respond to touch release without relying on delayed synthetic click");
-assert.ok(html.includes("var dockPointerHandledAt=0;"), "Touch launcher guard must be initialized before navigation handlers run");
+assert.ok(html.includes("One authoritative launcher router") && html.includes('window.addEventListener("click",event=>') && !html.includes("window.addEventListener(\"pointerup\",event=>{if(Date.now()-dockPointerHandledAt<900)"), "Launcher must use one native click activation path without a competing pointerup toggle");
+assert.ok(html.includes('if(target.closest("#dock-launcher-menu"))') && html.includes("event.stopImmediatePropagation()") && html.includes("dockMenu.hidden=true"), "Open launcher menu must consume inside taps to prevent click-through and dismiss cleanly on outside taps");
 assert.ok(html.includes('if(typeof r!=="function")throw Error("Writing Studio renderer is unavailable.")'), "Writing Studio must report missing renderer wiring instead of silently opening a blank panel");
 
 assert.ok(html.includes("user_second_brain_entries") && html.includes("brain-cloud-form") && html.includes("loadCloudSecondBrain"), "Second Brain must save, search, delete and load account-scoped cloud entries");

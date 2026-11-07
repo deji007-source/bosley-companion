@@ -36,7 +36,9 @@ const required = [
   ['Windows bulb appears on the shortcut and stays visible until explicitly toggled', 'writingBulbVisibleUntil = Number.POSITIVE_INFINITY'],
   ['Windows bulb shortcut hides the existing bulb without destroying its window', "writingBulb.hide();"],
   ['Windows bulb shortcut can reopen an existing hidden bulb', 'writingBulb.isVisible()'],
-  ['Windows detached pages use compact near-square defaults', 'Math.min(480, Math.max(400, area.width - 32))'],
+  ['Windows detached pages open in a comfortable window rather than filling the desktop', 'Math.min(860, area.width - 48)'],
+  ['Windows detached pages have a contained window height', 'Math.min(700, area.height - 64)'],
+  ['Windows detached pages restore saved user sizing without forcing near-full-screen bounds', 'savedBounds?.width ?? width'],
   ['Windows detached pages open near the top-centre', 'area.x + Math.round((area.width - savedWidth) / 2)'],
   ['Windows detached pages remain comfortably resizable', 'minWidth: 360, minHeight: 360'],
   ['Windows detached pages fill their client area when maximized', 'body.desktop-floating-view #side-dock .dock-body{'],
@@ -69,4 +71,4 @@ for (const [label, needle] of required) {
 if (!main.includes("panel.on('show', () => armPanelIdleClose())") || !main.includes("event.sender === panel.webContents && panel.isVisible()) armPanelIdleClose()")) throw new Error('Windows workspace inactivity timer is not armed on show and real panel activity.');
 if (!html.includes('body.desktop-floating-view #side-dock .dock-body{') || !html.includes('body.desktop-floating-view #side-dock .dock-body>*') || !html.includes('height:100%!important;min-width:0!important;min-height:0!important;')) throw new Error('Windows detached page layout is missing its maximized responsive rules.');
 if (html.includes('setTimeout(()=>window.BosleyOpenWritingIdeasCard?.(),450)')) throw new Error('Writing Ideas card still waits through the splash delay.');
-console.log('Windows workspace checks passed (top-bezel square workspace island, compact resizable pages, maximized responsive content, instant Writing Ideas card, Ctrl+Shift+I-only bulb).');
+console.log('Windows workspace checks passed (top-bezel square workspace island, independently sized resizable pages, maximized responsive content, instant Writing Ideas card, Ctrl+Shift+I-only bulb).');

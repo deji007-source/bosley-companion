@@ -95,8 +95,9 @@ body.desktop-panel.desktop-chat-compact .chat-history-panel,
 body.desktop-panel.desktop-chat-compact .bottom{display:none!important}
 body.desktop-panel.desktop-chat-compact .panel{min-height:0!important}
 body.desktop-panel.desktop-chat-compact .chat{flex:1 1 auto;min-height:0;padding:12px 12px 8px}
-body.desktop-panel.desktop-chat-compact .chat>.msg,
-body.desktop-panel.desktop-chat-compact .chat>.chat-jump{display:none!important}
+body.desktop-panel.desktop-chat-compact .chat{display:block!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;scrollbar-gutter:stable}
+body.desktop-panel.desktop-chat-compact .chat>.msg{display:block!important;visibility:visible!important}
+body.desktop-panel.desktop-chat-compact .chat>.chat-jump{display:grid!important}
 body.desktop-panel.desktop-chat-compact .composer{flex:0 0 auto;margin:0 9px 9px}
 body.desktop-panel.desktop-chat-compact .composer #in{font-size:12px}
 body.desktop-panel.desktop-chat-compact #dock-menu-toggle{width:38px!important;height:38px!important}

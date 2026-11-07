@@ -13,6 +13,7 @@ assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear aft
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
+const writingAssistFunction = readText(new URL("../supabase/functions/bosley-writing-assist/index.ts", import.meta.url), "utf8");
 assert.ok(marketHistoryFunction.includes("authorization") && marketHistoryFunction.includes("startsWith(\"Bearer \""), "Historical provider function must require an authenticated caller");
 assert.ok(marketHistoryFunction.includes("TIME_SERIES_DAILY") && marketHistoryFunction.includes("FX_DAILY") && marketHistoryFunction.includes("DIGITAL_CURRENCY_DAILY"), "Historical provider must use documented daily series endpoints for supported market categories");
 assert.ok(marketHistoryFunction.includes("isValidCalendarDate") && marketHistoryFunction.includes("candles.length < 60") && marketHistoryFunction.includes("candles.length > 10000"), "Provider data must validate calendar dates and enforce bounded backtest history");
@@ -992,3 +993,6 @@ assert.ok(windowsWorkflow.includes("ipcMain.on('bosley:show-writing-bulb', showW
 assert.ok(windowsWorkflow.includes("window.bosleyDesktop.togglePanel();") && !windowsWorkflow.includes("window.bosleyDesktop.showWritingBulb();"), "Clicking the Windows top floating widget must open the Companion, not summon the writing bulb");
 assert.ok(windowsWorkflow.includes("writingBulb.isVisible()) {") && windowsWorkflow.includes("GHOST TAPPED AGAIN: OPENED BOSLEY COMPANION") && windowsWorkflow.includes("panel.show();") && windowsWorkflow.includes("armPanelIdleClose();"), "Windows ghost second tap while the bulb is visible must open the main Bosley panel");
 assert.ok(windowsWorkflow.includes("writingBulbVisibleUntil = 0;") && windowsWorkflow.includes("function openWritingAssistantFromBulb()"), "Opening the Windows floating card must stop the bulb visibility timer");
+
+assert.ok(html.includes('data-idea-language') && html.includes('bosley-writing-language') && html.includes('language:ideaLanguage'), "Bulb card must expose and persist a selectable response language and pass it to Writing Assist");
+assert.ok(writingAssistFunction.includes('supportedLanguages=["Nigerian English","English (US)","English (UK)","International English","French","Spanish","Portuguese","Arabic","Yoruba","Hausa","Igbo"]') && writingAssistFunction.includes("output language=") && writingAssistFunction.includes("translate or rewrite naturally into that language"), "Writing Assist must validate the selected output language and honour it in generated responses");

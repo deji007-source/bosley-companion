@@ -91,6 +91,8 @@ body.desktop-panel.desktop-chat-compact .chat-history-panel,
 body.desktop-panel.desktop-chat-compact .bottom{display:none!important}
 body.desktop-panel.desktop-chat-compact .panel{min-height:0!important}
 body.desktop-panel.desktop-chat-compact .chat{flex:1 1 auto;min-height:0;padding:12px 12px 8px}
+body.desktop-panel.desktop-chat-compact .chat>.msg,
+body.desktop-panel.desktop-chat-compact .chat>.chat-jump{display:none!important}
 body.desktop-panel.desktop-chat-compact .composer{flex:0 0 auto;margin:0 9px 9px}
 body.desktop-panel.desktop-chat-compact .composer #in{font-size:12px}
 body.desktop-panel.desktop-chat-compact #dock-menu-toggle{width:38px!important;height:38px!important}
@@ -4327,6 +4329,7 @@ eyes();
 body.panel-open #dock-launcher{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
 #dock-launcher{position:fixed!important;z-index:2147483647!important;right:9px!important;top:34%!important;bottom:auto!important;left:auto!important;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:translateY(-50%)!important;isolation:isolate!important;overflow:visible!important}
 #dock-launcher>#dock-menu-toggle{display:grid!important;place-items:center!important;width:48px!important;height:48px!important;pointer-events:auto!important;touch-action:manipulation!important}
+body.desktop-panel.desktop-chat-compact #dock-launcher>#dock-menu-toggle{width:32px!important;height:32px!important}
 #dock-launcher-menu{z-index:2147483647!important;pointer-events:auto!important;right:calc(100% + 9px)!important;top:50%!important;left:auto!important;bottom:auto!important;transform:translateY(-50%)!important}
 #dock-launcher-menu[hidden]{display:none!important}
 #composer-writing-card{z-index:2147483647!important;pointer-events:auto!important}#bosley-writing-launch{display:none!important}

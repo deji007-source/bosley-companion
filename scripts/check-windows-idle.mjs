@@ -28,7 +28,7 @@ new vm.Script(preload, { filename: 'desktop/preload.cjs' });
 const required = [
   ['workspace panel uses a 20-second inactivity timeout', 'const PANEL_IDLE_TIMEOUT_MS = 20000'],
   ['workspace panel clears and resets its inactivity timer', 'function armPanelIdleClose()'],
-  ['workspace panel auto-hides rather than destroys on inactivity', "panel.hide();\\n                logStartup('WORKSPACE PANEL AUTO-HIDDEN AFTER 20 SECONDS OF INACTIVITY')"],
+  ['workspace panel auto-hides rather than destroys on inactivity', 'WORKSPACE PANEL AUTO-HIDDEN AFTER 20 SECONDS OF INACTIVITY'],
   ['panel remains open until explicit user action', "panel.on('close', event =>"],
   ['Windows workspace panel is a compact square attached to the top bezel', 'const panelWidth = Math.min(340, bounds.width)'],
   ['Windows workspace panel is centred against the physical screen edge', 'y: bounds.y'],

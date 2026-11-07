@@ -83,6 +83,18 @@ html[data-widget-edge=balanced] .launch{border-radius:15px}
 html[data-widget-edge=sharp] .launch{border-radius:8px}
 
 /* ---- panel ---- */
+/* Compact Windows Companion: keep the collapsed chat island focused on conversation. */
+body.desktop-panel.desktop-chat-compact .modebar,
+body.desktop-panel.desktop-chat-compact .modehint,
+body.desktop-panel.desktop-chat-compact .chat-tools,
+body.desktop-panel.desktop-chat-compact .chat-history-panel,
+body.desktop-panel.desktop-chat-compact .bottom{display:none!important}
+body.desktop-panel.desktop-chat-compact .panel{min-height:0!important}
+body.desktop-panel.desktop-chat-compact .chat{flex:1 1 auto;min-height:0;padding:12px 12px 8px}
+body.desktop-panel.desktop-chat-compact .composer{flex:0 0 auto;margin:0 9px 9px}
+body.desktop-panel.desktop-chat-compact .composer #in{font-size:12px}
+body.desktop-panel.desktop-chat-compact #dock-menu-toggle{width:38px!important;height:38px!important}
+body.desktop-panel.desktop-chat-compact #dock-menu-toggle svg{width:24px;height:24px}
 .panel{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:min(900px,calc(100vw - 24px));height:min(820px,calc(100dvh - 24px));min-height:420px;display:flex;flex-direction:column;border:1px solid #263744;border-radius:24px;overflow:hidden;background:#05080c;box-shadow:0 24px 90px #000d,0 0 70px #1a6b8a12;animation:in .22s ease-out}
 @keyframes in{from{opacity:0;transform:translate(-50%,-6px) scale(.97)}}
 .panel.maximized{width:min(1240px,calc(100vw - 24px));height:calc(100dvh - 24px);min-height:0;max-height:calc(100dvh - 24px)}
@@ -1981,6 +1993,10 @@ $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#
 const widgetMode=new URLSearchParams(location.search).get("widget")==="1"||!!window.BosleyDesktop||!!window.BosleyAndroidWidget;
 if(widgetMode)H.classList.add("widget-mode");
 if(window.BosleyDesktop&&typeof window.BosleyDesktop.request==="function")document.body.classList.add("desktop-panel");
+if(document.body.classList.contains("desktop-panel")){
+ const updateDesktopChatDensity=()=>document.body.classList.toggle("desktop-chat-compact",window.innerWidth<520&&window.innerHeight<520);
+ updateDesktopChatDensity();window.addEventListener("resize",updateDesktopChatDensity,{passive:true});
+}
 let nativeOverlayHiddenForPanel=false;
 function notifyWidgetSize(open){
  try{if(window.BosleyDesktop&&typeof window.BosleyDesktop.widgetResize==="function")window.BosleyDesktop.widgetResize(!!open); }catch(e){console.warn("Bosley desktop resize failed",e)}

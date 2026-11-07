@@ -1014,7 +1014,7 @@ jobs:
               fs.writeFileSync(floatingViewBoundsFile, JSON.stringify(all, null, 2), 'utf8');
             } catch (error) { logStartup('FLOATING VIEW BOUNDS SAVE FAILED', viewId, error.message); }
           }
-          const FLOATING_VIEW_IDS = ['lovable-bosley','ws','facepanel','agents-panel','automation','activity','skills-panel','bosley-search','control-centre','universal-input','writing-assist'];
+          const FLOATING_VIEW_IDS = ['lovable-bosley','ws','facepanel','agents-panel','automation','activity','skills-panel','bosley-search','control-centre','universal-input','writing-assist','trading-panel'];
           function openFloatingView(viewId) {
             if (!FLOATING_VIEW_IDS.includes(viewId)) throw new Error('Unknown Bosley side view.');
             const existing = floatingViewWindows.get(viewId);
@@ -1027,10 +1027,10 @@ jobs:
             const index = FLOATING_VIEW_IDS.indexOf(viewId);
             const display = screen.getPrimaryDisplay();
             const area = display.workArea;
-            // Detached pages are compact, near-square utility windows anchored at
-            // the top centre. They remain resizable; do not inherit old oversized bounds.
-            const width = Math.min(480, Math.max(400, area.width - 32));
-            const height = Math.min(520, Math.max(420, area.height - 56));
+            // Detached workspace pages open as full-page windows while remaining
+            // movable, resizable, minimizable and closable.
+            const width = Math.max(400, area.width - 32);
+            const height = Math.max(420, area.height - 48);
             const savedBounds = (() => {
               try {
                 const all = JSON.parse(fs.readFileSync(floatingViewBoundsFile, 'utf8'));
@@ -1039,12 +1039,12 @@ jobs:
               } catch {}
               return null;
             })();
-            const savedWidth = Math.min(Math.min(area.width - 16, 680), Math.max(400, savedBounds?.width ?? width));
-            const savedHeight = Math.min(Math.min(area.height - 16, 720), Math.max(420, savedBounds?.height ?? height));
+            const savedWidth = Math.min(area.width - 16, Math.max(Math.round(area.width * 0.88), savedBounds?.width ?? width));
+            const savedHeight = Math.min(area.height - 16, Math.max(Math.round(area.height * 0.88), savedBounds?.height ?? height));
             const maxX = Math.max(area.x + 8, area.x + area.width - savedWidth - 8);
             const maxY = Math.max(area.y + 8, area.y + area.height - savedHeight - 8);
             const x = Math.max(area.x + 8, Math.min(maxX, savedBounds?.x ?? (area.x + Math.round((area.width - savedWidth) / 2))));
-            const y = Math.max(area.y + 8, Math.min(maxY, savedBounds?.y ?? (area.y + 42)));
+            const y = Math.max(area.y + 8, Math.min(maxY, savedBounds?.y ?? (area.y + 8)));
             const startWidth = savedWidth;
             const startHeight = savedHeight;
             const win = new BrowserWindow({

@@ -33,8 +33,13 @@ const required = [
   ['Windows bulb appears on the shortcut and stays visible until explicitly toggled', 'writingBulbVisibleUntil = Number.POSITIVE_INFINITY'],
   ['Windows bulb shortcut hides the existing bulb without destroying its window', "writingBulb.hide();"],
   ['Windows bulb shortcut can reopen an existing hidden bulb', 'writingBulb.isVisible()'],
-  ['Windows side dock restores compact established width', 'width:min(330px,calc(100vw - 470px))'],
-  ['Windows side dock restores established desktop width and height', 'width:360px!important;height:min(600px,calc(100dvh - 24px))!important'],
+  ['Windows detached pages use compact near-square defaults', 'Math.min(480, Math.max(400, area.width - 32))'],
+  ['Windows detached pages open near the top-centre', 'area.x + Math.round((area.width - savedWidth) / 2)'],
+  ['Windows detached pages remain comfortably resizable', 'minWidth: 360, minHeight: 360'],
+  ['Windows floating page content fits its own window', 'body.desktop-floating-view #side-dock .dock-body{'],
+  ['Windows floating page children cannot overflow horizontally', 'max-width:100%!important;min-width:0!important;'],
+  ['Windows top widget opens the Companion instead of the writing bulb', 'window.bosleyDesktop.togglePanel()'],
+  ['Windows top widget does not trigger the writing bulb', '!window.bosleyDesktop.showWritingBulb()'],
   ['Windows bulb remains assigned to Ctrl+Shift+I', "globalShortcut.register('CommandOrControl+Shift+I', toggleWritingBulb)"],
   ['Windows Writing Ideas card uses the bundled shared interface', "writingCard.loadFile(path.join(__dirname, 'index.html'), { query: { bosleyWritingCard: '1' } })"],
   ['Writing Ideas card is a movable always-on-top overlay', 'resizable: true, movable: true'],
@@ -44,11 +49,18 @@ for (const [label, needle] of required) {
   if (label.startsWith('no inactivity') || label.startsWith('panel has')) {
     const forbidden = label.startsWith('no inactivity') ? 'PANEL_AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY' : 'const PANEL_IDLE_TIMEOUT_MS = 15000;';
     if (main.includes(forbidden)) throw new Error('Windows workspace check failed: ' + label);
-  } else if (label.startsWith('Windows side dock')) {
+  } else if (label.startsWith('Windows floating page')) {
     if (!html.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
+  } else if (label.startsWith('Windows top widget')) {
+    const bubbleStart = workflow.indexOf("cat > desktop/bubble.html <<'BUBBLE_EOF'");
+    const bubbleEnd = workflow.indexOf('BUBBLE_EOF', bubbleStart + 40);
+    const bubble = workflow.slice(bubbleStart, bubbleEnd);
+    if (label.includes('does not trigger')) {
+      if (bubble.includes('showWritingBulb()')) throw new Error('Windows workspace check failed: ' + label);
+    } else if (!bubble.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
   } else if (!main.includes(needle) && !preload.includes(needle)) {
     throw new Error('Windows workspace check failed: ' + label);
   }
 }
-if (!html.includes('width:min(330px,calc(100vw - 470px))') || !html.includes('width:360px!important;height:min(600px,calc(100dvh - 24px))!important') || html.includes('width:min(640px,calc(100vw - 24px))')) throw new Error('Windows side dock dimensions did not return to the compact established layout.');
-console.log('Windows workspace checks passed (compact side dock, persistent panel, draggable local Writing Ideas overlay, Ctrl+Shift+I shortcut).');
+if (!html.includes('body.desktop-floating-view #side-dock .dock-body{') || !html.includes('body.desktop-floating-view #side-dock .dock-body>*')) throw new Error('Windows detached page layout is missing its compact responsive rules.');
+console.log('Windows workspace checks passed (compact top-centred detached pages, responsive page content, persistent panel, draggable Writing Ideas overlay, Ctrl+Shift+I-only bulb).');

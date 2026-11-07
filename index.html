@@ -801,6 +801,120 @@ body.desktop-floating-view #side-dock .dock-body>.automation:not([hidden]){
   grid-template-columns:minmax(0,1fr);
  }
 }
+
+/* Bosley monochrome workspace refresh — shared by web, Windows and Android. */
+:root{
+ color-scheme:dark;
+ --accent:#f2f2f2!important;
+ --accent-strong:#fff!important;
+ --primary:#f2f2f2!important;
+ --line:#303030!important;
+ --border:#303030!important;
+ --panel:#101010!important;
+ --text:#f5f5f5!important;
+ --mute:#a0a0a0!important;
+ --muted:#a0a0a0!important;
+}
+#root,#root *{accent-color:#f2f2f2}
+#root button.primary,#root .primary,#root [data-primary="true"]{
+ background:#ededed!important;color:#090909!important;border-color:#ededed!important;
+ box-shadow:none!important;
+}
+#root button.primary:hover,#root .primary:hover{background:#fff!important;color:#000!important}
+#root a,#root a.link{color:#e5e5e5}
+#root :is(.active,.selected,[aria-selected="true"],[aria-pressed="true"]){
+ border-color:#bdbdbd!important;
+}
+#root :is(button.active,button.selected,[role="tab"][aria-selected="true"],[aria-pressed="true"]){
+ background:#e9e9e9!important;color:#080808!important;
+}
+#root :is(input,textarea,select,[contenteditable="true"]){
+ background-color:#090909!important;color:#f5f5f5!important;border-color:#383838!important;
+}
+#root :is(input,textarea,select,[contenteditable="true"]):focus{
+ border-color:#bdbdbd!important;outline-color:#e8e8e8!important;
+}
+#root .composer{background:#080808!important;border-color:#454545!important}
+#root #send{background:#f1f1f1!important;color:#080808!important}
+#root .modebar,#root .tabs,#root .dock-tabs{background:#080808!important}
+#root .modebar button[aria-pressed="true"],#root .dock-tabs button[aria-selected="true"]{
+ background:#ededed!important;color:#080808!important;border-color:#fff!important;
+}
+#side-dock{background:#050505!important;border-color:#393939!important}
+#side-dock .dock-head,#side-dock .dock-tabs{background:#090909!important}
+#side-dock .dock-tabs button{color:#dedede!important}
+#side-dock .dock-tabs button[aria-selected="true"],
+#side-dock .dock-tabs button.active{background:#eee!important;color:#080808!important}
+#side-dock .dock-body{min-width:0!important;min-height:0!important}
+#side-dock .dock-body>*{min-width:0!important;max-width:100%!important;box-sizing:border-box}
+#side-dock .dock-body :is(.form,.items,.actions,.grid,.row,.toolbar,.controls,.card,.item){
+ min-width:0;max-width:100%;
+}
+#side-dock .dock-body :is(p,small,strong,label,span,h1,h2,h3,h4){overflow-wrap:anywhere}
+#side-dock .dock-body :is(input,textarea,select,button){max-width:100%}
+
+/* All detached pages use the window, not a narrow fixed-width inner column. */
+body.desktop-floating-view #side-dock .dock-body{
+ display:flex!important;flex:1 1 auto;flex-direction:column;
+ width:100%!important;height:calc(100% - 48px)!important;
+ min-width:0!important;min-height:0!important;overflow:auto!important;
+ padding:14px!important;
+}
+body.desktop-floating-view #side-dock .dock-body>section,
+body.desktop-floating-view #side-dock .dock-body>.workspace,
+body.desktop-floating-view #side-dock .dock-body>.automation{
+ width:100%!important;max-width:none!important;min-width:0!important;
+ flex:1 0 auto;min-height:0!important;margin:0!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bue-shell,
+body.desktop-floating-view #side-dock .dock-body .bosley-search-hero,
+body.desktop-floating-view #side-dock .dock-body .bosley-search-form,
+body.desktop-floating-view #side-dock .dock-body .bosley-search-results{
+ width:100%!important;max-width:none!important;min-width:0!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bue-layout{
+ grid-template-columns:minmax(0,1fr)!important;gap:12px!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bue-card{width:100%;padding:14px}
+body.desktop-floating-view #side-dock .dock-body .bue-editor{
+ min-height:260px!important;font-size:15px!important;line-height:1.65!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bue-toolbar{
+ max-height:none!important;overflow:visible!important;gap:7px!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bue-toolbar button,
+body.desktop-floating-view #side-dock .dock-body .bue-actions button,
+body.desktop-floating-view #side-dock .dock-body .bue-tabs button{
+ padding:8px 11px!important;font-size:12px!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bue-controls{
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bosley-search-form,
+body.desktop-floating-view #side-dock .dock-body .bosley-search-history,
+body.desktop-floating-view #side-dock .dock-body .bosley-search-results,
+body.desktop-floating-view #side-dock .dock-body .bosley-search-external-wrap{
+ margin-left:0!important;margin-right:0!important;width:100%!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bosley-search-entry{
+ display:flex!important;width:100%!important;min-width:0!important;
+}
+body.desktop-floating-view #side-dock .dock-body .bosley-search-entry input{flex:1 1 auto;min-width:0}
+body.desktop-floating-view #side-dock .dock-body .bosley-search-results .item{
+ width:100%!important;min-width:0!important;
+}
+body.desktop-floating-view #side-dock .dock-body .automation{
+ padding:12px!important;
+}
+body.desktop-floating-view #side-dock .dock-body #automation-skill-options{
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))!important;
+}
+@media(max-width:700px){
+ body.desktop-floating-view #side-dock .dock-body{padding:10px!important}
+ body.desktop-floating-view #side-dock .dock-body .bue-layout{grid-template-columns:1fr!important}
+ body.desktop-floating-view #side-dock .dock-body .bue-editor{min-height:200px!important}
+}
+
 </style><style>
 /* Detached Windows views must occupy the Electron client area edge-to-edge. */
 html,body{width:100%;height:100%;min-width:0;min-height:0;margin:0}

@@ -40,7 +40,7 @@ const required = [
   ['Windows detached pages have a contained window height', 'Math.min(700, area.height - 64)'],
   ['Windows detached pages restore saved user sizing without forcing near-full-screen bounds', 'savedBounds?.width ?? width'],
   ['Windows detached pages open near the top-centre', 'area.x + Math.round((area.width - savedWidth) / 2)'],
-  ['Windows detached pages remain resizable with window-safe minimums', 'minWidth: Math.min(360, startWidth), minHeight: Math.min(360, startHeight)],
+  ['Windows detached pages remain resizable with window-safe minimums', 'minWidth: Math.min(360, startWidth), minHeight: Math.min(360, startHeight)'],
   ['Windows detached pages fill their client area when maximized', 'body.desktop-floating-view #side-dock .dock-body{'],
   ['Windows detached page content grows to use available height', 'min-height:100%!important;max-height:none!important;'],
   ['Windows floating page content fits its own window', 'body.desktop-floating-view #side-dock .dock-body{'],

@@ -66,7 +66,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const series = payload[seriesKey];
-    if (!series || typeof series !== "object") return json({ error: "The provider response did not contain the expected daily time series. Check the ticker and API plan." }, 422);
+    if (!series || typeof series !== "object" || Array.isArray(series)) return json({ error: "The provider response did not contain the expected daily time series. Check the ticker and API plan." }, 422);
     const pick = (record: Record<string, unknown>, keys: string[]) => {
       for (const key of keys) {
         const value = Number(record[key]);
@@ -76,16 +76,21 @@ Deno.serve(async (req: Request) => {
     };
 
     const today = new Date().toISOString().slice(0, 10);
-    const parsed = Object.entries(series as Record<string, Record<string, unknown>>).map(([date, values]) => ({
-      date,
-      open: pick(values, sourceFields.open),
-      high: pick(values, sourceFields.high),
-      low: pick(values, sourceFields.low),
-      close: pick(values, sourceFields.close),
-      volume: pick(values, sourceFields.volume),
-    }));
+    const parsed = Object.entries(series as Record<string, unknown>).map(([date, values]) => {
+      const record = values && typeof values === "object" && !Array.isArray(values)
+        ? values as Record<string, unknown>
+        : {};
+      return {
+        date,
+        open: pick(record, sourceFields.open),
+        high: pick(record, sourceFields.high),
+        low: pick(record, sourceFields.low),
+        close: pick(record, sourceFields.close),
+        volume: pick(record, sourceFields.volume),
+      };
+    });
     const isValidCalendarDate = (value: string) => {
-      if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
       const date = new Date(value + "T00:00:00Z");
       return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
     };

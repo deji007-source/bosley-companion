@@ -487,7 +487,9 @@ assert.ok(html.includes("bosley-skill-count"), "Skills workspace must show its e
 assert.ok(html.includes('class="skills-empty"'), "Skills workspace must provide a designed empty/search state");
 assert.ok(html.includes('class="skills-tools"'), "Skills workspace actions must use responsive grouped controls");
 assert.ok(html.includes("skills-help"), "Skills workspace must include concise onboarding guidance");
-assert.ok(html.includes("::selection{background:#f2f2f2;color:#080808}"), "Global visual system must define readable selection styling");
+assert.ok(html.includes("::selection{background:#171717;color:#fff!important}"), "Global visual system must define readable dark selection styling");
+assert.ok(html.includes(".msg.you p,.msg.bosley p{color:#fff!important}"), "Both sides of Companion chat must use white message text");
+assert.ok(html.includes("p.style.setProperty(\"color\",\"#fff\",\"important\")"), "Rendered user and assistant messages must enforce white text");
 assert.ok(html.includes("*::-webkit-scrollbar-thumb"), "Scrollable panels must use the shared compact scrollbar styling");
 assert.ok(html.includes(".composer:focus-within"), "Chat composer must visibly respond to keyboard and text focus");
 assert.ok(html.includes("prefers-reduced-motion:reduce"), "Motion polish must respect reduced-motion preferences");

@@ -99,6 +99,8 @@ assert.ok(html.includes('title.textContent="BOSLEY · "+selected.label.toUpperCa
 assert.ok(html.includes('get("bosleyFloat")')&&html.includes('desktop-floating-view'), "Detached windows must load the selected interactive page independently");
 assert.ok(html.includes('action:"close_floating_view"'), "Detached side views must have a working close control");
 assert.ok(html.includes("body.android-full-page-view #side-dock{position:fixed!important;inset:0!important")&&html.includes("body.android-full-page-view .stage,body.android-full-page-view #dock-launcher{display:none!important}"), "Android workspace pages must occupy the full app viewport and hide the chat behind them");
+assert.ok(html.includes("if(!p)continue;const tab=document.createElement(\"button\")")&&!html.includes("if((v.button&&!b)||!p)continue"), "Side pages must register even when their optional legacy toolbar button is absent");
+assert.ok(html.includes("isAndroidNative||window.matchMedia(\"(max-width: 760px)\").matches"), "Mobile browser and Android app page launches must both use the full-page layout");
 assert.ok(html.includes('back.textContent="← Chat"')&&html.includes('document.body.classList.remove("android-full-page-view")'), "Android workspace pages must provide a back-to-chat control");
 
 

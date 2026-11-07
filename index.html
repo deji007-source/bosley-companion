@@ -1400,7 +1400,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  ];
  if(floatingView){const title=dock.querySelector(".dock-title");const selected=views.find(v=>v.panel===floatingView);if(title&&selected)title.textContent="BOSLEY · "+selected.label.toUpperCase();}
  let active="";
- for(const v of views){const b=document.getElementById(v.button),p=document.getElementById(v.panel);if((v.button&&!b)||!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
+ for(const v of views){const b=v.button?document.getElementById(v.button):null,p=document.getElementById(v.panel);if(!p)continue;const tab=document.createElement("button");tab.type="button";tab.textContent=v.label;tab.dataset.view=v.panel;tab.setAttribute("aria-controls",v.panel);tabs.appendChild(tab);body.appendChild(p);p.hidden=true;if(b){b.hidden=true;b.setAttribute("aria-expanded","false")}tab.addEventListener("click",()=>show(v.panel));}
  const floatingLauncher=document.getElementById("dock-launcher");if(floatingLauncher&&floatingLauncher.parentElement!==document.body)document.body.appendChild(floatingLauncher);
  const dockMenu=document.getElementById("dock-launcher-menu"),dockToggle=document.getElementById("dock-menu-toggle");
  const dockMenuStyle=document.createElement("style");dockMenuStyle.textContent="#dock-launcher-menu{display:flex!important;flex-direction:column!important;grid-template-columns:none!important;gap:2px!important;min-width:190px!important;max-width:min(240px,calc(100vw - 76px))!important;padding:7px!important}#dock-launcher-menu[hidden]{display:none!important}#dock-launcher-menu [role=menuitem]{display:block!important;width:100%!important;min-height:36px!important;height:auto!important;padding:8px 10px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:#eee!important;font:500 13px/1.25 system-ui!important;text-align:left!important;white-space:normal!important}#dock-launcher-menu [role=menuitem]:focus-visible,#dock-launcher-menu [role=menuitem]:active{background:#1b2930!important;outline:1px solid #54788a!important}";dockMenuStyle.textContent+="#dock-launcher-menu{display:flex!important;flex-direction:column!important;align-items:stretch!important;grid-template-columns:none!important;width:min(176px,calc(100vw - 76px))!important;max-height:min(54dvh,360px)!important;gap:2px!important;padding:5px!important;background:#07090c!important;backdrop-filter:none!important;isolation:isolate!important;z-index:2147483647!important;pointer-events:auto!important;box-shadow:0 16px 44px #000!important}#dock-launcher-menu[hidden]{display:none!important}#dock-launcher-menu button{display:block!important;width:100%!important;height:32px!important;min-height:32px!important;padding:5px 8px!important;font-size:11px!important;background:#11161b!important;color:#f3f5f7!important;pointer-events:auto!important;touch-action:manipulation!important}#dock-launcher-menu button::after{content:none!important}#dock-launcher{z-index:2147483646!important;isolation:isolate!important;pointer-events:auto!important}#dock-menu-toggle{touch-action:manipulation!important;pointer-events:auto!important}";document.head.appendChild(dockMenuStyle);
@@ -1450,8 +1450,8 @@ document.addEventListener("DOMContentLoaded",()=>{
  async function show(id){
   if(dockMenu)dockMenu.hidden=true;
   dockToggle?.setAttribute("aria-expanded","false");
-  const v=views.find(x=>x.panel===id);if(!v)return;
-  const p=document.getElementById(id);if(!p)return;
+  const v=views.find(x=>x.panel===id);if(!v){console.warn("Unknown Bosley page requested:",id);return;}
+  const p=document.getElementById(id);if(!p){dock.hidden=false;dock.removeAttribute("hidden");dock.style.setProperty("display","flex","important");const notice=document.createElement("p");notice.className="fb";notice.textContent=v.label+" is unavailable in this build. Reload Bosley and try again.";body.replaceChildren(notice);return;}
   if(document.body.classList.contains("desktop-panel")&&!document.body.classList.contains("desktop-floating-view")&&window.BosleyDesktop?.request){
    try{
     await window.BosleyDesktop.request({action:"open_floating_view",payload:{view:id}});
@@ -1463,7 +1463,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const wasActive=active===id&&!dock.hidden;
   if(wasActive){dock.hidden=true;active="";if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});return;}
   if(active==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});
-  if(isAndroidNative){document.body.classList.add("android-full-page-view");const back=dock.querySelector("#dock-close");if(back){back.textContent="← Chat";back.setAttribute("aria-label","Back to chat")}}
+  if(isAndroidNative||window.matchMedia("(max-width: 760px)").matches){document.body.classList.add("android-full-page-view");const back=dock.querySelector("#dock-close");if(back){back.textContent="← Chat";back.setAttribute("aria-label","Back to chat")}}
   dock.hidden=false;dock.removeAttribute("hidden");dock.style.setProperty("display","flex","important");dock.style.setProperty("visibility","visible","important");dock.style.setProperty("pointer-events","auto","important");active=id;
   if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:true});
   for(const x of views){

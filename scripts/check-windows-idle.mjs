@@ -26,8 +26,9 @@ new vm.Script(main, { filename: 'desktop/main.cjs' });
 new vm.Script(preload, { filename: 'desktop/preload.cjs' });
 
 const required = [
-  ['no inactivity timeout closes the companion', "function armPanelIdleClose() {}"],
-  ['panel has no auto-hide-on-idle handler', "!main.includes('PANEL AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY')"],
+  ['workspace panel uses a 20-second inactivity timeout', 'const PANEL_IDLE_TIMEOUT_MS = 20000'],
+  ['workspace panel clears and resets its inactivity timer', 'function armPanelIdleClose()'],
+  ['workspace panel auto-hides rather than destroys on inactivity', "panel.hide();\\n                logStartup('WORKSPACE PANEL AUTO-HIDDEN AFTER 20 SECONDS OF INACTIVITY')"],
   ['panel remains open until explicit user action', "panel.on('close', event =>"],
   ['Windows workspace panel is a compact square attached to the top bezel', 'const panelWidth = Math.min(340, bounds.width)'],
   ['Windows workspace panel is centred against the physical screen edge', 'y: bounds.y'],
@@ -50,10 +51,7 @@ const required = [
   ['Writing Ideas card fits within the desktop work area', 'Math.min(700, Math.max(560, cardArea.height - 24))'],
 ];
 for (const [label, needle] of required) {
-  if (label.startsWith('no inactivity') || label.startsWith('panel has')) {
-    const forbidden = label.startsWith('no inactivity') ? 'PANEL_AUTO-CLOSED AFTER 15 SECONDS OF INACTIVITY' : 'const PANEL_IDLE_TIMEOUT_MS = 15000;';
-    if (main.includes(forbidden)) throw new Error('Windows workspace check failed: ' + label);
-  } else if (label.startsWith('Writing Ideas card opens')) {
+  if (label.startsWith('Writing Ideas card opens')) {
     if (!html.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
   } else if (label.startsWith('Windows floating page') || label.startsWith('Windows detached page content') || label.startsWith('Windows detached pages fill')) {
     if (!html.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
@@ -68,6 +66,7 @@ for (const [label, needle] of required) {
     throw new Error('Windows workspace check failed: ' + label);
   }
 }
+if (!main.includes("panel.on('show', () => armPanelIdleClose())") || !main.includes("event.sender === panel.webContents && panel.isVisible()) armPanelIdleClose()")) throw new Error('Windows workspace inactivity timer is not armed on show and real panel activity.');
 if (!html.includes('body.desktop-floating-view #side-dock .dock-body{') || !html.includes('body.desktop-floating-view #side-dock .dock-body>*') || !html.includes('height:100%!important;min-width:0!important;min-height:0!important;')) throw new Error('Windows detached page layout is missing its maximized responsive rules.');
 if (html.includes('setTimeout(()=>window.BosleyOpenWritingIdeasCard?.(),450)')) throw new Error('Writing Ideas card still waits through the splash delay.');
 console.log('Windows workspace checks passed (top-bezel square workspace island, compact resizable pages, maximized responsive content, instant Writing Ideas card, Ctrl+Shift+I-only bulb).');

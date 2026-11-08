@@ -22,6 +22,17 @@ assert.ok(html.includes(String.raw`/\bsma\s*(\d{1,3})\s*[\/,]\s*(\d{1,3})\b/`)==
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
+const parserStart = appScript.indexOf("const parseStrategy=raw=>{");
+const parserEnd = appScript.indexOf("\n  const csvRows=", parserStart);
+assert.ok(parserStart >= 0 && parserEnd > parserStart, "Trading Dock strategy parser must be present for direct regression testing");
+const parseStrategy = vm.runInNewContext(appScript.slice(parserStart, parserEnd) + "\nparseStrategy");
+for (const rule of ["Buy when the 20-day SMA crosses above the 50-day SMA. Sell when it crosses below.", "Long-only SMA 20 / 50 crossover. Buy when SMA 20 crosses above SMA 50 and exit below.", "SMA 20/50 crossover"]) {
+  const parsed = parseStrategy(rule);
+  assert.equal(parsed.ok, true, "Default and preset SMA rules must parse: " + rule);
+  assert.equal(parsed.mode, "sma");
+  assert.equal(parsed.fast, 20);
+  assert.equal(parsed.slow, 50);
+}
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
 
 assert.ok(marketHistoryFunction.includes("authorization") && marketHistoryFunction.includes("startsWith(\"Bearer \""), "Historical provider function must require an authenticated caller");

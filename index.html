@@ -4399,7 +4399,7 @@ eyes();
    freeChunkStream?.getTracks().forEach(track=>track.stop());freeChunkStream=null;if(freeRecorder===recorder)freeRecorder=null;
    if(!freeTalkActive||freeTalkMuted)return;
    const duration=(Date.now()-started)/1000,blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
-   if(duration<1||!blob.size){setTimeout(listenFreeTalk,180);return}
+   if(!(duration>=1)||!blob.size){setTimeout(listenFreeTalk,180);return}
    try{
     const active=db?(await db.auth.getSession()).data.session:null;if(!active)throw new Error("Your sign-in session expired.");
     const form=new FormData();form.append("audio",blob,"voice.webm");form.append("duration",String(duration));

@@ -23,10 +23,12 @@ assert.ok(!html.includes(String.raw`/\\bsma\\s*`), "SMA preset parser must not c
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
-const parserStart = appScript.indexOf("const parseStrategy=raw=>{");
-const parserEnd = appScript.indexOf("\n  const csvRows=", parserStart);
-assert.ok(parserStart >= 0 && parserEnd > parserStart, "Trading Dock strategy parser must be present for direct regression testing");
-const parseStrategy = vm.runInNewContext(appScript.slice(parserStart, parserEnd) + "\nparseStrategy");
+const tradingScript = inlineScripts.find(source => source.includes("const parseStrategy=raw=>{"));
+assert.ok(tradingScript, "Trading Dock strategy parser must be present for direct regression testing");
+const parserStart = tradingScript.indexOf("const parseStrategy=raw=>{");
+const parserEnd = tradingScript.indexOf("\n  const csvRows=", parserStart);
+assert.ok(parserStart >= 0 && parserEnd > parserStart, "Trading Dock parser boundaries must be valid");
+const parseStrategy = vm.runInNewContext(tradingScript.slice(parserStart, parserEnd) + "\nparseStrategy");
 for (const rule of ["Buy when the 20-day SMA crosses above the 50-day SMA. Sell when it crosses below.", "Long-only SMA 20 / 50 crossover. Buy when SMA 20 crosses above SMA 50 and exit below.", "SMA 20/50 crossover"]) {
   const parsed = parseStrategy(rule);
   assert.equal(parsed.ok, true, "Default and preset SMA rules must parse: " + rule);

@@ -1671,3 +1671,5 @@ jobs:
           path: Bosley-Optional-Agent-Pack.zip
           if-no-files-found: error
           retention-days: 30
+
+# Keep the Windows workflow revision aligned with the shared cross-platform UI checks.

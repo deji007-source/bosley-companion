@@ -101,6 +101,7 @@ jobs:
           # Package the same standalone UI that is deployed as the working website.
           # dist/index.html is a separate React shell, not the production companion UI.
           cp index.html desktop/index.html
+          node scripts/check-ui-parity.mjs index.html desktop/index.html "Windows packaged interface"
           # Vite currently inlines the app's JavaScript and CSS into index.html.
           # Copy asset files when emitted, but don't fail when the build is self-contained.
           mkdir -p desktop/assets
@@ -1594,7 +1595,18 @@ jobs:
         shell: bash
         run: |
           cd desktop
-          npm install
+          # Electron's postinstall downloads its platform binary. Retry the install
+          # itself as well as packaging because upstream gateways can return 5xx/504.
+          install_attempt=1
+          until npm install --no-audit --no-fund; do
+            if [ "$install_attempt" -ge 3 ]; then
+              echo "Windows dependency installation failed after $install_attempt attempts."
+              exit 1
+            fi
+            echo "Dependency installation failed (attempt $install_attempt); retrying in 15 seconds..."
+            sleep 15
+            install_attempt=$((install_attempt + 1))
+          done
           # Retry transient upstream HTTP 5xx failures from electron-builder's
           # Windows NSIS resource/signing download. Keep the build failure hard
           # if all attempts fail; never upload a partial installer.

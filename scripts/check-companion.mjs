@@ -9,6 +9,10 @@ const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g
   .map(([, , source]) => source);
 
 assert.ok(inlineScripts.length > 0, "Expected the companion's inline application script");
+assert.ok(html.includes('id="td-test-strategy"'), "Trading Dock must expose a repeatable SMA 20/50 test strategy");
+assert.ok(html.includes('el("td-test-strategy").addEventListener("click"'), "The test strategy control must load and validate its rule");
+assert.ok(html.includes("Not started · strategy needs changes") && html.includes("NEEDS STRATEGY"), "Rejected strategies must be clearly distinguished from active backtest progress");
+assert.ok(html.includes("Strategy parsed successfully. No candles have been processed yet."), "A valid strategy must show a ready state before execution starts");
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));

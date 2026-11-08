@@ -59,6 +59,18 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          wrapper = Path("android/gradle/wrapper/gradle-wrapper.properties")
+          source = wrapper.read_text()
+          if re.search(r"^networkTimeout=", source, re.MULTILINE):
+              source = re.sub(r"^networkTimeout=.*$", "networkTimeout=120000", source, flags=re.MULTILINE)
+          else:
+              source += "\nnetworkTimeout=120000\n"
+          wrapper.write_text(source)
+          print("Gradle wrapper network timeout set to 120 seconds.")
+          PY
           node scripts/check-ui-parity.mjs index.html android/app/src/main/assets/public/index.html "Android packaged WebView"
           python3 scripts/install-android-overlay.py
           python3 scripts/prepare-android-direct-install.py
@@ -155,11 +167,21 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          if [ "${{ steps.signing.outputs.configured }}" = "true" ]; then
-            ./gradlew --no-daemon assembleRelease bundleRelease
-          else
-            ./gradlew --no-daemon assembleDebug
-          fi
+          attempt=1
+          while true; do
+            if [ "${{ steps.signing.outputs.configured }}" = "true" ]; then
+              ./gradlew --no-daemon assembleRelease bundleRelease && break
+            else
+              ./gradlew --no-daemon assembleDebug && break
+            fi
+            if [ "$attempt" -ge 3 ]; then
+              echo "Android Gradle build failed after $attempt attempts."
+              exit 1
+            fi
+            echo "Gradle build failed (attempt $attempt); retrying in 10 seconds..."
+            sleep 10
+            attempt=$((attempt + 1))
+          done
 
       - name: Verify Android package signatures
         shell: bash

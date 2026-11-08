@@ -13,9 +13,29 @@ assert.ok(html.includes('id="td-test-strategy"'), "Trading Dock must expose a re
 assert.ok(html.includes('el("td-test-strategy").addEventListener("click"'), "The test strategy control must load and validate its rule");
 assert.ok(html.includes("Not started · strategy needs changes") && html.includes("NEEDS STRATEGY"), "Rejected strategies must be clearly distinguished from active backtest progress");
 assert.ok(html.includes("Strategy parsed successfully. No candles have been processed yet."), "A valid strategy must show a ready state before execution starts");
+assert.ok(html.includes('id="bosley-theme"') && html.includes('value="light"') && html.includes('value="dark"'), "Appearance settings must expose light and dark themes");
+assert.ok(html.includes('html[data-theme="light"] #root{filter:invert(1) hue-rotate(180deg)}'), "Light theme must apply a contrasting light palette to the shared interface");
+assert.ok(html.includes("#bosley-idea-pop{max-height:min(68dvh,560px)!important") && html.includes("overflow-y:auto!important") && html.includes("position:sticky!important"), "Writing & Ideas card must be compact, scrollable and retain its header");
+assert.ok(html.includes("Run built-in test · SMA 20/50") && html.includes("Starting the historical paper simulation"), "The built-in test control must start the backtest, not only load a preset");
+assert.ok(html.includes("Backtest not started: load at least 60 valid candles first.") && html.includes('Backtest failed: at "+failedAt.toFixed(1)'), "Backtest preflight and runtime failures must show actionable diagnostics without resetting progress");
+assert.ok(html.includes(String.raw`/\bsma\s*(\d{1,3})\s*[\/,]\s*(\d{1,3})\b/`), "SMA preset parser must use valid word-boundary and digit expressions");
+assert.ok(!html.includes(String.raw`/\\bsma\\s*`), "SMA preset parser must not contain a double-escaped word-boundary expression");
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
+const tradingScript = inlineScripts.find(source => source.includes("const parseStrategy=raw=>{"));
+assert.ok(tradingScript, "Trading Dock strategy parser must be present for direct regression testing");
+const parserStart = tradingScript.indexOf("const parseStrategy=raw=>{");
+const parserEnd = tradingScript.indexOf("\n  const csvRows=", parserStart);
+assert.ok(parserStart >= 0 && parserEnd > parserStart, "Trading Dock parser boundaries must be valid");
+const parseStrategy = vm.runInNewContext(tradingScript.slice(parserStart, parserEnd) + "\nparseStrategy");
+for (const rule of ["Buy when the 20-day SMA crosses above the 50-day SMA. Sell when it crosses below.", "Long-only SMA 20 / 50 crossover. Buy when SMA 20 crosses above SMA 50 and exit below.", "SMA 20/50 crossover"]) {
+  const parsed = parseStrategy(rule);
+  assert.equal(parsed.ok, true, "Default and preset SMA rules must parse: " + rule);
+  assert.equal(parsed.mode, "sma");
+  assert.equal(parsed.fast, 20);
+  assert.equal(parsed.slow, 50);
+}
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
 
 assert.ok(marketHistoryFunction.includes("authorization") && marketHistoryFunction.includes("startsWith(\"Bearer \""), "Historical provider function must require an authenticated caller");

@@ -48,6 +48,7 @@ jobs:
         run: |
           test -s index.html
           cp index.html dist/index.html
+          node scripts/check-ui-parity.mjs index.html dist/index.html "Android staging"
           grep -q 'id="side-dock"' dist/index.html
           grep -q 'id="launch"' dist/index.html
 
@@ -58,6 +59,7 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          node scripts/check-ui-parity.mjs index.html android/app/src/main/assets/public/index.html "Android packaged WebView"
           python3 scripts/install-android-overlay.py
           python3 scripts/prepare-android-direct-install.py
           grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml

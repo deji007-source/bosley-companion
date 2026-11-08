@@ -32,6 +32,7 @@ for (const [index, source] of inlineScripts.entries()) {
 }
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
+assert.ok(androidInstaller.includes("gestureHandler.postDelayed(holdAction,550)") && androidInstaller.includes('openCompanion("capture-screen")'), "Holding the Android bulb must summon the explicit screen-capture assistant flow");
 assert.ok(html.includes("bosley_contacts"), "Writing Studio contacts must sync through the signed-in Bosley account");
 assert.ok(html.includes("syncBosleyContacts"), "Saved contacts must hydrate from the shared cloud contact table");
 assert.ok(html.includes("universal_input_draft"), "Universal Input drafts must persist to the shared account sync record");

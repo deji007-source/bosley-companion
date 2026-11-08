@@ -2969,6 +2969,7 @@ if(screenButton)screenButton.onclick=async()=>{
  }catch(error){note("Screen capture failed: "+String(error?.message||error).slice(0,220))}
  finally{screenButton.disabled=false}
 };
+window.BosleyDesktop?.onScreenAssistantRequest?.(()=>{if(screenButton&&!screenButton.hidden)screenButton.click();else note("Screen capture is not available in this app context.");});
 $("#removeimage").onclick=clearImageAttachment;
 $("#camera-input").addEventListener("change",async e=>{
  const file=e.target.files?.[0];

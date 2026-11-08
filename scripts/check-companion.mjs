@@ -18,7 +18,8 @@ assert.ok(html.includes('html[data-theme="light"] #root{filter:invert(1) hue-rot
 assert.ok(html.includes("#bosley-idea-pop{max-height:min(68dvh,560px)!important") && html.includes("overflow-y:auto!important") && html.includes("position:sticky!important"), "Writing & Ideas card must be compact, scrollable and retain its header");
 assert.ok(html.includes("Run built-in test · SMA 20/50") && html.includes("Starting the historical paper simulation"), "The built-in test control must start the backtest, not only load a preset");
 assert.ok(html.includes("Backtest not started: load at least 60 valid candles first.") && html.includes('Backtest failed: at "+failedAt.toFixed(1)'), "Backtest preflight and runtime failures must show actionable diagnostics without resetting progress");
-assert.ok(html.includes(String.raw`/\bsma\s*(\d{1,3})\s*[\/,]\s*(\d{1,3})\b/`)===false, "SMA preset parser must not contain a double-escaped word-boundary expression");
+assert.ok(html.includes(String.raw`/\bsma\s*(\d{1,3})\s*[\/,]\s*(\d{1,3})\b/`), "SMA preset parser must use valid word-boundary and digit expressions");
+assert.ok(!html.includes(String.raw`/\\bsma\\s*`), "SMA preset parser must not contain a double-escaped word-boundary expression");
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));

@@ -33,6 +33,19 @@ for (const [index, source] of inlineScripts.entries()) {
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 assert.ok(androidInstaller.includes("gestureHandler.postDelayed(holdAction,550)") && androidInstaller.includes('openCompanion("capture-screen")'), "Holding the Android bulb must summon the explicit screen-capture assistant flow");
+const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
+assert.ok(html.includes('id="bosley-theme"') && html.includes('<option value="dark">Dark</option>') && html.includes('<option value="light">Light</option>') && html.includes('<option value="system">Follow device</option>'), "Appearance must expose Dark, Light and System theme choices");
+assert.ok(html.includes('id="bosley-light-theme"') && html.includes('html[data-bosley-theme="light"]') && html.includes('html[data-bosley-theme="dark"]{color-scheme:dark}'), "Both light and dark themes must define explicit color-scheme and palette rules");
+assert.ok(html.includes('key="bosley_color_theme"') && html.includes('localStorage.setItem(key,mode)') && html.includes('e.addEventListener("change",()=>apply(e.value))'), "Theme selection must persist and apply immediately when changed");
+assert.ok(html.includes('new MutationObserver(bind)') && html.includes('matchMedia("(prefers-color-scheme: light)")'), "Appearance selector binding must survive rendered panels and System mode must follow the device preference");
+assert.ok(html.includes('html[data-bosley-theme="light"] .workspace input') && html.includes('html[data-bosley-theme="light"] .td-card input') && html.includes('html[data-bosley-theme="light"] #bosley-idea-pop'), "Light mode must cover workspace forms, Trading Dock forms and the floating idea card");
+assert.ok(html.includes('getDisplayMedia({video:{frameRate:1},audio:false})') && html.includes('stream.getTracks().forEach(track=>track.stop())'), "Browser screen capture must be user-selected, single-frame and stop its media tracks");
+assert.ok(html.includes('pendingImageData=await normalizeCapturedImage(result.dataUrl)') && html.includes('$("#imageattachment").hidden=false') && html.includes('$("#form").onsubmit=e=>') && html.includes('img=pendingImageData'), "A captured screen image must become a chat attachment and enter the normal send flow only after submit");
+assert.ok(html.includes('if(action==="capture-screen"){const capture=$("#screen")') && html.includes('capture.dataset.nativeCaptureConfirmed="true";capture.click()'), "Android long-press launch action must invoke the screen capture control after native handoff");
+assert.ok(windowsWorkflow.includes('setTimeout(()=>{held=true;window.bosleyDesktop.openScreenAssistant()},550)') && windowsWorkflow.includes("openScreenAssistant: () => ipcRenderer.send('bosley:open-screen-assistant')"), "Windows bulb long-press must call the native screen assistant bridge");
+assert.ok(windowsWorkflow.includes("ipcMain.on('bosley:open-screen-assistant'") && windowsWorkflow.includes("panel.webContents.send('bosley:screen-assistant-request')") && html.includes('onScreenAssistantRequest?.(()=>{if(screenButton&&!screenButton.hidden)screenButton.click()'), "Windows screen assistant request must reach the shared screen-capture and chat-attachment handler");
+assert.ok(html.includes('id="td-test-strategy"') && html.includes('id="td-run"') && html.includes('id="td-progress-percent"') && html.includes('id="td-run-status"'), "Trading Dock must expose a repeatable strategy test, run action, progress and status outputs");
+
 assert.ok(html.includes("bosley_contacts"), "Writing Studio contacts must sync through the signed-in Bosley account");
 assert.ok(html.includes("syncBosleyContacts"), "Saved contacts must hydrate from the shared cloud contact table");
 assert.ok(html.includes("universal_input_draft"), "Universal Input drafts must persist to the shared account sync record");

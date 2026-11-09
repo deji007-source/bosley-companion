@@ -2965,7 +2965,7 @@ if(screenButton)screenButton.onclick=async()=>{
   pendingImageData=await normalizeCapturedImage(result.dataUrl);
   $("#imagepreview").src=pendingImageData;
   $("#imageattachment").hidden=false;
-  note("Screen captured and attached. Review it; nothing is sent until you press Send.");
+  note("Screen captured and attached. Review it in the Bosley screen card.");showScreenAskCard();
  }catch(error){note("Screen capture failed: "+String(error?.message||error).slice(0,220))}
  finally{screenButton.disabled=false}
 };
@@ -4677,4 +4677,75 @@ html[data-bosley-theme="light"] .td-chip{background:#e9f1f7!important;color:#234
 html[data-bosley-theme="light"] #bosley-idea-pop .bwp-head{background:#fff!important}
 html[data-bosley-theme="light"] #bosley-idea-pop button{color:#17202a!important;border-color:#d2dbe5!important}
 html[data-bosley-theme="light"] #bosley-idea-pop button.primary{background:#17202a!important;color:#fff!important}
-</style><script id="bosley-theme-controller">(()=>{const root=document.documentElement,key="bosley_color_theme",valid=v=>["dark","light","system"].includes(v)?v:"dark";let mode="dark";try{mode=localStorage.getItem(key)||"dark"}catch{}const apply=v=>{mode=valid(v);root.dataset.bosleyTheme=mode==="system"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):mode;try{localStorage.setItem(key,mode)}catch{}};apply(mode);const bind=()=>{const e=document.getElementById("bosley-theme");if(e&&!e.dataset.bound){e.dataset.bound="1";e.value=mode;e.addEventListener("change",()=>apply(e.value))}};bind();new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});matchMedia("(prefers-color-scheme: light)").addEventListener?.("change",()=>{if(mode==="system")apply(mode)})})();</script></body></html>
+</style><script id="bosley-theme-controller">(()=>{const root=document.documentElement,key="bosley_color_theme",valid=v=>["dark","light","system"].includes(v)?v:"dark";let mode="dark";try{mode=localStorage.getItem(key)||"dark"}catch{}const apply=v=>{mode=valid(v);root.dataset.bosleyTheme=mode==="system"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):mode;try{localStorage.setItem(key,mode)}catch{}};apply(mode);const bind=()=>{const e=document.getElementById("bosley-theme");if(e&&!e.dataset.bound){e.dataset.bound="1";e.value=mode;e.addEventListener("change",()=>apply(e.value))}};bind();new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});matchMedia("(prefers-color-scheme: light)").addEventListener?.("change",()=>{if(mode==="system")apply(mode)})})();</script>
+<style id="bosley-screen-ask-style">
+#bosley-screen-ask{position:fixed;inset:0;z-index:2147483646;display:none;align-items:flex-end;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(3,8,14,.22);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#bosley-screen-ask[aria-hidden="false"]{display:flex}
+#bosley-screen-ask .bsa-glow{position:fixed;inset:7px;border:2px solid rgba(95,207,255,.9);border-radius:25px;pointer-events:none;box-shadow:0 0 8px 2px #43c8ff,0 0 24px 5px #148bff9c,inset 0 0 20px #148bff45;animation:bsa-pulse 2.2s ease-in-out infinite}
+@keyframes bsa-pulse{0%,100%{opacity:.72;filter:brightness(.9)}50%{opacity:1;filter:brightness(1.35)}}
+#bosley-screen-ask .bsa-card{position:relative;width:min(100%,510px);max-height:min(64dvh,520px);overflow:auto;box-sizing:border-box;border:1px solid #34485b;border-radius:24px;background:rgba(12,17,24,.97);color:#f6f8fb;box-shadow:0 18px 65px #0009;padding:13px;display:grid;gap:10px}
+#bosley-screen-ask .bsa-grip{width:42px;height:4px;border-radius:9px;background:#82909d;justify-self:center}
+#bosley-screen-ask .bsa-head{display:flex;align-items:center;gap:9px}
+#bosley-screen-ask .bsa-title{font-size:14px;font-weight:700;flex:1}
+#bosley-screen-ask .bsa-close{width:32px;height:32px;border-radius:50%;border:1px solid #42505d;background:#202a35;color:inherit;font-size:18px}
+#bosley-screen-ask .bsa-preview{display:flex;align-items:center;gap:10px;min-width:0}
+#bosley-screen-ask .bsa-preview img{width:76px;height:56px;object-fit:cover;border-radius:10px;border:1px solid #506477;background:#18212a}
+#bosley-screen-ask .bsa-caption{font-size:12px;line-height:1.4;color:#c2ccd6}
+#bosley-screen-ask .bsa-input{width:100%;min-height:42px;max-height:100px;resize:vertical;box-sizing:border-box;border:1px solid #526171;border-radius:14px;background:#202a35;color:#f7f9fc;padding:11px 12px;font:inherit;font-size:14px;outline:none}
+#bosley-screen-ask .bsa-actions{display:flex;gap:8px}
+#bosley-screen-ask .bsa-actions button{min-height:40px;border-radius:13px;padding:8px 13px;font:inherit;font-size:13px;font-weight:650}
+#bosley-screen-ask .bsa-summary{flex:1;border:1px solid #536678;background:#202c38;color:#f6f8fb}
+#bosley-screen-ask .bsa-send{flex:1;border:1px solid #b5e8ff;background:#b9eaff;color:#071522}
+#bosley-screen-ask .bsa-foot{font-size:10px;color:#aeb9c4;text-align:center}
+html[data-bosley-theme="light"] #bosley-screen-ask{background:rgba(226,234,242,.25)}
+html[data-bosley-theme="light"] #bosley-screen-ask .bsa-card{background:rgba(255,255,255,.98);color:#17202a;border-color:#cbd6e1;box-shadow:0 18px 60px #26384a30}
+html[data-bosley-theme="light"] #bosley-screen-ask .bsa-grip{background:#9ba8b5}
+html[data-bosley-theme="light"] #bosley-screen-ask .bsa-close,html[data-bosley-theme="light"] #bosley-screen-ask .bsa-summary{background:#edf2f6;color:#17202a;border-color:#c8d3dd}
+html[data-bosley-theme="light"] #bosley-screen-ask .bsa-caption,html[data-bosley-theme="light"] #bosley-screen-ask .bsa-foot{color:#566574}
+html[data-bosley-theme="light"] #bosley-screen-ask .bsa-input{background:#f1f4f7;color:#17202a;border-color:#c7d2dc}
+@media(min-width:700px){#bosley-screen-ask{justify-content:flex-end;align-items:flex-end;padding:26px}#bosley-screen-ask .bsa-card{width:min(420px,calc(100vw - 52px))}}
+</style>
+
+<div id="bosley-screen-ask" aria-hidden="true" role="dialog" aria-label="Ask Bosley about this screen">
+ <div class="bsa-glow"></div>
+ <section class="bsa-card">
+  <div class="bsa-grip"></div>
+  <div class="bsa-head"><span aria-hidden="true">✦</span><div class="bsa-title">Ask Bosley about this screen</div><button class="bsa-close" id="bsa-close" type="button" aria-label="Close">×</button></div>
+  <div class="bsa-preview"><img id="bsa-preview-img" alt="Captured screen preview"><div class="bsa-caption">Screen captured. Add a question or ask for a brief summary. Nothing is sent until you choose an action.</div></div>
+  <textarea id="bsa-question" class="bsa-input" rows="1" maxlength="1200" placeholder="Ask about what you're watching…"></textarea>
+  <div class="bsa-actions"><button id="bsa-summary" class="bsa-summary" type="button">Quick summary</button><button id="bsa-send" class="bsa-send" type="button">Send to Bosley</button></div>
+  <div class="bsa-foot">One screenshot only · You control when it is sent</div>
+ </section>
+</div>
+
+<script id="bosley-screen-ask-controller">
+(()=>{
+ const root=document.getElementById("bosley-screen-ask");
+ if(!root)return;
+ const image=root.querySelector("#bsa-preview-img"),input=root.querySelector("#bsa-question");
+ const close=()=>{root.setAttribute("aria-hidden","true")};
+ window.showScreenAskCard=()=>{
+  if(!pendingImageData)return;
+  image.src=pendingImageData;input.value="";
+  root.setAttribute("aria-hidden","false");
+  setTimeout(()=>input.focus({preventScroll:true}),80);
+ };
+ const submit=async summary=>{
+  if(!pendingImageData){close();return}
+  const question=input.value.trim()||(summary?"Give me a brief summary of what is visible in this screenshot.":"What is shown in this screenshot?");
+  const attachment=pendingImageData;
+  close();
+  clearImageAttachment();
+  note(summary?"Sending screenshot for a brief summary…":"Sending screenshot and question to Bosley…");
+  try{await send(question,attachment,"",[])}
+  catch(error){pendingImageData=attachment;$("#imagepreview").src=attachment;$("#imageattachment").hidden=false;note("Could not send the screenshot. It is still attached; try again.")}
+ };
+ root.querySelector("#bsa-close").addEventListener("click",close);
+ root.querySelector("#bsa-send").addEventListener("click",()=>submit(false));
+ root.querySelector("#bsa-summary").addEventListener("click",()=>submit(true));
+ input.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();submit(false)}});
+ root.addEventListener("click",event=>{if(event.target===root)close()});
+ document.addEventListener("keydown",event=>{if(event.key==="Escape"&&root.getAttribute("aria-hidden")==="false")close()});
+})();
+</script>
+</body></html>

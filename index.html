@@ -4678,6 +4678,17 @@ html[data-bosley-theme="light"] #bosley-idea-pop .bwp-head{background:#fff!impor
 html[data-bosley-theme="light"] #bosley-idea-pop button{color:#17202a!important;border-color:#d2dbe5!important}
 html[data-bosley-theme="light"] #bosley-idea-pop button.primary{background:#17202a!important;color:#fff!important}
 </style><script id="bosley-theme-controller">(()=>{const root=document.documentElement,key="bosley_color_theme",valid=v=>["dark","light","system"].includes(v)?v:"dark";let mode="dark";try{mode=localStorage.getItem(key)||"dark"}catch{}const apply=v=>{mode=valid(v);root.dataset.bosleyTheme=mode==="system"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):mode;try{localStorage.setItem(key,mode)}catch{}};apply(mode);const bind=()=>{const e=document.getElementById("bosley-theme");if(e&&!e.dataset.bound){e.dataset.bound="1";e.value=mode;e.addEventListener("change",()=>apply(e.value))}};bind();new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});matchMedia("(prefers-color-scheme: light)").addEventListener?.("change",()=>{if(mode==="system")apply(mode)})})();</script>
+
+<style id="bosley-light-inversion">
+/* Light mode is a true tonal reversal of the dark interface; media remains true-colour. */
+html[data-bosley-theme="light"] body{filter:invert(1) hue-rotate(180deg)}
+html[data-bosley-theme="light"] body img,
+html[data-bosley-theme="light"] body video,
+html[data-bosley-theme="light"] body picture{filter:invert(1) hue-rotate(180deg)}
+html[data-bosley-theme="light"] #bosley-screen-ask{filter:invert(1) hue-rotate(180deg)}
+html[data-bosley-theme="light"] #bosley-screen-ask img{filter:none}
+html[data-bosley-theme="light"] #bosley-screen-ask .bsa-glow{box-shadow:0 0 8px 2px #168bc7,0 0 25px 5px #168bff70,inset 0 0 20px #148bff20}
+</style>
 <style id="bosley-screen-ask-style">
 #bosley-screen-ask{position:fixed;inset:0;z-index:2147483646;display:none;align-items:flex-end;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(3,8,14,.22);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 #bosley-screen-ask[aria-hidden="false"]{display:flex}

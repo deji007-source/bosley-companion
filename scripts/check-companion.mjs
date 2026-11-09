@@ -102,7 +102,7 @@ assert.ok(androidInstaller.includes('"android.permission.MODIFY_AUDIO_SETTINGS"'
 assert.ok(androidInstaller.includes('"mailto".equalsIgnoreCase(scheme)') && androidInstaller.includes('"sms".equalsIgnoreCase(scheme)'), "Android native bridge must allow reviewed email and SMS composer links");
 assert.ok(appScript.includes('window.Capacitor?.Plugins?.BosleyOverlay') && appScript.includes('native?.openExternalUrl'), "Android communication handoffs must use the native external-app bridge");
 
-const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
+
 const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
 assert.ok(appScript.includes('connectButton.disabled=false'), "Agents Connect buttons must remain available so server configuration errors can be shown and corrected");
 assert.ok(!appScript.includes("disabled=!credentialStoreReady"), "Agents UI must not silently disable provider connection when credential-store readiness is false");

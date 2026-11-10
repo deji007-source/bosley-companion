@@ -29,6 +29,8 @@ jobs:
           test -s index.html
           mkdir -p dist
           cp index.html dist/index.html
+          mkdir -p dist/src/trading
+          cp src/trading/*.js dist/src/trading/
           node scripts/check-ui-parity.mjs index.html dist/index.html "website"
           grep -q 'id="side-dock"' dist/index.html
           grep -q 'id="launch"' dist/index.html

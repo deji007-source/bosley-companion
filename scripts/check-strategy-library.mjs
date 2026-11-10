@@ -14,6 +14,7 @@ assert.throws(()=>inspectStrategyImport(file,"strategy.py"),/Only JSON/);
 console.log("Bosley strategy library checks passed.");
 
 import { parseStrategy, strategyPresets } from "../src/trading/strategy-parser.js";
+import { createDemoSeries, runBacktest } from "../src/trading/backtest-engine.js";
 const strategyCases = [
   ["sma", "Long-only SMA 9 / 21 crossover. Buy when the 9-period simple moving average crosses above the 21-period simple moving average. Sell and close when it crosses below.", 9, 21],
   ["ema", "Long-only EMA 9 / 21 crossover. Buy when the 9-period exponential moving average crosses above the 21-period exponential moving average. Sell and close when it crosses below.", 9, 21],
@@ -45,3 +46,41 @@ for (const preset of strategyPresets) {
   assert.equal(parsed.slow, preset.slow);
 }
 console.log("Bosley built-in strategy preset checks passed.");
+
+const demoBars = createDemoSeries();
+assert.equal(demoBars.length, 756, "The production demo generator must return the labelled three-year, 756-candle series.");
+assert.ok(demoBars.every((bar, index) => Number.isFinite(bar.open) && Number.isFinite(bar.high) && Number.isFinite(bar.low) && Number.isFinite(bar.close) && bar.high >= Math.max(bar.open, bar.close) && bar.low <= Math.min(bar.open, bar.close) && (!index || bar.date > demoBars[index - 1].date)), "The generated OHLC demo candles must be valid and date ordered.");
+const demoResults = [];
+for (const preset of strategyPresets) {
+  const strategy = parseStrategy(preset.rule);
+  const phases = [];
+  const result = await runBacktest({
+    bars: demoBars, strategy, initial: 10, allocation: 95, riskPerTrade: 0.5,
+    stopLoss: 1, takeProfit: 2, onProgress: info => phases.push(info.phase),
+    yieldControl: async () => {}
+  });
+  assert.ok(result, preset.name + " should complete against the production demo dataset.");
+  assert.ok(Number.isFinite(result.finalEquity) && result.finalEquity > 0, preset.name + " must return a valid ending balance.");
+  assert.ok(Number.isFinite(result.totalReturn), preset.name + " must return a finite total return.");
+  assert.ok(Number.isFinite(result.oosFinal) && Number.isFinite(result.oosReturn), preset.name + " must return separate holdout metrics.");
+  assert.ok(result.bars > 0 && result.curve.length === result.bars, preset.name + " must produce an in-sample equity curve.");
+  assert.ok(result.start < result.oosStart && result.end < result.oosStart, preset.name + " must keep holdout dates outside the in-sample window.");
+  assert.ok(result.winRate === null || (Number.isFinite(result.winRate) && result.winRate >= 0 && result.winRate <= 100), preset.name + " must calculate win rate from closed trades only.");
+  assert.ok(result.profitFactor === null || result.profitFactor === Infinity || Number.isFinite(result.profitFactor), preset.name + " must return an explicit profit-factor value.");
+  assert.equal(result.riskPerTrade, 0.5);
+  assert.equal(result.allocation, 95);
+  assert.equal(result.stopLoss, 1);
+  assert.equal(result.takeProfit, 2);
+  assert.ok(phases.includes("in-sample") && phases.includes("out-of-sample") && phases.includes("completed"), preset.name + " must run both test windows and report completion.");
+  demoResults.push({ name: preset.name, trades: result.trades, winRate: result.winRate, totalReturn: result.totalReturn, holdoutReturn: result.oosReturn });
+}
+assert.ok(demoResults.find(result => result.name === "SMA 20 / 50 trend crossover").trades > 0, "The default SMA 20/50 demo must generate closed trades so the win-rate calculation is exercised.");
+let cancelYields = 0;
+const cancelledRun = await runBacktest({
+  bars: demoBars, strategy: parseStrategy(strategyPresets[0].rule), initial: 10,
+  allocation: 95, riskPerTrade: 0.5, stopLoss: 1, takeProfit: 2,
+  shouldCancel: () => cancelYields > 0, yieldControl: async () => { cancelYields++; }
+});
+assert.equal(cancelledRun, null, "A cancelled simulation must not return a completed report.");
+console.log("Bosley demo backtest smoke results:", JSON.stringify(demoResults));
+console.log("Bosley production backtest engine checks passed.");

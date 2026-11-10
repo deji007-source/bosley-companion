@@ -59,4 +59,18 @@ export function parseStrategy(raw) {
   return fail();
 }
 
-if (typeof window !== "undefined") window.BosleyStrategyParser = Object.freeze({ parseStrategy });
+
+export const strategyPresets = Object.freeze([
+  Object.freeze({ id: "sma-20-50", name: "SMA 20 / 50 trend crossover", indicator: "sma", fast: 20, slow: 50, description: "Simple moving average trend-following example", rule: "Long-only SMA 20 / 50 crossover. Buy when the 20-period simple moving average crosses above the 50-period simple moving average. Sell and close when it crosses below." }),
+  Object.freeze({ id: "sma-10-30", name: "SMA 10 / 30 faster crossover", indicator: "sma", fast: 10, slow: 30, description: "Faster simple moving average crossover example", rule: "Long-only SMA 10 / 30 crossover. Buy when the 10-period simple moving average crosses above the 30-period simple moving average. Sell and close when it crosses below." }),
+  Object.freeze({ id: "ema-9-21", name: "EMA 9 / 21 trend crossover", indicator: "ema", fast: 9, slow: 21, description: "Exponential moving average crossover example", rule: "Long-only EMA 9 / 21 crossover. Buy when the 9-period exponential moving average crosses above the 21-period exponential moving average. Sell and close when it crosses below." }),
+  Object.freeze({ id: "ema-12-26", name: "EMA 12 / 26 slower crossover", indicator: "ema", fast: 12, slow: 26, description: "Slower exponential moving average crossover example", rule: "Long-only EMA 12 / 26 crossover. Buy when the 12-period exponential moving average crosses above the 26-period exponential moving average. Sell and close when it crosses below." }),
+  Object.freeze({ id: "rsi-14-50", name: "RSI 14 / 50 threshold", indicator: "rsi", fast: 14, slow: 14, description: "RSI midpoint threshold example", rule: "Long-only RSI(14) strategy. Buy when RSI crosses above 50 and exit when RSI crosses below 50." }),
+  Object.freeze({ id: "macd-12-26-9", name: "MACD 12 / 26 / 9 crossover", indicator: "macd", fast: 12, slow: 26, description: "MACD line and signal-line crossover example", rule: "Long-only MACD(12, 26, 9) crossover. Buy when the MACD line crosses above its signal line and exit when it crosses below." }),
+  Object.freeze({ id: "bollinger-20-2", name: "Bollinger 20 / 2 upper-band breakout", indicator: "bollinger", fast: 20, slow: 20, description: "Bollinger upper-band breakout example", rule: "Long-only Bollinger Bands(20, 2) breakout. Buy when the close crosses above the upper band and exit when it closes back below." })
+]);
+
+if (typeof window !== "undefined") {
+  window.BosleyStrategyParser = Object.freeze({ parseStrategy });
+  window.BosleyStrategyPresets = strategyPresets;
+}

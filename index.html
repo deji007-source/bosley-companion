@@ -1375,26 +1375,26 @@ document.addEventListener("DOMContentLoaded",()=>{
    const macdMatch=text.match(/macd\s*\(?\s*(\d{1,2})?\s*[,/ ]+\s*(\d{1,2})?\s*[,/ ]+\s*(\d{1,2})?\s*\)?/),macdFast=macdMatch?Number(macdMatch[1]||12):12,macdSlow=macdMatch?Number(macdMatch[2]||26):26,macdSignal=macdMatch?Number(macdMatch[3]||9):9;
    if(/macd/.test(text)&&/cross|above|below|bullish|bearish/.test(text)&&macdFast>=2&&macdFast<macdSlow&&macdSlow<=100&&macdSignal>=2&&macdSignal<=50)return {ok:true,fast:macdFast,slow:macdSlow,signalPeriod:macdSignal,description:"Long-only MACD("+macdFast+", "+macdSlow+", "+macdSignal+") crossover · enter above its signal line and exit below",mode:"macd",warmupBars:macdSlow+macdSignal-2};
    const crossoverText=/cross(?:es|ing)?\\s+(?:above|over|below|under)|\\bcrossover\\b|bullish|bearish/.test(text);
-   const periodsFor=(kind,aliases)=>{
+   const periodsFor=aliases=>{
     const found=[];
     for(const alias of aliases){
-     const escaped=alias.replace(/[.*+?^${}()|[\\]\\\\]/g,"\\\\$&");
-     const pair=new RegExp("\\\\b"+escaped+"\\\\s*\\\\(?\\\\s*(\\\\d{1,3})\\\\s*(?:\\\\/|,|and|&)\\\\s*(\\\\d{1,3})","g");
+     const escaped=alias.replace(/\\s+/g,"\\\\s+");
+     const pair=new RegExp("\\b"+escaped+"\\s*\\(?\\s*(\\d{1,3})\\s*(?:\\/|,|and|&)\\s*(\\d{1,3})","g");
      for(const m of text.matchAll(pair))found.push(Number(m[1]),Number(m[2]));
-     const before=new RegExp("\\\\b(\\\\d{1,3})\\\\s*(?:-?period|-?day)?\\\\s*"+escaped+"\\\\b","g");
+     const before=new RegExp("\\b(\\d{1,3})\\s*(?:-?period|-?day)?\\s*"+escaped+"\\b","g");
      for(const m of text.matchAll(before))found.push(Number(m[1]));
-     const after=new RegExp("\\\\b"+escaped+"\\\\s*\\\\(?\\\\s*(\\\\d{1,3})\\\\b","g");
+     const after=new RegExp("\\b"+escaped+"\\s*\\(?\\s*(\\d{1,3})\\b","g");
      for(const m of text.matchAll(after))found.push(Number(m[1]));
     }
     return [...new Set(found.filter(n=>Number.isInteger(n)&&n>=2&&n<=250))].sort((x,y)=>x-y);
    };
-   const emaPeriods=periodsFor("ema",["ema","exponential moving average"]);
-   if(/\\bema\\b|exponential moving average/.test(text)&&emaPeriods.length>=2&&crossoverText){
-    const intraday=/\\b(5|15)\\s*[- ]?minute|\\b(5m|15m)\\b/.test(text);
+   const emaPeriods=periodsFor(["ema","exponential moving average"]);
+   if(/\bema\b|exponential moving average/.test(text)&&emaPeriods.length>=2&&crossoverText){
+    const intraday=/\b(5|15)\s*[- ]?minute|\b(5m|15m)\b/.test(text);
     return {ok:true,fast:emaPeriods[0],slow:emaPeriods[1],description:"Long-only EMA crossover · enter when fast EMA crosses above slow EMA · exit when it crosses below",mode:"ema",timeframeWarning:intraday?"The strategy requests intraday candles, but the selected dataset contains daily candles. This run will use daily candles and cannot validate 5-minute or 15-minute execution.":""};
    }
-   const smaPeriods=periodsFor("sma",["sma","simple moving average","moving average"]);
-   if((/\\bsma\\b|simple moving average/.test(text)||/\\bma\\b/.test(text))&&smaPeriods.length>=2&&crossoverText){
+   const smaPeriods=periodsFor(["sma","simple moving average","moving average"]);
+   if((/\bsma\b|simple moving average/.test(text)||/\bma\b/.test(text))&&smaPeriods.length>=2&&crossoverText){
     return {ok:true,fast:smaPeriods[0],slow:smaPeriods[1],description:"Long-only SMA crossover · enter on fast/slow bullish cross · exit on bearish cross",mode:"sma"};
    }
    return {ok:false,message:"I could not safely map the full rule into the backtest engine yet. Supported rules are SMA/EMA crossovers, RSI threshold rules, MACD signal-line crossovers and Bollinger upper-band breakouts. Ambiguous or unsupported conditions are rejected rather than silently approximated. Pasted code is never executed."};

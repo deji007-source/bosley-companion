@@ -10,7 +10,7 @@ assert.equal(account.mode, "paper");
 assert.equal(accounts.summary(account).equity, 1000);
 const updated = accounts.record(account, { type: "simulation", amount: -25, note: "Example simulated cost" });
 assert.equal(updated.cash, 975);
-assert.equal(accounts.summary(updated).pnl, -25);
+assert.equal(accounts.summary(updated).pnl, -25);\nconst referenced = accounts.record(updated, { type: "backtest-result", amount: 40, reference: "run-unique-1" });\nassert.equal(referenced.cash, 1015);\nassert.equal(accounts.record(referenced, { type: "backtest-result", amount: 40, reference: "run-unique-1" }), referenced, "A retried backtest must not be applied twice");
 assert.throws(() => accounts.record(updated, { amount: -2000 }), /negative cash/);
 assert.throws(() => accounts.createAccount({ startingBalance: 0 }), /Starting balance/);
 const bars = Array.from({ length: 40 }, (_, i) => ({ close: 100 + i * 0.5 }));

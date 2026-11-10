@@ -391,7 +391,7 @@ assert.ok(windowsWorkflow.includes("compact: { width: 220, height: 15 }"), "Comp
 assert.ok(windowsWorkflow.includes("default: { width: 260, height: 17 }"), "Default rendered widget height must match its native window");
 assert.ok(windowsWorkflow.includes("wide: { width: 300, height: 19 }"), "Wide rendered widget height must match its native window");
 assert.ok(windowsWorkflow.includes("raw.split(/\\r?\
-/)"), "Find-target must split SSE responses on actual newline characters");
+assert.ok(windowsWorkflow.includes(String.raw`raw.split(/\r?\n/)`), "Find-target must split SSE responses on actual newline characters");
 assert.ok(windowsWorkflow.includes("Some gateway configurations return a single JSON response instead of SSE."), "Find-target must support non-streaming JSON responses too");
 assert.ok(windowsWorkflow.includes("packet.choices?.[0]?.message?.content"), "Find-target must parse ordinary chat-completion JSON payloads");
 assert.ok(windowsWorkflow.includes("setIgnoreMouseEvents(true, { forward: true })"), "Windows tether layer should not block clicks in other apps");

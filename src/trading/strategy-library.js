@@ -58,5 +58,7 @@ function mount(panel){
  $("#bsl-save",host).addEventListener("click",safe(save));$("#bsl-refresh",host).addEventListener("click",safe(refresh));$("#bsl-select",host).addEventListener("change",safe(history));$("#bsl-load",host).addEventListener("click",safe(load));$("#bsl-restore",host).addEventListener("click",safe(restore));$("#bsl-import",host).addEventListener("click",safe(importFile));safe(refresh)();
 }
 function install(){const panel=document.getElementById("money-learning");if(!panel)return;const observer=new MutationObserver(()=>{if(panel.querySelector("#td-strategy"))mount(panel);});observer.observe(panel,{childList:true,subtree:true});if(panel.querySelector("#td-strategy"))mount(panel);}
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});else install();
-window.BosleyStrategyLibrary=Object.freeze({validateStrategyRules,inspectStrategyImport});
+if(typeof document!=="undefined"){
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});else install();
+}
+if(typeof window!=="undefined")window.BosleyStrategyLibrary=Object.freeze({validateStrategyRules,inspectStrategyImport});

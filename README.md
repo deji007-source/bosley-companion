@@ -125,3 +125,10 @@ npm run test:strategy-library
 ```
 
 The strategy library and audit modules are copied into the web, Android and Windows build artifacts by their respective workflows.
+
+
+### Cross-platform strategy-library builds
+
+The website, Android WebView package, and Windows Electron package load the same `src/trading/strategy-library.js` and `src/trading/strategy-audit.js` modules from the repository. Their GitHub Actions workflows run the shared companion regression checks, strategy-rule/import checks, and JavaScript syntax checks. Android and Windows workflows also run for pull requests targeting `main`, alongside the website workflow, so a change is checked across all three delivery targets before merge.
+
+The strategy format is intentionally versioned and extensible. Existing supported rule types remain available; additional strategy types should be added only after their exact entry, exit, indicator, and risk semantics are specified and validated. A future custom strategy requested by the user will be added as a separately tested rule type rather than guessed from an incomplete description.

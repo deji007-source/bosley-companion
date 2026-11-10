@@ -13,7 +13,7 @@ assert.throws(()=>inspectStrategyImport('{"format":"bosley-strategy-v1","name":"
 assert.throws(()=>inspectStrategyImport(file,"strategy.py"),/Only JSON/);
 console.log("Bosley strategy library checks passed.");
 
-import { parseStrategy } from "../src/trading/strategy-parser.js";
+import { parseStrategy, strategyPresets } from "../src/trading/strategy-parser.js";
 const strategyCases = [
   ["sma", "Long-only SMA 9 / 21 crossover. Buy when the 9-period simple moving average crosses above the 21-period simple moving average. Sell and close when it crosses below.", 9, 21],
   ["ema", "Long-only EMA 9 / 21 crossover. Buy when the 9-period exponential moving average crosses above the 21-period exponential moving average. Sell and close when it crosses below.", 9, 21],
@@ -34,3 +34,14 @@ assert.equal(parseStrategy("Buy when the 20-day SMA crosses above the 50-day SMA
 assert.equal(parseStrategy("RSI(14) crosses above 70 and exits below 30.").ok, false, "Mismatched RSI thresholds must not be approximated.");
 assert.equal(parseStrategy("Buy when the moon is bright.").ok, false, "Unsupported rules must be rejected.");
 console.log("Bosley strategy parser checks passed.");
+
+assert.equal(strategyPresets.length, 7, "The repository should ship seven ready-to-load supported strategy examples.");
+assert.equal(new Set(strategyPresets.map(preset => preset.id)).size, strategyPresets.length, "Built-in strategy IDs must be unique.");
+for (const preset of strategyPresets) {
+  const parsed = parseStrategy(preset.rule);
+  assert.equal(parsed.ok, true, preset.name + " must pass the same parser used by Trading Dock: " + parsed.message);
+  assert.equal(parsed.mode, preset.indicator);
+  assert.equal(parsed.fast, preset.fast);
+  assert.equal(parsed.slow, preset.slow);
+}
+console.log("Bosley built-in strategy preset checks passed.");

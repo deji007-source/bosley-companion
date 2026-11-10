@@ -1,0 +1,4 @@
+alter table public.trading_strategy_comparison_items drop constraint if exists trading_strategy_comparison_items_backtest_run_id_user_id_fkey;
+alter table public.trading_strategy_comparison_items add constraint trading_strategy_comparison_items_backtest_run_id_user_id_fkey foreign key (backtest_run_id,user_id) references public.trading_backtest_runs(id,user_id) on delete set null (backtest_run_id);
+alter table public.trading_strategy_imports drop constraint if exists trading_strategy_imports_imported_strategy_id_user_id_fkey;
+alter table public.trading_strategy_imports add constraint trading_strategy_imports_imported_strategy_id_user_id_fkey foreign key (imported_strategy_id,user_id) references public.trading_strategies(id,user_id) on delete set null (imported_strategy_id);

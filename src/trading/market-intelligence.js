@@ -9,12 +9,12 @@
     const sma = period => average(closes.slice(-period));
     const last = closes.at(-1), fast = sma(10), slow = sma(20);
     const mean = average(returns), variance = average(returns.map(value => (value - mean) ** 2));
-    const gains = [], losses = [];
+    let gainTotal = 0, lossTotal = 0;
     for (let i = Math.max(1, closes.length - 14); i < closes.length; i++) {
       const delta = closes[i] - closes[i - 1];
-      if (delta > 0) gains.push(delta); else losses.push(-delta);
+      if (delta > 0) gainTotal += delta; else lossTotal -= delta;
     }
-    const avgGain = average(gains) || 0, avgLoss = average(losses) || 0;
+    const avgGain = gainTotal / 14, avgLoss = lossTotal / 14;
     const rsi14 = avgLoss === 0 ? (avgGain === 0 ? 50 : 100) : 100 - 100 / (1 + avgGain / avgLoss);
     const trend = last > fast && fast > slow ? "Above short and medium averages" : last < fast && fast < slow ? "Below short and medium averages" : "Mixed moving-average structure";
     return Object.freeze({ observations: bars.length, latestClose: last, sma10: fast, sma20: slow, rsi14, meanDailyReturnPct: mean * 100, dailyVolatilityPct: Math.sqrt(variance) * 100, trend, disclaimer: "Descriptive historical statistics only. Not a forecast, signal, or recommendation." });

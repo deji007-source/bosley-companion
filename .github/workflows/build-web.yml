@@ -23,7 +23,8 @@ jobs:
       - name: Build and type-check companion
         run: npm run build
       - name: Run companion regression checks
-        run: npm run test:companion
+        run: |
+          npm run test:companion
           npm run test:strategy-library
           node --check src/trading/strategy-library.js
           node --check src/trading/strategy-audit.js

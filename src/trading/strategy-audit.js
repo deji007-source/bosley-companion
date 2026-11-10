@@ -108,7 +108,7 @@ function init(){
    try{await writeLog("run_"+statusValue,message);const {error}=await current.client.from("trading_backtest_runs").update({status:statusValue==="completed"?"completed":statusValue,completed_at:new Date().toISOString(),error_summary:statusValue==="failed"?message.slice(0,2000):null}).eq("id",current.id);if(error)throw error;active=null;await refresh();say("Execution "+current.id.slice(0,8)+" "+statusValue+" and its log was saved.");}catch(e){active=null;say("Execution finished, but audit update failed: "+e.message);}
   }
   $("#bsa-refresh",box).addEventListener("click",()=>refresh().catch(e=>say(e.message)));
-  panel.addEventListener("click",event=>{if(event.target.closest("#td-run"))beginRun();});
+  panel.addEventListener("click",event=>{if(event.target.closest("#td-run"))beginRun();},true);
   refresh().catch(e=>say(e.message));
  };
  const observer=new MutationObserver(()=>{if(panel.querySelector("#bosley-strategy-library")){addComparison();addAudit();}});

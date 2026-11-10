@@ -88,7 +88,7 @@ function init(){
     if(!revisionId){const {data,error}=await client.from("trading_strategy_revisions").select("id").eq("strategy_id",strategyId).order("revision_number",{ascending:false}).limit(1).single();if(error)throw error;revisionId=data.id;}
     const datasetId=$("#td-cloud-list")?.value||null,datasetLabel=$("#td-cloud-list")?.selectedOptions?.[0]?.textContent||"Unspecified dataset";
     const config={initial_capital:Number($("#td-capital")?.value||0),allocation_pct:Number($("#td-risk")?.value||0),risk_per_trade_pct:Number($("#td-risk-per-trade")?.value||0),stop_loss_pct:Number($("#td-stop-loss")?.value||0),take_profit_pct:Number($("#td-take-profit")?.value||0)};
-    const {data:run,error}=await client.from("trading_backtest_runs").insert({user_id:user.id,strategy_id:strategyId,strategy_revision_id:revisionId,dataset_id:datasetId,dataset_snapshot:{name:datasetLabel,data_mode:document.querySelector("#td-dataset-name")?.textContent||"Current Trading Dock dataset"},execution_mode:"backtest",status:"running",config,initial_capital:config.initial_capital}).select("id").single();
+    const {data:run,error}=await client.from("trading_backtest_runs").insert({user_id:user.id,strategy_id:strategyId,strategy_revision_id:revisionId,dataset_id:datasetId,dataset_snapshot:{name:datasetLabel,data_mode:document.querySelector("#td-dataset-name")?.textContent||"Current Trading Dock dataset"},execution_mode:"backtest",status:"running",started_at:new Date().toISOString(),config,initial_capital:config.initial_capital}).select("id").single();
     if(error)throw error;active={id:run.id,client,userId:user.id,seq:0};
     await writeLog("run_started","Backtest execution started.",{dataset:datasetLabel,config});
     const tag=$("#td-report-tag"),runStatus=$("#td-run-status");
@@ -105,7 +105,7 @@ function init(){
   }
   async function finish(statusValue,message){
    if(!active)return;const current=active;if(observer)observer.disconnect();
-   try{await writeLog("run_"+statusValue,message);const {error}=await current.client.from("trading_backtest_runs").update({status:statusValue==="completed"?"completed":statusValue,completed_at:new Date().toISOString(),error_summary:statusValue==="failed"?message.slice(0,2000):null}).eq("id",current.id);if(error)throw error;active=null;await refresh();say("Execution "+current.id.slice(0,8)+" "+statusValue+" and its log was saved.");}catch(e){active=null;say("Execution finished, but audit update failed: "+e.message);}
+   try{await writeLog("run_"+statusValue,message);const metricRows=[...document.querySelectorAll("#td-metrics .td-metric")];const metrics=Object.fromEntries(metricRows.map(row=>[row.querySelector("span")?.textContent?.trim()||"metric",row.querySelector("strong")?.textContent?.trim()||""]));const {error}=await current.client.from("trading_backtest_runs").update({status:statusValue==="completed"?"completed":statusValue,completed_at:new Date().toISOString(),metrics:statusValue==="completed"?metrics:null,error_summary:statusValue==="failed"?message.slice(0,2000):null}).eq("id",current.id);if(error)throw error;active=null;await refresh();say("Execution "+current.id.slice(0,8)+" "+statusValue+" and its log was saved.");}catch(e){active=null;say("Execution finished, but audit update failed: "+e.message);}
   }
   $("#bsa-refresh",box).addEventListener("click",()=>refresh().catch(e=>say(e.message)));
   panel.addEventListener("click",event=>{if(event.target.closest("#td-run"))beginRun();},true);

@@ -1429,7 +1429,7 @@ document.addEventListener("DOMContentLoaded",()=>{
      const delta=Math.round((r.finalEquity-initial+Number.EPSILON)*100)/100;
      state.paperAccount=delta===0?account:window.BosleyPaperAccounts.record(account,{type:"backtest-result",amount:delta,reference:runId,note:"Completed historical simulation · "+String(state.dataName||"dataset").slice(0,55)});
      paperSummary();
-     el("td-paper-summary").textContent+=" · latest simulation "+(delta>=0?"+":"")+money(delta-initial*0)+" P/L";
+     el("td-paper-summary").textContent+=" · latest simulation "+(delta>=0?"+":"")+money(delta)+" P/L";
     }catch(accountError){el("td-paper-summary").textContent="Backtest completed; paper ledger update needs attention: "+accountError.message;}
     state.lastRun={id:runId,at:new Date().toISOString(),return:r.totalReturn,trades:r.trades,dataset:state.dataName,finalEquity:r.finalEquity,initialEquity:initial,validation:{inSampleStart:r.start,inSampleEnd:r.end,outOfSampleStart:r.oosStart,outOfSampleReturn:r.oosReturn}};save();
     progress(100,"Completed · "+bars.length.toLocaleString()+" candles · "+r.signalChanges+" signal changes · "+r.trades+" closed trades · out-of-sample validation finished.");

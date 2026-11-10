@@ -51,6 +51,12 @@ assert.ok(html.includes('await send(question,attachment,"",[])') && html.include
 assert.ok(html.includes('id="bosley-light-inversion"') && html.includes('html[data-bosley-theme="light"] .panel') && html.includes('html[data-bosley-theme="light"] .td-card') && html.includes('html[data-bosley-theme="light"] input') && html.includes('html[data-bosley-theme="light"] #bosley-screen-ask .bsa-glow'), "Light mode must invert the dark interface while preserving captured media and the screen ask card palette");
 
 assert.ok(html.includes('id="td-test-strategy"') && html.includes('id="td-run"') && html.includes('id="td-progress-percent"') && html.includes('id="td-run-status"'), "Trading Dock must expose a repeatable strategy test, run action, progress and status outputs");
+assert.ok(html.includes('id="td-idea-indicator"') && html.includes('id="td-idea-fast"') && html.includes('id="td-idea-slow"') && html.includes('id="td-build-strategy"'), "Trading Dock must provide a no-code visual strategy builder");
+assert.ok(html.includes('id="td-idea-description"') && html.includes('id="td-use-description"'), "Trading Dock must accept plain-language strategy descriptions without requiring source code");
+assert.ok(html.includes('const buildPlainLanguageStrategy=') && html.includes('parseStrategy(description)'), "No-code and natural-language strategy inputs must be validated by the same supported strategy parser before backtesting");
+assert.ok(html.includes('https://github.com/pmorissette/bt') && html.includes('MIT') && html.includes('https://github.com/kernc/backtesting.py') && html.includes('AGPL-3.0') && html.includes('https://github.com/mementum/backtrader') && html.includes('GPL-3.0'), "Trading Dock research library must list the reviewed projects and their licence terms");
+assert.ok(html.includes('No repository code has been vendored') && html.includes('separately reviewed backend research adapter'), "Open-source research references must not be represented as already integrated or executed");
+
 
 assert.ok(html.includes("bosley_contacts"), "Writing Studio contacts must sync through the signed-in Bosley account");
 assert.ok(html.includes("syncBosleyContacts"), "Saved contacts must hydrate from the shared cloud contact table");

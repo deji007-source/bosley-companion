@@ -5,8 +5,9 @@ export function parseStrategy(raw) {
   const rsiMatch = text.match(/\brsi\s*\(?\s*(\d{1,3})?/);
   if (rsiMatch) {
     const period = Number(rsiMatch[1] || 14);
-    const entry = text.match(/rsi[^.]{0,160}?cross(?:es|ing)?\s+(?:above|over)\s*(\d{1,2})/);
-    const exit = text.match(/rsi[^.]{0,220}?cross(?:es|ing)?\s+(?:below|under)\s*(\d{1,2})/);
+    const rsiConditions = [...text.matchAll(/\brsi\b[^.]{0,160}/g)].map(match => match[0]).join(" ");
+    const entry = rsiConditions.match(/cross(?:es|ing)?\s+(?:above|over)\s*(\d{1,2})/);
+    const exit = rsiConditions.match(/cross(?:es|ing)?\s+(?:below|under)\s*(\d{1,2})/);
     if (period < 2 || period > 100 || !entry || !exit || Number(entry[1]) !== Number(exit[1]) || Number(entry[1]) < 1 || Number(entry[1]) > 99) return fail();
     return { ok: true, fast: period, slow: period, threshold: Number(entry[1]), description: "Long-only RSI(" + period + ") threshold crossover · enter above " + entry[1] + " and exit below it", mode: "rsi", warmupBars: period };
   }
@@ -23,7 +24,7 @@ export function parseStrategy(raw) {
   const macdMatch = text.match(/macd\s*\(?\s*(\d{1,2})?\s*[,/ ]+\s*(\d{1,2})?\s*[,/ ]+\s*(\d{1,2})?\s*\)?/);
   if (/\bmacd\b/.test(text)) {
     const fast = Number(macdMatch?.[1] || 12), slow = Number(macdMatch?.[2] || 26), signalPeriod = Number(macdMatch?.[3] || 9);
-    const entry = /macd[^.]{0,160}?cross(?:es|ing)?\s+(?:above|over)[^.]{0,100}signal line/.test(text);
+    const entry = /macd line[^.]{0,120}?cross(?:es|ing)?\s+(?:above|over)[^.]{0,100}signal line/.test(text);
     const exit = /exit[^.]{0,160}(?:cross(?:es|ing)?\s+(?:below|under)|below)[^.]{0,100}signal/.test(text) || /exit[^.]{0,160}cross(?:es|ing)?\s+(?:below|under)/.test(text);
     if (fast < 2 || fast >= slow || slow > 100 || signalPeriod < 2 || signalPeriod > 50 || !entry || !exit) return fail();
     return { ok: true, fast, slow, signalPeriod, description: "Long-only MACD(" + fast + ", " + slow + ", " + signalPeriod + ") crossover · enter above its signal line and exit below", mode: "macd", warmupBars: slow + signalPeriod - 2 };

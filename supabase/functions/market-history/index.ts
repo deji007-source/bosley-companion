@@ -1,3 +1,5 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
@@ -18,11 +20,26 @@ const validSymbol = (value: unknown, pattern: RegExp) =>
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Use POST for historical data requests." }, 405);
-  if (!req.headers.get("authorization")?.startsWith("Bearer ")) {
+  const authorization = req.headers.get("authorization") || "";
+  if (!authorization.startsWith("Bearer ") || authorization.length < 24) {
     return json({ error: "Sign in to request provider data." }, 401);
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+    if (!supabaseUrl || !supabaseKey) {
+      return json({ error: "Historical data authentication is not configured on the server." }, 503);
+    }
+    const authClient = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const accessToken = authorization.slice("Bearer ".length).trim();
+    const { data: authData, error: authError } = await authClient.auth.getUser(accessToken);
+    if (authError || !authData.user) {
+      return json({ error: "Your sign-in session is invalid or expired. Sign in again." }, 401);
+    }
+
     const body = await req.json();
     const apiKey = String(body?.apiKey ?? "").trim();
     const category = String(body?.category ?? "").trim().toLowerCase();

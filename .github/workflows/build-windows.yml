@@ -36,6 +36,9 @@ jobs:
         run: |
           npm install
           npm run test:companion
+          npm run test:strategy-library
+          node --check src/trading/strategy-library.js
+          node --check src/trading/strategy-audit.js
           node scripts/check-windows-idle.mjs
           npm run build
 

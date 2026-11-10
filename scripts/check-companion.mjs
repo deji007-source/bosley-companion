@@ -1005,3 +1005,11 @@ assert.ok(html.includes('id="td-progress-percent"') && html.includes('id="td-pro
 assert.ok(html.includes('id="td-risk-per-trade"') && html.includes('id="td-stop-loss"') && html.includes('id="td-take-profit"') && html.includes("const sizePosition=(equity,price)=>") && html.includes("roundTripCost=2*feeRate+spread+2*slippage"), "Position sizing must apply an account risk budget, allocation cap and estimated round-trip costs");
 assert.ok(html.includes("const bracketExit=(bar,entryPrice)=>") && html.includes("bar.low<=stop") && html.includes("bar.high>=target") && html.includes("conservative OHLC ordering") && html.includes("closeOos"), "Stop-loss and take-profit must be evaluated against OHLC in both in-sample and holdout runs with stop-first ambiguity handling");
 assert.ok(html.includes("bollingerSeries=") && html.includes('mode:"bollinger"') && html.includes("bars[i].close>bands.upper[i]"), "Bollinger upper-band breakout strategies must use calculated bands rather than a proxy signal");
+
+const strategyLibrary = readText(new URL("../src/trading/strategy-library.js", import.meta.url), "utf8");
+const strategyAudit = readText(new URL("../src/trading/strategy-audit.js", import.meta.url), "utf8");
+assert.ok(html.includes("./src/trading/strategy-library.js") && html.includes("./src/trading/strategy-audit.js"), "Trading Dock strategy and audit modules must load in the production interface");
+assert.ok(strategyLibrary.includes("trading_strategy_revisions") && strategyLibrary.includes("Restore as new revision"), "Strategy library must persist immutable revisions and support non-destructive restore");
+assert.ok(strategyLibrary.includes("executable code or active content") && strategyLibrary.includes("threshold 50"), "Strategy imports must reject executable content and ambiguous RSI thresholds");
+assert.ok(strategyAudit.includes("trading_backtest_logs") && strategyAudit.includes("same_dataset:true") && strategyAudit.includes("trading_strategy_comparison_items"), "Backtest runs must have per-run audit events and comparison sets must pin a common dataset");
+assert.ok(companionChat.includes("trading-education") && companionChat.includes("learning and simulation environment"), "Bosley chat must route trading questions to market-data education and simulation guidance");

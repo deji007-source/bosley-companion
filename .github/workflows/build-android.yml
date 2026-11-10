@@ -48,6 +48,8 @@ jobs:
           npm run test:strategy-library
           node --check src/trading/strategy-library.js
           node --check src/trading/strategy-audit.js
+          node --check src/trading/strategy-parser.js
+          node --check src/trading/backtest-engine.js
           npm run build
 
       - name: Use the shared production Bosley interface for Android

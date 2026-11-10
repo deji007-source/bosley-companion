@@ -60,6 +60,9 @@ for (const [rule, mode] of [
   assert.equal(parsed.mode, mode, "No-code strategy builder must preserve the selected indicator: " + mode);
 }
 assert.equal(parseStrategy("import os; os.system('anything')").ok, false, "Arbitrary pasted code must never be accepted as a strategy rule");
+assert.equal(parseStrategy("Buy when the 20-day EMA crosses above the 50-day EMA and exit when it crosses below.").mode, "ema", "Natural-language day-period EMA rules must parse");
+assert.equal(parseStrategy("Buy when RSI(14) crosses above 60 and sell when it crosses below 40.").ok, false, "Different RSI entry and exit thresholds must not be silently treated as the same threshold");
+
 
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 assert.ok(androidInstaller.includes("gestureHandler.postDelayed(holdAction,550)") && androidInstaller.includes('openCompanion("capture-screen")'), "Holding the Android bulb must summon the explicit screen-capture assistant flow");

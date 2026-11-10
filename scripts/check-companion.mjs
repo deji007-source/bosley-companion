@@ -1005,7 +1005,7 @@ assert.ok(writingAssistFunction.includes('supportedLanguages=["Nigerian English"
 assert.ok(html.includes('id="td-progress-percent"') && html.includes('id="td-progress-stage"') && html.includes('el("td-progress-percent").textContent=pct.toFixed(1)+"%"'), "Backtest progress must show a visible percentage and processing stage");
 assert.ok(html.includes('id="td-risk-per-trade"') && html.includes('id="td-stop-loss"') && html.includes('id="td-take-profit"') && html.includes("const sizePosition=(equity,price)=>") && html.includes("roundTripCost=2*feeRate+spread+2*slippage"), "Position sizing must apply an account risk budget, allocation cap and estimated round-trip costs");
 assert.ok(html.includes("const bracketExit=(bar,entryPrice)=>") && html.includes("bar.low<=stop") && html.includes("bar.high>=target") && html.includes("conservative OHLC ordering") && html.includes("closeOos"), "Stop-loss and take-profit must be evaluated against OHLC in both in-sample and holdout runs with stop-first ambiguity handling");
-assert.ok(html.includes("bollingerSeries=") && html.includes('mode:"bollinger"') && html.includes("bars[i].close>bands.upper[i]"), "Bollinger upper-band breakout strategies must use calculated bands rather than a proxy signal");
+assert.ok(html.includes("bollingerSeries=") && strategyParser.includes('mode: "bollinger"') && html.includes("bars[i].close>bands.upper[i]"), "Bollinger upper-band breakout strategies must use calculated bands rather than a proxy signal");
 
 const strategyLibrary = readText(new URL("../src/trading/strategy-library.js", import.meta.url), "utf8");
 const strategyAudit = readText(new URL("../src/trading/strategy-audit.js", import.meta.url), "utf8");

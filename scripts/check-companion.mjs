@@ -47,7 +47,8 @@ assert.ok(html.includes("Final layer correction: keep the ghost and its tools ab
 assert.ok(html.includes("document.body.appendChild(floatingLauncher)") && html.includes('id="bosley-floating-layer-fix"'), "Floating ghost launcher must be portalled to the document body above workspace stacking contexts");
 assert.ok(html.includes("One authoritative launcher router") && html.includes('window.addEventListener("click",event=>') && html.includes('#dock-launcher-menu [data-open-view]'), "Portalled launcher menu must use one delegated capture click router for reliable tool and panel activation");
 assert.ok(html.includes("const route=views.find(view=>view.panel===id)") && html.includes("show(route.panel).catch") && html.includes("window.BosleyOpenPanel=(id)=>show(id)"), "Launcher selections must resolve to a registered page and invoke the local panel controller");
-const viewRegistry=html.match(/const views=\[([\s\S]*?)\n \];/);
+const viewRegistry=html.match(/const views=\[([\s\S]*?)
+ \];/);
 assert.ok(viewRegistry, "Companion workspace must expose one explicit page registry");
 const registeredPages=[...viewRegistry[1].matchAll(/panel:"([^"]+)"/g)].map(match=>match[1]);
 assert.ok(registeredPages.length>=12, "All first-party Companion workspace pages must be registered for navigation");
@@ -389,7 +390,8 @@ assert.ok(windowsWorkflow.includes("button { width: 260px; height: 17px;"), "Ren
 assert.ok(windowsWorkflow.includes("compact: { width: 220, height: 15 }"), "Compact rendered widget height must match its native window");
 assert.ok(windowsWorkflow.includes("default: { width: 260, height: 17 }"), "Default rendered widget height must match its native window");
 assert.ok(windowsWorkflow.includes("wide: { width: 300, height: 19 }"), "Wide rendered widget height must match its native window");
-assert.ok(windowsWorkflow.includes("raw.split(/\\r?\\n/)"), "Find-target must split SSE responses on actual newline characters");
+assert.ok(windowsWorkflow.includes("raw.split(/\\r?\
+/)"), "Find-target must split SSE responses on actual newline characters");
 assert.ok(windowsWorkflow.includes("Some gateway configurations return a single JSON response instead of SSE."), "Find-target must support non-streaming JSON responses too");
 assert.ok(windowsWorkflow.includes("packet.choices?.[0]?.message?.content"), "Find-target must parse ordinary chat-completion JSON payloads");
 assert.ok(windowsWorkflow.includes("setIgnoreMouseEvents(true, { forward: true })"), "Windows tether layer should not block clicks in other apps");
@@ -1026,7 +1028,8 @@ assert.ok(backtestEngine.includes("winRate: closed.length ? wins / closed.length
 assert.ok(html.includes('id="td-preset"') && html.includes('id="td-load-preset"') && html.includes("window.BosleyStrategyPresets"), "Trading Dock must expose a selectable built-in strategy library.");
 assert.ok(html.includes('["Risk budget / trade",r.riskPerTrade.toFixed(2)+"%"]') && html.includes('["Max allocation",r.allocation.toFixed(1)+"%"]') && html.includes('["Stop loss / take profit",r.stopLoss.toFixed(1)+"% / "+r.takeProfit.toFixed(1)+"%"]') && backtestEngine.includes("initial, riskPerTrade, allocation, stopLoss, takeProfit, finalEquity"), "The completed result must carry its own risk settings into the report renderer without relying on out-of-scope variables.");
 assert.ok(html.includes("el(\"td-metrics\").innerHTML=\"\"") && html.includes("No completed trades. The failed run did not produce a valid report.") && html.includes("No completed result to plot"), "A failed backtest must clear provisional metrics and must not leave them looking like a completed report.");
-assert.ok(html.includes("renderReport(r);state.initial=initial;state.balance=r.finalEquity;") && html.indexOf("renderReport(r);state.initial=initial;") < html.indexOf("state.lastRun={at:new Date().toISOString(),return:r.totalReturn"), "A backtest must render its final report before recording the run as completed.");
+assert.ok(html.includes("renderReport(r);state.initial=initial;state.balance=r.finalEquity;") && html.indexOf("renderReport(r);state.initial=initial;") < html.indexOf("state.lastRun={id:runId"), "A backtest must render its final report before recording the run as completed.");
+assert.ok(html.includes("BosleyPaperAccounts.record(account") && html.includes("type:\"backtest-result\"") && html.includes("paperSummary();"), "Completed backtests must update the paper-account ledger and refresh its summary.");
 assert.ok(html.includes('<script type="module" src="./src/trading/backtest-engine.js"></script>') && html.includes("engine.runBacktest({bars,strategy:p") && html.includes("engine.createDemoSeries()"), "The visible Trading Dock must use the same production engine and demo-data generator exercised by Node regression tests.");
 
 assert.ok(html.includes('<div id="dock-launcher-menu" hidden role="menu" aria-label="Bosley pages"><button type="button" role="menuitem" data-open-view="money-learning">Trading Dock</button>'), "Trading Dock must be the first, immediately visible destination in the Bosley launcher.");

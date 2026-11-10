@@ -11,7 +11,9 @@
     if (!account || account.mode !== "paper") throw new Error("Only paper accounts are supported.");
     const amount = Number(entry?.amount);
     if (!Number.isFinite(amount) || amount === 0) throw new Error("Ledger amount must be a non-zero finite number.");
-    const reference = entry?.reference ? String(entry.reference).slice(0, 96) : "";\n    if (reference && (account.ledger || []).some(item => item.reference === reference)) return account;\n    const cash = round(account.cash + amount);
+    const reference = entry?.reference ? String(entry.reference).slice(0, 96) : "";
+    if (reference && (account.ledger || []).some(item => item.reference === reference)) return account;
+    const cash = round(account.cash + amount);
     if (cash < 0) throw new Error("The simulated account cannot have a negative cash balance.");
     const next = { ...account, cash, equity: round(cash + Number(account.unrealizedPnl || 0)), ledger: [...(account.ledger || []).slice(-499), { id: makeId(), type: String(entry.type || "adjustment").slice(0, 32), amount: round(amount), note: String(entry.note || "").slice(0, 160), ...(reference ? { reference } : {}), at: new Date().toISOString() }] };
     return next;

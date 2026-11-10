@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
     if (source === "stooq") {
       if (category !== "equities" && category !== "forex") return json({ error: "Free Stooq history currently supports daily equities and selected currency pairs." }, 400);
       if (!validSymbol(symbol, category === "forex" ? /^[A-Z]{6}$/ : /^[A-Z0-9.^_-]{1,20}$/)) return json({ error: "Enter a valid stock ticker or six-letter currency pair." }, 400);
-      const stooqSymbol = category === "forex" ? symbol.toLowerCase() : symbol.toLowerCase();
+      const stooqSymbol = category === "forex" ? symbol.toLowerCase() : (symbol.includes(".") ? symbol.toLowerCase() : symbol.toLowerCase() + ".us");
       const query = new URLSearchParams({ s: stooqSymbol, i: "d" });
       const response = await fetch("https://stooq.com/q/d/l/?" + query.toString(), { headers: { Accept: "text/csv" }, signal: AbortSignal.timeout(20000) });
       if (!response.ok) return json({ error: "Stooq returned HTTP " + response.status + "." }, 502);

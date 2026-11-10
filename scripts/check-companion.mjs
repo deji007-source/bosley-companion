@@ -36,18 +36,9 @@ const strategyScript = inlineScripts.find(source => source.includes("const parse
 assert.ok(strategyScript, "Trading Dock application script must be present");
 const parserStart = strategyScript.indexOf("const parseStrategy=raw=>{");
 assert.ok(parserStart >= 0, "Trading Dock must expose its constrained natural-language strategy parser");
-const parserOpen = strategyScript.indexOf("{", parserStart);
-let parserDepth = 0;
-let parserEnd = -1;
-for (let i = parserOpen; i < appScript.length; i++) {
-  if (appScript[i] === "{") parserDepth++;
-  else if (appScript[i] === "}") {
-    parserDepth--;
-    if (parserDepth === 0) { parserEnd = i + 1; break; }
-  }
-}
-assert.ok(parserEnd > parserOpen, "Strategy parser must have a complete function body");
-const parseStrategy = vm.runInNewContext(strategyScript.slice(parserStart, parserEnd) + ";parseStrategy");
+const parserEnd = strategyScript.indexOf("  const csvRows=raw=>{", parserStart);
+assert.ok(parserEnd > parserStart, "Strategy parser must have a clear end before CSV parsing");
+const parseStrategy = vm.runInNewContext(strategyScript.slice(parserStart, parserEnd).trim() + ";parseStrategy");
 for (const [rule, mode] of [
   ["Long-only SMA crossover. Buy when SMA 20 crosses above SMA 50. Exit when SMA 20 crosses below SMA 50.", "sma"],
   ["Long-only EMA crossover. Buy when EMA 20 crosses above EMA 50. Exit when EMA 20 crosses below EMA 50.", "ema"],

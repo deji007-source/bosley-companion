@@ -9,14 +9,16 @@ function init(){
   const box=document.createElement("section");box.id="bsc-panel";box.className="td-card";
   box.innerHTML='<div class="td-head"><h3>Strategy comparison</h3><span class="td-chip">MATCHED DATASET</span></div><p class="bsc-help">Create a comparison set using one saved historical dataset and the same date window. This saves the comparison plan; it does not automatically run backtests.</p><label>Historical dataset<select id="bsc-dataset"><option value="">Choose a saved dataset…</option></select></label><div class="bsc-grid"><label>Start date<input id="bsc-start" type="date"></label><label>End date<input id="bsc-end" type="date"></label></div><div id="bsc-strategies" class="bsc-list">Load your saved strategies to select revisions.</div><div class="bsc-actions"><button type="button" id="bsc-refresh">Refresh options</button><button type="button" id="bsc-load-dataset">Load selected dataset into Trading Dock</button><button type="button" id="bsc-create">Save comparison set</button></div><div id="bsc-status" role="status" aria-live="polite">Choose a dataset and at least two strategies.</div><style>#bsc-panel{margin-top:12px}#bsc-panel .bsc-help,#bsc-panel #bsc-status{font-size:11px;opacity:.75;line-height:1.5}#bsc-panel .bsc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}#bsc-panel label{display:block;font-size:11px}#bsc-panel input,#bsc-panel select{width:100%;padding:8px;background:var(--input-bg,rgba(255,255,255,.06));color:inherit;border:1px solid var(--border,rgba(255,255,255,.14));border-radius:8px}#bsc-panel .bsc-list{display:grid;gap:7px;max-height:190px;overflow:auto;margin:10px 0}#bsc-panel .bsc-choice{display:flex;align-items:center;gap:8px;border:1px solid var(--border,rgba(255,255,255,.12));border-radius:8px;padding:8px}#bsc-panel .bsc-choice input{width:auto}#bsc-panel .bsc-actions{display:flex;gap:8px;flex-wrap:wrap}#bsc-panel button{font:inherit;border:1px solid var(--border,rgba(255,255,255,.16));border-radius:8px;padding:8px 10px;background:rgba(255,255,255,.07);color:inherit;cursor:pointer}@media(max-width:520px){#bsc-panel .bsc-grid{grid-template-columns:1fr}}</style>';
   library.insertAdjacentElement("afterend",box);
-  const say=m=>status($("#bsc-status",box),m);
+  const say=m=>status($("#bsc-status",box),m),datasetDates=new Map();
   const auth=async()=>{const client=db();if(!client)throw Error("Account services are unavailable.");const {data,error}=await client.auth.getUser();if(error||!data?.user)throw Error("Sign in to create a comparison.");return {client,user:data.user};};
   async function refresh(){
    const {client}=await auth();
    const select=$("#bsc-dataset",box);select.replaceChildren(new Option("Choose a connected historical dataset…",""));
    const {data:datasets,error:datasetError}=await client.from("market_research_datasets").select("id,name,symbol,timeframe,row_count,started_on,ended_on,source_name,source_type,quality_report").order("created_at",{ascending:false}).limit(100);
    if(datasetError)throw datasetError;
+   datasetDates.clear();
    for(const dataset of datasets||[]){
+    datasetDates.set(dataset.id,{start:dataset.started_on,end:dataset.ended_on});
     const source=dataset.source_name||dataset.source_type||"source not recorded";
     const dates=(dataset.started_on||"date unknown")+" → "+(dataset.ended_on||"date unknown");
     const label=dataset.name+" · "+dataset.symbol+" · "+dataset.row_count+" rows · "+source+" · "+dates;
@@ -72,10 +74,10 @@ function init(){
    load.click();say("Selected dataset passed to the Trading Dock loader. Check the Historical Data status above before running the backtest.");
   }));
   $("#bsc-dataset",box).addEventListener("change",()=>{
-   const option=$("#bsc-dataset",box).selectedOptions[0],id=option?.value;
-   if(!id)return;
-   const text=option.textContent||"",match=text.match(/(\\d{4}-\\d{2}-\\d{2}) → (\\d{4}-\\d{2}-\\d{2})/);
-   if(match){$("#bsc-start",box).min=match[1];$("#bsc-start",box).max=match[2];$("#bsc-end",box).min=match[1];$("#bsc-end",box).max=match[2];$("#bsc-start",box).value=match[1];$("#bsc-end",box).value=match[2];}
+   const id=$("#bsc-dataset",box).value,range=datasetDates.get(id);
+   if(!range?.start||!range?.end)return;
+   $("#bsc-start",box).min=range.start;$("#bsc-start",box).max=range.end;$("#bsc-end",box).min=range.start;$("#bsc-end",box).max=range.end;
+   $("#bsc-start",box).value=range.start;$("#bsc-end",box).value=range.end;
   });
   $("#bsc-create",box).addEventListener("click",safe(create));safe(refresh)();
  };

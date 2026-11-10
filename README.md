@@ -110,7 +110,7 @@ For a signed release, configure these GitHub Actions repository secrets using a 
 
 ## Trading Dock strategy library
 
-The Trading Dock now has a versioned strategy-library module backed by the Jarvis Supabase project. Signed-in users can save named strategies, append immutable revisions, inspect revision history, and restore an older revision as a new revision. The first portable rule format supports explicit long-only SMA/EMA crossovers and RSI rules with matching 50/50 entry and exit thresholds.
+The Trading Dock now has a versioned strategy-library module backed by the Jarvis Supabase project. Signed-in users can save named strategies, append immutable revisions, inspect revision history, and restore an older revision as a new revision. The first portable rule format supports explicit long-only SMA/EMA crossovers and RSI rules with matching 50/50 entry and exit thresholds. The Trading Dock also ships seven selectable examples: SMA 20/50, SMA 10/30, EMA 9/21, EMA 12/26, RSI 14/50, MACD 12/26/9, and Bollinger 20/2. Each preset is validated by the same production parser before it can be loaded into the editor.
 
 Strategy imports accept small JSON-based Bosley Strategy v1 files only. Imported content is parsed as data, checked for supported fields and suspicious executable content, and stored as pending licence/security review. Imports are not executed or activated. Arbitrary Python, JavaScript and shell content is rejected.
 

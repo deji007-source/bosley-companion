@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import { validateStrategyRules, inspectStrategyImport } from "../src/trading/strategy-library.js";
+const valid={version:1,direction:"long-only",indicators:[{type:"rsi",period:14,entryAbove:50,exitBelow:50}],entry:{indicator:"rsi",operator:"crosses_above"},exit:{indicator:"rsi",operator:"crosses_below"}};
+assert.deepEqual(validateStrategyRules(valid),valid);
+assert.throws(()=>validateStrategyRules({...valid,indicators:[{type:"rsi",period:14,entryAbove:70,exitBelow:30}]}),/threshold 50/);
+assert.throws(()=>validateStrategyRules({...valid,python:"print(1)"}),/Unsupported strategy field/);
+assert.throws(()=>validateStrategyRules({...valid,indicators:[{type:"sma",period:1}]}),/periods/);
+const file=JSON.stringify({format:"bosley-strategy-v1",name:"RSI 50",licence:{name:"MIT"},rules:valid});
+assert.equal(inspectStrategyImport(file,"rsi.json").name,"RSI 50");
+assert.throws(()=>inspectStrategyImport(file.replace('"licence":{"name":"MIT"}','"licence":{}')),/licence name/);
+assert.throws(()=>inspectStrategyImport('{"format":"bosley-strategy-v1","name":"Bad","licence":{"name":"MIT"},"rules":{},"code":"import os"}'),/executable code/);
+assert.throws(()=>inspectStrategyImport(file,"strategy.py"),/Only JSON/);
+console.log("Bosley strategy library checks passed.");

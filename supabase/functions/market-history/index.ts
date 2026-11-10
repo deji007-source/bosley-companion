@@ -1,3 +1,5 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
@@ -18,15 +20,49 @@ const validSymbol = (value: unknown, pattern: RegExp) =>
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Use POST for historical data requests." }, 405);
-  if (!req.headers.get("authorization")?.startsWith("Bearer ")) {
+  const authorization = req.headers.get("authorization") || "";
+  if (!authorization.startsWith("Bearer ") || authorization.length < 24) {
     return json({ error: "Sign in to request provider data." }, 401);
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+    if (!supabaseUrl || !supabaseKey) {
+      return json({ error: "Historical data authentication is not configured on the server." }, 503);
+    }
+    const authClient = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const accessToken = authorization.slice("Bearer ".length).trim();
+    const { data: authData, error: authError } = await authClient.auth.getUser(accessToken);
+    if (authError || !authData.user) {
+      return json({ error: "Your sign-in session is invalid or expired. Sign in again." }, 401);
+    }
+
     const body = await req.json();
     const apiKey = String(body?.apiKey ?? "").trim();
+    const source = String(body?.source ?? "alpha-vantage").trim().toLowerCase();
     const category = String(body?.category ?? "").trim().toLowerCase();
     const symbol = String(body?.symbol ?? "").trim().toUpperCase();
+
+    if (source === "stooq") {
+      if (category !== "equities" && category !== "forex") return json({ error: "Free Stooq history currently supports daily equities and selected currency pairs." }, 400);
+      if (!validSymbol(symbol, category === "forex" ? /^[A-Z]{6}$/ : /^[A-Z0-9.^_-]{1,20}$/)) return json({ error: "Enter a valid stock ticker or six-letter currency pair." }, 400);
+      const stooqSymbol = category === "forex" ? symbol.toLowerCase() : (symbol.includes(".") ? symbol.toLowerCase() : symbol.toLowerCase() + ".us");
+      const query = new URLSearchParams({ s: stooqSymbol, i: "d" });
+      const response = await fetch("https://stooq.com/q/d/l/?" + query.toString(), { headers: { Accept: "text/csv" }, signal: AbortSignal.timeout(20000) });
+      if (!response.ok) return json({ error: "Stooq returned HTTP " + response.status + "." }, 502);
+      const csv = await response.text();
+      const lines = csv.trim().split(/\r?\n/);
+      if (lines.length < 61 || !/^Date,Open,High,Low,Close,Volume/i.test(lines[0] || "")) return json({ error: "Stooq returned fewer than 60 daily rows or an unsupported symbol." }, 422);
+      const parsed = lines.slice(1).map(line => { const [date,open,high,low,close,volume] = line.split(","); return { date,open:Number(open),high:Number(high),low:Number(low),close:Number(close),volume:volume === "" ? null : Number(volume) }; });
+      const valid = parsed.filter(row => /^\d{4}-\d{2}-\d{2}$/.test(row.date) && [row.open,row.high,row.low,row.close].every(v => Number.isFinite(v) && v > 0) && row.high >= Math.max(row.open,row.close,row.low) && row.low <= Math.min(row.open,row.close,row.high) && (row.volume === null || (Number.isFinite(row.volume) && row.volume >= 0)));
+      const seen = new Set<string>();
+      const candles = valid.filter(row => { if (seen.has(row.date)) return false; seen.add(row.date); return true; }).sort((x,y) => x.date.localeCompare(y.date));
+      if (candles.length < 60) return json({ error: "Only " + candles.length + " valid daily observations were returned; at least 60 are required." }, 422);
+      return json({ provider: "Stooq", providerUrl: "https://stooq.com/q/d/", symbol, category, timeframe: "1d", currency: null, retrievedAt: new Date().toISOString(), rows: candles, quality: { received: parsed.length, accepted: candles.length, rejected: parsed.length-valid.length, duplicateDates: valid.length-candles.length, volumeAvailable: candles.some(row => row.volume !== null) }, notes: ["Free public daily historical data; ticker coverage varies.", "Attribution: Stooq. Review current terms before redistribution.", "Historical research only; no live orders."] });
+    }
 
     if (apiKey.length < 8 || apiKey.length > 128 || !/^[A-Za-z0-9._-]+$/.test(apiKey)) {
       return json({ error: "Enter a valid Alpha Vantage API key. The key is used for this request only and is not stored by Bosley." }, 400);

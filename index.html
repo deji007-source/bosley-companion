@@ -1473,7 +1473,7 @@ document.addEventListener("DOMContentLoaded",()=>{
    if(kind==="rsi"&&(!Number.isFinite(threshold)||threshold<1||threshold>99)){el("td-understanding").textContent="RSI threshold must be between 1 and 99.";return false;}
    if(kind==="bollinger"&&(!Number.isFinite(band)||band<.5||band>4)){el("td-understanding").textContent="Bollinger deviation must be between 0.5 and 4.";return false;}
    let rule="";
-   if(kind==="sma"||kind==="ema"){const label=kind.toUpperCase(),full=kind==="sma"?"simple moving average":"exponential moving average";rule="Long-only "+label+" "+fast+" / "+slow+" crossover. Buy when the "+fast+"-period "+full+" crosses above the "+slow+"-period "+full+". Sell and close when the fast average crosses below the slow average.";}
+   if(kind==="sma"||kind==="ema"){const label=kind.toUpperCase();rule="Long-only "+label+" crossover. Buy when "+label+" "+fast+" crosses above "+label+" "+slow+". Exit when "+label+" "+fast+" crosses below "+label+" "+slow+".";}
    else if(kind==="rsi"){rule="Long-only RSI("+fast+") threshold crossover. Buy when RSI crosses above "+threshold+" and exit when RSI crosses below "+threshold+".";}
    else if(kind==="macd"){rule="Long-only MACD("+fast+", "+slow+", 9) crossover. Buy when the MACD line crosses above its signal line and exit when it crosses below.";}
    else{rule="Long-only Bollinger Bands("+fast+", "+band+") breakout. Buy when the close crosses above the upper band and exit when it closes back below.";}

@@ -101,6 +101,8 @@ jobs:
           # Package the same standalone UI that is deployed as the working website.
           # dist/index.html is a separate React shell, not the production companion UI.
           cp index.html desktop/index.html
+          mkdir -p desktop/src/trading
+          cp src/trading/*.js desktop/src/trading/
           node scripts/check-ui-parity.mjs index.html desktop/index.html "Windows packaged interface"
           # Vite currently inlines the app's JavaScript and CSS into index.html.
           # Copy asset files when emitted, but don't fail when the build is self-contained.

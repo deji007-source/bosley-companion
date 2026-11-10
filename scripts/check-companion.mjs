@@ -31,6 +31,34 @@ for (const [index, source] of inlineScripts.entries()) {
   );
 }
 
+
+const parserStart = appScript.indexOf("const parseStrategy=raw=>{");
+assert.ok(parserStart >= 0, "Trading Dock must expose its constrained natural-language strategy parser");
+const parserOpen = appScript.indexOf("{", parserStart);
+let parserDepth = 0;
+let parserEnd = -1;
+for (let i = parserOpen; i < appScript.length; i++) {
+  if (appScript[i] === "{") parserDepth++;
+  else if (appScript[i] === "}") {
+    parserDepth--;
+    if (parserDepth === 0) { parserEnd = i + 1; break; }
+  }
+}
+assert.ok(parserEnd > parserOpen, "Strategy parser must have a complete function body");
+const parseStrategy = vm.runInNewContext(appScript.slice(parserStart, parserEnd) + ";parseStrategy");
+for (const [rule, mode] of [
+  ["Long-only SMA crossover. Buy when SMA 20 crosses above SMA 50. Exit when SMA 20 crosses below SMA 50.", "sma"],
+  ["Long-only EMA crossover. Buy when EMA 20 crosses above EMA 50. Exit when EMA 20 crosses below EMA 50.", "ema"],
+  ["Long-only RSI(14) threshold crossover. Buy when RSI crosses above 55 and exit when RSI crosses below 55.", "rsi"],
+  ["Long-only MACD(12, 26, 9) crossover. Buy when the MACD line crosses above its signal line and exit when it crosses below.", "macd"],
+  ["Long-only Bollinger Bands(20, 2) breakout. Buy when the close crosses above the upper band and exit when it closes back below.", "bollinger"],
+]) {
+  const parsed = parseStrategy(rule);
+  assert.equal(parsed.ok, true, "No-code strategy builder output must parse: " + mode);
+  assert.equal(parsed.mode, mode, "No-code strategy builder must preserve the selected indicator: " + mode);
+}
+assert.equal(parseStrategy("import os; os.system('anything')").ok, false, "Arbitrary pasted code must never be accepted as a strategy rule");
+
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 assert.ok(androidInstaller.includes("gestureHandler.postDelayed(holdAction,550)") && androidInstaller.includes('openCompanion("capture-screen")'), "Holding the Android bulb must summon the explicit screen-capture assistant flow");
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");

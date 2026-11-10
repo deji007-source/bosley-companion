@@ -15,7 +15,7 @@ export function validateStrategyRules(input){
   if(item.type==="rsi"&&(item.entryAbove!==50||item.exitBelow!==50))throw Error("RSI entry and exit must both explicitly use threshold 50 in v1.");
   if(item.type==="bollinger"&&(!Number.isFinite(item.multiplier)||item.multiplier<.5||item.multiplier>4))throw Error("Bollinger multiplier must be between 0.5 and 4.");
  }
- const signal=x=>x&&typeof x==="object"&&types.includes(x.indicator)&&["crosses_above","crosses_below","closes_above","closes_below"].includes(x.operator);
+ const signal=x=>{if(!x||typeof x!=="object"||!types.includes(x.indicator)||!["crosses_above","crosses_below","closes_above","closes_below"].includes(x.operator))return false;if(["sma","ema"].includes(x.indicator))return Number.isInteger(x.fastPeriod)&&Number.isInteger(x.slowPeriod)&&x.fastPeriod>=2&&x.slowPeriod>x.fastPeriod&&x.slowPeriod<=250;if(x.indicator==="rsi")return x.threshold===50;return true;};
  if(!signal(input.entry)||!signal(input.exit)||input.entry.indicator===input.exit.indicator&&input.entry.operator===input.exit.operator)throw Error("Entry and exit signals must be explicit supported rules and cannot be identical.");
  if(input.risk!==undefined){const ranges={riskPerTradePct:[.1,5],maxAllocationPct:[1,100],stopLossPct:[.1,50],takeProfitPct:[.1,100]};if(!input.risk||typeof input.risk!=="object"||Array.isArray(input.risk))throw Error("Risk settings must be an object.");for(const [k,v] of Object.entries(input.risk)){if(!ranges[k])throw Error("Unsupported risk setting: "+k);if(!Number.isFinite(v)||v<ranges[k][0]||v>ranges[k][1])throw Error(k+" is outside its supported range.");}}
  return structuredClone(input);
@@ -35,8 +35,8 @@ export function inspectStrategyImport(raw,fileName="strategy.json"){
 }
 function editorRules(raw){
  const s=String(raw||"").toLowerCase();
- if(/\brsi\b/.test(s)){const a=s.match(/(?:cross(?:es|ing)?\s+above|above)\s*(\d{1,2})/),b=s.match(/(?:cross(?:es|ing)?\s+below|below)\s*(\d{1,2})/);if(!a||!b||a[1]!==b[1])throw Error("RSI entry and exit thresholds must both be explicit and identical. Use 50 for both in v1.");const p=Number(s.match(/rsi\s*\(?\s*(\d{1,3})/)?.[1]||14);return {version:1,direction:"long-only",indicators:[{type:"rsi",period:p,entryAbove:50,exitBelow:50}],entry:{indicator:"rsi",operator:"crosses_above"},exit:{indicator:"rsi",operator:"crosses_below"}};}
- const m=s.match(/\b(sma|ema)\s*(\d{1,3})\s*(?:\/|and|over)\s*(\d{1,3})/);if(!m)throw Error("This rule cannot yet be converted. Save a supported SMA/EMA crossover or explicit RSI 50/50 rule.");const type=m[1],fast=Number(m[2]),slow=Number(m[3]);return {version:1,direction:"long-only",indicators:[{type,period:fast},{type,period:slow}],entry:{indicator:type,operator:"crosses_above"},exit:{indicator:type,operator:"crosses_below"}};
+ if(/\brsi\b/.test(s)){const a=s.match(/(?:cross(?:es|ing)?\s+above|above)\s*(\d{1,2})/),b=s.match(/(?:cross(?:es|ing)?\s+below|below)\s*(\d{1,2})/);if(!a||!b||Number(a[1])!==50||Number(b[1])!==50)throw Error("RSI entry and exit thresholds must both explicitly be 50 in v1.");const p=Number(s.match(/rsi\s*\(?\s*(\d{1,3})/)?.[1]||14);return {version:1,direction:"long-only",indicators:[{type:"rsi",period:p,entryAbove:50,exitBelow:50}],entry:{indicator:"rsi",operator:"crosses_above",threshold:50},exit:{indicator:"rsi",operator:"crosses_below",threshold:50}};}
+ const m=s.match(/\b(sma|ema)\s*(\d{1,3})\s*(?:\/|and|over)\s*(\d{1,3})/);if(!m)throw Error("This rule cannot yet be converted. Save a supported SMA/EMA crossover or explicit RSI 50/50 rule.");const type=m[1],fast=Number(m[2]),slow=Number(m[3]);return {version:1,direction:"long-only",indicators:[{type,period:fast},{type,period:slow}],entry:{indicator:type,operator:"crosses_above",fastPeriod:fast,slowPeriod:slow},exit:{indicator:type,operator:"crosses_below",fastPeriod:fast,slowPeriod:slow}};
 }
 function mount(panel){
  if(panel.querySelector("#bosley-strategy-library"))return;

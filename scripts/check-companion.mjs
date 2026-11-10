@@ -22,6 +22,8 @@ const marketHistoryFunction = readText(new URL("../supabase/functions/market-his
 
 assert.ok(marketHistoryFunction.includes("authorization") && marketHistoryFunction.includes("startsWith(\"Bearer \""), "Historical provider function must require an authenticated caller");
 assert.ok(marketHistoryFunction.includes("authClient.auth.getUser(accessToken)") && marketHistoryFunction.includes("authData.user"), "Historical provider function must verify the Supabase user session, not merely check for a Bearer header.");
+assert.ok(marketHistoryFunction.includes('source === "stooq"') && marketHistoryFunction.includes("https://stooq.com/q/d/") && marketHistoryFunction.includes('provider: "Stooq"'), "Historical data endpoint must expose a free, attributed Stooq daily source.");
+assert.ok(html.includes('id="td-free-fetch"') && html.includes('source:"stooq"') && html.includes('el("td-cloud-save").click()'), "Free public history must be fetchable in the Trading Dock and automatically cached for reuse.");
 assert.ok(marketHistoryFunction.includes("TIME_SERIES_DAILY") && marketHistoryFunction.includes("FX_DAILY") && marketHistoryFunction.includes("DIGITAL_CURRENCY_DAILY"), "Historical provider must use documented daily series endpoints for supported market categories");
 assert.ok(marketHistoryFunction.includes("isValidCalendarDate") && marketHistoryFunction.includes("candles.length < 60") && marketHistoryFunction.includes("candles.length > 10000"), "Provider data must validate calendar dates and enforce bounded backtest history");
 assert.ok(marketHistoryFunction.includes("gapsOverSevenDays") && marketHistoryFunction.includes("duplicateDates") && marketHistoryFunction.includes("rejected:"), "Provider response must include data-quality diagnostics");

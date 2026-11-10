@@ -3,9 +3,12 @@ run-name: Bosley Android Build (${{ github.sha }})
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     paths:
       - 'index.html'
+      - 'src/trading/**'
       - 'package.json'
       - 'vite.config.ts'
       - 'capacitor.config.ts'
@@ -42,12 +45,19 @@ jobs:
         run: |
           npm install
           npm run test:companion
+          npm run test:strategy-library
+          node --check src/trading/strategy-library.js
+          node --check src/trading/strategy-audit.js
+          node --check src/trading/strategy-parser.js
+          node --check src/trading/backtest-engine.js
           npm run build
 
       - name: Use the shared production Bosley interface for Android
         run: |
           test -s index.html
           cp index.html dist/index.html
+          mkdir -p dist/src/trading
+          cp src/trading/*.js dist/src/trading/
           node scripts/check-ui-parity.mjs index.html dist/index.html "Android staging"
           grep -q 'id="side-dock"' dist/index.html
           grep -q 'id="launch"' dist/index.html

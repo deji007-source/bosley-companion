@@ -4,6 +4,8 @@ run-name: Bosley Windows Build (${{ github.sha }})
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     paths:
       - ".github/workflows/build-windows.yml"
@@ -36,6 +38,11 @@ jobs:
         run: |
           npm install
           npm run test:companion
+          npm run test:strategy-library
+          node --check src/trading/strategy-library.js
+          node --check src/trading/strategy-audit.js
+          node --check src/trading/strategy-parser.js
+          node --check src/trading/backtest-engine.js
           node scripts/check-windows-idle.mjs
           npm run build
 
@@ -101,6 +108,8 @@ jobs:
           # Package the same standalone UI that is deployed as the working website.
           # dist/index.html is a separate React shell, not the production companion UI.
           cp index.html desktop/index.html
+          mkdir -p desktop/src/trading
+          cp src/trading/*.js desktop/src/trading/
           node scripts/check-ui-parity.mjs index.html desktop/index.html "Windows packaged interface"
           # Vite currently inlines the app's JavaScript and CSS into index.html.
           # Copy asset files when emitted, but don't fail when the build is self-contained.

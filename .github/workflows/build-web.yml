@@ -23,12 +23,20 @@ jobs:
       - name: Build and type-check companion
         run: npm run build
       - name: Run companion regression checks
-        run: npm run test:companion
+        run: |
+          npm run test:companion
+          npm run test:strategy-library
+          node --check src/trading/strategy-library.js
+          node --check src/trading/strategy-audit.js
+          node --check src/trading/strategy-parser.js
+          node --check src/trading/backtest-engine.js
       - name: Stage the production companion website
         run: |
           test -s index.html
           mkdir -p dist
           cp index.html dist/index.html
+          mkdir -p dist/src/trading
+          cp src/trading/*.js dist/src/trading/
           node scripts/check-ui-parity.mjs index.html dist/index.html "website"
           grep -q 'id="side-dock"' dist/index.html
           grep -q 'id="launch"' dist/index.html

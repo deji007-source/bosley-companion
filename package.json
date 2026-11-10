@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test:companion": "node scripts/check-companion.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:strategy-library": "node scripts/check-strategy-library.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

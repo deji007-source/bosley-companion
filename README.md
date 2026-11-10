@@ -107,3 +107,28 @@ Edge Functions and database policies should be reviewed and tested before enabli
 The default GitHub Actions artifact is a **debug APK for development testing only**. A successful build does not mean Google Play Protect has reviewed or trusted it. Do not disable Play Protect to install an unfamiliar APK.
 
 For a signed release, configure these GitHub Actions repository secrets using a release keystore that you control: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`. Keep a secure offline backup of the keystore and passwords; the signing identity must remain stable for future updates. The workflow then produces a signed APK for controlled testing and an Android App Bundle (`.aab`) suitable for uploading to Play Console. Play Console internal testing or a reviewed store release is the preferred distribution path. Signing alone does not guarantee Play Protect approval.
+
+## Trading Dock strategy library
+
+The Trading Dock now has a versioned strategy-library module backed by the Jarvis Supabase project. Signed-in users can save named strategies, append immutable revisions, inspect revision history, and restore an older revision as a new revision. The first portable rule format supports explicit long-only SMA/EMA crossovers and RSI rules with matching 50/50 entry and exit thresholds. The Trading Dock also ships seven selectable examples: SMA 20/50, SMA 10/30, EMA 9/21, EMA 12/26, RSI 14/50, MACD 12/26/9, and Bollinger 20/2. Each preset is validated by the same production parser before it can be loaded into the editor.
+
+Strategy imports accept small JSON-based Bosley Strategy v1 files only. Imported content is parsed as data, checked for supported fields and suspicious executable content, and stored as pending licence/security review. Imports are not executed or activated. Arbitrary Python, JavaScript and shell content is rejected.
+
+Comparison sets pin one saved historical dataset, a date window, and selected strategy revisions. Creating a comparison set does not itself run the comparison; each backtest still needs to be run and verified on the same dataset and date window before results can be compared. Backtests started with a saved strategy revision receive separate execution records and event logs.
+
+The chat assistant routes trading and market-data questions to a market-literacy context. It distinguishes provider history from synthetic demonstration data, explains assumptions and uncertainty, and does not connect brokerage accounts or submit orders.
+
+Run the focused rule/import checks with:
+
+```bash
+npm run test:strategy-library
+```
+
+The strategy library and audit modules are copied into the web, Android and Windows build artifacts by their respective workflows.
+
+
+### Cross-platform strategy-library builds
+
+The website, Android WebView package, and Windows Electron package load the same `src/trading/strategy-library.js` and `src/trading/strategy-audit.js` modules from the repository. Their GitHub Actions workflows run the shared companion regression checks, strategy-rule/import checks, and JavaScript syntax checks. Android and Windows workflows also run for pull requests targeting `main`, alongside the website workflow, so a change is checked across all three delivery targets before merge.
+
+The strategy format is intentionally versioned and extensible. Existing supported rule types remain available; additional strategy types should be added only after their exact entry, exit, indicator, and risk semantics are specified and validated. A future custom strategy requested by the user will be added as a separately tested rule type rather than guessed from an incomplete description.

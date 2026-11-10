@@ -21,7 +21,7 @@ const analysis = context.window.BosleyMarketIntelligence.analyze(bars);
 assert.equal(analysis.observations, 40);
 assert.ok(Number.isFinite(analysis.rsi14));
 assert.ok(analysis.trend.length > 0);
-assert.match(analysis.disclaimer, /not a forecast/);
+assert.match(analysis.disclaimer, /not a forecast/i);
 assert.throws(() => context.window.BosleyMarketIntelligence.analyze(bars.slice(0, 10)), /At least 20/);
 const flat = context.window.BosleyMarketIntelligence.analyze(Array.from({ length: 20 }, () => ({ close: 50 })));
 assert.equal(flat.rsi14, 50, "Flat price series should produce neutral RSI.");

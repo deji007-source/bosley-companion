@@ -66,7 +66,9 @@ assert.ok(html.includes('ideaStatus("Done — your text has been updated. Tap Un
 assert.ok(html.includes('read(saved.target).trim()!==saved.applied.trim()') && html.includes('ideaPop.querySelector("[data-idea-apply]").disabled=!ideaUndo'), "Undo must preserve newer user edits and remain available when the bulb is reopened");
 assert.ok(html.includes('button.dataset.ideaMode==="shorten"?"concise"') && html.includes('data-idea-mode="professional"') && html.includes('data-idea-mode="summarize"'), "Bulb editing actions must map to supported Writing Assist modes");
 assert.ok(html.includes('id="dock-launcher-menu" hidden role="menu"') && html.includes('role="menuitem" data-open-view="writing-assist">Writing Studio</button>') && html.includes('role="menuitem" data-open-view="universal-input">Universal Input</button>'), "The dock dropdown must use clear vertical page labels");
-const launcherMenu = html.match(/<div id="dock-launcher-menu"[\\s\\S]*?<\\/div>/)?.[0] || "";
+const launcherStart = html.indexOf('<div id="dock-launcher-menu"');
+const launcherEnd = html.indexOf("</div>", launcherStart);
+const launcherMenu = launcherStart >= 0 && launcherEnd >= 0 ? html.slice(launcherStart, launcherEnd + 6) : "";
 assert.equal([...launcherMenu.matchAll(/data-open-view="money-learning"/g)].length, 1, "Trading Dock must appear exactly once in the floating launcher menu");
 assert.ok(html.includes('window.addEventListener("click",event=>{') && html.includes('dockClickGuardAt=Date.now()') && !html.includes('let dockPointerHandledAt=0'), "The page dropdown must respond to a single native click without requiring a long press");
 assert.ok(html.includes('#dock-launcher-menu{display:flex!important;flex-direction:column!important') && html.includes('grid-template-columns:none!important'), "The dropdown must stay a vertical text list despite legacy grid styles");

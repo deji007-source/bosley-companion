@@ -31,7 +31,57 @@ for (const [index, source] of inlineScripts.entries()) {
   );
 }
 
+
+const strategyScript = inlineScripts.find(source => source.includes("const parseStrategy=raw=>{"));
+assert.ok(strategyScript, "Trading Dock application script must be present");
+const parserStart = strategyScript.indexOf("const parseStrategy=raw=>{");
+assert.ok(parserStart >= 0, "Trading Dock must expose its constrained natural-language strategy parser");
+const parserEnd = strategyScript.indexOf("  const csvRows=raw=>{", parserStart);
+assert.ok(parserEnd > parserStart, "Strategy parser must have a clear end before CSV parsing");
+const parseStrategy = vm.runInNewContext(strategyScript.slice(parserStart, parserEnd).trim() + ";parseStrategy");
+for (const [rule, mode] of [
+  ["Long-only SMA crossover. Buy when SMA 20 crosses above SMA 50. Exit when SMA 20 crosses below SMA 50.", "sma"],
+  ["Long-only EMA crossover. Buy when EMA 20 crosses above EMA 50. Exit when EMA 20 crosses below EMA 50.", "ema"],
+  ["Long-only RSI(14) threshold crossover. Buy when RSI crosses above 55 and exit when RSI crosses below 55.", "rsi"],
+  ["Long-only MACD(12, 26, 9) crossover. Buy when the MACD line crosses above its signal line and exit when it crosses below.", "macd"],
+  ["Long-only Bollinger Bands(20, 2) breakout. Buy when the close crosses above the upper band and exit when it closes back below.", "bollinger"],
+]) {
+  const parsed = parseStrategy(rule);
+  assert.equal(parsed.ok, true, "No-code strategy builder output must parse: " + mode);
+  assert.equal(parsed.mode, mode, "No-code strategy builder must preserve the selected indicator: " + mode);
+}
+assert.equal(parseStrategy("import os; os.system('anything')").ok, false, "Arbitrary pasted code must never be accepted as a strategy rule");
+assert.equal(parseStrategy("Buy when the 20-day EMA crosses above the 50-day EMA and exit when it crosses below.").mode, "ema", "Natural-language day-period EMA rules must parse");
+assert.equal(parseStrategy("Buy when RSI(14) crosses above 60 and sell when it crosses below 40.").ok, false, "Different RSI entry and exit thresholds must not be silently treated as the same threshold");
+
+
 const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
+assert.ok(androidInstaller.includes("gestureHandler.postDelayed(holdAction,550)") && androidInstaller.includes('openCompanion("capture-screen")'), "Holding the Android bulb must summon the explicit screen-capture assistant flow");
+const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
+assert.ok(html.includes('id="bosley-theme"') && html.includes('<option value="dark">Dark</option>') && html.includes('<option value="light">Light</option>') && html.includes('<option value="system">Follow device</option>'), "Appearance must expose Dark, Light and System theme choices");
+assert.ok(html.includes('id="bosley-light-theme"') && html.includes('html[data-bosley-theme="light"]') && html.includes('html[data-bosley-theme="dark"]{color-scheme:dark}'), "Both light and dark themes must define explicit color-scheme and palette rules");
+assert.ok(html.includes('key="bosley_color_theme"') && html.includes('localStorage.setItem(key,mode)') && html.includes('e.addEventListener("change",()=>apply(e.value))'), "Theme selection must persist and apply immediately when changed");
+assert.ok(html.includes('new MutationObserver(bind)') && html.includes('matchMedia("(prefers-color-scheme: light)")'), "Appearance selector binding must survive rendered panels and System mode must follow the device preference");
+assert.ok(html.includes('html[data-bosley-theme="light"] .workspace input') && html.includes('html[data-bosley-theme="light"] .td-card input') && html.includes('html[data-bosley-theme="light"] #bosley-idea-pop'), "Light mode must cover workspace forms, Trading Dock forms and the floating idea card");
+assert.ok(html.includes('getDisplayMedia({video:{frameRate:1},audio:false})') && html.includes('stream.getTracks().forEach(track=>track.stop())'), "Browser screen capture must be user-selected, single-frame and stop its media tracks");
+assert.ok(html.includes('pendingImageData=await normalizeCapturedImage(result.dataUrl)') && html.includes('$("#imageattachment").hidden=false') && html.includes('$("#form").onsubmit=e=>') && html.includes('img=pendingImageData'), "A captured screen image must become a chat attachment and enter the normal send flow only after submit");
+assert.ok(html.includes('if(action==="capture-screen"){const capture=$("#screen")') && html.includes('capture.dataset.nativeCaptureConfirmed="true";capture.click()'), "Android long-press launch action must invoke the screen capture control after native handoff");
+assert.ok(windowsWorkflow.includes('setTimeout(()=>{held=true;window.bosleyDesktop.openScreenAssistant()},550)') && windowsWorkflow.includes("openScreenAssistant: () => ipcRenderer.send('bosley:open-screen-assistant')"), "Windows bulb long-press must call the native screen assistant bridge");
+assert.ok(windowsWorkflow.includes("ipcMain.on('bosley:open-screen-assistant'") && windowsWorkflow.includes("panel.webContents.send('bosley:screen-assistant-request')") && html.includes('onScreenAssistantRequest?.(()=>{if(screenButton&&!screenButton.hidden)screenButton.click()'), "Windows screen assistant request must reach the shared screen-capture and chat-attachment handler");
+assert.ok(html.includes('id="bosley-screen-ask"') && html.includes('class="bsa-glow"') && html.includes('aria-label="Ask Bosley about this screen"'), "Screen capture must open the floating bezel-glow ask card");
+assert.ok(html.includes('id="bsa-question"') && html.includes('id="bsa-summary"') && html.includes('id="bsa-send"'), "Screen ask card must provide a question field, quick summary and send action");
+assert.ok(html.includes('showScreenAskCard()') && html.includes('image.src=pendingImageData'), "Successful capture must populate and reveal the screenshot preview card");
+assert.ok(html.includes('await send(question,attachment,"",[])') && html.includes('Give me a brief summary of what is visible in this screenshot.'), "Quick summary and custom question must send the captured image through the normal Bosley vision chat flow");
+assert.ok(html.includes('id="bosley-light-inversion"') && html.includes('html[data-bosley-theme="light"] .panel') && html.includes('html[data-bosley-theme="light"] .td-card') && html.includes('html[data-bosley-theme="light"] input') && html.includes('html[data-bosley-theme="light"] #bosley-screen-ask .bsa-glow'), "Light mode must invert the dark interface while preserving captured media and the screen ask card palette");
+
+assert.ok(html.includes('id="td-test-strategy"') && html.includes('id="td-run"') && html.includes('id="td-progress-percent"') && html.includes('id="td-run-status"'), "Trading Dock must expose a repeatable strategy test, run action, progress and status outputs");
+assert.ok(html.includes('id="td-idea-indicator"') && html.includes('id="td-idea-fast"') && html.includes('id="td-idea-slow"') && html.includes('id="td-build-strategy"'), "Trading Dock must provide a no-code visual strategy builder");
+assert.ok(html.includes('id="td-idea-description"') && html.includes('id="td-use-description"'), "Trading Dock must accept plain-language strategy descriptions without requiring source code");
+assert.ok(html.includes('const buildPlainLanguageStrategy=') && html.includes('parseStrategy(description)'), "No-code and natural-language strategy inputs must be validated by the same supported strategy parser before backtesting");
+assert.ok(html.includes('https://github.com/pmorissette/bt') && html.includes('MIT') && html.includes('https://github.com/kernc/backtesting.py') && html.includes('AGPL-3.0') && html.includes('https://github.com/mementum/backtrader') && html.includes('GPL-3.0'), "Trading Dock research library must list the reviewed projects and their licence terms");
+assert.ok(html.includes('No repository code has been vendored') && html.includes('separately reviewed backend research adapter'), "Open-source research references must not be represented as already integrated or executed");
+
+
 assert.ok(html.includes("bosley_contacts"), "Writing Studio contacts must sync through the signed-in Bosley account");
 assert.ok(html.includes("syncBosleyContacts"), "Saved contacts must hydrate from the shared cloud contact table");
 assert.ok(html.includes("universal_input_draft"), "Universal Input drafts must persist to the shared account sync record");
@@ -88,7 +138,7 @@ assert.ok(androidInstaller.includes('"android.permission.MODIFY_AUDIO_SETTINGS"'
 assert.ok(androidInstaller.includes('"mailto".equalsIgnoreCase(scheme)') && androidInstaller.includes('"sms".equalsIgnoreCase(scheme)'), "Android native bridge must allow reviewed email and SMS composer links");
 assert.ok(appScript.includes('window.Capacitor?.Plugins?.BosleyOverlay') && appScript.includes('native?.openExternalUrl'), "Android communication handoffs must use the native external-app bridge");
 
-const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
+
 const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
 assert.ok(appScript.includes('connectButton.disabled=false'), "Agents Connect buttons must remain available so server configuration errors can be shown and corrected");
 assert.ok(!appScript.includes("disabled=!credentialStoreReady"), "Agents UI must not silently disable provider connection when credential-store readiness is false");
@@ -128,7 +178,7 @@ assert.ok(html.includes("Provisional return") && html.includes("Trade win rate")
 assert.ok(html.includes("emaSeries=") && html.includes("emaPeriods=") && html.includes('mode:"ema"') && html.includes("fastEma[i]>slowEma[i]"), "EMA crossover rules must be parsed and calculated with exponential moving averages rather than SMA or price-vs-SMA substitutions");
 assert.ok(html.includes("rsiSeries=") && html.includes('mode:"rsi"') && html.includes("rsiValues[i]>p.threshold") && html.includes("emaValues=") && html.includes('mode:"macd"') && html.includes("macdLine[i]>macdSignalLine[i]"), "RSI and MACD strategy descriptions must map to their actual indicator calculations");
 assert.ok(html.includes("warmupBars:rsiPeriod") && html.includes("warmupBars:macdSlow+macdSignal-2") && html.includes("i===backtestStart") && html.includes("i===split+2") && html.includes("activeSignalBars"), "Indicator warmup and active-at-window-start conditions must be handled in both in-sample and holdout simulations");
-assert.ok(html.includes('id="td-indicator"') && html.includes('id="td-fast"') && html.includes('id="td-slow"') && html.includes('id="td-apply-template"') && html.includes("syncStrategyBuilder") && html.includes("const p=understand();if(!p.ok)return") && !html.includes("if(!syncStrategyBuilder())return"), "Indicator settings must be optional and custom strategy text must be preserved when analysing and running");
+assert.ok(html.includes('id="td-indicator"') && html.includes('id="td-fast"') && html.includes('id="td-slow"') && html.includes('id="td-apply-template"') && html.includes("syncStrategyBuilder") && html.includes('const p=understand();if(!p.ok){el("td-report-tag").textContent="STRATEGY ERROR"') && !html.includes("if(!syncStrategyBuilder())return"), "Indicator settings must be optional and custom strategy text must be preserved when analysing and running");
 assert.ok(html.includes("intraday candles, but the selected dataset contains daily candles") && html.includes("Daily drawdown limits are not yet modeled") && html.includes("take-profit are applied to OHLC candles"), "Unsupported intraday timeframe and the remaining unimplemented daily drawdown control must be disclosed");
 assert.ok(html.includes("Backtest failed: ") && html.includes("No partial result was saved as a completed report."), "Runtime errors must be surfaced and must not leave the backtest controls stuck or save partial results as complete");
 assert.ok(html.includes("rows.length<756")&&html.includes("day.getUTCDay()===0||day.getUTCDay()===6"), "Three-year demo data must use 756 weekday trading sessions rather than calendar-day candles");

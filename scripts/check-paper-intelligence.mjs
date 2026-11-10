@@ -23,4 +23,8 @@ assert.ok(Number.isFinite(analysis.rsi14));
 assert.ok(analysis.trend.length > 0);
 assert.match(analysis.disclaimer, /not a forecast/);
 assert.throws(() => context.window.BosleyMarketIntelligence.analyze(bars.slice(0, 10)), /At least 20/);
+const flat = context.window.BosleyMarketIntelligence.analyze(Array.from({ length: 20 }, () => ({ close: 50 })));
+assert.equal(flat.rsi14, 50, "Flat price series should produce neutral RSI.");
+const falling = context.window.BosleyMarketIntelligence.analyze(Array.from({ length: 20 }, (_, i) => ({ close: 100 - i })));
+assert.equal(falling.rsi14, 0, "A strictly falling series should produce zero RSI.");
 console.log("Paper account and market intelligence checks passed.");

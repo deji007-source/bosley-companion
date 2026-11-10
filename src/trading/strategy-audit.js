@@ -35,7 +35,7 @@ function init(){
    if(ids.length<2)throw Error("Select at least two strategies.");
    const {data:dataset,error:datasetError}=await client.from("market_research_datasets").select("id,name,symbol,timeframe,row_count,started_on,ended_on,source_name,source_type,quality_report,metadata").eq("id",datasetId).single();
    if(datasetError)throw datasetError;
-   if(start<dataset.started_on||end>dataset.ended_on)throw Error("Date range must be inside the selected dataset's available history.");
+   if(!dataset.started_on||!dataset.ended_on||start<dataset.started_on||end>dataset.ended_on)throw Error("Date range must be inside the selected dataset's available history.");
    const {data:strategies,error}=await client.from("trading_strategies").select("id,current_revision").in("id",ids);
    if(error)throw error;
    const revisions=[];
@@ -80,7 +80,8 @@ function init(){
   }
   async function beginRun(){
    if(active)return;
-   const selected=$("#bsl-select"),revisionSelect=$("#bsl-revision"),strategyId=selected?.value;
+   const selected=$("#bsl-select"),revisionSelect=$("#bsl-revision"),strategyId=selected?.value,ready=(($("#td-report-tag")?.textContent||"").trim());
+   if(!["READY","TEST READY"].includes(ready)){say("Understand and validate the strategy before starting an audited backtest.");return;}
    if(!strategyId){say("Save or select a named strategy before running if you want this execution audited.");return;}
    try{
     const {client,user}=await auth();let revisionId=revisionSelect?.value;

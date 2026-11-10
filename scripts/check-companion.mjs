@@ -9,6 +9,13 @@ const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g
   .map(([, , source]) => source);
 
 assert.ok(inlineScripts.length > 0, "Expected the companion's inline application script");
+assert.ok(html.includes('id="trading-dock-open"'), "Trading Dock must have a direct, always-visible header entry");
+assert.ok(html.includes('id="money-learning"') && html.includes('panel:"money-learning"') && html.includes('data-open-view="money-learning"'), "Trading Dock page must exist, be registered and be reachable from the launcher");
+assert.ok(html.includes('window.BosleyOpenTradingDock=()=>show("money-learning")'), "Trading Dock must expose a stable direct navigation action");
+assert.ok(html.includes('id="td-preset"') && html.includes('id="td-load-preset"') && html.includes('id="td-run"') && html.includes('id="td-cancel"'), "Trading Dock must expose strategy presets and working run/cancel controls");
+assert.ok(html.includes('id="td-provider-fetch"') && html.includes('db.functions.invoke("market-history"'), "Trading Dock must connect to the authenticated historical data provider");
+assert.ok(html.includes('src="./src/trading/strategy-parser.js"') && html.includes('src="./src/trading/backtest-engine.js"'), "Shared strategy parser and backtest engine must load in the production interface");
+
 assert.ok(html.includes('id="td-test-strategy"'), "Trading Dock must expose a repeatable SMA 20/50 test strategy");
 assert.ok(html.includes('el("td-test-strategy").addEventListener("click"'), "The test strategy control must load and validate its rule");
 assert.ok(html.includes("Not started · strategy needs changes") && html.includes("NEEDS STRATEGY"), "Rejected strategies must be clearly distinguished from active backtest progress");
@@ -17,6 +24,10 @@ assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear aft
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
+const strategyParser = readText(new URL("../src/trading/strategy-parser.js", import.meta.url), "utf8");
+const backtestEngine = readText(new URL("../src/trading/backtest-engine.js", import.meta.url), "utf8");
+assert.ok(strategyParser.includes("export const strategyPresets") && strategyParser.includes("bollinger-20-2"), "The built-in strategy catalogue must include all supported indicator families");
+assert.ok(backtestEngine.includes("export async function runBacktest") && backtestEngine.includes("holdout") && backtestEngine.includes("shouldCancel"), "The shared engine must expose tested simulation, holdout and cancellation behaviour");
 
 assert.ok(marketHistoryFunction.includes("authorization") && marketHistoryFunction.includes("startsWith(\"Bearer \""), "Historical provider function must require an authenticated caller");
 assert.ok(marketHistoryFunction.includes("TIME_SERIES_DAILY") && marketHistoryFunction.includes("FX_DAILY") && marketHistoryFunction.includes("DIGITAL_CURRENCY_DAILY"), "Historical provider must use documented daily series endpoints for supported market categories");

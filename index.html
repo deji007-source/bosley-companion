@@ -1422,7 +1422,16 @@ document.addEventListener("DOMContentLoaded",()=>{
      }
     }});
     if(!r||token!==runToken)return;
-    renderReport(r);state.initial=initial;state.balance=r.finalEquity;state.strategy=el("td-strategy").value;state.lastRun={at:new Date().toISOString(),return:r.totalReturn,trades:r.trades,dataset:state.dataName};save();
+    renderReport(r);state.initial=initial;state.balance=r.finalEquity;state.strategy=el("td-strategy").value;
+    const runId="backtest-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
+    try{
+     const account=state.paperAccount&&Math.abs(Number(state.paperAccount.initialBalance)-initial)<0.005?state.paperAccount:window.BosleyPaperAccounts.createAccount({label:state.paperAccount?.label||"Paper learning account",currency:"USD",startingBalance:initial});
+     const delta=Math.round((r.finalEquity-initial+Number.EPSILON)*100)/100;
+     state.paperAccount=delta===0?account:window.BosleyPaperAccounts.record(account,{type:"backtest-result",amount:delta,reference:runId,note:"Completed historical simulation · "+String(state.dataName||"dataset").slice(0,55)});
+     paperSummary();
+     el("td-paper-summary").textContent+=" · latest simulation "+(delta>=0?"+":"")+money(delta-initial*0)+" P/L";
+    }catch(accountError){el("td-paper-summary").textContent="Backtest completed; paper ledger update needs attention: "+accountError.message;}
+    state.lastRun={id:runId,at:new Date().toISOString(),return:r.totalReturn,trades:r.trades,dataset:state.dataName,finalEquity:r.finalEquity,initialEquity:initial,validation:{inSampleStart:r.start,inSampleEnd:r.end,outOfSampleStart:r.oosStart,outOfSampleReturn:r.oosReturn}};save();
     progress(100,"Completed · "+bars.length.toLocaleString()+" candles · "+r.signalChanges+" signal changes · "+r.trades+" closed trades · out-of-sample validation finished.");
     runActive=false;el("td-run").disabled=false;el("td-cancel").disabled=true;el("td-report").closest(".td-card")?.scrollIntoView({behavior:"smooth",block:"start"});
    }catch(error){

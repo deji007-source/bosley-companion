@@ -1445,9 +1445,9 @@ document.addEventListener("DOMContentLoaded",()=>{
   el("td-cancel").addEventListener("click",()=>{if(!runActive)return;runToken++;runActive=false;el("td-run").disabled=false;el("td-cancel").disabled=true;el("td-run-status").textContent="Run cancelled. No partial result was saved or labelled complete.";el("td-report-tag").textContent="CANCELLED";});
 
   const buildPlainLanguageStrategy=()=>{
-   const kind=el("td-idea-indicator").value,logic=el("td-idea-logic").value,fast=Math.floor(Number(el("td-idea-fast").value)),slow=Math.floor(Number(el("td-idea-slow").value)),threshold=Number(el("td-idea-threshold").value),band=Number(el("td-idea-band").value);
-   if(!Number.isInteger(fast)||fast<2||fast>100){el("td-understanding").textContent="Fast / indicator period must be a whole number from 2 to 100.";return false;}
-   if(["sma","ema","macd"].includes(kind)&&(!Number.isInteger(slow)||slow<=fast||slow>250)){el("td-understanding").textContent="Slow period must be a whole number greater than the fast period and no more than 250.";return false;}
+   const kind=el("td-idea-indicator").value,logic=el("td-idea-logic").value,fast=Math.floor(Number(el("td-idea-fast").value)),slow=Math.floor(Number(el("td-idea-slow").value)),threshold=Number(el("td-idea-threshold").value),band=Number(el("td-idea-band").value),maxFast=["rsi","macd"].includes(kind)?100:250,maxSlow=kind==="macd"?100:250;
+   if(!Number.isInteger(fast)||fast<2||fast>maxFast){el("td-understanding").textContent="Fast / indicator period must be a whole number from 2 to "+maxFast+".";return false;}
+   if(["sma","ema","macd"].includes(kind)&&(!Number.isInteger(slow)||slow<=fast||slow>maxSlow)){el("td-understanding").textContent="Slow period must be a whole number greater than the fast period and no more than "+maxSlow+".";return false;}
    if(kind==="rsi"&&(!Number.isFinite(threshold)||threshold<1||threshold>99)){el("td-understanding").textContent="RSI threshold must be between 1 and 99.";return false;}
    if(kind==="bollinger"&&(!Number.isFinite(band)||band<.5||band>4)){el("td-understanding").textContent="Bollinger deviation must be between 0.5 and 4.";return false;}
    let rule="";

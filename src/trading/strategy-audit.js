@@ -103,8 +103,8 @@ function init(){
    if(error)throw error;
   }
   async function finish(statusValue,message){
-   if(!active)return;const current=active;active=null;if(observer)observer.disconnect();
-   try{await writeLog("run_"+statusValue,message);const {error}=await current.client.from("trading_backtest_runs").update({status:statusValue==="completed"?"completed":statusValue,completed_at:new Date().toISOString(),error_summary:statusValue==="failed"?message.slice(0,2000):null}).eq("id",current.id);if(error)throw error;await refresh();say("Execution "+current.id.slice(0,8)+" "+statusValue+" and its log was saved.");}catch(e){say("Execution finished, but audit update failed: "+e.message);}
+   if(!active)return;const current=active;if(observer)observer.disconnect();
+   try{await writeLog("run_"+statusValue,message);const {error}=await current.client.from("trading_backtest_runs").update({status:statusValue==="completed"?"completed":statusValue,completed_at:new Date().toISOString(),error_summary:statusValue==="failed"?message.slice(0,2000):null}).eq("id",current.id);if(error)throw error;active=null;await refresh();say("Execution "+current.id.slice(0,8)+" "+statusValue+" and its log was saved.");}catch(e){active=null;say("Execution finished, but audit update failed: "+e.message);}
   }
   $("#bsa-refresh",box).addEventListener("click",()=>refresh().catch(e=>say(e.message)));
   panel.addEventListener("click",event=>{if(event.target.closest("#td-run"))beginRun();});

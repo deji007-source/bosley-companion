@@ -1598,23 +1598,56 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
   el("td-public-symbol-list").addEventListener("change",()=>{const symbol=el("td-public-symbol-list").value;if(symbol)el("td-symbol").value=symbol;});
   el("td-stooq-fetch").addEventListener("click",async()=>{
-   const button=el("td-stooq-fetch"),status=el("td-stooq-status"),symbol=el("td-symbol").value.trim().toLowerCase(),from=el("td-history-from").value,to=el("td-history-to").value||new Date().toISOString().slice(0,10);
-   if(!db){status.textContent="Historical data connection is unavailable.";return}
-   if(!symbol){status.textContent="Enter a Stooq symbol first, e.g. aapl.us or eurusd.";return}
-   if(!from||from>to||to>new Date().toISOString().slice(0,10)){status.textContent="Choose a valid date range. The start must be on or before the end, and the end cannot be in the future.";return}
-   const owner=await cloudReady();if(!owner)return;
-   button.disabled=true;status.textContent="Checking shared cache and fetching missing daily observations from Stooq for "+from+" to "+to+"…";
+   const button=el("td-stooq-fetch"),status=el("td-stooq-status");
+   const symbol=(el("td-symbol").value.trim()||"spy.us").toLowerCase();
+   const from=el("td-history-from").value||"2000-01-01";
+   const to=el("td-history-to").value||new Date().toISOString().slice(0,10);
+   if(!db){status.textContent="Bosley data connection is unavailable. Reload the app and try again.";return}
+   if(!/^[a-z0-9.^_-]{1,32}$/.test(symbol)){status.textContent="That Stooq symbol is not valid. The default SPY symbol is spy.us.";return}
+   if(!from||from>to||to>new Date().toISOString().slice(0,10)){status.textContent="The historical date range is invalid. Choose a start date before the end date.";return}
+   button.disabled=true;button.setAttribute("aria-busy","true");
+   const originalLabel=button.textContent;button.textContent="Connecting…";
    try{
-    const {data:payload,error}=await db.functions.invoke("public-market-history",{body:{symbol,from,to}});
-    if(error)throw error;if(!payload||payload.error)throw Error(payload?.error||"Stooq returned an empty response.");
-    if(!Array.isArray(payload.rows)||payload.rows.length<2)throw Error("The source returned fewer than two valid daily observations.");
+    status.textContent="Checking your Bosley sign-in session…";
+    let {data:sessionData,error:sessionError}=await db.auth.getSession();
+    let session=sessionData?.session;
+    if(sessionError)throw new Error("Could not read your sign-in session: "+sessionError.message);
+    if(!session?.access_token){
+     const refreshed=await db.auth.refreshSession();
+     if(refreshed.error||!refreshed.data?.session?.access_token)throw new Error("Your sign-in session needs refreshing. Sign out and back in, then retry.");
+     session=refreshed.data.session;
+    }else if(session.expires_at&&session.expires_at*1000<Date.now()+60000){
+     const refreshed=await db.auth.refreshSession();
+     if(!refreshed.error&&refreshed.data?.session?.access_token)session=refreshed.data.session;
+    }
+    const {data:userData,error:userError}=await db.auth.getUser(session.access_token);
+    if(userError||!userData?.user)throw new Error("Bosley could not verify your signed-in account. Refresh your sign-in session and retry.");
+    status.textContent="Signed in. Fetching "+symbol.toUpperCase()+" daily history from "+from+" to "+to+"… This may take a little while.";
+    button.textContent="Fetching history…";
+    const {data:payload,error}=await db.functions.invoke("public-market-history",{
+     body:{symbol,from,to},
+     headers:{Authorization:"Bearer "+session.access_token}
+    });
+    if(error){
+     let detail=error.message||"The historical-data service returned an error.";
+     try{const context=error.context;if(context&&typeof context.json==="function"){const body=await context.json();if(body?.error)detail=body.error;}}catch{}
+     throw new Error(detail);
+    }
+    if(!payload||payload.error)throw new Error(payload?.error||"The historical-data service returned an empty response.");
+    if(!Array.isArray(payload.rows)||payload.rows.length<2)throw new Error("The provider returned fewer than two valid observations for "+symbol+".");
     const rows=payload.rows.map(row=>({date:String(row.date),open:Number(row.open),high:Number(row.high),low:Number(row.low),close:Number(row.close),volume:row.volume===null?null:Number(row.volume)}));
+    if(rows.some(r=>!/^\\d{4}-\\d{2}-\\d{2}$/.test(r.date)||![r.open,r.high,r.low,r.close].every(Number.isFinite)))throw new Error("The provider response failed candle validation. No data was loaded.");
+    rows.sort((a,b)=>a.date.localeCompare(b.date));
     state.data=rows;state.dataMode="provider-api";state.dataName="Stooq · "+payload.symbol+" · "+from+" to "+to+" daily history";state.dataSourceName="Stooq";state.dataSourceReference=payload.providerUrl||"https://stooq.com/q/d/";state.marketCategory="general";state.dataRetrievedAt=payload.retrievedAt||new Date().toISOString();state.dataCurrency=null;state.dataQuality=payload.quality||null;state.lastRun=null;
     el("td-dataset-name").value=state.dataName;el("td-symbol").value=payload.symbol||symbol;el("td-source-name").value="Stooq";el("td-source-reference").value=state.dataSourceReference;el("td-market-category").value="general";save();updateDataInfo();
-    el("td-report-tag").textContent="DATA UPDATED";el("td-report").textContent="Stooq daily observations loaded from the shared cache or refreshed from the source. Review source attribution and data quality before running a research backtest.";
-    status.textContent="Loaded "+rows.length.toLocaleString()+" shared daily observations · "+rows[0].date+" to "+rows[rows.length-1].date+" · "+(payload.fetched?"source refreshed and shared cache updated":"served from shared cache")+" · "+Number(payload.quality?.sourceFetchedRows||0).toLocaleString()+" provider rows fetched · "+Number(payload.quality?.rejectedRows||0).toLocaleString()+" rejected. "+payload.attribution;
-   }catch(error){status.textContent="Stooq history request failed: "+(error?.message||String(error));}
-   finally{button.disabled=false;}
+    el("td-report-tag").textContent="DATA UPDATED";el("td-report").textContent="Genuine Stooq daily observations are loaded. Check source attribution and data quality before running the educational historical simulation.";
+    status.textContent="SUCCESS · Loaded "+rows.length.toLocaleString()+" daily observations · "+rows[0].date+" to "+rows[rows.length-1].date+" · "+(payload.fetched?"provider refreshed and shared cache updated":"loaded from shared cache")+" · "+Number(payload.quality?.rejectedRows||0).toLocaleString()+" rejected rows. "+(payload.attribution||"Source: Stooq.");
+    button.textContent="History loaded";
+   }catch(error){
+    const detail=String(error?.message||error||"Unknown error").replace(/\\s+/g," ").slice(0,500);
+    status.textContent="FETCH FAILED · "+detail+" · Your sign-in is retained; you can retry this button.";
+    button.textContent="Retry free Stooq history";
+   }finally{button.disabled=false;button.removeAttribute("aria-busy");if(button.textContent==="Connecting…"||button.textContent==="Fetching history…")button.textContent=originalLabel;}
   });
   const setMarketCategory=category=>{const allowed=["general","equities","forex","crypto"];if(!allowed.includes(category))return;state.marketCategory=category;const picker=el("td-market-category");if(picker)picker.value=category;panel.querySelectorAll("[data-td-category]").forEach(button=>{const active=button.dataset.tdCategory===category;button.setAttribute("aria-pressed",String(active));button.classList.toggle("td-selected",active)});save();};panel.querySelectorAll("[data-td-category]").forEach(button=>button.addEventListener("click",()=>setMarketCategory(button.dataset.tdCategory)));el("td-market-category")?.addEventListener("change",event=>setMarketCategory(event.target.value));setMarketCategory(state.marketCategory||"general");el("td-demo").addEventListener("click",()=>{state.data=seed();state.demoVersion=2;state.dataName="General market demo · generated 3-year series";state.dataMode="synthetic-demo";state.dataQuality=null;state.dataRetrievedAt=null;state.dataCurrency=null;state.dataSourceName="Synthetic demonstration generator";state.dataSourceReference="";setMarketCategory("general");state.lastRun=null;save();updateDataInfo();el("td-report-tag").textContent="NOT RUN";el("td-report").textContent="Demo series loaded. This is synthetic data, not real market history."});
   el("td-capital").addEventListener("change",()=>{const n=Number(el("td-capital").value);if(Number.isFinite(n)&&n>=1&&n<=1000000){state.initial=n;save()}});

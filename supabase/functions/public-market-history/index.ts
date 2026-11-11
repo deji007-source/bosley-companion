@@ -20,6 +20,7 @@ Deno.serve(async (req: Request) => {
   const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!base || !anon || !service) return reply({ error: "Historical-data service is not configured." }, 503);
   let auditContext: { symbol: string; from: string; to: string } | null = null;
+  let auditStartedAt: string | null = null;
   let auditWritten = false;
   const writeAudit = async (status: "success" | "partial" | "failed", errorMessage?: string, metrics: Record<string, unknown> = {}) => {
     if (!auditContext || auditWritten) return;
@@ -27,7 +28,7 @@ Deno.serve(async (req: Request) => {
       const result = await fetch(base + "/rest/v1/market_data_ingestion_runs", {
         method: "POST",
         headers: { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ provider_slug: "stooq", symbol: auditContext.symbol, timeframe: "1d", requested_from: auditContext.from, requested_to: auditContext.to, fetched_rows: Number(metrics.fetched_rows ?? 0), accepted_rows: Number(metrics.accepted_rows ?? 0), rejected_rows: Number(metrics.rejected_rows ?? 0), cache_rows: Number(metrics.cache_rows ?? 0), status, error_message: errorMessage ?? null, quality: metrics.quality ?? {}, finished_at: new Date().toISOString() }),
+        body: JSON.stringify({ provider_slug: "stooq", symbol: auditContext.symbol, timeframe: "1d", requested_from: auditContext.from, requested_to: auditContext.to, started_at: auditStartedAt ?? new Date().toISOString(), fetched_rows: Number(metrics.fetched_rows ?? 0), accepted_rows: Number(metrics.accepted_rows ?? 0), rejected_rows: Number(metrics.rejected_rows ?? 0), cache_rows: Number(metrics.cache_rows ?? 0), status, error_message: errorMessage ?? null, quality: metrics.quality ?? {}, finished_at: new Date().toISOString() }),
       });
       if (!result.ok) console.error("Could not write ingestion audit record", await result.text());
       else auditWritten = true;
@@ -46,6 +47,7 @@ Deno.serve(async (req: Request) => {
     const validDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s + "T00:00:00Z")) && new Date(s + "T00:00:00Z").toISOString().slice(0,10) === s;
     if (!validDate(from) || !validDate(to) || from > to || to > new Date().toISOString().slice(0,10)) return reply({ error: "Choose a valid date range ending today or earlier." }, 400);
     auditContext = { symbol, from, to };
+    auditStartedAt = new Date().toISOString();
 
     const rest = base + "/rest/v1/market_data_candles";
     const headers = { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" };
@@ -103,7 +105,8 @@ Deno.serve(async (req: Request) => {
       attribution:"Source: Stooq. Confirm current data-use terms and attribution requirements before redistribution or commercial use. Provider licensing has not yet been independently approved in Bosley's catalogue."
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Historical data request failed.";
+    console.error("Historical data processing failed", e);
+    const message = e instanceof Error && (e.message === "Could not read shared historical cache." || e.message === "Could not update shared historical cache.") ? e.message : "Historical data processing failed. Please retry later.";
     await writeAudit("failed", message);
     return reply({ error: message }, 500);
   }

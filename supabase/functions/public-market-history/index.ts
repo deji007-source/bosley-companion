@@ -76,10 +76,14 @@ Deno.serve(async (req: Request) => {
       cached = await readAllCached();
     }
     const rows = cached.map(c=>({date:String(c.candle_date),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close),volume:c.volume===null?null:Number(c.volume)}));
+    const retrievedAt = new Date().toISOString();
+    const expectedWeekdays = (() => { let n=0; const d=new Date(from+"T00:00:00Z"), end=new Date(to+"T00:00:00Z"); for(;d<=end;d.setUTCDate(d.getUTCDate()+1)){const day=d.getUTCDay();if(day!==0&&day!==6)n++;} return n; })();
+    const quality = {accepted:rows.length,duplicateDates:0,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000),expectedWeekdays,coverageRatio:expectedWeekdays?Math.min(1,rows.length/expectedWeekdays):1,coverageNote:"Weekday count is indicative only; exchange holidays and provider-specific calendars affect expected observations."};
+    const audit = await fetch(base+"/rest/v1/market_data_ingestion_runs", {method:"POST",headers:{...headers,Prefer:"return=minimal"},body:JSON.stringify({provider_slug:"stooq",symbol,timeframe:"1d",requested_from:from,requested_to:to,fetched_rows:fetched?rows.length:0,accepted_rows:rows.length,rejected_rows:0,cache_rows:rows.length,status:rows.length>=2?"success":"partial",quality,finished_at:retrievedAt})});
+    if(!audit.ok) console.error("Could not write ingestion audit record",await audit.text());
     return reply({
       provider:"Stooq", providerUrl:"https://stooq.com/q/d/", symbol, timeframe:"1d",
-      rows, cache:"shared", fetched, retrievedAt:new Date().toISOString(),
-      quality:{accepted:rows.length,duplicateDates:0,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000)},
+      rows, cache:"shared", fetched, retrievedAt, quality,
       attribution:"Source: Stooq. Confirm current data-use terms and attribution requirements before redistribution or commercial use. Provider licensing has not yet been independently approved in Bosley's catalogue."
     });
   } catch (e) {

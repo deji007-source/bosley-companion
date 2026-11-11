@@ -66,6 +66,7 @@ Deno.serve(async (req: Request) => {
     let cached = await readAllCached();
     let fetched = false;
     let sourceFetchedRows = 0;
+    let sourceAcceptedRows = 0;
     let sourceRejectedRows = 0;
     let sourceDuplicateRows = 0;
     if (cached.length === 0 || cached[0]?.candle_date > from || cached[cached.length - 1]?.candle_date < to) {
@@ -89,6 +90,7 @@ Deno.serve(async (req: Request) => {
         parsed.push({date,open,high,low,close,volume});
       }
       const unique = [...new Map(parsed.map(c=>[c.date,c])).values()].sort((a,b)=>a.date.localeCompare(b.date));
+      sourceAcceptedRows = unique.length;
       sourceDuplicateRows = parsed.length - unique.length;
       sourceRejectedRows += sourceDuplicateRows;
       if (unique.length < 2) { const message = "Fewer than two valid daily observations were returned for this symbol and date range."; await writeAudit("failed", message, { fetched_rows: sourceFetchedRows, rejected_rows: sourceRejectedRows, accepted_rows: unique.length }); return reply({ error: message }, 422); }
@@ -103,8 +105,8 @@ Deno.serve(async (req: Request) => {
     const rows = cached.map(c=>({date:String(c.candle_date),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close),volume:c.volume===null?null:Number(c.volume)}));
     const retrievedAt = new Date().toISOString();
     const expectedWeekdays = (() => { let n=0; const d=new Date(from+"T00:00:00Z"), end=new Date(to+"T00:00:00Z"); for(;d<=end;d.setUTCDate(d.getUTCDate()+1)){const day=d.getUTCDay();if(day!==0&&day!==6)n++;} return n; })();
-    const quality = {accepted:rows.length,sourceFetchedRows, rejectedRows:sourceRejectedRows,duplicateDates:sourceDuplicateRows,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000),expectedWeekdays,coverageRatio:expectedWeekdays?Math.min(1,rows.length/expectedWeekdays):1,coverageNote:"Weekday count is indicative only; exchange holidays and provider-specific calendars affect expected observations."};
-    await writeAudit(rows.length >= 2 ? "success" : "partial", undefined, { fetched_rows: sourceFetchedRows, accepted_rows: fetched ? Math.max(0, rows.length) : rows.length, rejected_rows: sourceRejectedRows, cache_rows: rows.length, quality });
+    const quality = {acceptedCacheRows:rows.length,sourceFetchedRows,sourceAcceptedRows,rejectedRows:sourceRejectedRows,duplicateDates:sourceDuplicateRows,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000),expectedWeekdays,coverageRatio:expectedWeekdays?Math.min(1,rows.length/expectedWeekdays):1,coverageNote:"Weekday count is indicative only; exchange holidays and provider-specific calendars affect expected observations."};
+    await writeAudit(rows.length >= 2 ? "success" : "partial", undefined, { fetched_rows: sourceFetchedRows, accepted_rows: fetched ? sourceAcceptedRows : rows.length, rejected_rows: sourceRejectedRows, cache_rows: rows.length, quality });
     return reply({
       provider:"Stooq", providerUrl:"https://stooq.com/q/d/", symbol, timeframe:"1d",
       rows, cache:"shared", fetched, retrievedAt, quality,

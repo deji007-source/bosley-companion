@@ -60,7 +60,8 @@ assert.equal(normalizedSample[2].volume, null, "Missing volume must remain null,
 assert.throws(() => normalizeHistoricalBars([{ date: "2024-02-30", open: 1, high: 1, low: 1, close: 1, volume: null }]), /invalid date/i);
 assert.throws(() => normalizeHistoricalBars([{ date: "2024-01-01", open: 1, high: 0.5, low: 0.8, close: 1, volume: 1 }]), /invalid date, OHLC value, or volume/i);
 assert.throws(() => normalizeHistoricalBars([{ date: "2024-01-01", open: 1, high: 1, low: 1, close: 1, volume: Number.NaN }]), /invalid date, OHLC value, or volume/i);
-\nconst demoBars = createDemoSeries();
+
+const demoBars = createDemoSeries();
 assert.equal(demoBars.length, 756, "The production demo generator must return the labelled three-year, 756-candle series.");
 assert.ok(demoBars.every((bar, index) => Number.isFinite(bar.open) && Number.isFinite(bar.high) && Number.isFinite(bar.low) && Number.isFinite(bar.close) && bar.high >= Math.max(bar.open, bar.close) && bar.low <= Math.min(bar.open, bar.close) && (!index || bar.date > demoBars[index - 1].date)), "The generated OHLC demo candles must be valid and date ordered.");
 const demoResults = [];

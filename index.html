@@ -1521,7 +1521,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     await db.from("market_research_datasets").delete().eq("id",id);
     cloudStatus("Dataset save failed; the incomplete dataset was rolled back. "+error.message);return;
    }
-   cloudStatus("Saved "+bars.length.toLocaleString()+" dated observations privately to your Bosley account. Source remains user-imported CSV; values have not been independently verified.");
+   cloudStatus("Saved "+bars.length.toLocaleString()+" dated observations privately to your Bosley account. Source: "+(providerMode?(state.dataSourceName||"provider"):"user-imported CSV")+". Provider attribution and validation metadata are retained; values have not been independently audited.");
    await refreshCloudDatasets();
   });
   el("td-cloud-load").addEventListener("click",async()=>{
@@ -1641,7 +1641,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     state.data=rows;state.dataMode="provider-api";state.dataName="Stooq · "+payload.symbol+" · "+from+" to "+to+" daily history";state.dataSourceName="Stooq";state.dataSourceReference=payload.providerUrl||"https://stooq.com/q/d/";state.marketCategory="general";state.dataRetrievedAt=payload.retrievedAt||new Date().toISOString();state.dataCurrency=null;state.dataQuality=payload.quality||null;state.lastRun=null;
     el("td-dataset-name").value=state.dataName;el("td-symbol").value=payload.symbol||symbol;el("td-source-name").value="Stooq";el("td-source-reference").value=state.dataSourceReference;el("td-market-category").value="general";save();updateDataInfo();
     el("td-report-tag").textContent="DATA UPDATED";el("td-report").textContent="Genuine Stooq daily observations are loaded. Check source attribution and data quality before running the educational historical simulation.";
-    status.textContent="SUCCESS · Loaded "+rows.length.toLocaleString()+" daily observations · "+rows[0].date+" to "+rows[rows.length-1].date+" · "+(payload.fetched?"provider refreshed and shared cache updated":"loaded from shared cache")+" · "+Number(payload.quality?.rejectedRows||0).toLocaleString()+" rejected rows. "+(payload.attribution||"Source: Stooq.");
+    status.textContent="SUCCESS · Loaded "+rows.length.toLocaleString()+" daily observations · "+rows[0].date+" to "+rows[rows.length-1].date+" · "+Number(payload.quality?.sourceFetchedRows||0).toLocaleString()+" fetched · "+Number(payload.quality?.acceptedRows||rows.length).toLocaleString()+" accepted · "+Number(payload.quality?.rejectedRows||0).toLocaleString()+" rejected · "+(payload.fetched?"provider refreshed and shared cache updated":"loaded from shared cache")+". "+(payload.attribution||"Source: Stooq.");
     button.textContent="History loaded";
     status.textContent+=" · Automatically saving a private copy to your Bosley research library…";
     const saveButton=el("td-cloud-save");

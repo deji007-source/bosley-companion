@@ -33,9 +33,18 @@ Deno.serve(async (req: Request) => {
     const rest = base + "/rest/v1/market_data_candles";
     const headers = { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" };
     const query = "?provider_slug=eq.stooq&symbol=eq." + encodeURIComponent(symbol) + "&timeframe=eq.1d&candle_date=gte." + from + "&candle_date=lte." + to + "&select=candle_date,open,high,low,close,volume&order=candle_date.asc";
-    const cachedRes = await fetch(rest + query, { headers: { apikey: service, Authorization: "Bearer " + service } });
-    if (!cachedRes.ok) throw new Error("Could not read shared historical cache.");
-    let cached = await cachedRes.json() as Array<Record<string, unknown>>;
+    const readAllCached = async () => {
+      const all: Array<Record<string, unknown>> = [];
+      for (let offset = 0; offset < 50000; offset += 1000) {
+        const page = await fetch(rest + query, { headers: { apikey: service, Authorization: "Bearer " + service, Range: offset + "-" + (offset + 999), "Range-Unit": "items" } });
+        if (!page.ok) throw new Error("Could not read shared historical cache.");
+        const rows = await page.json() as Array<Record<string, unknown>>;
+        all.push(...rows);
+        if (rows.length < 1000) break;
+      }
+      return all;
+    };
+    let cached = await readAllCached();
     let fetched = false;
     if (cached.length === 0 || cached[0]?.candle_date > from || cached[cached.length - 1]?.candle_date < to) {
       const url = new URL("https://stooq.com/q/d/l/");
@@ -64,15 +73,13 @@ Deno.serve(async (req: Request) => {
         if (!saved.ok) throw new Error("Could not update shared historical cache.");
       }
       fetched = true;
-      const refreshed = await fetch(rest + query, { headers: { apikey: service, Authorization: "Bearer " + service } });
-      if (!refreshed.ok) throw new Error("Could not read refreshed historical cache.");
-      cached = await refreshed.json();
+      cached = await readAllCached();
     }
     const rows = cached.map(c=>({date:String(c.candle_date),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close),volume:c.volume===null?null:Number(c.volume)}));
     return reply({
       provider:"Stooq", providerUrl:"https://stooq.com/q/d/", symbol, timeframe:"1d",
       rows, cache:"shared", fetched, retrievedAt:new Date().toISOString(),
-      quality:{accepted:rows.length,duplicateDates:0,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null},
+      quality:{accepted:rows.length,duplicateDates:0,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000)},
       attribution:"Source: Stooq. Confirm current data-use terms and attribution requirements before redistribution or commercial use. Provider licensing has not yet been independently approved in Bosley's catalogue."
     });
   } catch (e) {

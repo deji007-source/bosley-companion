@@ -1174,6 +1174,60 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
  #remote-mode-card .remote-mode-toggle{min-width:46px!important;width:46px!important;height:27px!important;min-height:27px!important;padding:2px 5px!important;font-size:10px!important;border-radius:7px!important}
 }
 </style>
+
+<style id="bosley-workspace-fit-fix">
+/* Give detached pages enough room; keep every section inside the viewport. */
+#side-dock{
+  left:auto!important;right:12px!important;
+  width:min(560px,calc(100vw - 24px))!important;
+  min-width:0!important;
+  height:min(820px,calc(100dvh - 24px))!important;
+  max-height:calc(100dvh - 24px)!important;
+}
+#side-dock .dock-body{
+  display:block;min-width:0;min-height:0;flex:1 1 auto;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior:contain;scrollbar-gutter:stable;
+}
+#side-dock .dock-body>*:not([hidden]){
+  box-sizing:border-box;max-width:100%;min-width:0;
+}
+#side-dock .dock-body>.workspace:not([hidden]),
+#side-dock .dock-body>#money-learning:not([hidden]),
+#side-dock .dock-body>#ws:not([hidden]),
+#side-dock .dock-body>#facepanel:not([hidden]),
+#side-dock .dock-body>#activity:not([hidden]),
+#side-dock .dock-body>.automation:not([hidden]){
+  display:block!important;width:100%!important;max-width:100%!important;
+  min-width:0!important;height:auto!important;min-height:100%;
+  max-height:none!important;overflow:visible!important;
+  margin:0!important;
+}
+#side-dock .dock-body .td-cols,
+#side-dock .dock-body .td-grid,
+#side-dock .dock-body .td-metrics{
+  min-width:0;grid-template-columns:repeat(2,minmax(0,1fr));
+}
+#side-dock .dock-body input,
+#side-dock .dock-body select,
+#side-dock .dock-body textarea,
+#side-dock .dock-body button{max-width:100%;min-width:0}
+#side-dock .dock-tabs{flex:0 0 auto;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden}
+@media(min-width:761px) and (max-width:1100px){
+ #side-dock{width:min(520px,calc(100vw - 24px))!important}
+}
+@media(max-width:760px){
+ #side-dock{left:8px!important;right:8px!important;bottom:8px!important;top:auto!important;
+   width:auto!important;height:min(82dvh,760px)!important;max-height:calc(100dvh - 16px)!important}
+ #side-dock .dock-body{padding:10px!important}
+ #side-dock .dock-body .td-cols,
+ #side-dock .dock-body .td-grid,
+ #side-dock .dock-body .td-metrics{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(min-width:761px){
+ #side-dock .dock-body .td-cols{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
 </head>
 <body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><script>
 /* Independent splash failsafe: keep the launch overlay from trapping users if app boot code fails. */

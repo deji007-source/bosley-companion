@@ -14,7 +14,7 @@ assert.throws(()=>inspectStrategyImport(file,"strategy.py"),/Only JSON/);
 console.log("Bosley strategy library checks passed.");
 
 import { parseStrategy, strategyPresets } from "../src/trading/strategy-parser.js";
-import { createDemoSeries, runBacktest } from "../src/trading/backtest-engine.js";
+import { createDemoSeries, normalizeHistoricalBars, runBacktest } from "../src/trading/backtest-engine.js";
 const strategyCases = [
   ["sma", "Long-only SMA 9 / 21 crossover. Buy when the 9-period simple moving average crosses above the 21-period simple moving average. Sell and close when it crosses below.", 9, 21],
   ["ema", "Long-only EMA 9 / 21 crossover. Buy when the 9-period exponential moving average crosses above the 21-period exponential moving average. Sell and close when it crosses below.", 9, 21],
@@ -47,7 +47,20 @@ for (const preset of strategyPresets) {
 }
 console.log("Bosley built-in strategy preset checks passed.");
 
-const demoBars = createDemoSeries();
+
+const normalizedSample = normalizeHistoricalBars([
+  { date: "2024-01-03", open: 12, high: 14, low: 11, close: 13, volume: null },
+  { date: "2024-01-01", open: 10, high: 11, low: 9, close: 10.5, volume: 100 },
+  { date: "2024-01-03", open: 12, high: 15, low: 11, close: 14, volume: null },
+  { date: "2024-01-02", open: 10.5, high: 12, low: 10, close: 11.5, volume: 0 }
+]);
+assert.deepEqual(normalizedSample.map(bar => bar.date), ["2024-01-01", "2024-01-02", "2024-01-03"], "Historical bars must be sorted and duplicate dates collapsed.");
+assert.equal(normalizedSample[2].close, 14, "The latest duplicate observation must be retained.");
+assert.equal(normalizedSample[2].volume, null, "Missing volume must remain null, not NaN.");
+assert.throws(() => normalizeHistoricalBars([{ date: "2024-02-30", open: 1, high: 1, low: 1, close: 1, volume: null }]), /invalid date/i);
+assert.throws(() => normalizeHistoricalBars([{ date: "2024-01-01", open: 1, high: 0.5, low: 0.8, close: 1, volume: 1 }]), /invalid date, OHLC value, or volume/i);
+assert.throws(() => normalizeHistoricalBars([{ date: "2024-01-01", open: 1, high: 1, low: 1, close: 1, volume: Number.NaN }]), /invalid date, OHLC value, or volume/i);
+\nconst demoBars = createDemoSeries();
 assert.equal(demoBars.length, 756, "The production demo generator must return the labelled three-year, 756-candle series.");
 assert.ok(demoBars.every((bar, index) => Number.isFinite(bar.open) && Number.isFinite(bar.high) && Number.isFinite(bar.low) && Number.isFinite(bar.close) && bar.high >= Math.max(bar.open, bar.close) && bar.low <= Math.min(bar.open, bar.close) && (!index || bar.date > demoBars[index - 1].date)), "The generated OHLC demo candles must be valid and date ordered.");
 const demoResults = [];

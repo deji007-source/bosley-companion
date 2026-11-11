@@ -65,6 +65,10 @@ Deno.serve(async (req: Request) => {
     };
     let cached = await readAllCached();
     let fetched = false;
+    let sourceFetchedRows = 0;
+    let sourceAcceptedRows = 0;
+    let sourceRejectedRows = 0;
+    let sourceDuplicateRows = 0;
     if (cached.length === 0 || cached[0]?.candle_date > from || cached[cached.length - 1]?.candle_date < to) {
       const url = new URL("https://stooq.com/q/d/l/");
       url.search = new URLSearchParams({ s: symbol, i: "d", d1: from.replaceAll("-",""), d2: to.replaceAll("-","") }).toString();
@@ -72,20 +76,24 @@ Deno.serve(async (req: Request) => {
       if (!source.ok) { const message = "Stooq returned HTTP " + source.status + "."; await writeAudit("failed", message); return reply({ error: message }, 502); }
       const csv = (await source.text()).trim();
       const lines = csv.split(/\r?\n/);
+      sourceFetchedRows = Math.max(0, lines.length - 1);
       if (lines.length < 2 || !/^Date,Open,High,Low,Close,Volume/i.test(lines[0])) { const message = "Stooq did not return a daily OHLCV CSV for this symbol. Check the Stooq symbol format."; await writeAudit("failed", message, { fetched_rows: Math.max(0, lines.length - 1) }); return reply({ error: message }, 422); }
       const parsed: Candle[] = [];
       for (const line of lines.slice(1)) {
         const cols = line.split(",");
-        if (cols.length < 5) continue;
+        if (cols.length < 5) { sourceRejectedRows++; continue; }
         const date = cols[0];
         const [open,high,low,close] = cols.slice(1,5).map(Number);
         const volume = cols[5] === undefined || cols[5] === "" ? null : Number(cols[5]);
         if (!validDate(date) || date < from || date > to || ![open,high,low,close].every(n=>Number.isFinite(n)&&n>0) ||
-          high < Math.max(open,close,low) || low > Math.min(open,close,high) || (volume !== null && (!Number.isFinite(volume)||volume<0))) continue;
+          high < Math.max(open,close,low) || low > Math.min(open,close,high) || (volume !== null && (!Number.isFinite(volume)||volume<0))) { sourceRejectedRows++; continue; }
         parsed.push({date,open,high,low,close,volume});
       }
       const unique = [...new Map(parsed.map(c=>[c.date,c])).values()].sort((a,b)=>a.date.localeCompare(b.date));
-      if (unique.length < 2) { const message = "Fewer than two valid daily observations were returned for this symbol and date range."; await writeAudit("failed", message, { fetched_rows: Math.max(0, lines.length - 1), rejected_rows: Math.max(0, lines.length - 1 - unique.length) }); return reply({ error: message }, 422); }
+      sourceAcceptedRows = unique.length;
+      sourceDuplicateRows = parsed.length - unique.length;
+      sourceRejectedRows += sourceDuplicateRows;
+      if (unique.length < 2) { const message = "Fewer than two valid daily observations were returned for this symbol and date range."; await writeAudit("failed", message, { fetched_rows: sourceFetchedRows, rejected_rows: sourceRejectedRows, accepted_rows: unique.length }); return reply({ error: message }, 422); }
       for (let i=0;i<unique.length;i+=500) {
         const batch = unique.slice(i,i+500).map(c=>({provider_slug:"stooq",symbol,timeframe:"1d",candle_date:c.date,open:c.open,high:c.high,low:c.low,close:c.close,volume:c.volume}));
         const saved = await fetch(rest, { method:"POST", headers, body:JSON.stringify(batch) });
@@ -97,8 +105,8 @@ Deno.serve(async (req: Request) => {
     const rows = cached.map(c=>({date:String(c.candle_date),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close),volume:c.volume===null?null:Number(c.volume)}));
     const retrievedAt = new Date().toISOString();
     const expectedWeekdays = (() => { let n=0; const d=new Date(from+"T00:00:00Z"), end=new Date(to+"T00:00:00Z"); for(;d<=end;d.setUTCDate(d.getUTCDate()+1)){const day=d.getUTCDay();if(day!==0&&day!==6)n++;} return n; })();
-    const quality = {accepted:rows.length,duplicateDates:0,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000),expectedWeekdays,coverageRatio:expectedWeekdays?Math.min(1,rows.length/expectedWeekdays):1,coverageNote:"Weekday count is indicative only; exchange holidays and provider-specific calendars affect expected observations."};
-    await writeAudit(rows.length >= 2 ? "success" : "partial", undefined, { fetched_rows: fetched ? rows.length : 0, accepted_rows: rows.length, rejected_rows: 0, cache_rows: rows.length, quality });
+    const quality = {acceptedCacheRows:rows.length,sourceFetchedRows,sourceAcceptedRows,rejectedRows:sourceRejectedRows,duplicateDates:sourceDuplicateRows,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000),expectedWeekdays,coverageRatio:expectedWeekdays?Math.min(1,rows.length/expectedWeekdays):1,coverageNote:"Weekday count is indicative only; exchange holidays and provider-specific calendars affect expected observations."};
+    await writeAudit(rows.length >= 2 ? "success" : "partial", undefined, { fetched_rows: sourceFetchedRows, accepted_rows: fetched ? sourceAcceptedRows : rows.length, rejected_rows: sourceRejectedRows, cache_rows: rows.length, quality });
     return reply({
       provider:"Stooq", providerUrl:"https://stooq.com/q/d/", symbol, timeframe:"1d",
       rows, cache:"shared", fetched, retrievedAt, quality,

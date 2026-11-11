@@ -3,7 +3,7 @@ export function normalizeHistoricalBars(input) {
   const byDate = new Map();
   for (const [index, bar] of input.entries()) {
     const date = String(bar?.date ?? "");
-    const validDate = /^\\d{4}-\\d{2}-\\d{2}$/.test(date) && !Number.isNaN(Date.parse(date + "T00:00:00Z")) && new Date(date + "T00:00:00Z").toISOString().slice(0, 10) === date;
+    const validDate = /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(date + "T00:00:00Z")) && new Date(date + "T00:00:00Z").toISOString().slice(0, 10) === date;
     const values = [bar?.open, bar?.high, bar?.low, bar?.close];
     const volumeValid = bar?.volume == null || (Number.isFinite(bar.volume) && bar.volume >= 0);
     if (!validDate || !values.every(value => Number.isFinite(value) && value > 0) ||

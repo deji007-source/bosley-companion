@@ -1643,6 +1643,9 @@ document.addEventListener("DOMContentLoaded",()=>{
     el("td-report-tag").textContent="DATA UPDATED";el("td-report").textContent="Genuine Stooq daily observations are loaded. Check source attribution and data quality before running the educational historical simulation.";
     status.textContent="SUCCESS · Loaded "+rows.length.toLocaleString()+" daily observations · "+rows[0].date+" to "+rows[rows.length-1].date+" · "+(payload.fetched?"provider refreshed and shared cache updated":"loaded from shared cache")+" · "+Number(payload.quality?.rejectedRows||0).toLocaleString()+" rejected rows. "+(payload.attribution||"Source: Stooq.");
     button.textContent="History loaded";
+    status.textContent+=" · Automatically saving a private copy to your Bosley research library…";
+    const saveButton=el("td-cloud-save");
+    if(saveButton)saveButton.click();else throw new Error("Automatic dataset-save control is unavailable.");
    }catch(error){
     const detail=String(error?.message||error||"Unknown error").replace(/\\s+/g," ").slice(0,500);
     status.textContent="FETCH FAILED · "+detail+" · Your sign-in is retained; you can retry this button.";

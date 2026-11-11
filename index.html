@@ -1501,7 +1501,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     const {data:payload,error}=await db.functions.invoke("market-history",{body:{apiKey,category,symbol}});
     if(error)throw error;if(!payload||payload.error)throw Error(payload?.error||"The provider returned an empty response.");
     if(!Array.isArray(payload.rows)||payload.rows.length<60)throw Error("The provider returned fewer than 60 valid daily observations.");
-    const rows=payload.rows.map(row=>({date:String(row.date),open:Number(row.open),high:Number(row.high),low:Number(row.low),close:Number(row.close),volume:row.volume===null?NaN:Number(row.volume)}));
+    const rows=payload.rows.map(row=>({date:String(row.date),open:Number(row.open),high:Number(row.high),low:Number(row.low),close:Number(row.close),volume:row.volume===null?null:Number(row.volume)}));
     state.data=rows;state.dataMode="provider-api";state.dataName="Alpha Vantage · "+payload.symbol+" daily history";state.dataSourceName=payload.provider||"Alpha Vantage";state.dataSourceReference=payload.providerUrl||"https://www.alphavantage.co/documentation/";state.marketCategory=payload.category||category;state.dataRetrievedAt=payload.retrievedAt||new Date().toISOString();state.dataCurrency=payload.currency||null;state.dataQuality=payload.quality||null;state.lastRun=null;
     el("td-dataset-name").value=state.dataName;el("td-symbol").value=payload.symbol||symbol;el("td-source-name").value=state.dataSourceName;el("td-source-reference").value=state.dataSourceReference;save();updateDataInfo();
     el("td-report-tag").textContent="DATA UPDATED";el("td-report").textContent="Provider history loaded. Review the validation summary and confirm the instrument, currency and exchange calendar before running a simulated backtest.";
@@ -1528,9 +1528,14 @@ document.addEventListener("DOMContentLoaded",()=>{
    const owner=await cloudReady();if(!owner)return;
    button.disabled=true;status.textContent="Loading shared historical symbols…";
    try{
-    const {data,error}=await db.from("market_data_candles").select("symbol,candle_date").order("candle_date",{ascending:false}).limit(5000);
-    if(error)throw error;
-    const grouped=new Map();for(const row of data||[]){const v=grouped.get(row.symbol)||{first:row.candle_date,last:row.candle_date};if(row.candle_date<v.first)v.first=row.candle_date;if(row.candle_date>v.last)v.last=row.candle_date;grouped.set(row.symbol,v)}
+    const catalogueRows=[];
+    for(let offset=0;offset<50000;offset+=1000){
+     const {data,error}=await db.from("market_data_candles").select("symbol,candle_date").order("symbol",{ascending:true}).order("candle_date",{ascending:true}).range(offset,offset+999);
+     if(error)throw error;
+     catalogueRows.push(...(data||[]));
+     if(!data||data.length<1000)break;
+    }
+    const grouped=new Map();for(const row of catalogueRows){const v=grouped.get(row.symbol)||{first:row.candle_date,last:row.candle_date};if(row.candle_date<v.first)v.first=row.candle_date;if(row.candle_date>v.last)v.last=row.candle_date;grouped.set(row.symbol,v)}
     select.replaceChildren(new Option(grouped.size?"Choose cached public history…":"No public symbols cached yet",""));
     for(const [symbol,range] of [...grouped.entries()].sort((a,b)=>a[0].localeCompare(b[0])))select.add(new Option(symbol+" · "+range.first+" to "+range.last,symbol));
     status.textContent=grouped.size+" symbols found in the shared public-history cache. New symbols become available after a successful fetch.";

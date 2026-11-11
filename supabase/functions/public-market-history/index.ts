@@ -1,0 +1,81 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
+});
+type Candle = { date: string; open: number; high: number; low: number; close: number; volume: number | null };
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return reply({ error: "Use POST." }, 405);
+  const auth = req.headers.get("authorization") || "";
+  if (!auth.startsWith("Bearer ")) return reply({ error: "Sign in first." }, 401);
+  const base = Deno.env.get("SUPABASE_URL");
+  const anon = Deno.env.get("SUPABASE_ANON_KEY");
+  const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!base || !anon || !service) return reply({ error: "Historical-data service is not configured." }, 503);
+  try {
+    const userRes = await fetch(base + "/auth/v1/user", { headers: { apikey: anon, Authorization: auth } });
+    if (!userRes.ok) return reply({ error: "Your session is invalid or expired. Sign in again." }, 401);
+    const body = await req.json();
+    const symbol = String(body?.symbol ?? "").trim().toLowerCase();
+    const from = String(body?.from ?? "1900-01-01");
+    const to = String(body?.to ?? new Date().toISOString().slice(0, 10));
+    if (!/^[a-z0-9.^_-]{1,32}$/.test(symbol)) return reply({ error: "Enter a valid Stooq symbol, e.g. aapl.us or eurusd." }, 400);
+    const validDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s + "T00:00:00Z")) && new Date(s + "T00:00:00Z").toISOString().slice(0,10) === s;
+    if (!validDate(from) || !validDate(to) || from > to || to > new Date().toISOString().slice(0,10)) return reply({ error: "Choose a valid date range ending today or earlier." }, 400);
+
+    const rest = base + "/rest/v1/market_data_candles";
+    const headers = { apikey: service, Authorization: "Bearer " + service, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" };
+    const query = "?provider_slug=eq.stooq&symbol=eq." + encodeURIComponent(symbol) + "&timeframe=eq.1d&candle_date=gte." + from + "&candle_date=lte." + to + "&select=candle_date,open,high,low,close,volume&order=candle_date.asc";
+    const cachedRes = await fetch(rest + query, { headers: { apikey: service, Authorization: "Bearer " + service } });
+    if (!cachedRes.ok) throw new Error("Could not read shared historical cache.");
+    let cached = await cachedRes.json() as Array<Record<string, unknown>>;
+    let fetched = false;
+    if (cached.length === 0 || cached[0]?.candle_date > from || cached[cached.length - 1]?.candle_date < to) {
+      const url = new URL("https://stooq.com/q/d/l/");
+      url.search = new URLSearchParams({ s: symbol, i: "d", d1: from.replaceAll("-",""), d2: to.replaceAll("-","") }).toString();
+      const source = await fetch(url, { headers: { Accept: "text/csv", "User-Agent": "BosleyResearch/1.0 (historical data attribution)" }, signal: AbortSignal.timeout(25000) });
+      if (!source.ok) return reply({ error: "Stooq returned HTTP " + source.status + "." }, 502);
+      const csv = (await source.text()).trim();
+      const lines = csv.split(/\r?\n/);
+      if (lines.length < 2 || !/^Date,Open,High,Low,Close,Volume/i.test(lines[0])) return reply({ error: "Stooq did not return a daily OHLCV CSV for this symbol. Check the Stooq symbol format." }, 422);
+      const parsed: Candle[] = [];
+      for (const line of lines.slice(1)) {
+        const cols = line.split(",");
+        if (cols.length < 5) continue;
+        const date = cols[0];
+        const [open,high,low,close] = cols.slice(1,5).map(Number);
+        const volume = cols[5] === undefined || cols[5] === "" ? null : Number(cols[5]);
+        if (!validDate(date) || date < from || date > to || ![open,high,low,close].every(n=>Number.isFinite(n)&&n>0) ||
+          high < Math.max(open,close,low) || low > Math.min(open,close,high) || (volume !== null && (!Number.isFinite(volume)||volume<0))) continue;
+        parsed.push({date,open,high,low,close,volume});
+      }
+      const unique = [...new Map(parsed.map(c=>[c.date,c])).values()].sort((a,b)=>a.date.localeCompare(b.date));
+      if (unique.length < 2) return reply({ error: "Fewer than two valid daily observations were returned for this symbol and date range." }, 422);
+      for (let i=0;i<unique.length;i+=500) {
+        const batch = unique.slice(i,i+500).map(c=>({provider_slug:"stooq",symbol,timeframe:"1d",candle_date:c.date,open:c.open,high:c.high,low:c.low,close:c.close,volume:c.volume}));
+        const saved = await fetch(rest, { method:"POST", headers, body:JSON.stringify(batch) });
+        if (!saved.ok) throw new Error("Could not update shared historical cache.");
+      }
+      fetched = true;
+      const refreshed = await fetch(rest + query, { headers: { apikey: service, Authorization: "Bearer " + service } });
+      if (!refreshed.ok) throw new Error("Could not read refreshed historical cache.");
+      cached = await refreshed.json();
+    }
+    const rows = cached.map(c=>({date:String(c.candle_date),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close),volume:c.volume===null?null:Number(c.volume)}));
+    return reply({
+      provider:"Stooq", providerUrl:"https://stooq.com/q/d/", symbol, timeframe:"1d",
+      rows, cache:"shared", fetched, retrievedAt:new Date().toISOString(),
+      quality:{accepted:rows.length,duplicateDates:0,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null},
+      attribution:"Source: Stooq. Confirm current data-use terms and attribution requirements before redistribution or commercial use. Provider licensing has not yet been independently approved in Bosley's catalogue."
+    });
+  } catch (e) {
+    return reply({ error: e instanceof Error ? e.message : "Historical data request failed." }, 500);
+  }
+});

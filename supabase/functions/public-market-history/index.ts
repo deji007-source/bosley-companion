@@ -64,12 +64,23 @@ Deno.serve(async (req: Request) => {
       return all;
     };
     let cached = await readAllCached();
+    const findInternalGaps = (rows: Array<Record<string, unknown>>) => {
+      const gaps: number[] = [];
+      for (let i = 1; i < rows.length; i++) {
+        const previous = Date.parse(String(rows[i - 1].candle_date) + "T00:00:00Z");
+        const current = Date.parse(String(rows[i].candle_date) + "T00:00:00Z");
+        const days = Math.round((current - previous) / 86400000);
+        if (days > 4) gaps.push(days);
+      }
+      return gaps;
+    };
+    let internalGaps = findInternalGaps(cached);
     let fetched = false;
     let sourceFetchedRows = 0;
     let sourceAcceptedRows = 0;
     let sourceRejectedRows = 0;
     let sourceDuplicateRows = 0;
-    if (cached.length === 0 || cached[0]?.candle_date > from || cached[cached.length - 1]?.candle_date < to) {
+    if (cached.length === 0 || cached[0]?.candle_date > from || cached[cached.length - 1]?.candle_date < to || internalGaps.length > 0) {
       const url = new URL("https://stooq.com/q/d/l/");
       url.search = new URLSearchParams({ s: symbol, i: "d", d1: from.replaceAll("-",""), d2: to.replaceAll("-","") }).toString();
       const source = await fetch(url, { headers: { Accept: "text/csv", "User-Agent": "BosleyResearch/1.0 (historical data attribution)" }, signal: AbortSignal.timeout(25000) });
@@ -101,12 +112,13 @@ Deno.serve(async (req: Request) => {
       }
       fetched = true;
       cached = await readAllCached();
+      internalGaps = findInternalGaps(cached);
     }
     const rows = cached.map(c=>({date:String(c.candle_date),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close),volume:c.volume===null?null:Number(c.volume)}));
     const retrievedAt = new Date().toISOString();
     const expectedWeekdays = (() => { let n=0; const d=new Date(from+"T00:00:00Z"), end=new Date(to+"T00:00:00Z"); for(;d<=end;d.setUTCDate(d.getUTCDate()+1)){const day=d.getUTCDay();if(day!==0&&day!==6)n++;} return n; })();
-    const quality = {acceptedCacheRows:rows.length,sourceFetchedRows,sourceAcceptedRows,rejectedRows:sourceRejectedRows,duplicateDates:sourceDuplicateRows,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000),expectedWeekdays,coverageRatio:expectedWeekdays?Math.min(1,rows.length/expectedWeekdays):1,coverageNote:"Weekday count is indicative only; exchange holidays and provider-specific calendars affect expected observations."};
-    await writeAudit(rows.length >= 2 ? "success" : "partial", undefined, { fetched_rows: sourceFetchedRows, accepted_rows: fetched ? sourceAcceptedRows : rows.length, rejected_rows: sourceRejectedRows, cache_rows: rows.length, quality });
+    const quality = {acceptedCacheRows:rows.length,sourceFetchedRows,sourceAcceptedRows,rejectedRows:sourceRejectedRows,duplicateDates:sourceDuplicateRows,internalGapCount:internalGaps.length,largestInternalGapDays:internalGaps.length?Math.max(...internalGaps):0,invalidRowsRejected:true,firstDate:rows[0]?.date??null,lastDate:rows.at(-1)?.date??null,requestedFrom:from,requestedTo:to,cachePages:Math.ceil(rows.length/1000),expectedWeekdays,coverageRatio:expectedWeekdays?Math.min(1,rows.length/expectedWeekdays):1,coverageNote:"Weekday count is indicative only; exchange holidays and provider-specific calendars affect expected observations. Internal gaps longer than four calendar days trigger a provider reconciliation and remain visible in quality metadata if unresolved."};
+    await writeAudit(rows.length >= 2 && internalGaps.length === 0 ? "success" : "partial", internalGaps.length ? "Historical cache still contains one or more gaps longer than four calendar days; check exchange holidays and provider coverage." : undefined, { fetched_rows: sourceFetchedRows, accepted_rows: fetched ? sourceAcceptedRows : rows.length, rejected_rows: sourceRejectedRows, cache_rows: rows.length, quality });
     return reply({
       provider:"Stooq", providerUrl:"https://stooq.com/q/d/", symbol, timeframe:"1d",
       rows, cache:"shared", fetched, retrievedAt, quality,

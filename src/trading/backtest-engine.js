@@ -1,3 +1,21 @@
+export function normalizeHistoricalBars(input) {
+  if (!Array.isArray(input)) throw new Error("Historical candles must be supplied as a list.");
+  const byDate = new Map();
+  for (const [index, bar] of input.entries()) {
+    const date = String(bar?.date ?? "");
+    const validDate = /^\\d{4}-\\d{2}-\\d{2}$/.test(date) && !Number.isNaN(Date.parse(date + "T00:00:00Z")) && new Date(date + "T00:00:00Z").toISOString().slice(0, 10) === date;
+    const values = [bar?.open, bar?.high, bar?.low, bar?.close];
+    const volumeValid = bar?.volume == null || (Number.isFinite(bar.volume) && bar.volume >= 0);
+    if (!validDate || !values.every(value => Number.isFinite(value) && value > 0) ||
+      bar.high < Math.max(bar.open, bar.close, bar.low) ||
+      bar.low > Math.min(bar.open, bar.close, bar.high) || !volumeValid) {
+      throw new Error("Historical candle " + (index + 1) + " has an invalid date, OHLC value, or volume.");
+    }
+    byDate.set(date, { date, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume == null ? null : bar.volume });
+  }
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
 const money = value => "$" + Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function createDemoSeries() {
@@ -83,7 +101,8 @@ export async function runBacktest({
   onProgress = () => {}, shouldCancel = () => false,
   yieldControl = () => new Promise(resolve => setTimeout(resolve, 0))
 }) {
-  if (!Array.isArray(bars) || bars.length < 60) throw new Error("At least 60 validated daily candles are required.");
+  bars = normalizeHistoricalBars(bars);
+  if (bars.length < 60) throw new Error("At least 60 unique, validated daily candles are required.");
   if (!strategy || strategy.ok !== true) throw new Error("The strategy must pass validation before a backtest can run.");
   for (const [name, value, min, max] of [
     ["starting capital", initial, 1, 1000000], ["allocation", allocation, 1, 100],

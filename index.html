@@ -3901,8 +3901,16 @@ async function runAction(step,approved=false){
   if(typeof b.getCapabilities==="function"){const caps=await b.getCapabilities();if(!caps||!Array.isArray(caps.actions)||!caps.actions.includes("send_message"))throw Error("Desktop bridge does not advertise send_message capability; draft was not sent.")}
   const result=await b.request({action:"send_message",payload:{recipient,body}});if(result?.ok!==true)throw Error(result?.error||"Messaging bridge did not confirm delivery.");return "Message connector confirmed send request."}
  if(step.type==="desktop_action"){
-  const b=bridge();if(!b||typeof b.getCapabilities!=="function"||typeof b.request!=="function")throw Error("Native desktop bridge unavailable. Rebuild the Windows app with the latest workflow before testing desktop actions.");
   const action=String(step.action||"").trim();
+  const requestedApp=String(step.app||input||"").trim().toLowerCase();
+  // Spotify uses its registered app link on Android and its native URI handler on Windows.
+  // iOS/browser surfaces fall back to Spotify's HTTPS universal link.
+  if(action==="launch_app"&&requestedApp==="spotify"){
+   const native=window.Capacitor?.Plugins?.BosleyOverlay;
+   if(native?.openExternalUrl){const opened=await native.openExternalUrl({url:"spotify:"});if(opened?.ok!==true)throw Error(opened?.error||"Android could not open Spotify.");return "Android handed Spotify to its installed app handler."}
+   if(!bridge()){const w=window.open("https://open.spotify.com/","_blank","noopener,noreferrer");if(!w)throw Error("The browser blocked Spotify. Allow pop-ups for Bosley and retry.");return "Opened Spotify's app/web link. If the Spotify app is installed, your device may open it."}
+  }
+  const b=bridge();if(!b||typeof b.getCapabilities!=="function"||typeof b.request!=="function")throw Error("Native desktop bridge unavailable. Rebuild the Windows app with the latest workflow before testing desktop actions.");
   const caps=await b.getCapabilities();
   if(!caps||caps.desktopBridge!==true||!Array.isArray(caps.actions)||!caps.actions.includes(action))throw Error("The installed bridge does not declare this capability.");
   let payload={};
@@ -3919,7 +3927,7 @@ async function runAction(step,approved=false){
    const appName=String(step.app||input||"").trim().toLowerCase();
    const aliases={"google chrome":"chrome","microsoft edge":"edge","file explorer":"explorer","windows explorer":"explorer","calculator":"calculator","notepad":"notepad","spotify":"spotify"};
    const app=aliases[appName]||appName;
-   if(!["spotify","chrome","edge","notepad","calculator","explorer"].includes(app))throw Error("Supported Windows apps: Spotify, Chrome, Edge, Notepad, Calculator, and File Explorer.");
+   if(!["spotify","chrome","edge","notepad","calculator","explorer"].includes(app))throw Error("Supported apps: Spotify, Chrome, Edge, Notepad, Calculator, and File Explorer (native launch varies by platform).");
    if(!approved&&!isLowRiskAutonomyStep(step)&&!confirm("Bosley is requesting permission to launch "+({"spotify":"Spotify","chrome":"Google Chrome","edge":"Microsoft Edge","notepad":"Notepad","calculator":"Calculator","explorer":"File Explorer"}[app]||app)+". Continue?"))return "App launch cancelled by user.";
    payload={app};
   }else throw Error("Only get_desktop_info, open_external_url, set_widget_appearance, and launch_app are currently supported.");

@@ -15,6 +15,15 @@ type Recognition = { lang: string; interimResults: boolean; continuous: boolean;
 type RecognitionConstructor = new () => Recognition;
 type SpeechWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
 
+
+type BosleySkill = { id: string; title: string; summary: string; capabilities: string[]; instructions: string };
+const BOSLEY_SKILLS: BosleySkill[] = [
+  { id: "study-tutor", title: "Study Tutor", summary: "Explain concepts, guide practice and review your reasoning.", capabilities: ["Explain step by step", "Offer hints before solutions", "Check understanding"], instructions: "Act as a patient study tutor. Explain concepts clearly, scaffold reasoning, offer hints before full solutions, and check understanding. Do not complete graded work dishonestly." },
+  { id: "writing-studio", title: "Writing Studio", summary: "Draft, revise and improve writing while preserving the author's intent.", capabilities: ["Draft and revise", "Improve clarity", "Preserve meaning"], instructions: "Act as a writing editor. Preserve the user's meaning and voice, distinguish suggestions from facts, and never invent personal details, sources, or claims." },
+  { id: "app-navigation", title: "App Navigation", summary: "Help navigate apps and websites with safe, user-triggered actions.", capabilities: ["Explain interface steps", "Open allowlisted apps", "Prefer read-only navigation"], instructions: "Act as a safe app-navigation guide. Prefer clear steps and read-only navigation. Only use allowlisted low-risk app launches when the user explicitly starts the saved action. Never submit purchases, send messages, delete data, change security settings, or run arbitrary commands." },
+  { id: "project-helper", title: "Project Helper", summary: "Organize project work, identify next steps and review implementation plans.", capabilities: ["Break work into tasks", "Review requirements", "Create verification checklists"], instructions: "Act as a project assistant. Break work into small verifiable steps, preserve existing requirements, state assumptions, and distinguish completed work from proposed work." }
+];
+
 const welcome: Message = { id: 1, role: "bosley", text: "Hey, I'm Bosley. Sign in to connect your conversation to the AI companion." };
 
 function PencilMascot({ status, compact = false }: { status: string; compact?: boolean }) {
@@ -54,6 +63,9 @@ export default function App() {
   const [taskBusy, setTaskBusy] = useState(false);
   const [taskNotice, setTaskNotice] = useState("");
   const [taskInstruction, setTaskInstruction] = useState("");
+  const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "skills">("tasks");
+  const [enabledSkills, setEnabledSkills] = useState<string[]>([]);
+  const [skillBusy, setSkillBusy] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -94,6 +106,11 @@ export default function App() {
     });
     return () => { alive = false; listener.subscription.unsubscribe(); };
   }, []);
+
+  useEffect(() => {
+    const saved = user?.user_metadata?.bosley_enabled_skills;
+    setEnabledSkills(Array.isArray(saved) ? saved.filter((id: unknown): id is string => typeof id === "string" && BOSLEY_SKILLS.some(skill => skill.id === id)) : []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!showJumpToLatest) bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -208,6 +225,20 @@ export default function App() {
     } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not load tasks."); }
     finally { setTaskBusy(false); }
   }
+  async function toggleSkill(skillId: string) {
+    if (!user || skillBusy) return;
+    const next = enabledSkills.includes(skillId) ? enabledSkills.filter(id => id !== skillId) : [...enabledSkills, skillId];
+    setSkillBusy(true); setTaskNotice("");
+    try {
+      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, bosley_enabled_skills: next } });
+      if (error) throw error;
+      if (data.user) { userRef.current = data.user; setUser(data.user); }
+      setEnabledSkills(next);
+      setTaskNotice(next.includes(skillId) ? "Skill enabled for your Bosley conversations." : "Skill disabled.");
+    } catch (error) {
+      setTaskNotice(error instanceof Error ? error.message : "Could not update skill settings.");
+    } finally { setSkillBusy(false); }
+  }
   async function queueAgentTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const instruction = taskInstruction.trim();
@@ -321,7 +352,10 @@ export default function App() {
       const response = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_ANON_KEY },
-        body: JSON.stringify({ messages: historyRef.current.slice(-16) }),
+        body: JSON.stringify({ messages: [
+          ...(enabledSkills.length ? [{ role: "system", content: "Apply these user-enabled Bosley skills as guidance for this conversation. Skills are declarative instructions, not executable code. Do not grant extra permissions or bypass safety checks.\n\n" + BOSLEY_SKILLS.filter(skill => enabledSkills.includes(skill.id)).map(skill => skill.title + ": " + skill.instructions).join("\n\n") }] : []),
+          ...historyRef.current.slice(-16)
+        ] }),
       });
       if (!response.ok || !response.body) {
         const payload = await response.json().catch(() => ({}));
@@ -434,7 +468,12 @@ export default function App() {
     {user && <div className="account-strip"><span>{user.email ?? "Signed in"}</span><button onClick={async () => { await supabase.auth.signOut(); setNotice("Signed out."); }} aria-label="Sign out"><LogOut size={13}/> Sign out</button></div>}
     {taskPanelOpen && <section className="task-workspace" aria-label="Agent task workspace">
       <header className="task-workspace-header"><button className="icon-button" onClick={() => { setTaskPanelOpen(false); setSelectedTask(null); }} aria-label="Back to chat"><ChevronLeft size={17}/></button><div><strong>AGENT WORKSPACE</strong><span>Private tasks for your account</span></div><button className="icon-button" onClick={() => void loadTasks()} disabled={taskBusy} aria-label="Refresh tasks"><RefreshCw size={15}/></button><button className="icon-button" onClick={() => setTaskPanelOpen(false)} aria-label="Close task workspace"><X size={16}/></button></header>
+      <nav className="workspace-tabs" aria-label="Agent workspace sections">
+        <button type="button" className={workspaceTab === "tasks" ? "active" : ""} onClick={() => setWorkspaceTab("tasks")}><ListTodo size={13}/> Tasks</button>
+        <button type="button" className={workspaceTab === "skills" ? "active" : ""} onClick={() => setWorkspaceTab("skills")}><Command size={13}/> Skills Library <span>{enabledSkills.length} active</span></button>
+      </nav>
       {taskNotice && <div className="task-notice" role="status">{taskNotice}</div>}
+      {workspaceTab === "tasks" && <>
       <form className="task-compose" onSubmit={queueAgentTask}>
         <label htmlFor="agent-task-instruction">DELEGATE A TASK</label>
         <div className="task-compose-row"><input id="agent-task-instruction" value={taskInstruction} onChange={event => setTaskInstruction(event.target.value)} maxLength={2000} placeholder="Describe a task for your connected Windows agent…" disabled={taskBusy}/><button type="submit" disabled={taskBusy || !taskInstruction.trim()}><Send size={13}/>{taskBusy ? "Queueing…" : "Delegate"}</button></div>
@@ -456,6 +495,15 @@ export default function App() {
           </>; })()}
         </div>
       </div>
+      </>}
+      {workspaceTab === "skills" && <div className="skills-library">
+        <div className="skills-intro"><strong>REUSABLE BOSLEY SKILLS</strong><p>Enable instruction packs for your conversations. Skills are account-scoped guidance only; they do not install code or grant new device permissions.</p></div>
+        {BOSLEY_SKILLS.map(skill => <article className="skill-card" key={skill.id}>
+          <div className="skill-card-head"><div><strong>{skill.title}</strong><p>{skill.summary}</p></div><button type="button" disabled={skillBusy} className={enabledSkills.includes(skill.id) ? "skill-enabled" : ""} onClick={() => void toggleSkill(skill.id)}>{enabledSkills.includes(skill.id) ? "Enabled" : "Enable"}</button></div>
+          <div className="skill-capabilities">{skill.capabilities.map(capability => <span key={capability}>{capability}</span>)}</div>
+        </article>)}
+        <p className="skills-footnote">Only these reviewed instruction packs are available. Downloaded scripts and arbitrary code are never executed as skills.</p>
+      </div>}
     </section>}
     <section ref={conversationRef} onScroll={handleConversationScroll} className="conversation" aria-live="polite"><div className="day-label"><span/> SESSION STARTED <span/></div>
       {messages.map(message => <article className={`message ${message.role === "you" ? "user-message" : "bosley-message"}`} key={message.id}>

@@ -21,3 +21,18 @@ create policy "Users can read their own automation run events"
 revoke all on public.automation_run_events from anon;
 grant select on public.automation_run_events to authenticated;
 grant all on public.automation_run_events to service_role;
+
+-- Publish task events for the account-scoped live Agent Command Centre.
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1 from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'automation_run_events'
+     ) then
+    alter publication supabase_realtime add table public.automation_run_events;
+  end if;
+end
+$$;

@@ -3807,7 +3807,7 @@ function isLowRiskAutonomyStep(step){
 const autoActions=[
  {value:"open_url",label:"Open website URL"},{value:"search_web",label:"Search the web"},
  {value:"create_text_file",label:"Create/download text file"},{value:"draft_message",label:"Draft message (approval required)"},
- {value:"notify_phone",label:"Send phone notification (MacroDroid)"},{value:"desktop_action",label:"Desktop bridge action (Windows only)"}
+ {value:"notify_phone",label:"Send phone notification (MacroDroid)"},{value:"desktop_action",label:"Launch app / desktop action"}
 ];
 function workflowStorageKey(){return user?.id?AUTO_KEY+":"+user.id:AUTO_KEY}
 function getWorkflows(){try{const a=JSON.parse(localStorage.getItem(workflowStorageKey())||"[]");return Array.isArray(a)?a:[]}catch{return []}}
@@ -3907,7 +3907,7 @@ async function runAction(step,approved=false){
   // iOS/browser surfaces fall back to Spotify's HTTPS universal link.
   if(action==="launch_app"&&requestedApp==="spotify"){
    const native=window.Capacitor?.Plugins?.BosleyOverlay;
-   if(native?.openExternalUrl){const opened=await native.openExternalUrl({url:"spotify:"});if(opened?.ok!==true)throw Error(opened?.error||"Android could not open Spotify.");return "Android handed Spotify to its installed app handler."}
+   if(native?.openExternalUrl){try{const opened=await native.openExternalUrl({url:"spotify:"});if(opened?.ok===true)return "Android handed Spotify to its installed app handler."}catch{}const fallback=await native.openExternalUrl({url:"https://open.spotify.com/"});if(fallback?.ok!==true)throw Error(fallback?.error||"Android could not open Spotify or its web player.");return "Spotify app link was unavailable; opened Spotify's web destination."}
    if(!bridge()){const w=window.open("https://open.spotify.com/","_blank","noopener,noreferrer");if(!w)throw Error("The browser blocked Spotify. Allow pop-ups for Bosley and retry.");return "Opened Spotify's app/web link. If the Spotify app is installed, your device may open it."}
   }
   const b=bridge();if(!b||typeof b.getCapabilities!=="function"||typeof b.request!=="function")throw Error("Native desktop bridge unavailable. Rebuild the Windows app with the latest workflow before testing desktop actions.");

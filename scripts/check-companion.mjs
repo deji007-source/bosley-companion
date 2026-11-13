@@ -6,8 +6,6 @@ import { readFileSync as readText } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const strategyParser = readText(new URL("../src/trading/strategy-parser.js", import.meta.url), "utf8");
 const backtestEngine = readText(new URL("../src/trading/backtest-engine.js", import.meta.url), "utf8");
-const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
-const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
   .filter(([, attributes]) => !/\bsrc\s*=/.test(attributes))
   .map(([, , source]) => source);

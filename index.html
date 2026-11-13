@@ -2032,7 +2032,7 @@ if(gateSwitch)gateSwitch.addEventListener("click",()=>{gateMode=gateMode==="in"?
 if(gateForm)gateForm.addEventListener("submit",async e=>{
  e.preventDefault();if(!db){if(gateFeedback)gateFeedback.textContent="Account service unavailable. Check your connection and try again.";return}
  gateSubmit.disabled=true;if(gateFeedback)gateFeedback.textContent=gateMode==="up"?"Creating your account…":"Signing in securely…";
- try{const credentials={email:gateEmail.value.trim(),password:gatePassword.value};const redirectUrl=new URL(window.location.pathname,window.location.origin);redirectUrl.searchParams.set("email-confirmed","1");const result=gateMode==="up"?await db.auth.signUp({...credentials,options:{emailRedirectTo:redirectUrl.toString()}}):await db.auth.signInWithPassword(credentials);if(result.error)throw result.error;
+ try{const credentials={email:gateEmail.value.trim(),password:gatePassword.value};const redirectUrl=new URL("https://bosley-companion.vercel.app/");redirectUrl.searchParams.set("email-confirmed","1");const result=gateMode==="up"?await db.auth.signUp({...credentials,options:{emailRedirectTo:redirectUrl.toString()}}):await db.auth.signInWithPassword(credentials);if(result.error)throw result.error;
  if(gateMode==="up"&&!result.data.session){if(gateFeedback)gateFeedback.textContent="Account created. Check your email to confirm, then sign in here.";return}
  if(result.data.session){user=result.data.user||result.data.session.user;window.dispatchEvent(new Event("bosley:account-changed"));renderAuthGate();if(gateFeedback)gateFeedback.textContent="Signed in.";restoreLatestConversation();if(typeof load==="function")load()}
  else if(gateFeedback)gateFeedback.textContent="No active session returned. Check email confirmation and try again.";

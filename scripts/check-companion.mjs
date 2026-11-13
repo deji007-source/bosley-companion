@@ -985,6 +985,10 @@ assert.ok(html.includes('category:"document"') && html.includes('"document-impor
 assert.ok(html.includes("data-brain-delete-document") && html.includes('.contains("tags",[tag])') && html.includes("Delete this entire imported document"), "Second Brain must support account-scoped deletion of all chunks belonging to one imported document");
 assert.ok(html.includes("IMPORTED · ") && html.includes("loadCloudSecondBrain()"), "Successful document imports must refresh the synced vault and report completion");
 assert.ok(html.includes("Agent Command Centre") && html.includes("agent-centre-devices") && html.includes("agent-centre-runs") && html.includes("agent-centre-commands"), "Agent Command Centre must display device presence, automation runs and device command status");
+assert.ok(html.includes("agent-centre-events") && html.includes("automation_run_events") && html.includes('data-agent-task-action="cancel"') && html.includes('data-agent-task-action="retry"'), "Agent Command Centre must display durable task events and expose owner-authenticated cancel/retry controls");
+const agentTasksFunction=readText(new URL("../supabase/functions/agent-tasks/index.ts", import.meta.url), "utf8");
+assert.ok(agentTasksFunction.includes("auth.auth.getUser(token)") && agentTasksFunction.includes('.eq("user_id", user.id)') && agentTasksFunction.includes('action === "cancel"') && agentTasksFunction.includes('action === "retry"'), "Agent task controls must authenticate the caller and scope every task lookup and mutation to the verified account");
+assert.ok(agentTasksFunction.includes("progress > 100") && agentTasksFunction.includes("message.length > 1200"), "Agent task progress payloads must enforce bounded messages and progress values");
 assert.ok(html.includes("bosley-agent-centre:") && html.includes("agent_device_commands"), "Agent Command Centre must refresh from authenticated device and automation activity");
 
 assert.ok(html.includes('data-idea-input') && html.includes('bosley-card-only'), "Writing and Ideas must own a standalone input and card-only presentation mode");

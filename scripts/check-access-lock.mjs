@@ -2,6 +2,7 @@ import fs from "node:fs";
 import assert from "node:assert/strict";
 
 const html = fs.readFileSync("index.html", "utf8");
+const windowsWorkflow = fs.readFileSync(".github/workflows/build-windows.yml", "utf8");
 assert.match(html, /protectedWorkspaceIds=new Set\(\["money-learning","lovable-bosley"\]\)/);
 assert.match(html, /id="bosley-access-lock"/);
 assert.match(html, /id="bosley-access-code"/);
@@ -19,5 +20,7 @@ assert.match(html, /bosley-account:"\+owner\(\)\+":"\+k/);
 assert.match(html, /window\.addEventListener\("bosley:account-changed"/);
 assert.match(html, /target\.closest\("#dock-launcher-menu"\)/);
 assert.match(html, /open_floating_view/);
-assert.match(html, /FLOATING_VIEW_IDS/);
+assert.match(windowsWorkflow, /FLOATING_VIEW_IDS/);
+assert.match(windowsWorkflow, /function openFloatingView\(viewId\)/);
+assert.match(windowsWorkflow, /request\.action === 'open_floating_view'/);
 console.log("Access lock, account isolation, theme and Windows page-window checks passed.");

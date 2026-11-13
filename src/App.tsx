@@ -44,6 +44,8 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [authBusy, setAuthBusy] = useState(false);
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [confirmationError, setConfirmationError] = useState("");
   const [sending, setSending] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
@@ -57,8 +59,29 @@ export default function App() {
 
   useEffect(() => {
     let alive = true;
-    supabase.auth.getSession().then(({ data }) => { if (alive) { userRef.current = data.session?.user ?? null; setUser(data.session?.user ?? null); } });
+    const params = new URLSearchParams(window.location.search);
+    const confirmationReturn = params.get("auth") === "confirmed";
+    if (params.get("auth") === "error") setConfirmationError("That confirmation link could not be verified. It may have expired or already been used.");
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!alive) return;
+      if (confirmationReturn && data.session?.user?.email_confirmed_at) {
+        setEmailConfirmed(true);
+        await supabase.auth.signOut();
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+      userRef.current = data.session?.user ?? null;
+      setUser(data.session?.user ?? null);
+    });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (confirmationReturn && session?.user?.email_confirmed_at) {
+        setEmailConfirmed(true);
+        userRef.current = null;
+        setUser(null);
+        window.setTimeout(() => { void supabase.auth.signOut(); }, 0);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
       userRef.current = session?.user ?? null;
       setUser(session?.user ?? null);
     });
@@ -175,9 +198,9 @@ export default function App() {
     setAuthBusy(true); setNotice("");
     try {
       if (authMode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
+        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: window.location.origin + "/?auth=confirmed" } });
         if (error) throw error;
-        if (!data.session) setNotice("Account created. Check your email to confirm it, then sign in.");
+        if (!data.session) setNotice("Account created. Check your email and click the confirmation link. Bosley will then take you to the login page.");
         else setNotice("Account created and signed in.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
@@ -287,6 +310,12 @@ export default function App() {
   function stopListening() { recognitionRef.current?.stop(); recognitionRef.current = null; setListening(false); setStatus("Ready"); }
   function handleMic() { if (listening) stopListening(); else startListening(); }
 
+  if (emailConfirmed) return <main className="app-shell"><section className="assistant-panel auth-result-panel" aria-live="polite">
+    <header className="topbar"><div className="brand-mark"><PencilMascot status="Ready" compact/></div><div className="brand-copy"><div className="brand-name">BOSLEY <span>COMPANION</span></div><div className="brand-status">ACCOUNT VERIFICATION</div></div></header>
+    <div className="auth-result-content"><div className="auth-result-icon"><Check size={28}/></div><div className="auth-heading">Email confirmed successfully</div><p>Your email address is verified. You can now return to Bosley and sign in with your email and password.</p><button className="auth-submit" onClick={() => { setEmailConfirmed(false); setConfirmationError(""); setAuthMode("signin"); setNotice("Email confirmed. Sign in to continue."); }}>BACK TO LOGIN <LogIn size={14}/></button></div>
+    <footer className="bottom-bar">BOSLEY COMPANION <span>·</span> SECURE ACCOUNT VERIFICATION</footer>
+  </section></main>;
+
   if (collapsed) return <main className="pencil-stage">
     <button className="mascot-launcher" onClick={() => setCollapsed(false)} aria-label="Open Bosley Companion" title="Open Bosley (Ctrl+Shift+B)"><PencilMascot status={status}/></button>
     <div className="mascot-caption">BOSLEY <span>•</span> {status.toUpperCase()}</div><p className="mascot-hint">TAP THE PENCIL TO OPEN</p>
@@ -297,12 +326,20 @@ export default function App() {
       <div className="window-actions"><button className="icon-button" onClick={() => setCollapsed(true)} title="Collapse to pencil" aria-label="Collapse to pencil"><Minus size={16}/></button><button className="icon-button" onClick={() => setCollapsed(true)} title="Minimize panel" aria-label="Minimize panel"><span>⌄</span></button></div>
     </header>
     <div className="connection-banner"><span className="connection-icon"><CircleHelp size={15}/></span><div><strong>{user ? "Bosley AI connected" : "Sign in to connect Bosley AI"}</strong><span>{user ? `Signed in as ${user.email ?? "your account"}` : "Secure, account-based AI chat and saved conversations."}</span></div><span className="free-pill">{user ? "AI READY" : "SIGN IN"}</span></div>
+    {!user && confirmationError && <div className="notice" role="alert">{confirmationError}<button type="button" onClick={() => setConfirmationError("")} aria-label="Dismiss notice"><X size={13}/></button></div>}
     {!user && <form className="auth-form" onSubmit={handleAuth}>
       <div className="auth-heading">{authMode === "signin" ? "Welcome back" : "Create your workspace account"}</div>
       <input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email address" aria-label="Email address" required />
       <input type="password" autoComplete={authMode === "signin" ? "current-password" : "new-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} placeholder="Password (at least 8 characters)" aria-label="Password" required />
       <button type="submit" className="auth-submit" disabled={authBusy}>{authBusy ? "PLEASE WAIT…" : <><LogIn size={14}/>{authMode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}</>}</button>
-      <button type="button" className="auth-switch" onClick={() => setAuthMode(current => current === "signin" ? "signup" : "signin")}>{authMode === "signin" ? "Need an account? Create one" : "Already have an account? Sign in"}</button>
+      {authMode === "signin" && <button type="button" className="auth-switch" onClick={async () => {
+        if (!email.trim()) { setNotice("Enter your email address first so we can resend the confirmation link."); return; }
+        setAuthBusy(true); setNotice("");
+        const { error } = await supabase.auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: window.location.origin + "/?auth=confirmed" } });
+        setNotice(error ? error.message : "A new confirmation email has been sent. Check your inbox.");
+        setAuthBusy(false);
+      }}>Resend confirmation email</button>}
+      <button type="button" className="auth-switch" onClick={() => { setAuthMode(current => current === "signin" ? "signup" : "signin"); setNotice(""); }}>{authMode === "signin" ? "Need an account? Create one" : "Already have an account? Sign in"}</button>
     </form>}
     {user && <div className="account-strip"><span>{user.email ?? "Signed in"}</span><button onClick={async () => { await supabase.auth.signOut(); setNotice("Signed out."); }} aria-label="Sign out"><LogOut size={13}/> Sign out</button></div>}
     <section ref={conversationRef} onScroll={handleConversationScroll} className="conversation" aria-live="polite"><div className="day-label"><span/> SESSION STARTED <span/></div>

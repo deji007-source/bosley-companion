@@ -1406,7 +1406,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
  function renderTradingLab(){
   const panel=document.getElementById("money-learning");if(!panel)throw Error("Trading Dock page is missing.");
-  const storeKey="bosley-trading-dock-v2:"+((user&&user.id)||"guest"),feeRate=.0005,slippage=.0005,spread=.0002;
+  const storeKey="bosley-trading-dock-v2:"+(window.BosleyCurrentUserId?.()||"guest"),feeRate=.0005,slippage=.0005,spread=.0002;
   const money=n=>"$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const seed=()=>{const engine=window.BosleyBacktestEngine;if(!engine)throw Error("Trading Dock backtest engine is still loading.");return engine.createDemoSeries()};
@@ -1690,7 +1690,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  lockRoot.innerHTML='<form class="access-card" id="bosley-access-form"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h2 id="bosley-access-title">Protected workspace</h2><p id="bosley-access-description">Enter your Bosley access passcode to continue.</p><label for="bosley-access-code">Four-digit passcode</label><input id="bosley-access-code" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="[0-9]{4}" required aria-describedby="bosley-access-error" placeholder="••••"><div class="access-actions"><button type="button" id="bosley-access-cancel">Cancel</button><button type="submit">Unlock workspace</button></div><div class="access-error" id="bosley-access-error" role="alert" aria-live="polite"></div></form>';
  document.body.appendChild(lockRoot);
  const lockForm=lockRoot.querySelector("#bosley-access-form"),lockInput=lockRoot.querySelector("#bosley-access-code"),lockError=lockRoot.querySelector("#bosley-access-error");
- function accessKey(id){return (user?.id||"guest")+":"+id}
+ function accessKey(id){return (window.BosleyCurrentUserId?.()||"guest")+":"+id}
  function hasWorkspaceAccess(id){const key=accessKey(id);try{return sessionStorage.getItem("bosley-workspace-unlock:"+key)==="1"}catch{return unlockedWorkspaceKeys.has(key)}}
  function setWorkspaceAccess(id){const key=accessKey(id);unlockedWorkspaceKeys.add(key);try{sessionStorage.setItem("bosley-workspace-unlock:"+key,"1")}catch{}}
  function requireWorkspacePasscode(id){

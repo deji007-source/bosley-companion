@@ -5,7 +5,7 @@ import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, 
 const SUPABASE_URL = "https://ywwfqisbmlkjcfoqehph.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwicmVmIjoieXd3ZnFpc2JtbGtqY2ZvcWVwaHAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3OTU4MDYwOSwiZXhwIjoyMDk1MTU2NjA5fQ.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
 const CHAT_URL = `${SUPABASE_URL}/functions/v1/companion-chat`;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 
 type Message = { id: number; role: "bosley" | "you"; text: string };
 type SpeechAlternative = { transcript: string };

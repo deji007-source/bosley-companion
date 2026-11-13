@@ -1,0 +1,26 @@
+import fs from "node:fs";
+import assert from "node:assert/strict";
+
+const html = fs.readFileSync("index.html", "utf8");
+const windowsWorkflow = fs.readFileSync(".github/workflows/build-windows.yml", "utf8");
+assert.match(html, /protectedWorkspaceIds=new Set\(\["money-learning","lovable-bosley"\]\)/);
+assert.match(html, /id="bosley-access-lock"/);
+assert.match(html, /id="bosley-access-code"/);
+assert.match(html, /Unlock workspace/);
+assert.match(html, /async function show\(id\)[\s\S]*?await requireWorkspacePasscode\(id\)/);
+assert.match(html, /b3282a2f2a28757b3a18ab833de16a9c54518c0b0cf493e3f0a7cf09386f326a/);
+assert.match(html, /bosley-trading-dock-v2:"\+\(window\.BosleyCurrentUserId\?\.\(\)\|\|"guest"\)/);
+assert.match(html, /bosley_face_settings_v1:"\+\(\(user&&user\.id\)\|\|"guest"\)/);
+assert.doesNotMatch(html, /(?:const|let)\s+(?:ACCESS_CODE|PASSCODE)\s*=\s*["']1122["']/);
+
+assert.match(html, /mix-blend-mode:difference/);
+assert.match(html, /id="bosley-theme-mode"/);
+assert.match(html, /function applyBosleyTheme\(mode\)/);
+assert.match(html, /bosley-account:"\+owner\(\)\+":"\+k/);
+assert.match(html, /window\.addEventListener\("bosley:account-changed"/);
+assert.match(html, /target\.closest\("#dock-launcher-menu"\)/);
+assert.match(html, /open_floating_view/);
+assert.match(windowsWorkflow, /FLOATING_VIEW_IDS/);
+assert.match(windowsWorkflow, /function openFloatingView\(viewId\)/);
+assert.match(windowsWorkflow, /request\.action === 'open_floating_view'/);
+console.log("Access lock, account isolation, theme and Windows page-window checks passed.");

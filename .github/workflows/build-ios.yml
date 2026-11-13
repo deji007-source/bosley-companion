@@ -1,0 +1,92 @@
+name: Build Bosley iOS App
+run-name: Bosley iOS Build (${{ github.sha }})
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    paths:
+      - 'index.html'
+      - 'src/trading/**'
+      - 'package.json'
+      - 'vite.config.ts'
+      - 'capacitor.config.ts'
+      - 'scripts/**'
+      - '.github/workflows/build-ios.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bosley-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install web dependencies and run regression checks
+        run: |
+          npm install
+          npm run test:companion
+          npm run test:strategy-library
+          npm run test:access-lock
+          node --check src/trading/strategy-library.js
+          node --check src/trading/strategy-audit.js
+          node --check src/trading/strategy-parser.js
+          node --check src/trading/backtest-engine.js
+          npm run build
+
+      - name: Stage the exact shared Bosley application with access gate and account-scoped research state
+        run: |
+          test -s index.html
+          cp index.html dist/index.html
+          mkdir -p dist/src/trading
+          cp src/trading/*.js dist/src/trading/
+          node scripts/check-ui-parity.mjs index.html dist/index.html "iOS staging"
+
+      - name: Install Capacitor iOS tooling
+        run: npm install --no-save @capacitor/core@^7 @capacitor/cli@^7 @capacitor/ios@^7
+
+      - name: Generate and sync native iOS project
+        run: |
+          npx cap add ios
+          npx cap sync ios
+          test -s ios/App/App.xcodeproj/project.pbxproj
+          test -s ios/App/App/Info.plist
+
+      - name: Build iOS Simulator app
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/ios \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+          test -d build/ios/Build/Products/Debug-iphonesimulator/App.app
+
+      - name: Package unsigned iOS simulator build
+        run: |
+          cd build/ios/Build/Products/Debug-iphonesimulator
+          zip -r "$GITHUB_WORKSPACE/Bosley-iOS-Simulator.zip" App.app
+
+      - name: Upload iOS simulator build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bosley-iOS-Simulator
+          path: Bosley-iOS-Simulator.zip
+          if-no-files-found: error
+          retention-days: 14

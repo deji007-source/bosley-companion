@@ -1042,3 +1042,4 @@ assert.ok(html.includes('<script type="module" src="./src/trading/backtest-engin
 
 assert.ok(html.includes('<div id="dock-launcher-menu" hidden role="menu" aria-label="Bosley pages"><button type="button" role="menuitem" data-open-view="money-learning">Trading Dock</button>'), "Trading Dock must be the first, immediately visible destination in the Bosley launcher.");
 assert.ok(html.includes("overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important") && html.includes("max-height:min(54dvh,360px)!important"), "The launcher menu must scroll on short screens so lower pages cannot be clipped out of reach.");
+assert.ok(html.includes("-webkit-overflow-scrolling:touch") && html.includes("touch-action:pan-y") && html.includes("scrollbar-gutter:stable") && html.includes("html.widget-mode #dock-launcher-menu"), "Launcher dropdown scrolling must support touch inertia and remain bounded in iOS, Android, and detached Windows views.");

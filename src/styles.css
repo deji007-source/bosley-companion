@@ -77,3 +77,14 @@
 .task-empty{padding:18px 8px;color:#8999a8;font-size:11px;line-height:1.6}
 .task-notice{margin:8px 12px 0;padding:8px 10px;border:1px solid rgba(139,223,242,.2);border-radius:8px;color:#b9dce6;background:rgba(100,190,220,.07);font-size:10px;line-height:1.5}
 @media(max-width:560px){.task-workspace{inset:56px 5px 48px}.task-workspace-body{grid-template-columns:1fr;grid-template-rows:minmax(120px,.8fr) minmax(160px,1.2fr)}.task-list-column{border-right:0;border-bottom:1px solid var(--line,rgba(160,190,210,.2))}.task-list-column,.task-detail-column{padding:9px}.task-row{padding:7px}}
+
+/* Persistent agent task delegation composer */
+.task-compose{display:grid;gap:7px;padding:10px 12px;border-bottom:1px solid var(--line,rgba(160,190,210,.2));background:rgba(60,120,150,.045);flex-shrink:0}
+.task-compose>label{font-size:9px;letter-spacing:.12em;color:#8bdff2;font-weight:800}
+.task-compose-row{display:flex;align-items:stretch;gap:7px;min-width:0}
+.task-compose-row input{flex:1;min-width:0;padding:10px 11px;border:1px solid rgba(145,176,197,.2);border-radius:8px;background:#080f15;color:#e7f0f6;font:11px 'DM Mono',monospace;outline:none}
+.task-compose-row input:focus{border-color:rgba(66,217,255,.55)}
+.task-compose-row button{display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;border:1px solid rgba(66,217,255,.25);border-radius:8px;background:rgba(66,190,230,.12);color:#9de9fb;font-size:10px;font-weight:700;white-space:nowrap}
+.task-compose-row button:disabled{opacity:.45;cursor:wait}
+.task-compose>small{font-size:9px;color:#81909e;line-height:1.4}
+@media(max-width:420px){.task-compose{padding:8px}.task-compose-row{flex-direction:column}.task-compose-row button{min-height:34px}}

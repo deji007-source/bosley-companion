@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+assert.ok(app.includes("BOSLEY_SKILLS") && app.includes("Study Tutor") && app.includes("Writing Studio") && app.includes("App Navigation") && app.includes("Project Helper"), "The reviewed skills catalogue must expose the initial instruction packs.");
+assert.ok(app.includes("supabase.auth.updateUser") && app.includes("bosley_enabled_skills"), "Enabled skills must persist in the signed-in account's auth metadata.");
+assert.ok(app.includes('role: "system"') && app.includes("Skills are declarative instructions, not executable code"), "Enabled skills must guide chat through a constrained system instruction, never executable code.");
+assert.ok(app.includes('workspaceTab === "skills"') && app.includes('onClick={() => void toggleSkill(skill.id)}'), "The agent workspace must allow enabling and disabling skills.");
+assert.ok(app.includes("do not grant extra permissions or bypass safety checks"), "Skills must not expand device permissions or bypass safety gates.");
+assert.ok(css.includes(".skills-library") && css.includes(".skill-card"), "The skills catalogue must be styled and scrollable.");
+console.log("Bosley skills library checks passed.");

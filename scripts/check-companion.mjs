@@ -1065,3 +1065,5 @@ assert.ok(html.includes("getTracks().forEach(t=>t.stop())") && html.includes("Im
 
 assert.ok(html.includes('k==="t"') && html.includes('e.key.toLowerCase()==="v"'), "Bosley bulb and Contextual Talk must use Alt+T and Alt+V respectively.");
 assert.ok(html.includes("Agent voice mode") && html.includes("Dictation mode") && html.includes("Edit mode"), "The visible keyboard guide must list the current voice-mode shortcuts.");
+
+assert.ok(html.includes("ct-marker-mode") && html.includes("ct-marker-clear") && html.includes("guidance marker") && html.includes("markers.forEach"), "Contextual Talk must support optional numbered visual guidance markers and clearing them.");

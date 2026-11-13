@@ -15,7 +15,7 @@ assert.doesNotMatch(html, /(?:const|let)\s+(?:ACCESS_CODE|PASSCODE)\s*=\s*["']11
 assert.match(html, /mix-blend-mode:difference/);
 assert.match(html, /id="bosley-theme-mode"/);
 assert.match(html, /function applyBosleyTheme\(mode\)/);
-assert.match(html, /bosley-account:\\"\+owner\(\)\+\\":\\"\+k/);
+assert.match(html, /bosley-account:"\+owner\(\)\+":"\+k/);
 assert.match(html, /window\.addEventListener\("bosley:account-changed"/);
 assert.match(html, /target\.closest\("#dock-launcher-menu"\)/);
 assert.match(html, /open_floating_view/);

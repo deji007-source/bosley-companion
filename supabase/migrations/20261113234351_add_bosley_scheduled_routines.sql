@@ -23,7 +23,7 @@ create table if not exists public.bosley_routines (
   constraint bosley_routines_target_allowlist check (
     (action_type = 'open_app' and lower(target) in ('spotify','chrome','edge','notepad','calculator','explorer'))
     or
-    (action_type = 'open_url' and target ~* '^https://([a-z0-9-]+\\.)*(google\\.com|youtube\\.com|spotify\\.com|gmail\\.com|drive\\.google\\.com|whatsapp\\.com|telegram\\.org|github\\.com|chatgpt\\.com|notion\\.so|discord\\.com)(/|$)')
+    (action_type = 'open_url' and target ~* '^https://([a-z0-9-]+\.)*(google\.com|youtube\.com|spotify\.com|gmail\.com|drive\.google\.com|whatsapp\.com|telegram\.org|github\.com|chatgpt\.com|notion\.so|discord\.com)(/|$)')
   )
 );
 

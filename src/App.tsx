@@ -53,6 +53,7 @@ export default function App() {
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [taskBusy, setTaskBusy] = useState(false);
   const [taskNotice, setTaskNotice] = useState("");
+  const [taskInstruction, setTaskInstruction] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -206,6 +207,32 @@ export default function App() {
       if (selectedTask && !(result.tasks || []).some((task: {id:string}) => task.id === selectedTask)) setSelectedTask(null);
     } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not load tasks."); }
     finally { setTaskBusy(false); }
+  }
+  async function queueAgentTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const instruction = taskInstruction.trim();
+    if (!instruction || instruction.length > 2000 || taskBusy) return;
+    setTaskBusy(true); setTaskNotice("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+      if (!session) throw new Error("Sign in again before delegating a task.");
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/remote-action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ type: "automation", instruction }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok || !result.id) throw new Error(result.error || "Bosley could not queue this task.");
+      setTaskInstruction("");
+      setTaskNotice(result.listenerOnline
+        ? "Task queued for your connected Windows agent. Its progress will appear here."
+        : "Task saved to your private queue. It will be picked up when your Windows agent reconnects.");
+      await loadTasks();
+      await openTask(result.id);
+    } catch (error) {
+      setTaskNotice(error instanceof Error ? error.message : "Could not delegate this task.");
+    } finally { setTaskBusy(false); }
   }
   async function openTask(taskId: string) {
     setSelectedTask(taskId); setTaskEvents([]);
@@ -408,6 +435,11 @@ export default function App() {
     {taskPanelOpen && <section className="task-workspace" aria-label="Agent task workspace">
       <header className="task-workspace-header"><button className="icon-button" onClick={() => { setTaskPanelOpen(false); setSelectedTask(null); }} aria-label="Back to chat"><ChevronLeft size={17}/></button><div><strong>AGENT WORKSPACE</strong><span>Private tasks for your account</span></div><button className="icon-button" onClick={() => void loadTasks()} disabled={taskBusy} aria-label="Refresh tasks"><RefreshCw size={15}/></button><button className="icon-button" onClick={() => setTaskPanelOpen(false)} aria-label="Close task workspace"><X size={16}/></button></header>
       {taskNotice && <div className="task-notice" role="status">{taskNotice}</div>}
+      <form className="task-compose" onSubmit={queueAgentTask}>
+        <label htmlFor="agent-task-instruction">DELEGATE A TASK</label>
+        <div className="task-compose-row"><input id="agent-task-instruction" value={taskInstruction} onChange={event => setTaskInstruction(event.target.value)} maxLength={2000} placeholder="Describe a task for your connected Windows agent…" disabled={taskBusy}/><button type="submit" disabled={taskBusy || !taskInstruction.trim()}><Send size={13}/>{taskBusy ? "Queueing…" : "Delegate"}</button></div>
+        <small>Tasks are private to your account. They remain queued while your Windows agent is offline.</small>
+      </form>
       <div className="task-workspace-body">
         <div className="task-list-column"><div className="task-section-label">RECENT TASKS <span>{tasks.length}</span></div>
           {taskBusy && !tasks.length && <div className="task-empty">Loading your tasks…</div>}

@@ -1269,8 +1269,14 @@ jobs:
               // Spotify is opened through its registered URI handler; no shell command,
               // executable path or user-controlled argument is accepted.
               if (target.protocol) {
-                await shell.openExternal(target.protocol);
-                return { ok: true, launched: appId, label: target.label, handler: 'system-protocol' };
+                try {
+                  await shell.openExternal(target.protocol);
+                  return { ok: true, launched: appId, label: target.label, handler: 'system-protocol' };
+                } catch (error) {
+                  // If Spotify is not installed, open its official HTTPS web player instead.
+                  await shell.openExternal('https://open.spotify.com/');
+                  return { ok: true, launched: appId, label: target.label, handler: 'web-fallback', note: String(error?.message || error).slice(0, 160) };
+                }
               }
               // Launching a fixed, allowlisted utility is a low-risk action. The user's
               // explicit Run click is the approval; do not show a second modal each time.

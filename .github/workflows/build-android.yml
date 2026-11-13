@@ -195,6 +195,30 @@ jobs:
             attempt=$((attempt + 1))
           done
 
+      - name: Install and launch APK on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            APK="android/app/build/outputs/apk/debug/app-debug.apk"
+            if [ "${{ steps.signing.outputs.configured }}" = "true" ]; then
+              APK="android/app/build/outputs/apk/release/app-release.apk"
+            fi
+            test -s "$APK"
+            adb install "$APK"
+            PACKAGE_ID="$($ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/aapt dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p")"
+            test -n "$PACKAGE_ID"
+            adb shell monkey -p "$PACKAGE_ID" -c android.intent.category.LAUNCHER 1
+            sleep 8
+            adb shell pidof "$PACKAGE_ID"
+            mkdir -p build/android-smoke
+            adb exec-out screencap -p > build/android-smoke/android-launch.png
+            test -s build/android-smoke/android-launch.png
+
       - name: Verify Android package signatures
         shell: bash
         run: |

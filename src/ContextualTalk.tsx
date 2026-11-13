@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "./App";
 import { Camera, ImagePlus, Send, X, RefreshCw, ShieldCheck, MonitorUp, Trash2 } from "lucide-react";
 
 const SUPABASE_URL = "https://ywwfqisbmlkjcfoqehph.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwicmVmIjoieXd3ZnFpc2JtbGtqY2ZvcWVwaHAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3OTU4MDYwOSwiZXhwIjoyMDk1MTU2NjA5fQ.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
 const CHAT_URL = SUPABASE_URL + "/functions/v1/companion-chat";
-// Share the same persisted Supabase auth key as the main Bosley application.
-const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { storageKey: "sb-ywwfqisbmlkjcfoqehph-auth-token", persistSession: true, autoRefreshToken: false, detectSessionInUrl: false },
-});
 type Capture = { dataUrl: string; label: string };
 
 async function compressImage(source: Blob): Promise<string> {
@@ -44,8 +40,8 @@ export default function ContextualTalk() {
 
   useEffect(() => {
     let alive = true;
-    authClient.auth.getSession().then(({ data }) => { if (alive) setSignedIn(!!data.session?.user); });
-    const { data } = authClient.auth.onAuthStateChange((_event, session) => setSignedIn(!!session?.user));
+    supabase.auth.getSession().then(({ data }) => { if (alive) setSignedIn(!!data.session?.user); });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => setSignedIn(!!session?.user));
     return () => { alive = false; data.subscription.unsubscribe(); recognitionRef.current?.stop(); };
   }, []);
 
@@ -120,7 +116,7 @@ export default function ContextualTalk() {
   async function askBosley(event: FormEvent) {
     event.preventDefault();
     if (!capture || !question.trim() || busy) return;
-    const { data } = await authClient.auth.getSession();
+    const { data } = await supabase.auth.getSession();
     const session = data.session;
     if (!session) { setNotice("Sign in to use Contextual Talk."); setSignedIn(false); return; }
     setBusy(true); setNotice(""); setAnswer("Bosley is examining the image…");

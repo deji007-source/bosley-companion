@@ -94,10 +94,35 @@ jobs:
           xcrun simctl io "$DEVICE_ID" screenshot build/ios/smoke/iphone-launch.png
           test -s build/ios/smoke/iphone-launch.png
 
-      - name: Package unsigned iOS simulator build
+      - name: Package unsigned iOS simulator build and usage guide
         run: |
+          cat > build/ios/IOS-SIMULATOR-README.txt <<'EOF'
+          BOSLEY iOS SIMULATOR BUILD
+          
+          IMPORTANT: This is an unsigned iOS Simulator app, not an iPhone-installable IPA.
+          
+          MAC WITH XCODE:
+          1. Unzip Bosley-iOS-Simulator.zip.
+          2. Open Xcode, then open Xcode > Open Developer Tool > Simulator.
+          3. In Terminal, change directory to the folder containing App.app.
+          4. Run: xcrun simctl install booted App.app
+          5. Run: /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' App.app/Info.plist
+          6. Copy the bundle identifier printed above and run: xcrun simctl launch booted YOUR_BUNDLE_ID
+          
+          PHYSICAL IPHONE:
+          Do not tap App.app or this ZIP in the iPhone Files app expecting installation.
+          A physical iPhone requires an Apple-signed IPA and an appropriate distribution path
+          (TestFlight, Apple Configurator, or Xcode device deployment). The simulator build
+          cannot be installed directly on a physical iPhone.
+          
+          BOSLEY FEATURES:
+          The task workspace is opened from the Tasks button in the Bosley top bar after sign-in.
+          Use Back to chat to close it. Task history is private to the signed-in account.
+          EOF
           cd build/ios/Build/Products/Debug-iphonesimulator
           zip -r "$GITHUB_WORKSPACE/Bosley-iOS-Simulator.zip" App.app
+          cd "$GITHUB_WORKSPACE"
+          zip -u Bosley-iOS-Simulator.zip build/ios/IOS-SIMULATOR-README.txt
 
       - name: Upload iOS simulator build
         uses: actions/upload-artifact@v4

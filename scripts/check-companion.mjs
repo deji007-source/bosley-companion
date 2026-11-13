@@ -28,6 +28,7 @@ assert.ok(marketHistoryFunction.includes("This endpoint retrieves historical obs
 assert.ok(appScript && appScript.indexOf("function startLaptopCommandListener(activeUser)") < appScript.lastIndexOf("})();"), "Laptop listener must remain inside the application IIFE so it can access $ and other private helpers");
 assert.ok(html.includes('id="email-confirmation-page"') && html.includes('id="email-confirmation-back"') && html.includes("Email confirmed"), "The email verification callback must show a dedicated confirmation page with an explicit return-to-sign-in action");
 assert.ok(html.includes("emailRedirectTo:redirectUrl.toString()") && html.includes('redirectUrl.searchParams.set("email-confirmed","1")'), "Sign-up confirmation emails must redirect to Bosley's dedicated email-confirmed route");
+assert.ok(html.includes('new URL("https://bosley-companion.vercel.app/")'), "Email confirmation links from every build must return to the stable production sign-in page rather than an ephemeral preview or native origin");
 assert.ok(html.includes("handleEmailConfirmationRoute") && html.includes('params.get("email-confirmed")!=="1"') && html.includes("window.history.replaceState"), "The confirmation route must be handled safely and remove stale callback tokens from the visible URL");
 assert.ok(html.includes('gateMode="in";renderAuthGate();gateEmail?.focus()') && html.includes('db.auth.signOut()'), "After email confirmation, the user must be returned to a clean signed-out state and explicitly sign in");
 

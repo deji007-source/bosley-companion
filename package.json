@@ -11,7 +11,8 @@
     "test:strategy-library": "node scripts/check-strategy-library.mjs",
     "test:access-lock": "node scripts/check-access-lock.mjs",
     "test:agent-workspace": "node scripts/check-agent-workspace.mjs",
-    "test:agent-skills": "node scripts/check-agent-skills.mjs"
+    "test:agent-skills": "node scripts/check-agent-skills.mjs",
+    "test:agent-voice": "node scripts/check-agent-voice.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

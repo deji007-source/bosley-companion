@@ -1536,7 +1536,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(name.length<1||name.length>120){cloudStrategyStatus("Enter a strategy name between 1 and 120 characters.");return}
     if(!rule||rule.length>4000){cloudStrategyStatus("Enter a supported strategy rule (maximum 4,000 characters).");return}
     const parsed=parseStrategy(rule);if(!parsed.ok){cloudStrategyStatus("Strategy not saved. Fix the rule first: "+parsed.message);return}
-    const rules={format:"bosley-strategy-v1",rule,parsed:{indicator:parsed.indicator||null,fast:parsed.fast,slow:parsed.slow,description:parsed.description||""},risk:{initial:Number(el("td-capital").value),allocation:Number(el("td-risk").value),riskPerTrade:Number(el("td-risk-per-trade").value),stopLoss:Number(el("td-stop-loss").value),takeProfit:Number(el("td-take-profit").value)},marketCategory:state.marketCategory||"general",symbol:el("td-symbol").value.trim().toUpperCase()||null,timeframe:el("td-timeframe").value};
+    const rules={format:"bosley-strategy-v1",rule,parsed:{indicator:parsed.indicator||null,fast:parsed.fast,slow:parsed.slow,description:parsed.description||""},risk:{initial:Number(el("td-capital").value),allocation:Number(el("td-risk").value),riskPerTrade:Number(el("td-risk-per-trade").value),stopLoss:Number(el("td-stop-loss").value),takeProfit:Number(el("td-take-profit").value)},marketCategory:(state.marketCategory==="equities"?"stocks":state.marketCategory||"general"),symbol:el("td-symbol").value.trim().toUpperCase()||null,timeframe:el("td-timeframe").value};
     cloudStrategyStatus("Saving strategy to your private library…");
     let strategyId=activeCloudStrategyId;
     if(strategyId){
@@ -1545,7 +1545,7 @@ document.addEventListener("DOMContentLoaded",()=>{
      if(!existing)strategyId=null;
     }
     if(!strategyId){
-     const {data:created,error}=await db.from("trading_strategies").insert({user_id:owner.id,name,description:"Saved from Bosley Trading Dock",market_category:["forex","stocks","crypto","indices","commodities","general"].includes(rules.marketCategory)?rules.marketCategory:"general",symbol:rules.symbol,timeframe:rules.timeframe}).select("id,current_revision").single();
+     const {data:created,error}=await db.from("trading_strategies").insert({user_id:owner.id,name,description:"Saved from Bosley Trading Dock",market_category:rules.marketCategory,symbol:rules.symbol,timeframe:rules.timeframe}).select("id,current_revision").single();
      if(error)throw error;strategyId=created.id;activeCloudStrategyId=strategyId;
     }else{
      const {error}=await db.from("trading_strategies").update({name,market_category:rules.marketCategory,symbol:rules.symbol,timeframe:rules.timeframe,updated_at:new Date().toISOString()}).eq("id",strategyId).eq("user_id",owner.id);
@@ -1748,7 +1748,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   el("td-capital").addEventListener("change",()=>{const n=Number(el("td-capital").value);if(Number.isFinite(n)&&n>=1&&n<=1000000){state.initial=n;save()}});
   [["td-risk","allocation",1,100],["td-risk-per-trade","riskPerTrade",0.1,5],["td-stop-loss","stopLoss",0.1,50],["td-take-profit","takeProfit",0.1,100]].forEach(([id,key,min,max])=>el(id).addEventListener("change",()=>{const value=Number(el(id).value);if(Number.isFinite(value)&&value>=min&&value<=max){state[key]=value;save()}}));
   el("td-strategy").addEventListener("change",()=>{state.strategy=el("td-strategy").value;save()});
-  updateDataInfo();el("td-run-status").textContent="Ready. A backtest runs in batches and reports progress. Cancelled runs are not saved as completed.";if(state.lastRun){el("td-report-tag").textContent="LAST RUN SAVED";el("td-report").textContent="Last test "+new Date(state.lastRun.at).toLocaleString()+" · "+Number(state.lastRun.return).toFixed(2)+"% · "+state.lastRun.trades+" closed trades. Re-run for full metrics."}el("td-equity").textContent=money(state.balance);el("td-start").textContent=money(state.initial);el("td-bars").textContent=data().length.toLocaleString();understand();
+  updateDataInfo();refreshCloudStrategies().catch(error=>cloudStrategyStatus("Strategy library will load when refreshed: "+error.message));el("td-run-status").textContent="Ready. A backtest runs in batches and reports progress. Cancelled runs are not saved as completed.";if(state.lastRun){el("td-report-tag").textContent="LAST RUN SAVED";el("td-report").textContent="Last test "+new Date(state.lastRun.at).toLocaleString()+" · "+Number(state.lastRun.return).toFixed(2)+"% · "+state.lastRun.trades+" closed trades. Re-run for full metrics."}el("td-equity").textContent=money(state.balance);el("td-start").textContent=money(state.initial);el("td-bars").textContent=data().length.toLocaleString();understand();
  }
 
 

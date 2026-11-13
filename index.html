@@ -1969,7 +1969,19 @@ window.BosleyCurrentUserId=()=>user?.id||null;
  }});
  Object.defineProperty(proto,"__bosleyAccountScoped",{value:true});
 })();
-window.addEventListener("bosley:account-changed",()=>{try{const saved=localStorage.getItem("bosley-interface-theme")||"dark";applyBosleyTheme(saved)}catch{}});
+let bosleyAccountScopeReady=false;
+window.addEventListener("bosley:account-changed",()=>{
+ const active=window.BosleyCurrentUserId?.()||"guest";
+ try{
+  const previous=sessionStorage.getItem("__bosley_internal:active-account");
+  sessionStorage.setItem("__bosley_internal:active-account",active);
+  if(previous!==null&&previous!==active){window.location.reload();return}
+  if(previous===null&&active!=="guest"&&!bosleyAccountScopeReady){bosleyAccountScopeReady=true;window.location.reload();return}
+  bosleyAccountScopeReady=true;
+  const saved=localStorage.getItem("bosley-interface-theme")||"dark";
+  applyBosleyTheme(saved);
+ }catch(error){console.warn("Bosley account scope refresh failed:",error)}
+});
 
 let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;

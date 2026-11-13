@@ -3,6 +3,12 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
 :root{font-family:Manrope,system-ui,sans-serif;color:#f5f5f5;background:#000;--mute:#8a8a8a;--line:#262626;--px:0;--py:0;--es:1}
+/* Exact monochrome light-mode inverse. A difference-blend white overlay inverts
+   every rendered RGB value without changing layout, fixed positioning or charts. */
+body::after{content:"";display:none;position:fixed;inset:0;z-index:2147483647;background:#fff;mix-blend-mode:difference;pointer-events:none}
+html[data-theme="light"]{color-scheme:light}
+html[data-theme="light"] body::after{display:block}
+
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#000}
 button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer}[hidden]{display:none!important}
 :focus-visible{outline:2px solid #fff;outline-offset:2px}
@@ -1272,6 +1278,9 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
    <p class="fb" id="android-overlay-feedback" role="status" aria-live="polite"></p>
   </div>
   <form class="form" id="faceform">
+   <label class="mute" for="bosley-theme-mode">Interface colour mode</label>
+   <select id="bosley-theme-mode"><option value="dark">Dark mode</option><option value="light">Light mode · exact colour inverse</option></select>
+
    <label class="mute" for="facepreset">Face preset</label>
    <select id="facepreset"><option value="incognito">Incognito (signature)</option><option value="calm">Calm</option><option value="alert">Alert</option></select>
    <label class="mute" for="facesize">Eye size</label>
@@ -1907,7 +1916,7 @@ if(gateForm)gateForm.addEventListener("submit",async e=>{
  gateSubmit.disabled=true;if(gateFeedback)gateFeedback.textContent=gateMode==="up"?"Creating your account…":"Signing in securely…";
  try{const credentials={email:gateEmail.value.trim(),password:gatePassword.value};const result=gateMode==="up"?await db.auth.signUp(credentials):await db.auth.signInWithPassword(credentials);if(result.error)throw result.error;
  if(gateMode==="up"&&!result.data.session){if(gateFeedback)gateFeedback.textContent="Account created. Check your email to confirm, then sign in here.";return}
- if(result.data.session){user=result.data.user||result.data.session.user;renderAuthGate();if(gateFeedback)gateFeedback.textContent="Signed in.";restoreLatestConversation();if(typeof load==="function")load()}
+ if(result.data.session){user=result.data.user||result.data.session.user;window.dispatchEvent(new Event("bosley:account-changed"));renderAuthGate();if(gateFeedback)gateFeedback.textContent="Signed in.";restoreLatestConversation();if(typeof load==="function")load()}
  else if(gateFeedback)gateFeedback.textContent="No active session returned. Check email confirmation and try again.";
  }catch(err){const m=String(err?.message||"Sign-in failed.");if(gateFeedback)gateFeedback.textContent=/invalid login credentials/i.test(m)?"Email or password is incorrect.":/email not confirmed/i.test(m)?"Confirm your email using the link we sent, then sign in.":m}
  finally{gateSubmit.disabled=false}
@@ -1917,6 +1926,31 @@ if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not init
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
 window.BosleyCurrentUserId=()=>user?.id||null;
+/* Namespace all app-owned browser storage by authenticated account.
+   Supabase auth tokens and device-level window geometry remain untouched. */
+(()=>{
+ const proto=Storage.prototype;
+ if(proto.__bosleyAccountScoped)return;
+ const nativeGet=proto.getItem,nativeSet=proto.setItem,nativeRemove=proto.removeItem,nativeClear=proto.clear;
+ const owner=()=>(window.BosleyCurrentUserId?.()||"guest");
+ const deviceKeys=new Set(["bosley-side-dock-position","bosley-side-dock-size","bosley-desktop-window-state"]);
+ const keyFor=key=>{
+  const k=String(key);
+  if(/^sb-[a-z0-9-]+-auth-token$/i.test(k)||/^supabase\./i.test(k)||/^capacitor\./i.test(k)||deviceKeys.has(k)||k.startsWith("__bosley_internal:"))return k;
+  return "bosley-account:"+owner()+":"+k;
+ };
+ Object.defineProperty(proto,"getItem",{configurable:true,value:function(key){return nativeGet.call(this,keyFor(key))}});
+ Object.defineProperty(proto,"setItem",{configurable:true,value:function(key,value){return nativeSet.call(this,keyFor(key),value)}});
+ Object.defineProperty(proto,"removeItem",{configurable:true,value:function(key){return nativeRemove.call(this,keyFor(key))}});
+ Object.defineProperty(proto,"clear",{configurable:true,value:function(){
+  const prefix="bosley-account:"+owner()+":";
+  const keys=[];for(let i=0;i<this.length;i++){const k=this.key(i);if(k&&k.startsWith(prefix))keys.push(k)}
+  keys.forEach(k=>nativeRemove.call(this,k));
+ }});
+ Object.defineProperty(proto,"__bosleyAccountScoped",{value:true});
+})();
+window.addEventListener("bosley:account-changed",()=>{try{const saved=localStorage.getItem("bosley-interface-theme")||"dark";applyBosleyTheme(saved)}catch{}});
+
 let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}
@@ -2271,6 +2305,19 @@ addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online
 /* ---------- customizable face ---------- */
 const faceSettingsKey=()=>"bosley_face_settings_v1:"+((user&&user.id)||"guest");
 const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default"};
+
+function applyBosleyTheme(mode){
+ const theme=mode==="light"?"light":"dark";
+ document.documentElement.dataset.theme=theme;
+ document.documentElement.style.colorScheme=theme;
+ const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==="light"?"#ffffff":"#000000";
+ const selector=$("#bosley-theme-mode");if(selector&&selector.value!==theme)selector.value=theme;
+}
+function initBosleyTheme(){
+ let mode="dark";try{mode=localStorage.getItem("bosley-interface-theme")||"dark"}catch{}
+ applyBosleyTheme(mode);
+ const selector=$("#bosley-theme-mode");if(selector)selector.onchange=()=>{const next=selector.value==="light"?"light":"dark";try{localStorage.setItem("bosley-interface-theme",next)}catch{}applyBosleyTheme(next)};
+}
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(faceSettingsKey())||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function normalizeFaceSettings(value={}){
  const v={...FACE_DEFAULTS,...(value&&typeof value==="object"?value:{})};
@@ -2378,6 +2425,7 @@ async function setupAndroidOverlayControls(){
  hide.onclick=async()=>{hide.disabled=true;try{await plugin.hide();feedback.textContent="Floating widget hidden. You can enable it again here."}catch(e){feedback.textContent=String(e?.message||"Could not hide floating widget.")}finally{hide.disabled=false}};
 }
 function initFaceSettings(){
+ initBosleyTheme();
  setupAndroidOverlayControls();
  const v=readFaceSettings();applyFaceSettings(v);
  const form=$("#faceform");if(!form)return;

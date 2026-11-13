@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createClient, type User } from "@supabase/supabase-js";
-import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut } from "lucide-react";
+import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut, ListTodo, RefreshCw, RotateCcw, Ban, ChevronLeft } from "lucide-react";
 
 const SUPABASE_URL = "https://ywwfqisbmlkjcfoqehph.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwicmVmIjoieXd3ZnFpc2JtbGtqY2ZvcWVwaHAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3OTU4MDYwOSwiZXhwIjoyMDk1MTU2NjA5fQ.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
@@ -46,7 +46,7 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [confirmationError, setConfirmationError] = useState("");
-  const [sending, setSending] = useState(false);
+  const [sending, setSending] = useState(false);\n  const [taskPanelOpen, setTaskPanelOpen] = useState(false);\n  const [tasks, setTasks] = useState<Array<{id:string;instruction:string;status:string;summary:string|null;created_at:string}>>([]);\n  const [taskEvents, setTaskEvents] = useState<Array<{id:string;event_type:string;message:string;created_at:string}>>([]);\n  const [selectedTask, setSelectedTask] = useState<string | null>(null);\n  const [taskBusy, setTaskBusy] = useState(false);\n  const [taskNotice, setTaskNotice] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -160,6 +160,44 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [listening]);
 
+  async function taskControl(payload: Record<string, unknown>) {
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+    if (!session) throw new Error("Sign in again to access your task workspace.");
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/agent-task-control`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_ANON_KEY },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) throw new Error(result.error || "Task request failed.");
+    return result;
+  }
+  async function loadTasks() {
+    setTaskBusy(true); setTaskNotice("");
+    try {
+      const result = await taskControl({ action: "list", limit: 40 });
+      setTasks(result.tasks || []);
+      if (selectedTask && !(result.tasks || []).some((task: {id:string}) => task.id === selectedTask)) setSelectedTask(null);
+    } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not load tasks."); }
+    finally { setTaskBusy(false); }
+  }
+  async function openTask(taskId: string) {
+    setSelectedTask(taskId); setTaskEvents([]);
+    try { const result = await taskControl({ action: "events", run_id: taskId }); setTaskEvents(result.events || []); }
+    catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not load task events."); }
+  }
+  async function updateTask(action: "cancel" | "retry", taskId: string) {
+    setTaskBusy(true); setTaskNotice("");
+    try {
+      const result = await taskControl({ action, run_id: taskId });
+      setTaskNotice(action === "cancel" ? (result.note || "Cancellation recorded.") : "A new retry was queued.");
+      await loadTasks();
+      if (action === "retry" && result.task?.id) await openTask(result.task.id);
+      else if (action === "cancel") await openTask(taskId);
+    } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Task update failed."); }
+    finally { setTaskBusy(false); }
+  }
   function speak(text: string) {
     if (!speechEnabled || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
@@ -323,7 +361,7 @@ export default function App() {
 
   return <main className="app-shell"><section className="assistant-panel" aria-label="Bosley Companion">
     <header className="topbar"><div className="brand-mark"><PencilMascot status={status} compact/></div><div className="brand-copy"><div className="brand-name">BOSLEY <span>COMPANION</span></div><div className="brand-status"><span className={`status-light ${status === "Listening" ? "status-listening" : ""}`}/>{status}<span className="local-tag">LOCAL UI</span></div></div>
-      <div className="window-actions"><button className="icon-button" onClick={() => setCollapsed(true)} title="Collapse to pencil" aria-label="Collapse to pencil"><Minus size={16}/></button><button className="icon-button" onClick={() => setCollapsed(true)} title="Minimize panel" aria-label="Minimize panel"><span>⌄</span></button></div>
+      <div className="window-actions">{user && <button className="icon-button task-launch-button" onClick={() => { setTaskPanelOpen(true); void loadTasks(); }} title="Open task workspace" aria-label="Open task workspace"><ListTodo size={16}/></button>}<button className="icon-button" onClick={() => setCollapsed(true)} title="Collapse to pencil" aria-label="Collapse to pencil"><Minus size={16}/></button><button className="icon-button" onClick={() => setCollapsed(true)} title="Minimize panel" aria-label="Minimize panel"><span>⌄</span></button></div>
     </header>
     <div className="connection-banner"><span className="connection-icon"><CircleHelp size={15}/></span><div><strong>{user ? "Bosley AI connected" : "Sign in to connect Bosley AI"}</strong><span>{user ? `Signed in as ${user.email ?? "your account"}` : "Secure, account-based AI chat and saved conversations."}</span></div><span className="free-pill">{user ? "AI READY" : "SIGN IN"}</span></div>
     {!user && confirmationError && <div className="notice" role="alert">{confirmationError}<button type="button" onClick={() => setConfirmationError("")} aria-label="Dismiss notice"><X size={13}/></button></div>}
@@ -342,6 +380,26 @@ export default function App() {
       <button type="button" className="auth-switch" onClick={() => { setAuthMode(current => current === "signin" ? "signup" : "signin"); setNotice(""); }}>{authMode === "signin" ? "Need an account? Create one" : "Already have an account? Sign in"}</button>
     </form>}
     {user && <div className="account-strip"><span>{user.email ?? "Signed in"}</span><button onClick={async () => { await supabase.auth.signOut(); setNotice("Signed out."); }} aria-label="Sign out"><LogOut size={13}/> Sign out</button></div>}
+    {taskPanelOpen && <section className="task-workspace" aria-label="Agent task workspace">
+      <header className="task-workspace-header"><button className="icon-button" onClick={() => { setTaskPanelOpen(false); setSelectedTask(null); }} aria-label="Back to chat"><ChevronLeft size={17}/></button><div><strong>AGENT WORKSPACE</strong><span>Private tasks for your account</span></div><button className="icon-button" onClick={() => void loadTasks()} disabled={taskBusy} aria-label="Refresh tasks"><RefreshCw size={15}/></button><button className="icon-button" onClick={() => setTaskPanelOpen(false)} aria-label="Close task workspace"><X size={16}/></button></header>
+      {taskNotice && <div className="task-notice" role="status">{taskNotice}</div>}
+      <div className="task-workspace-body">
+        <div className="task-list-column"><div className="task-section-label">RECENT TASKS <span>{tasks.length}</span></div>
+          {taskBusy && !tasks.length && <div className="task-empty">Loading your tasks…</div>}
+          {!taskBusy && !tasks.length && <div className="task-empty">No agent tasks yet. Tasks created by your connected Bosley devices will appear here.</div>}
+          {tasks.map(task => <button type="button" key={task.id} className={`task-row ${selectedTask === task.id ? "selected" : ""}`} onClick={() => void openTask(task.id)}>
+            <span className={`task-status-dot status-${task.status}`}/><span className="task-row-copy"><strong>{task.instruction}</strong><small>{task.status.toUpperCase()} · {new Date(task.created_at).toLocaleString()}</small></span>
+          </button>)}
+        </div>
+        <div className="task-detail-column">
+          {!selectedTask && <div className="task-empty">Select a task to view its activity and available controls.</div>}
+          {selectedTask && (() => { const task = tasks.find(item => item.id === selectedTask); return <><div className="task-detail-title"><strong>{task?.instruction || "Task details"}</strong><span>{task?.status?.toUpperCase() || "TASK"}</span></div>
+            <div className="task-event-list">{taskEvents.length ? taskEvents.map(event => <article className="task-event" key={event.id}><span>{event.event_type.toUpperCase()}</span><p>{event.message}</p><small>{new Date(event.created_at).toLocaleString()}</small></article>) : <div className="task-empty">No progress events have been recorded for this task yet.</div>}</div>
+            <div className="task-actions">{task && ["pending","processing"].includes(task.status) && <button type="button" onClick={() => void updateTask("cancel",task.id)} disabled={taskBusy}><Ban size={14}/> Cancel task</button>}{task && ["failed","cancelled"].includes(task.status) && <button type="button" onClick={() => void updateTask("retry",task.id)} disabled={taskBusy}><RotateCcw size={14}/> Retry task</button>}</div>
+          </>; })()}
+        </div>
+      </div>
+    </section>}
     <section ref={conversationRef} onScroll={handleConversationScroll} className="conversation" aria-live="polite"><div className="day-label"><span/> SESSION STARTED <span/></div>
       {messages.map(message => <article className={`message ${message.role === "you" ? "user-message" : "bosley-message"}`} key={message.id}>
         {message.role === "bosley" && <div className="avatar"><PencilMascot status={status} compact/></div>}

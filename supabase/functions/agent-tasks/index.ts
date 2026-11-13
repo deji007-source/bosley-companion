@@ -98,8 +98,9 @@ Deno.serve(async (req: Request) => {
         update.finished_at = new Date().toISOString();
       } else if (run.status === "pending") update.status = "processing";
       const { data, error } = await db.from("automation_runs").update(update)
-        .eq("id", id).eq("user_id", user.id).select("id,status,updated_at").single();
+        .eq("id", id).eq("user_id", user.id).in("status", ["pending", "processing"]).select("id,status,updated_at").maybeSingle();
       if (error) throw error;
+      if (!data) return json({ ok: false, error: "Task changed before the progress update; refresh its latest state." }, 409);
       await event(id, user.id, type, message, progress);
       return json({ ok: true, task: data });
     }

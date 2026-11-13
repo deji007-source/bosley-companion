@@ -31,3 +31,13 @@
 .mood-speaking .mouth-line{opacity:0;}
 .mood-speaking .mouth-talk{opacity:1;animation:mouthTalk .22s ease-in-out infinite alternate;}
 @keyframes mouthTalk{from{transform:scaleY(.35) scaleX(.82)}to{transform:scaleY(1) scaleX(1)}}
+
+
+/* Dedicated post-confirmation screen. */
+.auth-result-panel{height:min(560px,calc(100vh - 48px));min-height:420px}
+.auth-result-content{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:15px;padding:34px;text-align:center}
+.auth-result-icon{display:grid;place-items:center;width:64px;height:64px;border:1px solid rgba(110,220,160,.35);border-radius:50%;background:rgba(80,190,130,.08);color:#9ce4b5}
+.auth-result-content .auth-heading{font-size:clamp(20px,4vw,27px);font-weight:800;letter-spacing:-.04em}
+.auth-result-content p{max-width:340px;margin:0;color:#aab5c2;font-size:13px;line-height:1.7}
+.auth-result-content .auth-submit{display:flex;align-items:center;justify-content:center;gap:9px;width:min(100%,280px);margin-top:8px}
+@media(max-width:520px){.auth-result-panel{height:calc(100dvh - 32px);min-height:0}.auth-result-content{padding:22px}}

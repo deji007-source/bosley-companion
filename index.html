@@ -2338,6 +2338,7 @@ function initBosleyTheme(){
  applyBosleyTheme(mode);
  const selector=$("#bosley-theme-mode");if(selector)selector.onchange=()=>{const next=selector.value==="light"?"light":"dark";try{localStorage.setItem("bosley-interface-theme",next)}catch{}applyBosleyTheme(next)};
 }
+initBosleyTheme();
 function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(faceSettingsKey())||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function normalizeFaceSettings(value={}){
  const v={...FACE_DEFAULTS,...(value&&typeof value==="object"?value:{})};

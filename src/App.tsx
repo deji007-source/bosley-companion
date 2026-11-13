@@ -46,7 +46,13 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [confirmationError, setConfirmationError] = useState("");
-  const [sending, setSending] = useState(false);\n  const [taskPanelOpen, setTaskPanelOpen] = useState(false);\n  const [tasks, setTasks] = useState<Array<{id:string;instruction:string;status:string;summary:string|null;created_at:string}>>([]);\n  const [taskEvents, setTaskEvents] = useState<Array<{id:string;event_type:string;message:string;created_at:string}>>([]);\n  const [selectedTask, setSelectedTask] = useState<string | null>(null);\n  const [taskBusy, setTaskBusy] = useState(false);\n  const [taskNotice, setTaskNotice] = useState("");
+  const [sending, setSending] = useState(false);
+  const [taskPanelOpen, setTaskPanelOpen] = useState(false);
+  const [tasks, setTasks] = useState<Array<{id:string;instruction:string;status:string;summary:string|null;created_at:string}>>([]);
+  const [taskEvents, setTaskEvents] = useState<Array<{id:string;event_type:string;message:string;created_at:string}>>([]);
+  const [selectedTask, setSelectedTask] = useState<string | null>(null);
+  const [taskBusy, setTaskBusy] = useState(false);
+  const [taskNotice, setTaskNotice] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);

@@ -4183,7 +4183,7 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(/^(?:h
 /* ---------- keyboard ---------- */
 addEventListener("keydown",e=>{
  const k=e.key.toLowerCase();
- if(e.altKey&&!e.ctrlKey&&!e.shiftKey&&k==="t"&&!e.repeat){e.preventDefault();toggle();return}
+ if(e.altKey&&!e.ctrlKey&&!e.shiftKey&&k==="t"&&!e.repeat&&!(e.target instanceof HTMLElement&&e.target.matches("input,textarea,select,[contenteditable=true]"))){e.preventDefault();toggle();return}
  if((e.ctrlKey||e.altKey)&&e.shiftKey&&k==="1"){e.preventDefault();setVoiceMode("agent");note("Agent mode selected (Ctrl/Alt+Shift+1).");return}
  if((e.ctrlKey||e.altKey)&&e.shiftKey&&k==="2"){e.preventDefault();setVoiceMode("dictate");note("Dictate mode selected (Ctrl/Alt+Shift+2).");return}
  if((e.ctrlKey||e.altKey)&&e.shiftKey&&k==="3"){e.preventDefault();setVoiceMode("edit");note("Edit mode selected (Ctrl/Alt+Shift+3).");return}

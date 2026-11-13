@@ -1059,6 +1059,9 @@ assert.ok(html.includes("-webkit-overflow-scrolling:touch") && html.includes("to
 assert.ok(html.includes('id="contextual-talk-launch"') && html.includes('id="contextual-talk-modal"') && html.includes('id="ct-preview"'), "Contextual Talk must provide a signed-in launcher, a modal and an image preview before sending.");
 assert.ok(html.includes("window.Capacitor?.Plugins?.BosleyOverlay") && html.includes("requestScreenCapture") && html.includes("Android screen capture preview"), "Android Contextual Talk must use the explicit native MediaProjection permission bridge.");
 assert.ok(html.includes("getDisplayMedia") && html.includes("Screen capture preview") && html.includes("Choose image"), "Desktop Contextual Talk must support explicit browser capture and image-import fallback.");
-assert.ok(html.includes("Alt+Shift+V") && html.includes("SpeechRecognition"), "Contextual Talk must expose its keyboard shortcut and optional voice dictation.");
+assert.ok(html.includes("Alt+V") && html.includes("Alt+T") && html.includes("QUICK COMMANDS") && html.includes("bosley-shortcuts-panel") && html.includes("SpeechRecognition"), "Contextual Talk must expose its keyboard shortcut and optional voice dictation.");
 assert.ok(html.includes('type:"image_url"') && html.includes("companion-chat") && html.includes("setBusy(false)"), "Contextual Talk must send the previewed image to the authenticated visual-chat endpoint and restore controls after streaming.");
 assert.ok(html.includes("getTracks().forEach(t=>t.stop())") && html.includes("Images are not saved to your chat history"), "Contextual capture must stop capture streams and keep screenshots out of saved conversation history.");
+
+assert.ok(html.includes('k==="t"') && html.includes('k.toLowerCase()==="v"'), "Bosley bulb and Contextual Talk must use Alt+T and Alt+V respectively.");
+assert.ok(html.includes("Agent voice mode") && html.includes("Dictation mode") && html.includes("Edit mode"), "The visible keyboard guide must list the current voice-mode shortcuts.");

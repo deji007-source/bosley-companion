@@ -16,6 +16,13 @@ async function authenticatedUser(req: Request) {
 }
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 
+async function recordTaskEvent(userId: string, runId: string, eventType: "created" | "claimed" | "progress" | "completed" | "failed" | "cancelled" | "retried", message: string, details: Record<string, unknown> = {}) {
+  const { error } = await sb.from("automation_run_events").insert({
+    user_id: userId, run_id: runId, event_type: eventType, message: message.slice(0, 1000), details,
+  });
+  if (error) console.error("Task event could not be recorded:", error);
+}
+
 async function notifyLaptopListener(userId: string, instruction: string): Promise<boolean> {
   const channel = sb.channel("bosley-laptop-" + userId);
   try {
@@ -119,6 +126,7 @@ Deno.serve(async (req: Request) => {
         status: 500, headers: { ...cors, "Content-Type": "application/json" },
       });
     }
+    for (const command of claimed ?? []) await recordTaskEvent(user.id, command.id, "claimed", "Windows listener claimed this task.", { device: "bosley-laptop-listener" });
     return new Response(JSON.stringify({ ok: true, commands: claimed ?? [] }), {
       headers: { ...cors, "Content-Type": "application/json" },
     });
@@ -141,6 +149,7 @@ Deno.serve(async (req: Request) => {
     if (ackError || !acknowledged) return new Response(JSON.stringify({ ok: false, error: "The command could not be acknowledged." }), {
       status: 409, headers: { ...cors, "Content-Type": "application/json" },
     });
+    await recordTaskEvent(user.id, id, status === "completed" ? "completed" : "failed", status === "completed" ? "Windows listener completed this task." : "Windows listener reported that this task failed.", { result: summary });
     return new Response(JSON.stringify({ ok: true, command: acknowledged }), {
       headers: { ...cors, "Content-Type": "application/json" },
     });
@@ -150,6 +159,7 @@ Deno.serve(async (req: Request) => {
     if (!instruction || instruction.length > 2000) return new Response(JSON.stringify({ ok: false, error: "Instruction must be 1–2000 characters." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     const { data: queued, error } = await sb.from("automation_runs").insert({ user_id: user.id, instruction, status: "pending", summary: "remote_listener_queue:v1" }).select("id").single();
     if (error || !queued?.id) return new Response(JSON.stringify({ ok: false, error: "Could not queue automation." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    await recordTaskEvent(user.id, queued.id, "created", "Task added to the Windows automation queue.");
     // The durable Windows queue is authoritative. Telegram delivery remains optional
     // and never blocks command pickup if the trigger bot is not configured or linked.
     const { data: heartbeat } = await sb.from("device_status").select("last_seen")

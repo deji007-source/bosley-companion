@@ -1916,6 +1916,7 @@ if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not init
 
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
+window.BosleyCurrentUserId=()=>user?.id||null;
 let voiceMode="agent";
 let automationRuns=[],automationBusy=false,automationHistoryOwner=null;
 function automationHistoryKey(){return "bosley_automation_history:"+(user?.id||"guest")}

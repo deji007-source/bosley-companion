@@ -2054,7 +2054,7 @@ async function handleEmailConfirmationRoute(){
  catch(error){console.warn("[Bosley] Could not clear confirmation callback session:",error);}
  user=null;document.body.classList.add("auth-required","email-confirmed");
  if(gate)gate.hidden=true;if(confirmationPage)confirmationPage.hidden=false;
- history.replaceState({},document.title,window.location.pathname+"?email-confirmed=1");
+ window.history.replaceState({},document.title,window.location.pathname+"?email-confirmed=1");
 }
 confirmationBack?.addEventListener("click",()=>{if(confirmationPage)confirmationPage.hidden=true;document.body.classList.remove("email-confirmed");gateMode="in";renderAuthGate();gateEmail?.focus();});
 

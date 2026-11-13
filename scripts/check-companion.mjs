@@ -30,6 +30,7 @@ assert.ok(html.includes('id="email-confirmation-page"') && html.includes('id="em
 assert.ok(html.includes("emailRedirectTo:redirectUrl.toString()") && html.includes('redirectUrl.searchParams.set("email-confirmed","1")'), "Sign-up confirmation emails must redirect to Bosley's dedicated email-confirmed route");
 assert.ok(html.includes('new URL("https://bosley-companion.vercel.app/")'), "Email confirmation links from every build must return to the stable production sign-in page rather than an ephemeral preview or native origin");
 assert.ok(html.includes("handleEmailConfirmationRoute") && html.includes('params.get("email-confirmed")!=="1"') && html.includes("window.history.replaceState"), "The confirmation route must be handled safely and remove stale callback tokens from the visible URL");
+assert.ok(html.includes('new URLSearchParams(window.location.hash.replace(/^#/,""))') && html.includes('hashParams.get("error_description")'), "Expired or invalid Supabase confirmation links must show the returned URL-fragment error rather than a false success");
 assert.ok(html.includes('gateMode="in";renderAuthGate();gateEmail?.focus()') && html.includes('db.auth.signOut()'), "After email confirmation, the user must be returned to a clean signed-out state and explicitly sign in");
 
 for (const [index, source] of inlineScripts.entries()) {

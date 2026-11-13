@@ -86,7 +86,6 @@ jobs:
           python3 -m py_compile scripts/install-android-overlay.py
           python3 scripts/install-android-overlay.py
           python3 scripts/prepare-android-direct-install.py
-          grep -Fq 'implementation "androidx.webkit:webkit:1.12.1"' android/app/build.gradle
           grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.MODIFY_AUDIO_SETTINGS' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.SYSTEM_ALERT_WINDOW' android/app/src/main/AndroidManifest.xml

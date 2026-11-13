@@ -6,6 +6,8 @@ import { readFileSync as readText } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const strategyParser = readText(new URL("../src/trading/strategy-parser.js", import.meta.url), "utf8");
 const backtestEngine = readText(new URL("../src/trading/backtest-engine.js", import.meta.url), "utf8");
+const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
+const androidInstaller = readText(new URL("./install-android-overlay.py", import.meta.url), "utf8");
 const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
   .filter(([, attributes]) => !/\bsrc\s*=/.test(attributes))
   .map(([, , source]) => source);
@@ -1067,3 +1069,9 @@ assert.ok(html.includes('k==="t"') && html.includes('e.key.toLowerCase()==="v"')
 assert.ok(html.includes("Agent voice mode") && html.includes("Dictation mode") && html.includes("Edit mode"), "The visible keyboard guide must list the current voice-mode shortcuts.");
 
 assert.ok(html.includes("ct-marker-mode") && html.includes("ct-marker-clear") && html.includes("guidance marker") && html.includes("markers.forEach"), "Contextual Talk must support optional numbered visual guidance markers and clearing them.");
+
+assert.ok(html.includes('autoEligible=wf.steps.every(isLowRiskAutonomyStep)') && html.includes('User-started low-risk workflow'), "User-initiated saved workflows made only of allowlisted low-risk actions must run without a second approval prompt.");
+assert.ok(html.includes('"spotify","chrome","google chrome"') && html.includes('app==="spotify"') && html.includes('url:"spotify:"'), "Spotify must be included in the allowlisted cross-platform app-launch flow.");
+assert.ok(windowsWorkflow.includes("protocol: 'spotify:'") && windowsWorkflow.includes("await shell.openExternal(target.protocol)") && windowsWorkflow.includes("safeHosts = ['google.com','youtube.com','spotify.com'"), "Windows native bridge must open Spotify through its registered URI handler and skip prompts only for allowlisted HTTPS destinations.");
+assert.ok(androidInstaller.includes('!"spotify".equalsIgnoreCase(scheme)'), "Android native URL handoff must allow the Spotify app URI scheme.");
+assert.ok(!windowsWorkflow.slice(windowsWorkflow.indexOf("if (request.action === 'launch_app')"),windowsWorkflow.indexOf("if (request.action === 'clipboard_read')")).includes("dialog.showMessageBox"), "Allowlisted native app launch must not show a second confirmation dialog.");

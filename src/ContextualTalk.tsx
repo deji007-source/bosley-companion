@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Camera, ImagePlus, Send, X, RefreshCw, ShieldCheck, MonitorUp, Trash2 } from "lucide-react";
 
@@ -117,7 +117,7 @@ export default function ContextualTalk() {
     } catch { setNotice("Could not start dictation. Check microphone permission."); }
   }
 
-  async function askBosley(event: React.FormEvent) {
+  async function askBosley(event: FormEvent) {
     event.preventDefault();
     if (!capture || !question.trim() || busy) return;
     const { data } = await authClient.auth.getSession();

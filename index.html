@@ -1406,7 +1406,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
  function renderTradingLab(){
   const panel=document.getElementById("money-learning");if(!panel)throw Error("Trading Dock page is missing.");
-  const storeKey="bosley-trading-dock-v2",feeRate=.0005,slippage=.0005,spread=.0002;
+  const storeKey="bosley-trading-dock-v2:"+((user&&user.id)||"guest"),feeRate=.0005,slippage=.0005,spread=.0002;
   const money=n=>"$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const seed=()=>{const engine=window.BosleyBacktestEngine;if(!engine)throw Error("Trading Dock backtest engine is still loading.");return engine.createDemoSeries()};
@@ -1677,6 +1677,46 @@ document.addEventListener("DOMContentLoaded",()=>{
   updateDataInfo();el("td-run-status").textContent="Ready. A backtest runs in batches and reports progress. Cancelled runs are not saved as completed.";if(state.lastRun){el("td-report-tag").textContent="LAST RUN SAVED";el("td-report").textContent="Last test "+new Date(state.lastRun.at).toLocaleString()+" · "+Number(state.lastRun.return).toFixed(2)+"% · "+state.lastRun.trades+" closed trades. Re-run for full metrics."}el("td-equity").textContent=money(state.balance);el("td-start").textContent=money(state.initial);el("td-bars").textContent=data().length.toLocaleString();understand();
  }
 
+
+ /* Protected workspace entry: prompt once per signed-in account and section per app session. */
+ const protectedWorkspaceIds=new Set(["money-learning","lovable-bosley"]);
+ const unlockedWorkspaceKeys=new Set();
+ let pendingWorkspaceUnlock=null;
+ const lockStyle=document.createElement("style");
+ lockStyle.textContent="#bosley-access-lock{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:20px;background:#000d;backdrop-filter:blur(8px)}#bosley-access-lock[hidden]{display:none!important}#bosley-access-lock .access-card{width:min(390px,100%);padding:26px;border:1px solid #3a3a3a;border-radius:18px;background:#090909;color:#f5f5f5;box-shadow:0 24px 90px #000}#bosley-access-lock h2{margin:0 0 8px;font-size:18px}#bosley-access-lock p{margin:0 0 18px;color:#999;font-size:12px;line-height:1.6}#bosley-access-lock label{display:block;margin:0 0 7px;color:#ccc;font-size:11px;font-weight:700}#bosley-access-lock input{width:100%;height:48px;padding:0 14px;border:1px solid #444;border-radius:10px;background:#030303;color:#fff;font:600 20px 'DM Mono',monospace;letter-spacing:.38em;text-align:center}#bosley-access-lock input:focus{outline:2px solid #ddd;outline-offset:2px}#bosley-access-lock .access-actions{display:flex;gap:8px;margin-top:14px}#bosley-access-lock button{flex:1;min-height:42px;border:1px solid #444;border-radius:9px;background:#151515;color:#eee;font-size:12px;font-weight:700}#bosley-access-lock button[type=submit]{background:#f5f5f5;color:#000;border-color:#f5f5f5}#bosley-access-lock .access-error{min-height:18px;margin-top:10px;color:#e7a3a3;font-size:11px}body.bosley-access-locked{overflow:hidden!important}";
+ document.head.appendChild(lockStyle);
+ const lockRoot=document.createElement("section");
+ lockRoot.id="bosley-access-lock";lockRoot.hidden=true;lockRoot.setAttribute("role","dialog");lockRoot.setAttribute("aria-modal","true");lockRoot.setAttribute("aria-labelledby","bosley-access-title");
+ lockRoot.innerHTML='<form class="access-card" id="bosley-access-form"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h2 id="bosley-access-title">Protected workspace</h2><p id="bosley-access-description">Enter your Bosley access passcode to continue.</p><label for="bosley-access-code">Four-digit passcode</label><input id="bosley-access-code" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="[0-9]{4}" required aria-describedby="bosley-access-error" placeholder="••••"><div class="access-actions"><button type="button" id="bosley-access-cancel">Cancel</button><button type="submit">Unlock workspace</button></div><div class="access-error" id="bosley-access-error" role="alert" aria-live="polite"></div></form>';
+ document.body.appendChild(lockRoot);
+ const lockForm=lockRoot.querySelector("#bosley-access-form"),lockInput=lockRoot.querySelector("#bosley-access-code"),lockError=lockRoot.querySelector("#bosley-access-error");
+ function accessKey(id){return (user?.id||"guest")+":"+id}
+ function hasWorkspaceAccess(id){const key=accessKey(id);try{return sessionStorage.getItem("bosley-workspace-unlock:"+key)==="1"}catch{return unlockedWorkspaceKeys.has(key)}}
+ function setWorkspaceAccess(id){const key=accessKey(id);unlockedWorkspaceKeys.add(key);try{sessionStorage.setItem("bosley-workspace-unlock:"+key,"1")}catch{}}
+ function requireWorkspacePasscode(id){
+  if(!protectedWorkspaceIds.has(id)||hasWorkspaceAccess(id))return Promise.resolve(true);
+  if(pendingWorkspaceUnlock)return Promise.resolve(false);
+  const labels={"money-learning":"Trading Dock","lovable-bosley":"Bosley Builder"};
+  lockRoot.querySelector("#bosley-access-title").textContent=labels[id]+" is locked";
+  lockRoot.querySelector("#bosley-access-description").textContent="Enter the four-digit Bosley passcode to open "+labels[id]+".";
+  lockError.textContent="";lockInput.value="";lockRoot.hidden=false;document.body.classList.add("bosley-access-locked");lockInput.focus();
+  return new Promise(resolve=>{
+   pendingWorkspaceUnlock=resolve;
+   const finish=allowed=>{lockRoot.hidden=true;document.body.classList.remove("bosley-access-locked");pendingWorkspaceUnlock=null;lockForm.removeEventListener("submit",submit);lockRoot.querySelector("#bosley-access-cancel").removeEventListener("click",cancel);resolve(allowed)};
+   const submit=async event=>{
+    event.preventDefault();
+    if(!/^\d{4}$/.test(lockInput.value)){lockError.textContent="Enter all four digits.";return}
+    if(!globalThis.crypto?.subtle){lockError.textContent="Secure passcode checking is unavailable in this app context.";return}
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(lockInput.value));
+    const actual=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+    if(actual!=="b3282a2f2a28757b3a18ab833de16a9c54518c0b0cf493e3f0a7cf09386f326a"){lockError.textContent="That passcode is incorrect. Try again.";lockInput.value="";lockInput.focus();return}
+    setWorkspaceAccess(id);finish(true);
+   };
+   const cancel=()=>finish(false);
+   lockForm.addEventListener("submit",submit);lockRoot.querySelector("#bosley-access-cancel").addEventListener("click",cancel);
+  });
+ }
+
  const views=[
   {button:"wstoggle",panel:"ws",label:"Workspace",init:()=>{const r=window.BosleyPanelRenderers?.workspace;if(typeof r!=="function")throw Error("Workspace renderer is not connected to the dock.");const result=r();return Promise.resolve(result).then(()=>{const panel=document.getElementById("ws");if(!panel)throw Error("Workspace container is missing.");if(!panel.textContent.trim())drawWs();return undefined})}},
   {button:"facetoggle",panel:"facepanel",label:"Appearance",init:()=>{const r=window.BosleyPanelRenderers?.appearance;if(typeof r!=="function")throw Error("Appearance renderer is not connected to the dock.");return r()}},
@@ -1755,6 +1795,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(dockMenu)dockMenu.hidden=true;
   dockToggle?.setAttribute("aria-expanded","false");
   const v=views.find(x=>x.panel===id);if(!v){console.warn("Unknown Bosley page requested:",id);return;}
+  if(!await requireWorkspacePasscode(id))return;
   const p=document.getElementById(id);if(!p){dock.hidden=false;dock.removeAttribute("hidden");dock.style.setProperty("display","flex","important");const notice=document.createElement("p");notice.className="fb";notice.textContent=v.label+" is unavailable in this build. Reload Bosley and try again.";body.replaceChildren(notice);return;}
   // Always reveal the in-app dock immediately. Do not wait on the optional
   // Windows floating-window bridge: a pending native request must never block
@@ -2227,9 +2268,9 @@ setInterval(()=>{if(!RM.matches&&!document.hidden&&!S.listening&&Date.now()-last
 addEventListener("offline",()=>{S.offline=true;eyes()});addEventListener("online",()=>{S.offline=false;eyes()});
 
 /* ---------- customizable face ---------- */
-const FACE_KEY="bosley_face_settings_v1";
+const faceSettingsKey=()=>"bosley_face_settings_v1:"+((user&&user.id)||"guest");
 const FACE_DEFAULTS={preset:"incognito",size:"large",hat:"white",eyeShape:"pill",eyeGap:"normal",widgetEdge:"sharp",widgetBorder:"thin",widgetSize:"default"};
-function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(FACE_KEY)||"{}")}}catch{return {...FACE_DEFAULTS}}}
+function readFaceSettings(){try{return {...FACE_DEFAULTS,...JSON.parse(localStorage.getItem(faceSettingsKey())||"{}")}}catch{return {...FACE_DEFAULTS}}}
 function normalizeFaceSettings(value={}){
  const v={...FACE_DEFAULTS,...(value&&typeof value==="object"?value:{})};
  return {
@@ -2278,7 +2319,7 @@ function readCompanionSettings(){
  return {appearance:readFaceSettings(),voiceProfile:["jarvis","natural","system"].includes(voice)?voice:"jarvis",updatedAt:stamp};
 }
 function persistCompanionSettings(settings){
- try{localStorage.setItem(FACE_KEY,JSON.stringify(settings.appearance));localStorage.setItem("bosley_voice_profile",settings.voiceProfile);localStorage.setItem(COMPANION_SETTINGS_KEY,JSON.stringify({updatedAt:settings.updatedAt}));return true}catch{return false}
+ try{localStorage.setItem(faceSettingsKey(),JSON.stringify(settings.appearance));localStorage.setItem("bosley_voice_profile",settings.voiceProfile);localStorage.setItem(COMPANION_SETTINGS_KEY,JSON.stringify({updatedAt:settings.updatedAt}));return true}catch{return false}
 }
 async function syncCompanionSettings(){
  if(!db||!user)return false;
@@ -2341,11 +2382,11 @@ function initFaceSettings(){
  const form=$("#faceform");if(!form)return;
  $("#facepreset").value=v.preset;$("#facesize").value=v.size;
  $("#voiceprofile").value=voiceProfile; $("#eyeshape").value=v.eyeShape||"pill";$("#eyegap").value=v.eyeGap||"normal";$("#widgetedge").value=v.widgetEdge||"soft";$("#widgetborder").value=v.widgetBorder||"thin";$("#widgetsize").value=v.widgetSize||"default";
- form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(FACE_KEY,JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved locally. Syncing your account preferences…";scheduleCompanionSettingsSync()}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
+ form.onsubmit=e=>{e.preventDefault();voiceProfile=$("#voiceprofile").value;try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};const next={preset:$("#facepreset").value,size:$("#facesize").value,eyeShape:$("#eyeshape").value,eyeGap:$("#eyegap").value,widgetEdge:$("#widgetedge").value,widgetBorder:$("#widgetborder").value,widgetSize:$("#widgetsize").value};try{localStorage.setItem(faceSettingsKey(),JSON.stringify(next));applyFaceSettings(next);$("#facefeedback").textContent="Appearance saved locally. Syncing your account preferences…";scheduleCompanionSettingsSync()}catch{$("#facefeedback").textContent="Could not save settings in this browser."}};
  $("#voicepreview").onclick=()=>{const old=speechOn;speechOn=true;speak("Hey, it is lovely to have you here. I am Bosley. Take your time, tell me what is on your mind, and we will work through it together.");speechOn=old};
 $("#voiceprofile").value=voiceProfile;
 $("#voiceprofile").addEventListener("change",()=>{voiceProfile=$("#voiceprofile").value||"jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};scheduleCompanionSettingsSync();if("speechSynthesis"in window)speechSynthesis.cancel();const labels={warm:"Warm and welcoming voice selected. "+getVoiceStatus(),jarvis:"Jarvis-style voice selected. "+getVoiceStatus(),natural:"Natural assistant voice selected. "+getVoiceStatus(),system:"System default voice selected. "+getVoiceStatus()};$("#facefeedback").textContent=labels[voiceProfile]||getVoiceStatus();});
- $("#facereset").onclick=()=>{try{localStorage.removeItem(FACE_KEY)}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#voiceprofile").value="jarvis";voiceProfile="jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};$("#facefeedback").textContent="Appearance and voice reset."};
+ $("#facereset").onclick=()=>{try{localStorage.removeItem(faceSettingsKey())}catch{};applyFaceSettings(FACE_DEFAULTS);$("#facepreset").value=FACE_DEFAULTS.preset;$("#facesize").value=FACE_DEFAULTS.size;$("#eyeshape").value=FACE_DEFAULTS.eyeShape;$("#eyegap").value=FACE_DEFAULTS.eyeGap;$("#widgetedge").value=FACE_DEFAULTS.widgetEdge;$("#widgetborder").value=FACE_DEFAULTS.widgetBorder;$("#widgetsize").value=FACE_DEFAULTS.widgetSize;$("#voiceprofile").value="jarvis";voiceProfile="jarvis";try{localStorage.setItem("bosley_voice_profile",voiceProfile)}catch{};$("#facefeedback").textContent="Appearance and voice reset."};
 }
 $("#facetoggle").onclick=()=>{const el=$("#facepanel");el.hidden=!el.hidden;$("#facetoggle").setAttribute("aria-expanded",String(!el.hidden));if(!el.hidden)initFaceSettings()};
 
@@ -3911,7 +3952,7 @@ function dispatchAutomationCommand(raw){const t=String(raw||"").trim();if(/^(?:h
  else if(/\b(thinner|fine)\b.*\b(outline|border)\b|\b(outline|border)\b.*\b(thinner|fine)\b/.test(q)){face.widgetBorder="thin";changed=true}
  if(/\b(eyes|eye)\b.*\b(bigger|larger)\b/.test(q)){face.size="large";changed=true}
  else if(/\b(eyes|eye)\b.*\b(smaller|compact)\b/.test(q)){face.size="compact";changed=true}
- if(changed){try{localStorage.setItem(FACE_KEY,JSON.stringify(face));applyFaceSettings(face);const parts=[];if(mentionsWidget&&face.widgetSize==="wide")parts.push("wider widget");if(mentionsWidget&&face.widgetSize==="compact")parts.push("compact widget");if(mentionsWidget&&face.widgetEdge==="sharp")parts.push("sharper rectangle corners");if(mentionsWidget&&face.widgetEdge==="soft")parts.push("rounded rectangle corners");if(face.widgetBorder==="bold")parts.push("thicker outline");if(face.widgetBorder==="thin")parts.push("fine outline");if(face.size==="large")parts.push("larger eyes");if(face.size==="compact")parts.push("smaller eyes");addMsg("bosley","Done — set "+(parts.join(", ")||"your appearance")+" and saved it on this device. Open Appearance to fine-tune it.");return true}catch{addMsg("bosley","I couldn't save the appearance change in this browser.");return true}}
+ if(changed){try{localStorage.setItem(faceSettingsKey(),JSON.stringify(face));applyFaceSettings(face);const parts=[];if(mentionsWidget&&face.widgetSize==="wide")parts.push("wider widget");if(mentionsWidget&&face.widgetSize==="compact")parts.push("compact widget");if(mentionsWidget&&face.widgetEdge==="sharp")parts.push("sharper rectangle corners");if(mentionsWidget&&face.widgetEdge==="soft")parts.push("rounded rectangle corners");if(face.widgetBorder==="bold")parts.push("thicker outline");if(face.widgetBorder==="thin")parts.push("fine outline");if(face.size==="large")parts.push("larger eyes");if(face.size==="compact")parts.push("smaller eyes");addMsg("bosley","Done — set "+(parts.join(", ")||"your appearance")+" and saved it on this device. Open Appearance to fine-tune it.");return true}catch{addMsg("bosley","I couldn't save the appearance change in this browser.");return true}}
  if((m=t.match(/^(?:bosley[, ]+)?open\s+(https?:\/\/\S+)$/i))){runAction({type:"open_url",input:m[1]}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","I couldn’t open that link: "+e.message);autoLog("error",e.message)});return true}const sites={youtube:"https://www.youtube.com/",google:"https://www.google.com/",gmail:"https://mail.google.com/",spotify:"https://open.spotify.com/",github:"https://github.com/",whatsapp:"https://web.whatsapp.com/",telegram:"https://web.telegram.org/"};if((m=t.match(/^(?:bosley[, ]+)?open\s+(youtube|google|gmail|spotify|github|whatsapp|telegram)[.!]?$/i))){const url=sites[m[1].toLowerCase()];runAction({type:"open_url",input:url}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","I couldn’t open "+m[1]+": "+e.message);autoLog("error",e.message)});return true}if((m=t.match(/^(?:bosley[, ]+)?(?:search(?: the web)? for|look up|find online)\s+(.+)$/i))){runAction({type:"search_web",input:m[1]}).then(r=>{addMsg("bosley",r);autoLog("success",r)}).catch(e=>{addMsg("bosley","Search failed: "+e.message);autoLog("error",e.message)});return true}if((m=t.match(/^(?:bosley,?\s+)?show automation$/i))){$("#panel").hidden=false;$("#automation").hidden=false;drawAutomation();return true}return false}
 
 /* ---------- keyboard ---------- */

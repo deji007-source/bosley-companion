@@ -16,6 +16,13 @@ async function authenticatedUser(req: Request) {
 }
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 
+async function writeRunEvent(runId: string, userId: string, eventType: string, message: string) {
+  const { error } = await sb.from("automation_run_events").insert({
+    run_id: runId, user_id: userId, event_type: eventType, message: message.slice(0, 1200)
+  });
+  if (error) console.error("Automation run event write failed:", error);
+}
+
 async function notifyLaptopListener(userId: string, instruction: string): Promise<boolean> {
   const channel = sb.channel("bosley-laptop-" + userId);
   try {
@@ -141,6 +148,7 @@ Deno.serve(async (req: Request) => {
     if (ackError || !acknowledged) return new Response(JSON.stringify({ ok: false, error: "The command could not be acknowledged." }), {
       status: 409, headers: { ...cors, "Content-Type": "application/json" },
     });
+    await writeRunEvent(id, user.id, status === "completed" ? "completed" : "failed", summary || (status === "completed" ? "Windows listener completed the task." : "Windows listener reported a failure."));
     return new Response(JSON.stringify({ ok: true, command: acknowledged }), {
       headers: { ...cors, "Content-Type": "application/json" },
     });
@@ -150,6 +158,7 @@ Deno.serve(async (req: Request) => {
     if (!instruction || instruction.length > 2000) return new Response(JSON.stringify({ ok: false, error: "Instruction must be 1–2000 characters." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
     const { data: queued, error } = await sb.from("automation_runs").insert({ user_id: user.id, instruction, status: "pending", summary: "remote_listener_queue:v1" }).select("id").single();
     if (error || !queued?.id) return new Response(JSON.stringify({ ok: false, error: "Could not queue automation." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    await writeRunEvent(queued.id, user.id, "created", "Task added to the private Windows agent queue.");
     // The durable Windows queue is authoritative. Telegram delivery remains optional
     // and never blocks command pickup if the trigger bot is not configured or linked.
     const { data: heartbeat } = await sb.from("device_status").select("last_seen")

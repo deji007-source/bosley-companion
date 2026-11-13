@@ -1073,3 +1073,6 @@ assert.ok(html.includes('"spotify","chrome","google chrome"') && html.includes('
 assert.ok(windowsWorkflow.includes("protocol: 'spotify:'") && windowsWorkflow.includes("await shell.openExternal(target.protocol)") && windowsWorkflow.includes("safeHosts = ['google.com','youtube.com','spotify.com'"), "Windows native bridge must open Spotify through its registered URI handler and skip prompts only for allowlisted HTTPS destinations.");
 assert.ok(androidInstaller.includes('!"spotify".equalsIgnoreCase(scheme)'), "Android native URL handoff must allow the Spotify app URI scheme.");
 assert.ok(!windowsWorkflow.slice(windowsWorkflow.indexOf("if (request.action === 'launch_app')"),windowsWorkflow.indexOf("if (request.action === 'clipboard_read')")).includes("dialog.showMessageBox"), "Allowlisted native app launch must not show a second confirmation dialog.");
+
+assert.ok(html.includes('id="quick-open-spotify"') && html.includes('name:"Open Spotify"') && html.includes('app:"spotify"'), "Automation workspace must provide a one-click saved Open Spotify starter.");
+assert.ok(html.includes('persistWorkflow(saved,user.id)') && html.includes('select Run whenever you want'), "The Spotify starter must sync to the signed-in account and remain available to run later.");

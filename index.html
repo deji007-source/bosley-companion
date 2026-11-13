@@ -2047,7 +2047,8 @@ const confirmationPage=$("#email-confirmation-page"),confirmationBack=$("#email-
 async function handleEmailConfirmationRoute(){
  const params=new URLSearchParams(window.location.search);
  if(params.get("email-confirmed")!=="1")return;
- const errorText=params.get("error_description")||params.get("error");
+ const hashParams=new URLSearchParams(window.location.hash.replace(/^#/,""));
+ const errorText=params.get("error_description")||params.get("error")||hashParams.get("error_description")||hashParams.get("error");
  const title=$("#email-confirmation-title"),copy=$("#email-confirmation-copy"),mark=confirmationPage?.querySelector(".confirm-mark");
  if(errorText){if(title)title.textContent="Confirmation link could not be used";if(copy)copy.textContent="The confirmation link may have expired or is invalid. Return to sign in and request a new confirmation email. Details: "+errorText;if(mark)mark.textContent="!";}
  try{const {data}=await db?.auth.getSession()||{};if(data?.session)await db.auth.signOut();}

@@ -119,6 +119,25 @@ export default function App() {
   }
 
   useEffect(() => {
+    if (!taskPanelOpen || !user) return;
+    let active = true;
+    const refresh = async () => {
+      try {
+        const result = await taskControl({ action: "list", limit: 40 });
+        if (active) setTasks(result.tasks || []);
+        if (active && selectedTask) {
+          const detail = await taskControl({ action: "events", run_id: selectedTask });
+          if (active) setTaskEvents(detail.events || []);
+        }
+      } catch (error) {
+        if (active) setTaskNotice(error instanceof Error ? error.message : "Task refresh failed.");
+      }
+    };
+    const timer = window.setInterval(() => { void refresh(); }, 6000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [taskPanelOpen, user?.id, selectedTask]);
+
+  useEffect(() => {
     if (!user) {
       setConversationId(null);
       historyRef.current = [];

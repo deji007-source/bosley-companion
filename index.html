@@ -475,6 +475,14 @@ html.widget-mode body.desktop-panel #side-dock .dock-body{min-height:0!important
 #auth-gate .gate-eye{width:7px;height:18px;border-radius:9px;background:#fff}#auth-gate h1{margin:0 0 8px;font-size:22px;letter-spacing:-.04em}#auth-gate p{margin:0;color:#999;font-size:12px;line-height:1.65}
 #auth-gate form{display:grid;gap:9px;margin-top:22px}#auth-gate input{width:100%;height:44px;padding:0 12px;border:1px solid #333;border-radius:10px;background:#101010;color:#fff;font-size:13px}#auth-gate .gate-submit{height:43px;margin-top:4px;border:0;border-radius:10px;background:#f4f4f4;color:#050505;font-size:12px;font-weight:800}#auth-gate .gate-submit:disabled{opacity:.6;cursor:wait}
 #auth-gate .gate-switch{margin-top:12px;padding:8px 0;border:0;background:none;color:#ddd;text-decoration:underline;font-size:11px}#auth-gate .gate-feedback{min-height:18px;margin-top:12px;color:#ddd;font-size:11px;line-height:1.5;overflow-wrap:anywhere}body.auth-required{overflow:hidden}body.auth-required #root{visibility:hidden}
+#email-confirmation-page{position:fixed;z-index:2147483647;inset:0;display:grid;place-items:center;padding:20px;background:#080808;color:#f5f5f5}
+#email-confirmation-page[hidden]{display:none!important}
+#email-confirmation-page .confirm-card{width:min(440px,100%);padding:30px;border:1px solid #333;border-radius:20px;background:#101010;box-shadow:0 24px 90px #000}
+#email-confirmation-page .confirm-mark{width:48px;height:48px;margin-bottom:20px;border:1px solid #777;border-radius:50%;display:grid;place-items:center;font-size:24px}
+#email-confirmation-page h1{margin:0 0 10px;font-size:23px;letter-spacing:-.04em}
+#email-confirmation-page p{margin:0;color:#aaa;font-size:13px;line-height:1.7}
+#email-confirmation-page .confirm-back{width:100%;height:44px;margin-top:24px;border:0;border-radius:10px;background:#f4f4f4;color:#080808;font-weight:800;cursor:pointer}
+body.email-confirmed{overflow:hidden}body.email-confirmed #root{visibility:hidden}
 
 /* Final responsive layout overrides (must follow the base dock rules). */
 @media(max-width:760px){
@@ -1356,6 +1364,14 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 </div>
 
 <section id="auth-gate" hidden role="dialog" aria-modal="true" aria-labelledby="gate-title"><div class="gate-card"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h1 id="gate-title">Welcome to Bosley</h1><p id="gate-copy">Sign in to continue. Your conversations and workspace sync to your Bosley account.</p><form id="gate-auth"><input id="gate-email" type="email" required autocomplete="email" placeholder="Email address" aria-label="Email address"><input id="gate-password" type="password" required autocomplete="current-password" placeholder="Password" aria-label="Password"><button class="gate-submit" id="gate-submit" type="submit">Sign in securely</button></form><button class="gate-switch" id="gate-switch" type="button">New here? Create an account</button><div class="gate-feedback" id="gate-feedback" role="status" aria-live="polite"></div></div></section>
+<section id="email-confirmation-page" hidden role="status" aria-labelledby="email-confirmation-title">
+ <div class="confirm-card">
+  <div class="confirm-mark" aria-hidden="true">✓</div>
+  <h1 id="email-confirmation-title">Email confirmed</h1>
+  <p id="email-confirmation-copy">Your email address has been confirmed. Return to Bosley and sign in with your email address and password to continue.</p>
+  <button class="confirm-back" id="email-confirmation-back" type="button">Back to sign in</button>
+ </div>
+</section>
 <div id="startup-error" hidden role="alert"><strong>Bosley encountered a startup error</strong><span id="startup-error-message">The interface could not finish initializing.</span><code>Try reloading the app. If this persists, share this error text with support.</code></div>
 <script>
 // Keep asynchronous feature failures in diagnostics instead of covering the app
@@ -2016,7 +2032,7 @@ if(gateSwitch)gateSwitch.addEventListener("click",()=>{gateMode=gateMode==="in"?
 if(gateForm)gateForm.addEventListener("submit",async e=>{
  e.preventDefault();if(!db){if(gateFeedback)gateFeedback.textContent="Account service unavailable. Check your connection and try again.";return}
  gateSubmit.disabled=true;if(gateFeedback)gateFeedback.textContent=gateMode==="up"?"Creating your account…":"Signing in securely…";
- try{const credentials={email:gateEmail.value.trim(),password:gatePassword.value};const result=gateMode==="up"?await db.auth.signUp(credentials):await db.auth.signInWithPassword(credentials);if(result.error)throw result.error;
+ try{const credentials={email:gateEmail.value.trim(),password:gatePassword.value};const redirectUrl=new URL(window.location.pathname,window.location.origin);redirectUrl.searchParams.set("email-confirmed","1");const result=gateMode==="up"?await db.auth.signUp({...credentials,options:{emailRedirectTo:redirectUrl.toString()}}):await db.auth.signInWithPassword(credentials);if(result.error)throw result.error;
  if(gateMode==="up"&&!result.data.session){if(gateFeedback)gateFeedback.textContent="Account created. Check your email to confirm, then sign in here.";return}
  if(result.data.session){user=result.data.user||result.data.session.user;window.dispatchEvent(new Event("bosley:account-changed"));renderAuthGate();if(gateFeedback)gateFeedback.textContent="Signed in.";restoreLatestConversation();if(typeof load==="function")load()}
  else if(gateFeedback)gateFeedback.textContent="No active session returned. Check email confirmation and try again.";
@@ -2027,7 +2043,23 @@ if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not init
 
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;
+const confirmationPage=$("#email-confirmation-page"),confirmationBack=$("#email-confirmation-back");
+async function handleEmailConfirmationRoute(){
+ const params=new URLSearchParams(window.location.search);
+ if(params.get("email-confirmed")!=="1")return;
+ const errorText=params.get("error_description")||params.get("error");
+ const title=$("#email-confirmation-title"),copy=$("#email-confirmation-copy"),mark=confirmationPage?.querySelector(".confirm-mark");
+ if(errorText){if(title)title.textContent="Confirmation link could not be used";if(copy)copy.textContent="The confirmation link may have expired or is invalid. Return to sign in and request a new confirmation email. Details: "+errorText;if(mark)mark.textContent="!";}
+ try{const {data}=await db?.auth.getSession()||{};if(data?.session)await db.auth.signOut();}
+ catch(error){console.warn("[Bosley] Could not clear confirmation callback session:",error);}
+ user=null;document.body.classList.add("auth-required","email-confirmed");
+ if(gate)gate.hidden=true;if(confirmationPage)confirmationPage.hidden=false;
+ history.replaceState({},document.title,window.location.pathname+"?email-confirmed=1");
+}
+confirmationBack?.addEventListener("click",()=>{if(confirmationPage)confirmationPage.hidden=true;document.body.classList.remove("email-confirmed");gateMode="in";renderAuthGate();gateEmail?.focus();});
+
 window.BosleyCurrentUserId=()=>user?.id||null;
+handleEmailConfirmationRoute().catch(error=>console.error("[Bosley] Email confirmation route failed:",error));
 /* Namespace all app-owned browser storage by authenticated account.
    Supabase auth tokens and device-level window geometry remain untouched. */
 (()=>{

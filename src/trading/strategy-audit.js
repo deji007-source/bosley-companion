@@ -72,9 +72,12 @@ function init(){
    for(const run of data||[]){const row=document.createElement("div");row.style.cssText="border:1px solid var(--border,rgba(255,255,255,.12));border-radius:9px;padding:9px;font-size:11px";
     const strong=document.createElement("strong");strong.textContent=run.status.toUpperCase()+" · "+(run.dataset_snapshot?.name||"Dataset not attached");
     const detail=document.createElement("div");detail.textContent=new Date(run.created_at).toLocaleString()+" · "+run.execution_mode+" · "+run.id.slice(0,8);
-    const button=document.createElement("button");button.type="button";button.textContent="View log";button.style.marginTop="6px";
+    const actions=document.createElement("div");actions.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px";
+    const reportButton=document.createElement("button");reportButton.type="button";reportButton.textContent="Reopen report";
+    reportButton.addEventListener("click",()=>{const snapshot=run.metrics?.report_snapshot;if(!snapshot){say("This older run has no saved report snapshot. Its event log is still available.");return;}const report=document.createElement("div");report.style.cssText="white-space:pre-wrap;margin-top:8px;padding:9px;border-radius:8px;background:var(--surface-2,rgba(127,127,127,.1))";report.textContent="BACKTEST REPORT\n"+(snapshot.report||"No report text saved.")+"\n\nMETRICS\n"+JSON.stringify(snapshot.metrics||{},null,2)+"\n\nSIMULATED TRADES\n"+(snapshot.trades||"No trade detail saved.")+"\n\nCONFIGURATION\n"+JSON.stringify(run.config||{},null,2);const prior=row.querySelector("[data-report-snapshot]");if(prior)prior.remove();report.dataset.reportSnapshot="true";row.append(report);});
+    const button=document.createElement("button");button.type="button";button.textContent="View log";
     button.addEventListener("click",async()=>{try{const {client}=await auth(),{data,error}=await client.from("trading_backtest_logs").select("sequence_number,level,event,message,created_at").eq("run_id",run.id).order("sequence_number");if(error)throw error;detail.textContent=(data||[]).map(x=>"#"+x.sequence_number+" "+x.level.toUpperCase()+" · "+x.event+": "+x.message).join(" | ")||"No events recorded yet."; }catch(e){say(e.message);}});
-    row.append(strong,detail,button);logView.append(row);
+    actions.append(reportButton,button);row.append(strong,detail,actions);logView.append(row);
    }
    say((data||[]).length+" recent execution records.");
   }
@@ -105,7 +108,7 @@ function init(){
   }
   async function finish(statusValue,message){
    if(!active)return;const current=active;if(observer)observer.disconnect();
-   try{await writeLog("run_"+statusValue,message);const metricRows=[...document.querySelectorAll("#td-metrics .td-metric")];const metrics=Object.fromEntries(metricRows.map(row=>[row.querySelector("span")?.textContent?.trim()||"metric",row.querySelector("strong")?.textContent?.trim()||""]));const {error}=await current.client.from("trading_backtest_runs").update({status:statusValue==="completed"?"completed":statusValue,completed_at:new Date().toISOString(),metrics:statusValue==="completed"?metrics:null,error_summary:statusValue==="failed"?message.slice(0,2000):null}).eq("id",current.id);if(error)throw error;active=null;await refresh();say("Execution "+current.id.slice(0,8)+" "+statusValue+" and its log was saved.");}catch(e){active=null;say("Execution finished, but audit update failed: "+e.message);}
+   try{await writeLog("run_"+statusValue,message);const metricRows=[...document.querySelectorAll("#td-metrics .td-metric")];const metricValues=Object.fromEntries(metricRows.map(row=>[row.querySelector("span")?.textContent?.trim()||"metric",row.querySelector("strong")?.textContent?.trim()||""]));const snapshot={report:$("#td-report")?.textContent?.trim()||"",metrics:metricValues,trades:$("#td-trades")?.textContent?.trim()||""};const metrics=statusValue==="completed"?{...metricValues,report_snapshot:snapshot}:null;const {error}=await current.client.from("trading_backtest_runs").update({status:statusValue==="completed"?"completed":statusValue,completed_at:new Date().toISOString(),metrics,error_summary:statusValue==="failed"?message.slice(0,2000):null}).eq("id",current.id);if(error)throw error;active=null;await refresh();say("Execution "+current.id.slice(0,8)+" "+statusValue+" and its log was saved.");}catch(e){active=null;say("Execution finished, but audit update failed: "+e.message);}
   }
   $("#bsa-refresh",box).addEventListener("click",()=>refresh().catch(e=>say(e.message)));
   panel.addEventListener("click",event=>{if(event.target.closest("#td-run"))beginRun();},true);

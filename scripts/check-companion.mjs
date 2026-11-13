@@ -166,10 +166,10 @@ assert.ok(html.includes("floating-window-controls")&&html.includes("data-window-
 assert.ok(html.includes('title.textContent="BOSLEY · "+selected.label.toUpperCase()')&&html.includes("dock-close{display:none!important}"), "Detached pages must identify their own title and avoid a duplicate inactive close control");
 assert.ok(html.includes('get("bosleyFloat")')&&html.includes('desktop-floating-view'), "Detached windows must load the selected interactive page independently");
 assert.ok(html.includes('action:"close_floating_view"'), "Detached side views must have a working close control");
-assert.ok(html.includes("body.android-full-page-view #side-dock{position:fixed!important;inset:0!important")&&html.includes("body.android-full-page-view .stage,body.android-full-page-view #dock-launcher{display:none!important}"), "Android workspace pages must occupy the full app viewport and hide the chat behind them");
+assert.ok(html.includes("body.phone-full-page-view #side-dock{position:fixed!important;inset:0!important")&&html.includes("body.phone-full-page-view .stage,body.phone-full-page-view #dock-launcher{display:none!important}"), "Android and iOS workspace pages must occupy the full app viewport and hide the chat behind them");
 assert.ok(html.includes("if(!p)continue;const tab=document.createElement(\"button\")")&&!html.includes("if((v.button&&!b)||!p)continue"), "Side pages must register even when their optional legacy toolbar button is absent");
-assert.ok(html.includes('if(window.Capacitor?.getPlatform?.()==="android"){document.body.classList.add("android-full-page-view")')&&!html.includes('getPlatform?.()==="android"||window.matchMedia("(max-width: 760px)").matches'), "Only the native Android app may use the Android full-page layout; website navigation must retain the responsive side dock");
-assert.ok(html.includes('back.textContent="← Chat"')&&html.includes('document.body.classList.remove("android-full-page-view")'), "Android workspace pages must provide a back-to-chat control");
+assert.ok(html.includes('if(["android","ios"].includes(window.Capacitor?.getPlatform?.())){document.body.classList.add("phone-full-page-view")')&&!html.includes('getPlatform?.()==="android"||window.matchMedia("(max-width: 760px)").matches'), "Only native Android and iOS apps may use the phone full-page layout; website navigation must retain the responsive side dock");
+assert.ok(html.includes('back.textContent="← Back to chat"')&&html.includes('document.body.classList.remove("phone-full-page-view")'), "Android and iOS workspace pages must provide a back-to-chat control");
 
 
 assert.ok(html.includes('data-open-view="agents-panel"'), "Dedicated AI Agents side-panel launcher must be visible");

@@ -1365,14 +1365,14 @@ document.addEventListener("DOMContentLoaded",()=>{
  const panelVisibilityStyle=document.createElement("style");
  panelVisibilityStyle.textContent="#side-dock[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}#side-dock:not([hidden]){display:flex!important;visibility:visible!important;pointer-events:auto!important}#side-dock .dock-body>[hidden]{display:none!important}#side-dock .dock-body>#money-learning:not([hidden]),#side-dock .dock-body>#ws:not([hidden]),#side-dock .dock-body>#facepanel:not([hidden]),#side-dock .dock-body>#activity:not([hidden]),#side-dock .dock-body>#automation:not([hidden]),#side-dock .dock-body>#agents-panel:not([hidden]),#side-dock .dock-body>#skills-panel:not([hidden]),#side-dock .dock-body>#bosley-search:not([hidden]),#side-dock .dock-body>#control-centre:not([hidden]),#side-dock .dock-body>#universal-input:not([hidden]),#side-dock .dock-body>#writing-assist:not([hidden]){display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;width:100%!important;max-width:none!important;min-width:0!important}#side-dock .dock-body{min-width:0!important;overflow:auto!important}#side-dock .dock-body>*{box-sizing:border-box;min-width:0!important;max-width:100%!important}";
  panelVisibilityStyle.textContent += `
-  body.android-full-page-view,body.android-full-page-view #root{width:100%!important;height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}
-  body.android-full-page-view .stage,body.android-full-page-view #dock-launcher{display:none!important}
-  body.android-full-page-view #side-dock{position:fixed!important;inset:0!important;z-index:99999!important;display:flex!important;flex-direction:column!important;width:100%!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#050505!important}
-  body.android-full-page-view #side-dock .dock-head{display:flex!important;flex:0 0 50px!important;min-height:50px!important;padding:8px 12px!important}
-  body.android-full-page-view #side-dock .dock-close{display:flex!important;align-items:center!important;justify-content:center!important;min-width:76px!important;width:auto!important;height:34px!important;padding:0 10px!important;border:1px solid #444!important;border-radius:9px!important;color:#fff!important;font-size:12px!important}
-  body.android-full-page-view #side-dock .dock-tabs{flex:0 0 auto!important;max-width:100%!important;overflow-x:auto!important}
-  body.android-full-page-view #side-dock .dock-body{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;width:100%!important;height:auto!important;min-height:0!important;overflow:auto!important;padding:12px!important}
-  body.android-full-page-view #side-dock .dock-body>*{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important}
+  body.phone-full-page-view,body.phone-full-page-view #root{width:100%!important;height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}
+  body.phone-full-page-view .stage,body.phone-full-page-view #dock-launcher{display:none!important}
+  body.phone-full-page-view #side-dock{position:fixed!important;inset:0!important;z-index:99999!important;display:flex!important;flex-direction:column!important;width:100%!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#050505!important}
+  body.phone-full-page-view #side-dock .dock-head{display:flex!important;flex:0 0 50px!important;min-height:50px!important;padding:8px 12px!important}
+  body.phone-full-page-view #side-dock .dock-close{display:flex!important;align-items:center!important;justify-content:center!important;min-width:76px!important;width:auto!important;height:34px!important;padding:0 10px!important;border:1px solid #444!important;border-radius:9px!important;color:#fff!important;font-size:12px!important}
+  body.phone-full-page-view #side-dock .dock-tabs{flex:0 0 auto!important;max-width:100%!important;overflow-x:auto!important}
+  body.phone-full-page-view #side-dock .dock-body{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;width:100%!important;height:auto!important;min-height:0!important;overflow:auto!important;padding:12px!important}
+  body.phone-full-page-view #side-dock .dock-body>*{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important}
   `;
   document.head.appendChild(panelVisibilityStyle);
  const floatingView=new URLSearchParams(location.search).get("bosleyFloat");
@@ -1895,7 +1895,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   // Windows floating-window bridge: a pending native request must never block
   // page navigation. Selecting an already-open page must keep it open.
   if(active==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:false});
-  if(window.Capacitor?.getPlatform?.()==="android"){document.body.classList.add("android-full-page-view");const back=dock.querySelector("#dock-close");if(back){back.textContent="← Chat";back.setAttribute("aria-label","Back to chat")}}
+  if(["android","ios"].includes(window.Capacitor?.getPlatform?.())){document.body.classList.add("phone-full-page-view");const back=dock.querySelector("#dock-close");if(back){back.textContent="← Back to chat";back.setAttribute("aria-label","Back to chat");back.title="Return to chat"}}
   dock.hidden=false;dock.removeAttribute("hidden");dock.style.setProperty("display","flex","important");dock.style.setProperty("visibility","visible","important");dock.style.setProperty("pointer-events","auto","important");active=id;
   if(id==="universal-input")window.Capacitor?.Plugins?.BosleyOverlay?.setWritingBulbActive?.({active:true});
   for(const x of views){
@@ -1966,9 +1966,9 @@ document.addEventListener("DOMContentLoaded",()=>{
   const stopDrag=event=>{if(!dragState||event.pointerId!==dragState.pointerId)return;dragState=null;dock.classList.remove("is-dragging");try{const rect=dock.getBoundingClientRect();localStorage.setItem("bosley-side-dock-position",JSON.stringify({left:Math.round(rect.left),top:Math.round(rect.top)}))}catch{}};
   handle?.addEventListener("pointerup",stopDrag);handle?.addEventListener("pointercancel",stopDrag);
  }
- document.getElementById("dock-close")?.addEventListener("click",()=>{document.body.classList.remove("android-full-page-view");dock.hidden=true;dock.style.removeProperty("display");dock.style.removeProperty("visibility");dock.style.removeProperty("pointer-events");active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
+ document.getElementById("dock-close")?.addEventListener("click",()=>{document.body.classList.remove("phone-full-page-view");dock.hidden=true;dock.style.removeProperty("display");dock.style.removeProperty("visibility");dock.style.removeProperty("pointer-events");active="";for(const v of views){const b=document.getElementById(v.button);if(b)b.setAttribute("aria-expanded","false")}tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))});
  if(floatingView&&views.some(v=>v.panel===floatingView)){dock.hidden=false;requestAnimationFrame(()=>show(floatingView));document.getElementById("dock-close")?.addEventListener("click",()=>window.BosleyDesktop?.request({action:"close_floating_view"}));}
- document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dock.hidden){document.body.classList.remove("android-full-page-view");dock.hidden=true;active="";tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))}});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dock.hidden){document.body.classList.remove("phone-full-page-view");dock.hidden=true;active="";tabs.querySelectorAll("button").forEach(t=>t.classList.remove("on"))}});
 })();
 });
 </script>

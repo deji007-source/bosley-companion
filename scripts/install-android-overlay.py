@@ -4,23 +4,7 @@ from pathlib import Path
 import re
 
 root = Path("android")
-# The floating bulb runs a second WebView outside Capacitor's BridgeWebView.
-# Give it the same localhost asset origin and serve packaged assets explicitly.
-app_gradle = root / "app/build.gradle"
-if not app_gradle.is_file():
-    raise SystemExit("Generated android/app/build.gradle not found")
-gradle = app_gradle.read_text()
-dependency = 'implementation "androidx.webkit:webkit:1.12.1"'
-if dependency not in gradle:
-    # Insert into the app module's final dependencies block, avoiding buildscript/plugin blocks.
-    deps = list(re.finditer(r"(?m)^\s*dependencies\s*\{", gradle))
-    if not deps:
-        raise SystemExit("Could not locate Android app dependencies block for WebViewAssetLoader")
-    target = deps[-1]
-    gradle = gradle[:target.end()] + "\n    " + dependency + gradle[target.end():]
-    app_gradle.write_text(gradle)
-if dependency not in app_gradle.read_text():
-    raise SystemExit("WebViewAssetLoader dependency was not written to android/app/build.gradle")
+# The floating bulb uses Android's AssetManager directly; no extra AndroidX dependency is needed.
 manifest = root / "app/src/main/AndroidManifest.xml"
 if not manifest.exists():
     raise SystemExit("Generated AndroidManifest.xml not found")
@@ -302,8 +286,19 @@ public class BosleyOverlayService extends Service {
     android.webkit.WebView web=new android.webkit.WebView(this);
     web.setBackgroundColor(Color.TRANSPARENT);
     android.webkit.WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setDatabaseEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(false);settings.setLoadsImagesAutomatically(true);
-    final WebViewAssetLoader assetLoader=new WebViewAssetLoader.Builder().setDomain("localhost").addPathHandler("/",new WebViewAssetLoader.AssetsPathHandler(getAssets())).build();
     web.setWebViewClient(new android.webkit.WebViewClient(){
+      android.webkit.WebResourceResponse localAsset(String rawUrl){
+        try{
+          android.net.Uri uri=android.net.Uri.parse(rawUrl);
+          if(!"https".equals(uri.getScheme())||!"localhost".equals(uri.getHost()))return null;
+          String path=uri.getPath();
+          if(path==null||!path.startsWith("/public/"))return null;
+          String assetPath=path.substring(1);
+          String mime=android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(android.webkit.MimeTypeMap.getFileExtensionFromUrl(assetPath));
+          if(mime==null){String lower=assetPath.toLowerCase(java.util.Locale.ROOT);mime=lower.endsWith(".js")?"application/javascript":(lower.endsWith(".json")?"application/json":(lower.endsWith(".svg")?"image/svg+xml":"application/octet-stream"));}
+          return new android.webkit.WebResourceResponse(mime,"UTF-8",getAssets().open(assetPath));
+        }catch(Exception ignored){return null;}
+      }
       boolean route(String url,android.webkit.WebView view){
         if("bosley://close-card".equals(url)){removeWritingCardOverlay();return true;}
         if("bosley://paste".equals(url)){
@@ -313,8 +308,8 @@ public class BosleyOverlayService extends Service {
         }
         return !url.startsWith("https://localhost/");
       }
-      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view,android.webkit.WebResourceRequest request){return assetLoader.shouldInterceptRequest(request.getUrl());}
-      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view,String url){return assetLoader.shouldInterceptRequest(url);}
+      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view,android.webkit.WebResourceRequest request){return localAsset(request.getUrl().toString());}
+      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view,String url){return localAsset(url);}
       @Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,android.webkit.WebResourceRequest request){return route(request.getUrl().toString(),view);}
       @Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,String url){return route(url,view);}
     });

@@ -326,6 +326,23 @@ html.widget-mode #side-dock{left:auto;right:8px;top:8px;width:min(310px,calc(100
 #dock-launcher-menu button::after{content:attr(title);overflow:hidden;text-overflow:ellipsis}
 #dock-launcher-menu button.on{border-color:#7fc5e1;background:#10202a;color:#f4fbff}
 #dock-launcher-menu button:focus-visible,#dock-menu-toggle:focus-visible{outline:2px solid #8ddcff;outline-offset:2px}
+/* Keep the workspace launcher menu genuinely scrollable in every shell (browser, iOS, Android, Windows). */
+#dock-launcher-menu{
+ max-height:min(72dvh,620px)!important;
+ max-height:min(72vh,620px)!important;
+ overflow-x:hidden!important;
+ overflow-y:auto!important;
+ overscroll-behavior-y:contain;
+ -webkit-overflow-scrolling:touch;
+ touch-action:pan-y;
+ scrollbar-gutter:stable;
+}
+#dock-launcher-menu>*{min-height:0}
+#dock-launcher-menu button{flex:0 0 auto;touch-action:pan-y}
+@media(max-width:520px){
+ #dock-launcher-menu{max-height:calc(100dvh - max(24px,env(safe-area-inset-top)) - max(24px,env(safe-area-inset-bottom)))!important;max-height:calc(100vh - 48px)!important;overscroll-behavior:contain}
+}
+html.widget-mode #dock-launcher-menu{max-height:calc(100dvh - 32px)!important;max-height:calc(100vh - 32px)!important}
 @media(max-width:520px){#dock-launcher{right:6px;top:38%;padding:5px}#dock-launcher>#dock-menu-toggle{width:38px;height:38px}#dock-launcher-menu{right:calc(100% + 7px);width:min(218px,calc(100vw - 70px));gap:6px;padding:7px}}
 html.widget-mode #dock-launcher{right:6px;top:40%}
 /* Always-visible compact launcher for detached views */

@@ -4717,7 +4717,6 @@ async function renderUniversalInput(){
  if(!db||!launch||!modal)return;
  let capture=null,busy=false,recognition=null;
  const setNotice=text=>{notice.textContent=text||""};
- const setBusy=value=>{busy=value;submit.disabled=value||!capture||!question.value.trim();$("ct-capture").disabled=value;$("ct-choose").disabled=value;$("ct-dictate").disabled=value;$("ct-close").disabled=value};
  function setCapture(dataUrl,label){capture=dataUrl;img.src=dataUrl;$("ct-filename").textContent=label;preview.hidden=false;answer.hidden=true;setNotice("Preview ready. Nothing has been sent yet.");submit.disabled=!question.value.trim()||busy}
  function clearCapture(){capture=null;img.removeAttribute("src");preview.hidden=true;answer.hidden=true;answerText.textContent="";submit.disabled=true}
  function close(){if(busy)return;modal.hidden=true;recognition?.stop();recognition=null;question.value="";clearCapture();setNotice("")}

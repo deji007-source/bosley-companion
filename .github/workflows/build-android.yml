@@ -83,6 +83,7 @@ jobs:
           print("Gradle wrapper network timeout set to 120 seconds.")
           PY
           node scripts/check-ui-parity.mjs index.html android/app/src/main/assets/public/index.html "Android packaged WebView"
+          python3 -m py_compile scripts/install-android-overlay.py
           python3 scripts/install-android-overlay.py
           python3 scripts/prepare-android-direct-install.py
           grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml
@@ -193,6 +194,16 @@ jobs:
             sleep 10
             attempt=$((attempt + 1))
           done
+
+      - name: Install and launch APK on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: >-
+            APK="android/app/build/outputs/apk/debug/app-debug.apk"; if [ "${{ steps.signing.outputs.configured }}" = "true" ]; then APK="android/app/build/outputs/apk/release/app-release.apk"; fi; test -s "$APK"; adb install "$APK"; AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"; test -n "$AAPT"; PACKAGE_ID="$("$AAPT" dump badging "$APK" | cut -d "'" -f2 | head -n 1)"; test -n "$PACKAGE_ID"; adb shell monkey -p "$PACKAGE_ID" -c android.intent.category.LAUNCHER 1; sleep 8; adb shell pidof "$PACKAGE_ID"; mkdir -p build/android-smoke; adb exec-out screencap -p > build/android-smoke/android-launch.png; test -s build/android-smoke/android-launch.png
 
       - name: Verify Android package signatures
         shell: bash

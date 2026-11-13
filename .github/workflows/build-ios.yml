@@ -78,6 +78,22 @@ jobs:
             build
           test -d build/ios/Build/Products/Debug-iphonesimulator/App.app
 
+      - name: Install and launch on an available iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEVICE_ID="$(xcrun simctl list devices available --json | python3 -c 'import json,sys; data=json.load(sys.stdin); devices=[d for group in data["devices"].values() for d in group if d.get("isAvailable") and d.get("name", "").startswith("iPhone")]; print(devices[0]["udid"] if devices else "")')"
+          test -n "$DEVICE_ID" || { echo "No available iPhone simulator runtime was found."; exit 1; }
+          APP="$PWD/build/ios/Build/Products/Debug-iphonesimulator/App.app"
+          BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")"
+          xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" "$APP"
+          xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID"
+          mkdir -p build/ios/smoke
+          xcrun simctl io "$DEVICE_ID" screenshot build/ios/smoke/iphone-launch.png
+          test -s build/ios/smoke/iphone-launch.png
+
       - name: Package unsigned iOS simulator build
         run: |
           cd build/ios/Build/Products/Debug-iphonesimulator

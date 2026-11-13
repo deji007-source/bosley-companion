@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 
 root = Path("android")
+# The floating bulb uses Android's AssetManager directly; no extra AndroidX dependency is needed.
 manifest = root / "app/src/main/AndroidManifest.xml"
 if not manifest.exists():
     raise SystemExit("Generated AndroidManifest.xml not found")
@@ -285,16 +286,42 @@ public class BosleyOverlayService extends Service {
     android.webkit.WebView web=new android.webkit.WebView(this);
     web.setBackgroundColor(Color.TRANSPARENT);
     android.webkit.WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setDatabaseEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(false);settings.setLoadsImagesAutomatically(true);
-    web.setWebViewClient(new android.webkit.WebViewClient(){boolean route(String url,android.webkit.WebView view){if("bosley://close-card".equals(url)){removeWritingCardOverlay();return true;}if("bosley://paste".equals(url)){String value="";try{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);if(cm!=null&&cm.hasPrimaryClip()){ClipData clip=cm.getPrimaryClip();if(clip!=null&&clip.getItemCount()>0){CharSequence v=clip.getItemAt(0).coerceToText(BosleyOverlayService.this);if(v!=null)value=v.toString().substring(0,Math.min(6000,v.length()));}}}catch(Exception ignored){}view.evaluateJavascript("window.BosleySetClipboardText("+org.json.JSONObject.quote(value)+")",null);return true;}return !url.startsWith("https://localhost/");}@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,android.webkit.WebResourceRequest request){return route(request.getUrl().toString(),view);}@Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,String url){return route(url,view);}});
+    web.setWebViewClient(new android.webkit.WebViewClient(){
+      android.webkit.WebResourceResponse localAsset(String rawUrl){
+        try{
+          android.net.Uri uri=android.net.Uri.parse(rawUrl);
+          if(!"https".equals(uri.getScheme())||!"localhost".equals(uri.getHost()))return null;
+          String path=uri.getPath();
+          if(path==null||!path.startsWith("/public/"))return null;
+          String assetPath=path.substring(1);
+          String mime=android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(android.webkit.MimeTypeMap.getFileExtensionFromUrl(assetPath));
+          if(mime==null){String lower=assetPath.toLowerCase(java.util.Locale.ROOT);mime=lower.endsWith(".js")?"application/javascript":(lower.endsWith(".json")?"application/json":(lower.endsWith(".svg")?"image/svg+xml":"application/octet-stream"));}
+          return new android.webkit.WebResourceResponse(mime,"UTF-8",getAssets().open(assetPath));
+        }catch(Exception ignored){return null;}
+      }
+      boolean route(String url,android.webkit.WebView view){
+        if("bosley://close-card".equals(url)){removeWritingCardOverlay();return true;}
+        if("bosley://paste".equals(url)){
+          String value="";
+          try{android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);if(cm!=null&&cm.hasPrimaryClip()){ClipData clip=cm.getPrimaryClip();if(clip!=null&&clip.getItemCount()>0){CharSequence v=clip.getItemAt(0).coerceToText(BosleyOverlayService.this);if(v!=null)value=v.toString().substring(0,Math.min(6000,v.length()));}}}catch(Exception ignored){}
+          view.evaluateJavascript("window.BosleySetClipboardText("+org.json.JSONObject.quote(value)+")",null);return true;
+        }
+        return !url.startsWith("https://localhost/");
+      }
+      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view,android.webkit.WebResourceRequest request){return localAsset(request.getUrl().toString());}
+      @Override public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view,String url){return localAsset(url);}
+      @Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,android.webkit.WebResourceRequest request){return route(request.getUrl().toString(),view);}
+      @Override public boolean shouldOverrideUrlLoading(android.webkit.WebView view,String url){return route(url,view);}
+    });
     writingCardOverlay=web;
     writingCardLp=new WindowManager.LayoutParams(dp(292),dp(520),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
     writingCardLp.gravity=Gravity.TOP|Gravity.START;DisplayMetrics dm=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(dm);writingCardLp.x=Math.max(dp(6),(dm.widthPixels-dp(292))/2);writingCardLp.y=Math.max(dp(36),(int)(dm.heightPixels*.16f));writingCardLp.softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
     web.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;public boolean onTouch(View v,MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){sx=e.getRawX();sy=e.getRawY();ox=writingCardLp.x;oy=writingCardLp.y;return false;}if(e.getAction()==MotionEvent.ACTION_MOVE&&Math.abs(e.getRawY()-sy)>dp(28)){writingCardLp.x=Math.max(0,Math.min(dm.widthPixels-dp(292),ox+(int)(e.getRawX()-sx)));writingCardLp.y=Math.max(0,Math.min(dm.heightPixels-dp(160),oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(writingCardOverlay,writingCardLp);}catch(Exception ignored){}return true;}return false;}});
     try{
       wm.addView(writingCardOverlay,writingCardLp);
-      StringBuilder html=new StringBuilder();try(java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(getAssets().open("public/index.html"),java.nio.charset.StandardCharsets.UTF_8))){String line;while((line=reader.readLine())!=null)html.append(line).append('\n');}
-      html.append("<script>(function(){function activateBosleyCard(){document.documentElement.classList.add('bosley-card-only');document.body.classList.add('bosley-card-only');var card=document.getElementById('bosley-idea-pop');if(card){if(typeof window.BosleyOpenWritingIdeasCard==='function'){window.BosleyOpenWritingIdeasCard();}else{card.hidden=false;}card.setAttribute('aria-hidden','false');var close=card.querySelector('[data-idea-close]');if(close){close.hidden=false;close.style.display='grid';close.setAttribute('aria-label','Close Writing and Ideas');}}}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',activateBosleyCard,{once:true});}else{activateBosleyCard();}})();</script>");
-      web.loadDataWithBaseURL("https://localhost/",html.toString(),"text/html","UTF-8",null);
+      // Load the packaged app through the same https://localhost origin as Capacitor.
+      // This preserves account-scoped Supabase WebView storage and serves relative assets.
+      web.loadUrl("https://localhost/public/index.html?bosleyWritingCard=1");
     }catch(Exception e){removeWritingCardOverlay();Toast.makeText(this,"Bosley Writing & Ideas could not open. Open the main app and try again.",Toast.LENGTH_LONG).show();}
   }
   void removeWritingCardOverlay(){if(wm!=null&&writingCardOverlay!=null){try{wm.removeView(writingCardOverlay);}catch(Exception ignored){}if(writingCardOverlay instanceof android.webkit.WebView)((android.webkit.WebView)writingCardOverlay).destroy();writingCardOverlay=null;}}

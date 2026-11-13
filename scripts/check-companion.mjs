@@ -1061,4 +1061,4 @@ assert.ok(html.includes("window.Capacitor?.Plugins?.BosleyOverlay") && html.incl
 assert.ok(html.includes("getDisplayMedia") && html.includes("Screen capture preview") && html.includes("Choose image"), "Desktop Contextual Talk must support explicit browser capture and image-import fallback.");
 assert.ok(html.includes("Alt+Shift+V") && html.includes("SpeechRecognition"), "Contextual Talk must expose its keyboard shortcut and optional voice dictation.");
 assert.ok(html.includes('type:"image_url"') && html.includes("companion-chat") && html.includes("setBusy(false)"), "Contextual Talk must send the previewed image to the authenticated visual-chat endpoint and restore controls after streaming.");
-assert.ok(html.includes("track=>track.stop()") && html.includes("Images are not saved to your chat history"), "Contextual capture must stop capture streams and keep screenshots out of saved conversation history.");
+assert.ok(html.includes("getTracks().forEach(t=>t.stop())") && html.includes("Images are not saved to your chat history"), "Contextual capture must stop capture streams and keep screenshots out of saved conversation history.");

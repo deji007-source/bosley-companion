@@ -12,10 +12,10 @@ if not app_gradle.is_file():
 gradle = app_gradle.read_text()
 dependency = 'implementation "androidx.webkit:webkit:1.12.1"'
 if dependency not in gradle:
-    deps = re.search(r"dependencies\\s*\\{", gradle)
+    deps = re.search(r"dependencies\s*\{", gradle)
     if not deps:
         raise SystemExit("Could not locate Android app dependencies block for WebViewAssetLoader")
-    gradle = gradle[:deps.end()] + "\\n    " + dependency + gradle[deps.end():]
+    gradle = gradle[:deps.end()] + "\n    " + dependency + gradle[deps.end():]
     app_gradle.write_text(gradle)
 manifest = root / "app/src/main/AndroidManifest.xml"
 if not manifest.exists():

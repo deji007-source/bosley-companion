@@ -1783,7 +1783,27 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
   // Keep taps inside the open menu from reaching controls beneath it.
   if(target.closest("#dock-launcher-menu")){
+   const item=target.closest("[data-open-view]");
    event.preventDefault();event.stopImmediatePropagation();
+   if(item){
+    const viewId=item.dataset.openView;
+    if(dockMenu)dockMenu.hidden=true;
+    dockToggle?.setAttribute("aria-expanded","false");
+    (async()=>{
+     const desktop=bridge();
+     if(desktop){
+      try{
+       const caps=await desktop.getCapabilities();
+       if(caps?.actions?.includes("open_floating_view")){
+        const result=await desktop.request({action:"open_floating_view",payload:{view:viewId}});
+        if(result?.ok===true)return;
+        throw Error(result?.error||"Windows did not confirm opening this page window.");
+       }
+      }catch(error){console.warn("Standalone Bosley page window could not open:",error);note("Could not open a separate window: "+String(error?.message||error).slice(0,140));return}
+     }
+     await show(viewId);
+    })();
+   }
    return;
   }
   // Outside taps dismiss the menu but retain the outside control's normal action.

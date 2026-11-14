@@ -1055,3 +1055,24 @@ assert.ok(html.includes('<script type="module" src="./src/trading/backtest-engin
 assert.ok(html.includes('<div id="dock-launcher-menu" hidden role="menu" aria-label="Bosley pages"><button type="button" role="menuitem" data-open-view="money-learning">Trading Dock</button>'), "Trading Dock must be the first, immediately visible destination in the Bosley launcher.");
 assert.ok(html.includes("overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important") && html.includes("max-height:min(54dvh,360px)!important"), "The launcher menu must scroll on short screens so lower pages cannot be clipped out of reach.");
 assert.ok(html.includes("-webkit-overflow-scrolling:touch") && html.includes("touch-action:pan-y") && html.includes("scrollbar-gutter:stable") && html.includes("html.widget-mode #dock-launcher-menu"), "Launcher dropdown scrolling must support touch inertia and remain bounded in iOS, Android, and detached Windows views.");
+
+assert.ok(html.includes('id="contextual-talk-launch"') && html.includes('id="contextual-talk-modal"') && html.includes('id="ct-preview"'), "Contextual Talk must provide a signed-in launcher, a modal and an image preview before sending.");
+assert.ok(html.includes("window.Capacitor?.Plugins?.BosleyOverlay") && html.includes("requestScreenCapture") && html.includes("Android screen capture preview"), "Android Contextual Talk must use the explicit native MediaProjection permission bridge.");
+assert.ok(html.includes("getDisplayMedia") && html.includes("Screen capture preview") && html.includes("Choose image"), "Desktop Contextual Talk must support explicit browser capture and image-import fallback.");
+assert.ok(html.includes("Alt+V") && html.includes(">T</kbd>") && html.includes(">V</kbd>") && html.includes("QUICK COMMANDS") && html.includes("bosley-shortcuts-panel") && html.includes("SpeechRecognition"), "Contextual Talk must expose its keyboard shortcut and optional voice dictation.");
+assert.ok(html.includes('type:"image_url"') && html.includes("companion-chat") && html.includes("setBusy(false)"), "Contextual Talk must send the previewed image to the authenticated visual-chat endpoint and restore controls after streaming.");
+assert.ok(html.includes("getTracks().forEach(t=>t.stop())") && html.includes("Images are not saved to your chat history"), "Contextual capture must stop capture streams and keep screenshots out of saved conversation history.");
+
+assert.ok(html.includes('k==="t"') && html.includes('e.key.toLowerCase()==="v"'), "Bosley bulb and Contextual Talk must use Alt+T and Alt+V respectively.");
+assert.ok(html.includes("Agent voice mode") && html.includes("Dictation mode") && html.includes("Edit mode"), "The visible keyboard guide must list the current voice-mode shortcuts.");
+
+assert.ok(html.includes("ct-marker-mode") && html.includes("ct-marker-clear") && html.includes("guidance marker") && html.includes("markers.forEach"), "Contextual Talk must support optional numbered visual guidance markers and clearing them.");
+
+assert.ok(html.includes('autoEligible=wf.steps.every(isLowRiskAutonomyStep)') && html.includes('User-started low-risk workflow'), "User-initiated saved workflows made only of allowlisted low-risk actions must run without a second approval prompt.");
+assert.ok(html.includes('"spotify","chrome","google chrome"') && html.includes('requestedApp==="spotify"') && html.includes('url:"spotify:"'), "Spotify must be included in the allowlisted cross-platform app-launch flow.");
+assert.ok(windowsWorkflow.includes("protocol: 'spotify:'") && windowsWorkflow.includes("await shell.openExternal(target.protocol)") && windowsWorkflow.includes("safeHosts = ['google.com','youtube.com','spotify.com'"), "Windows native bridge must open Spotify through its registered URI handler and skip prompts only for allowlisted HTTPS destinations.");
+assert.ok(androidInstaller.includes('!"spotify".equalsIgnoreCase(scheme)'), "Android native URL handoff must allow the Spotify app URI scheme.");
+assert.ok(!windowsWorkflow.slice(windowsWorkflow.indexOf("if (request.action === 'launch_app')"),windowsWorkflow.indexOf("if (request.action === 'clipboard_read')")).includes("dialog.showMessageBox"), "Allowlisted native app launch must not show a second confirmation dialog.");
+
+assert.ok(html.includes('id="quick-open-spotify"') && html.includes('name:"Open Spotify"') && html.includes('app:"spotify"'), "Automation workspace must provide a one-click saved Open Spotify starter.");
+assert.ok(html.includes('persistWorkflow(saved,user.id)') && html.includes('select Run whenever you want'), "The Spotify starter must sync to the signed-in account and remain available to run later.");

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createClient, type User } from "@supabase/supabase-js";
-import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut, ListTodo, RefreshCw, RotateCcw, Ban, ChevronLeft } from "lucide-react";
+import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut, ListTodo, RefreshCw, RotateCcw, Ban, ChevronLeft, CalendarClock, Pause, Play, Trash2 } from "lucide-react";
 
 const SUPABASE_URL = "https://ywwfqisbmlkjcfoqehph.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwicmVmIjoieXd3ZnFpc2JtbGtqY2ZvcWVwaHAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3OTU4MDYwOSwiZXhwIjoyMDk1MTU2NjA5fQ.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
@@ -14,6 +14,36 @@ type SpeechEvent = { resultIndex: number; results: ArrayLike<SpeechResult> };
 type Recognition = { lang: string; interimResults: boolean; continuous: boolean; onresult: ((event: SpeechEvent) => void) | null; onerror: ((event: { error?: string }) => void) | null; onend: (() => void) | null; start: () => void; stop: () => void };
 type RecognitionConstructor = new () => Recognition;
 type SpeechWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
+
+
+type BosleySkill = { id: string; title: string; summary: string; capabilities: string[]; instructions: string };
+
+type BosleyRoutine = { id: string; name: string; action_type: "open_app" | "open_url"; target: string; recurrence: "once" | "daily" | "weekly"; timezone: string; scheduled_time: string; weekday: number | null; next_run_at: string; enabled: boolean; last_run_at: string | null };
+const ROUTINE_APPS = ["Spotify", "Chrome", "Edge", "Notepad", "Calculator", "Explorer"];
+const ROUTINE_URLS = ["https://spotify.com", "https://youtube.com", "https://gmail.com", "https://drive.google.com", "https://github.com", "https://chatgpt.com", "https://notion.so"];
+function localRoutineInstant(dateText: string, timeText: string, timezone: string): string {
+  const [year, month, day] = dateText.split("-").map(Number);
+  const [hour, minute] = timeText.split(":").map(Number);
+  if (![year,month,day,hour,minute].every(Number.isFinite)) throw new Error("Choose a valid date and time.");
+  const desired = Date.UTC(year, month - 1, day, hour, minute);
+  let candidate = desired;
+  const formatter = new Intl.DateTimeFormat("en-GB", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  for (let i = 0; i < 4; i++) {
+    const parts = Object.fromEntries(formatter.formatToParts(new Date(candidate)).map(part => [part.type, part.value]));
+    const represented = Date.UTC(Number(parts.year), Number(parts.month)-1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+    candidate = desired - (represented - candidate);
+  }
+  const check = Object.fromEntries(formatter.formatToParts(new Date(candidate)).map(part => [part.type, part.value]));
+  if (Number(check.year)!==year || Number(check.month)!==month || Number(check.day)!==day || Number(check.hour)!==hour || Number(check.minute)!==minute) throw new Error("That local time does not exist because of a daylight-saving clock change. Choose another time.");
+  return new Date(candidate).toISOString();
+}
+
+const BOSLEY_SKILLS: BosleySkill[] = [
+  { id: "study-tutor", title: "Study Tutor", summary: "Explain concepts, guide practice and review your reasoning.", capabilities: ["Explain step by step", "Offer hints before solutions", "Check understanding"], instructions: "Act as a patient study tutor. Explain concepts clearly, scaffold reasoning, offer hints before full solutions, and check understanding. Do not complete graded work dishonestly." },
+  { id: "writing-studio", title: "Writing Studio", summary: "Draft, revise and improve writing while preserving the author's intent.", capabilities: ["Draft and revise", "Improve clarity", "Preserve meaning"], instructions: "Act as a writing editor. Preserve the user's meaning and voice, distinguish suggestions from facts, and never invent personal details, sources, or claims." },
+  { id: "app-navigation", title: "App Navigation", summary: "Help navigate apps and websites with safe, user-triggered actions.", capabilities: ["Explain interface steps", "Open allowlisted apps", "Prefer read-only navigation"], instructions: "Act as a safe app-navigation guide. Prefer clear steps and read-only navigation. Only use allowlisted low-risk app launches when the user explicitly starts the saved action. Never submit purchases, send messages, delete data, change security settings, or run arbitrary commands." },
+  { id: "project-helper", title: "Project Helper", summary: "Organize project work, identify next steps and review implementation plans.", capabilities: ["Break work into tasks", "Review requirements", "Create verification checklists"], instructions: "Act as a project assistant. Break work into small verifiable steps, preserve existing requirements, state assumptions, and distinguish completed work from proposed work." }
+];
 
 const welcome: Message = { id: 1, role: "bosley", text: "Hey, I'm Bosley. Sign in to connect your conversation to the AI companion." };
 
@@ -53,6 +83,18 @@ export default function App() {
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [taskBusy, setTaskBusy] = useState(false);
   const [taskNotice, setTaskNotice] = useState("");
+  const [taskInstruction, setTaskInstruction] = useState("");
+  const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "skills" | "routines">("tasks");
+  const [enabledSkills, setEnabledSkills] = useState<string[]>([]);
+  const [skillBusy, setSkillBusy] = useState(false);
+  const [routines, setRoutines] = useState<BosleyRoutine[]>([]);
+  const [routineName, setRoutineName] = useState("");
+  const [routineTarget, setRoutineTarget] = useState("Spotify");
+  const [routineRecurrence, setRoutineRecurrence] = useState<"once" | "daily" | "weekly">("daily");
+  const [routineDate, setRoutineDate] = useState(() => { const now = new Date(); return now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0"); });
+  const [routineTime, setRoutineTime] = useState("08:00");
+  const [routineWeekday, setRoutineWeekday] = useState("1");
+  const [routineBusy, setRoutineBusy] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -95,6 +137,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const saved = user?.user_metadata?.bosley_enabled_skills;
+    setEnabledSkills(Array.isArray(saved) ? saved.filter((id: unknown): id is string => typeof id === "string" && BOSLEY_SKILLS.some(skill => skill.id === id)) : []);
+  }, [user?.id]);
+
+  useEffect(() => {
     if (!showJumpToLatest) bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, showJumpToLatest]);
 
@@ -131,6 +178,9 @@ export default function App() {
       try {
         const result = await taskControl({ action: "list", limit: 40 });
         if (active) setTasks(result.tasks || []);
+        const routineResult = await supabase.from("bosley_routines").select("*").eq("user_id", user.id).order("next_run_at", { ascending: true }).limit(50);
+        if (routineResult.error) throw routineResult.error;
+        if (active) setRoutines((routineResult.data || []) as BosleyRoutine[]);
         if (active && selectedTask) {
           const detail = await taskControl({ action: "events", run_id: selectedTask });
           if (active) setTaskEvents(detail.events || []);
@@ -206,6 +256,112 @@ export default function App() {
       if (selectedTask && !(result.tasks || []).some((task: {id:string}) => task.id === selectedTask)) setSelectedTask(null);
     } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not load tasks."); }
     finally { setTaskBusy(false); }
+  }
+
+  async function loadRoutines() {
+    if (!user) return;
+    const { data, error } = await supabase.from("bosley_routines").select("*").eq("user_id", user.id).order("next_run_at", { ascending: true }).limit(50);
+    if (error) throw error;
+    setRoutines((data || []) as BosleyRoutine[]);
+  }
+  async function createRoutine(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user || routineBusy) return;
+    setRoutineBusy(true); setTaskNotice("");
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      let scheduleDate = routineDate;
+      if (routineRecurrence === "weekly") {
+        const selectedDay = new Date(scheduleDate + "T00:00:00");
+        const offset = (Number(routineWeekday) - selectedDay.getDay() + 7) % 7;
+        selectedDay.setDate(selectedDay.getDate() + offset);
+        scheduleDate = selectedDay.getFullYear() + "-" + String(selectedDay.getMonth()+1).padStart(2,"0") + "-" + String(selectedDay.getDate()).padStart(2,"0");
+        if (new Date(localRoutineInstant(scheduleDate, routineTime, timezone)).getTime() <= Date.now()) {
+          selectedDay.setDate(selectedDay.getDate() + 7);
+          scheduleDate = selectedDay.getFullYear() + "-" + String(selectedDay.getMonth()+1).padStart(2,"0") + "-" + String(selectedDay.getDate()).padStart(2,"0");
+        }
+      }
+      const nextRun = localRoutineInstant(scheduleDate, routineTime, timezone);
+      if (new Date(nextRun).getTime() <= Date.now()) throw new Error("Choose a future time for this routine.");
+      const appTarget = ROUTINE_APPS.find(item => item.toLowerCase() === routineTarget.toLowerCase());
+      const urlTarget = ROUTINE_URLS.find(item => item === routineTarget);
+      if (!appTarget && !urlTarget) throw new Error("Choose an approved app or website.");
+      const action_type = appTarget ? "open_app" : "open_url";
+      const { error } = await supabase.from("bosley_routines").insert({
+        user_id: user.id, name: routineName.trim() || (appTarget ? "Open " + appTarget : "Open website"),
+        action_type, target: appTarget || urlTarget, recurrence: routineRecurrence, timezone,
+        scheduled_time: routineTime, weekday: routineRecurrence === "weekly" ? Number(routineWeekday) : null, next_run_at: nextRun
+      });
+      if (error) throw error;
+      setRoutineName("");
+      setTaskNotice("Routine saved. Bosley will queue the approved app/site opening at its scheduled time.");
+      await loadRoutines();
+    } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not save routine."); }
+    finally { setRoutineBusy(false); }
+  }
+  async function changeRoutine(routine: BosleyRoutine, action: "toggle" | "run" | "delete") {
+    if (!user || routineBusy) return;
+    setRoutineBusy(true); setTaskNotice("");
+    try {
+      if (action === "delete") {
+        const { error } = await supabase.from("bosley_routines").delete().eq("id", routine.id).eq("user_id", user.id);
+        if (error) throw error;
+        setTaskNotice("Routine deleted.");
+      } else if (action === "toggle") {
+        const { error } = await supabase.from("bosley_routines").update({ enabled: !routine.enabled }).eq("id", routine.id).eq("user_id", user.id);
+        if (error) throw error;
+        setTaskNotice(routine.enabled ? "Routine paused." : "Routine resumed.");
+      } else {
+        const instruction = routine.action_type === "open_app" ? "Open " + routine.target : "Open " + routine.target;
+        const { data: run, error } = await supabase.from("automation_runs").insert({ user_id: user.id, instruction, status: "pending", summary: "remote_listener_queue:v1" }).select("id").single();
+        if (error || !run) throw error || new Error("Could not queue routine.");
+        const { error: eventError } = await supabase.from("automation_run_events").insert({ user_id: user.id, run_id: run.id, event_type: "created", message: "Routine run started manually.", details: { routine_id: routine.id, manual: true } });
+        if (eventError) throw eventError;
+        setTaskNotice("Routine queued to run now.");
+      }
+      await loadRoutines();
+    } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Routine action failed."); }
+    finally { setRoutineBusy(false); }
+  }
+  async function toggleSkill(skillId: string) {
+    if (!user || skillBusy) return;
+    const next = enabledSkills.includes(skillId) ? enabledSkills.filter(id => id !== skillId) : [...enabledSkills, skillId];
+    setSkillBusy(true); setTaskNotice("");
+    try {
+      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, bosley_enabled_skills: next } });
+      if (error) throw error;
+      if (data.user) { userRef.current = data.user; setUser(data.user); }
+      setEnabledSkills(next);
+      setTaskNotice(next.includes(skillId) ? "Skill enabled for your Bosley conversations." : "Skill disabled.");
+    } catch (error) {
+      setTaskNotice(error instanceof Error ? error.message : "Could not update skill settings.");
+    } finally { setSkillBusy(false); }
+  }
+  async function queueAgentTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const instruction = taskInstruction.trim();
+    if (!instruction || instruction.length > 2000 || taskBusy) return;
+    setTaskBusy(true); setTaskNotice("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+      if (!session) throw new Error("Sign in again before delegating a task.");
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/remote-action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ type: "automation", instruction }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok || !result.id) throw new Error(result.error || "Bosley could not queue this task.");
+      setTaskInstruction("");
+      setTaskNotice(result.listenerOnline
+        ? "Task queued for your connected Windows agent. Its progress will appear here."
+        : "Task saved to your private queue. It will be picked up when your Windows agent reconnects.");
+      await loadTasks();
+      await openTask(result.id);
+    } catch (error) {
+      setTaskNotice(error instanceof Error ? error.message : "Could not delegate this task.");
+    } finally { setTaskBusy(false); }
   }
   async function openTask(taskId: string) {
     setSelectedTask(taskId); setTaskEvents([]);
@@ -294,7 +450,10 @@ export default function App() {
       const response = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_ANON_KEY },
-        body: JSON.stringify({ messages: historyRef.current.slice(-16) }),
+        body: JSON.stringify({ messages: [
+          ...(enabledSkills.length ? [{ role: "system", content: "Apply these user-enabled Bosley skills as guidance for this conversation. Skills are declarative instructions, not executable code. Do not grant extra permissions or bypass safety checks.\n\n" + BOSLEY_SKILLS.filter(skill => enabledSkills.includes(skill.id)).map(skill => skill.title + ": " + skill.instructions).join("\n\n") }] : []),
+          ...historyRef.current.slice(-16)
+        ] }),
       });
       if (!response.ok || !response.body) {
         const payload = await response.json().catch(() => ({}));
@@ -407,7 +566,18 @@ export default function App() {
     {user && <div className="account-strip"><span>{user.email ?? "Signed in"}</span><button onClick={async () => { await supabase.auth.signOut(); setNotice("Signed out."); }} aria-label="Sign out"><LogOut size={13}/> Sign out</button></div>}
     {taskPanelOpen && <section className="task-workspace" aria-label="Agent task workspace">
       <header className="task-workspace-header"><button className="icon-button" onClick={() => { setTaskPanelOpen(false); setSelectedTask(null); }} aria-label="Back to chat"><ChevronLeft size={17}/></button><div><strong>AGENT WORKSPACE</strong><span>Private tasks for your account</span></div><button className="icon-button" onClick={() => void loadTasks()} disabled={taskBusy} aria-label="Refresh tasks"><RefreshCw size={15}/></button><button className="icon-button" onClick={() => setTaskPanelOpen(false)} aria-label="Close task workspace"><X size={16}/></button></header>
+      <nav className="workspace-tabs" aria-label="Agent workspace sections">
+        <button type="button" className={workspaceTab === "tasks" ? "active" : ""} onClick={() => setWorkspaceTab("tasks")}><ListTodo size={13}/> Tasks</button>
+        <button type="button" className={workspaceTab === "skills" ? "active" : ""} onClick={() => setWorkspaceTab("skills")}><Command size={13}/> Skills Library <span>{enabledSkills.length} active</span></button>
+        <button type="button" className={workspaceTab === "routines" ? "active" : ""} onClick={() => { setWorkspaceTab("routines"); void loadRoutines(); }}><CalendarClock size={13}/> Routines <span>{routines.filter(item => item.enabled).length} active</span></button>
+      </nav>
       {taskNotice && <div className="task-notice" role="status">{taskNotice}</div>}
+      {workspaceTab === "tasks" && <>
+      <form className="task-compose" onSubmit={queueAgentTask}>
+        <label htmlFor="agent-task-instruction">DELEGATE A TASK</label>
+        <div className="task-compose-row"><input id="agent-task-instruction" value={taskInstruction} onChange={event => setTaskInstruction(event.target.value)} maxLength={2000} placeholder="Describe a task for your connected Windows agent…" disabled={taskBusy}/><button type="submit" disabled={taskBusy || !taskInstruction.trim()}><Send size={13}/>{taskBusy ? "Queueing…" : "Delegate"}</button></div>
+        <small>Tasks are private to your account. They remain queued while your Windows agent is offline.</small>
+      </form>
       <div className="task-workspace-body">
         <div className="task-list-column"><div className="task-section-label">RECENT TASKS <span>{tasks.length}</span></div>
           {taskBusy && !tasks.length && <div className="task-empty">Loading your tasks…</div>}
@@ -424,6 +594,38 @@ export default function App() {
           </>; })()}
         </div>
       </div>
+      </>}
+      {workspaceTab === "routines" && <div className="routines-library">
+        <div className="skills-intro"><strong>SCHEDULED ROUTINES</strong><p>Create opt-in routines that open an approved app or trusted website. They run only on the schedule you set and can be paused or deleted any time.</p></div>
+        <form className="routine-compose" onSubmit={createRoutine}>
+          <label>NEW ROUTINE</label>
+          <input value={routineName} onChange={event => setRoutineName(event.target.value)} maxLength={80} placeholder="Routine name (optional)"/>
+          <div className="routine-form-grid">
+            <label>APP OR WEBSITE<select value={routineTarget} onChange={event => setRoutineTarget(event.target.value)}>{ROUTINE_APPS.map(app => <option key={app} value={app}>{app}</option>)}{ROUTINE_URLS.map(url => <option key={url} value={url}>{url}</option>)}</select></label>
+            <label>REPEAT<select value={routineRecurrence} onChange={event => setRoutineRecurrence(event.target.value as "once"|"daily"|"weekly")}><option value="once">Once</option><option value="daily">Daily</option><option value="weekly">Weekly</option></select></label>
+            <label>START DATE<input type="date" value={routineDate} onChange={event => setRoutineDate(event.target.value)} required/></label>
+            <label>TIME (YOUR TIMEZONE)<input type="time" value={routineTime} onChange={event => setRoutineTime(event.target.value)} required/></label>
+            {routineRecurrence === "weekly" && <label>DAY OF WEEK<select value={routineWeekday} onChange={event => setRoutineWeekday(event.target.value)}>{["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((day,index)=><option key={day} value={index}>{day}</option>)}</select></label>}
+          </div>
+          <small>Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"}. This feature only opens approved apps/sites; it cannot run scripts, send messages or make purchases.</small>
+          <button type="submit" disabled={routineBusy}><CalendarClock size={14}/>{routineBusy ? "Saving…" : "Save routine"}</button>
+        </form>
+        <div className="routine-list"><div className="task-section-label">YOUR ROUTINES <span>{routines.length}</span></div>
+          {!routines.length && <div className="task-empty">No routines yet. Create one above to get started.</div>}
+          {routines.map(routine=><article className="routine-card" key={routine.id}>
+            <div className="routine-card-copy"><strong>{routine.name}</strong><span>{routine.action_type === "open_app" ? "Open app" : "Open website"} · {routine.target}</span><small>{routine.recurrence === "weekly" ? "Weekly" : routine.recurrence === "daily" ? "Daily" : "Once"} · {routine.scheduled_time.slice(0,5)} · {routine.timezone} · Next: {new Date(routine.next_run_at).toLocaleString()}</small><em>{routine.enabled ? "ACTIVE" : "PAUSED"}</em></div>
+            <div className="routine-card-actions"><button type="button" disabled={routineBusy} onClick={()=>void changeRoutine(routine,"run")} title="Run now"><Play size={13}/> Run</button><button type="button" disabled={routineBusy} onClick={()=>void changeRoutine(routine,"toggle")} title={routine.enabled ? "Pause" : "Resume"}>{routine.enabled ? <Pause size={13}/> : <Play size={13}/>} {routine.enabled ? "Pause" : "Resume"}</button><button type="button" disabled={routineBusy} onClick={()=>void changeRoutine(routine,"delete")} title="Delete"><Trash2 size={13}/></button></div>
+          </article>)}
+        </div>
+      </div>}
+      {workspaceTab === "skills" && <div className="skills-library">
+        <div className="skills-intro"><strong>REUSABLE BOSLEY SKILLS</strong><p>Enable instruction packs for your conversations. Skills are account-scoped guidance only; they do not install code or grant new device permissions.</p></div>
+        {BOSLEY_SKILLS.map(skill => <article className="skill-card" key={skill.id}>
+          <div className="skill-card-head"><div><strong>{skill.title}</strong><p>{skill.summary}</p></div><button type="button" disabled={skillBusy} className={enabledSkills.includes(skill.id) ? "skill-enabled" : ""} onClick={() => void toggleSkill(skill.id)}>{enabledSkills.includes(skill.id) ? "Enabled" : "Enable"}</button></div>
+          <div className="skill-capabilities">{skill.capabilities.map(capability => <span key={capability}>{capability}</span>)}</div>
+        </article>)}
+        <p className="skills-footnote">Only these reviewed instruction packs are available. Downloaded scripts and arbitrary code are never executed as skills.</p>
+      </div>}
     </section>}
     <section ref={conversationRef} onScroll={handleConversationScroll} className="conversation" aria-live="polite"><div className="day-label"><span/> SESSION STARTED <span/></div>
       {messages.map(message => <article className={`message ${message.role === "you" ? "user-message" : "bosley-message"}`} key={message.id}>
@@ -436,6 +638,7 @@ export default function App() {
     {notice && <div className="notice">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss notice"><X size={13}/></button></div>}
     <form className="composer" onSubmit={event => { event.preventDefault(); void sendMessage(); }}>
       <button type="button" className={`mic-button ${listening ? "is-listening" : ""}`} onClick={handleMic} title={listening ? "Stop listening" : "Start microphone"} aria-label={listening ? "Stop listening" : "Start microphone"}>{listening ? <MicOff size={18}/> : <Mic size={18}/>}</button>
+      <button type="button" className={`push-to-talk-button ${listening ? "is-listening" : ""}`} onPointerDown={event => { event.preventDefault(); if (!listening) startListening(); }} onPointerUp={() => { if (listening) stopListening(); }} onPointerLeave={() => { if (listening) stopListening(); }} onPointerCancel={() => { if (listening) stopListening(); }} onKeyDown={event => { if ((event.key === " " || event.key === "Enter") && !event.repeat && !listening) { event.preventDefault(); startListening(); } }} onKeyUp={event => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); if (listening) stopListening(); } }} onContextMenu={event => event.preventDefault()} title="Hold to talk; release to stop" aria-label="Hold to talk, release to stop"><Mic size={14}/><span>Hold</span></button>
       <input value={input} onChange={event => setInput(event.target.value)} placeholder={!user ? "Sign in to chat with Bosley…" : listening ? "Listening… speak now" : "Message Bosley…"} aria-label="Message Bosley" disabled={!user || sending}/>
       <button type="submit" className="send-button" disabled={!user || sending || !input.trim()} aria-label="Send message"><Send size={17}/></button>
     </form>

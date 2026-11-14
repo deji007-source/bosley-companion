@@ -2162,13 +2162,17 @@ async function handleEmailConfirmationRoute(){
  const errorText=params.get("error_description")||params.get("error")||hashParams.get("error_description")||hashParams.get("error");
  const title=$("#email-confirmation-title"),copy=$("#email-confirmation-copy"),mark=confirmationPage?.querySelector(".confirm-mark");
  if(errorText){if(title)title.textContent="Confirmation link could not be used";if(copy)copy.textContent="The confirmation link may have expired or is invalid. Return to sign in and request a new confirmation email. Details: "+errorText;if(mark)mark.textContent="!";}
+ // Consume the one-time confirmation route before any later sign-in or account-scope reload.
+ // Leaving this marker in the address bar would re-run this handler and sign the user out again.
+ params.delete("email-confirmed");params.delete("error");params.delete("error_description");
+ const cleanUrl=window.location.pathname+(params.toString()?"?"+params.toString():"");
+ window.history.replaceState({},document.title,cleanUrl);
  try{const {data}=await db?.auth.getSession()||{};if(data?.session)await db.auth.signOut();}
  catch(error){console.warn("[Bosley] Could not clear confirmation callback session:",error);}
  user=null;document.body.classList.add("auth-required","email-confirmed");
  if(gate)gate.hidden=true;if(confirmationPage)confirmationPage.hidden=false;
- window.history.replaceState({},document.title,window.location.pathname+"?email-confirmed=1");
 }
-confirmationBack?.addEventListener("click",()=>{if(confirmationPage)confirmationPage.hidden=true;document.body.classList.remove("email-confirmed");gateMode="in";renderAuthGate();gateEmail?.focus();});
+confirmationBack?.addEventListener("click",()=>{if(confirmationPage)confirmationPage.hidden=true;document.body.classList.remove("email-confirmed");const params=new URLSearchParams(window.location.search);params.delete("email-confirmed");window.history.replaceState({},document.title,window.location.pathname+(params.toString()?"?"+params.toString():""));gateMode="in";renderAuthGate();gateEmail?.focus();});
 
 window.BosleyCurrentUserId=()=>user?.id||null;
 handleEmailConfirmationRoute().catch(error=>console.error("[Bosley] Email confirmation route failed:",error));

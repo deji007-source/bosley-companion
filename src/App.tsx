@@ -91,7 +91,7 @@ export default function App() {
   const [routineName, setRoutineName] = useState("");
   const [routineTarget, setRoutineTarget] = useState("Spotify");
   const [routineRecurrence, setRoutineRecurrence] = useState<"once" | "daily" | "weekly">("daily");
-  const [routineDate, setRoutineDate] = useState(() => new Date(Date.now()+60000).toISOString().slice(0,10));
+  const [routineDate, setRoutineDate] = useState(() => { const now = new Date(); return now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0"); });
   const [routineTime, setRoutineTime] = useState("08:00");
   const [routineWeekday, setRoutineWeekday] = useState("1");
   const [routineBusy, setRoutineBusy] = useState(false);

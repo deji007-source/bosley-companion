@@ -1086,3 +1086,7 @@ assert.ok(html.includes('persistWorkflow(saved,user.id)') && html.includes('sele
 
 assert.ok(html.includes('data-td-load-mode="stooq"') && html.includes('data-td-load-mode="demo"') && html.includes('id="td-source-active"'), "Trading Dock must expose explicit Stooq and demo dataset switching with a visible active-source indicator.");
 assert.ok(html.includes("syncDatasetSourceChoice") && html.includes('el("td-stooq-fetch").click()') && html.includes('el("td-demo").click()'), "Dataset source cards must invoke the real Stooq and demo loaders instead of changing labels only.");
+
+assert.ok(html.includes('data-open-view="shortcuts">Shortcuts & Commands</button>') && html.includes('id="shortcuts"') && html.includes('panel:"shortcuts",label:"Shortcuts & Commands"'), "Shortcuts and Commands must be a registered full page reachable from the workspace dropdown.");
+assert.ok(html.includes('id="shortcuts"') && html.includes('id="bosley-shortcuts-toggle"') && html.includes('Alt') && html.includes('Everyday commands'), "The dedicated shortcuts page must document keyboard controls and everyday commands.");
+assert.ok(html.includes('SUPABASE_URL+"/functions/v1/companion-chat"') && html.includes('image_url:{url:capture}') && html.includes('text:question.value.trim()'), "Contextual Talk must send the user's plain-language question and captured image to the authenticated companion backend.");

@@ -2727,7 +2727,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  setTimeout(retry,150);
 },{once:true});
 window.addEventListener("pageshow",()=>setTimeout(handleNativeQuickAction,150));
-let dragState=null,dragged=false,suppressLaunchClick=false;
+let dragState=null,dragged=false;
 const launcher=$("#launch");
 launcher.addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="touch")return;dragState={x:e.screenX,y:e.screenY,cx:e.clientX,cy:e.clientY};dragged=false;try{launcher.setPointerCapture(e.pointerId)}catch{}},{passive:true});
 launcher.addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.screenX-dragState.x,dy=e.screenY-dragState.y;if(Math.abs(dx)+Math.abs(dy)<5)return;dragged=true;
@@ -2735,7 +2735,7 @@ launcher.addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.scre
  dragState.x=e.screenX;dragState.y=e.screenY;},{passive:true});
 function finishDrag(){dragState=null;}
 launcher.addEventListener("pointerup",finishDrag);launcher.addEventListener("pointercancel",()=>{dragState=null;dragged=false});
-launcher.addEventListener("click",e=>{if(suppressLaunchClick){e.preventDefault();return}if(dragged){dragged=false;e.preventDefault();return}toggle()});
+launcher.addEventListener("click",e=>{if(dragged){dragged=false;e.preventDefault();return}toggle()});
 $("#maximize").onclick=()=>{const p=$("#panel"),max=p.classList.toggle("maximized");$("#maximize").textContent=max?"❐":"□";$("#maximize").setAttribute("aria-label",max?"Restore panel":"Maximize panel");$("#maximize").title=max?"Restore panel":"Maximize panel"};
 $("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
 

@@ -132,3 +132,15 @@ The strategy library and audit modules are copied into the web, Android and Wind
 The website, Android WebView package, and Windows Electron package load the same `src/trading/strategy-library.js` and `src/trading/strategy-audit.js` modules from the repository. Their GitHub Actions workflows run the shared companion regression checks, strategy-rule/import checks, and JavaScript syntax checks. Android and Windows workflows also run for pull requests targeting `main`, alongside the website workflow, so a change is checked across all three delivery targets before merge.
 
 The strategy format is intentionally versioned and extensible. Existing supported rule types remain available; additional strategy types should be added only after their exact entry, exit, indicator, and risk semantics are specified and validated. A future custom strategy requested by the user will be added as a separately tested rule type rather than guessed from an incomplete description.
+
+## Quick commands and keyboard shortcuts
+
+Bosley includes a small in-app **Commands & shortcuts** reference in the floating tools menu.
+
+- **Alt + V** — capture the current screen in supported installed Windows and Android builds. Bosley shows the capture/permission flow, attaches a preview, and waits for you to press Send.
+- **Alt + T** — open the Writing & Ideas card.
+- In chat, say **Open Spotify**, **Open YouTube**, **Open Gmail**, **Open Google Drive**, **Open WhatsApp**, **Open Telegram**, **Open GitHub**, **Open ChatGPT**, **Open Notion**, or **Open Discord** to open an allowlisted website.
+- Say **Search the web for ...** or **Create a text file named notes.txt containing ...** for the matching browser-safe actions.
+- Say **Run my [workflow name] automation** to run a saved workflow.
+
+Saved workflows containing only allowlisted website launches or allowlisted desktop-app launches run without a separate per-run confirmation. Any workflow containing an action that sends, publishes, deletes, purchases, changes account settings, or otherwise has a consequential external effect still requires review and confirmation. The Windows desktop build is required for native Windows app launches; a browser-only build opens websites in browser tabs.

@@ -64,6 +64,12 @@ assert.ok(html.includes('panel.hidden=x.panel!==id') && html.includes('panel.rem
 assert.ok(html.includes("Always reveal the in-app dock immediately") && !html.includes('await window.BosleyDesktop.request({action:"open_floating_view",payload:{view:id}})'), "Page navigation must not wait for the optional Windows window bridge before revealing the side dock");
 assert.ok(!/if\s*\(\s*isAndroidNative\s*\|\|/.test(html) && html.includes('window.Capacitor?.getPlatform?.()==="android"'), "Shared page navigation must use a safely scoped Android platform check so website clicks cannot fail before showing the dock");
 assert.ok(html.includes('dock.hidden=false;dock.removeAttribute("hidden")') && html.includes("Selecting an already-open page must keep it open"), "Selecting a launcher page must immediately show the dock and must not toggle the selected page closed");
+assert.ok(html.includes('function finishDrag(){dragState=null;}'), "Ghost drag completion must never be responsible for opening the chat panel");
+assert.ok(html.includes('launcher.addEventListener("click",e=>{if(suppressLaunchClick){e.preventDefault();return}if(dragged){dragged=false;e.preventDefault();return}toggle()});'), "Ghost panel must open from standard mouse, touch and keyboard click events");
+assert.ok(!html.includes('if(e.detail!==0)return'), "Ghost activation must not discard ordinary mouse or touch clicks");
+assert.ok(!html.includes('const desktop=bridge();') || !html.includes('Standalone Bosley page window could not open:'), "Dropdown page selection must not be intercepted by a second competing router");
+assert.ok(html.includes('id="bosley-playful-ui"') && html.includes('--bosley-cyan') && html.includes('#dock-launcher-menu button:hover'), "The companion must include its modern playful visual theme");
+
 assert.ok(!html.includes("body.panel-open:not(.desktop-panel) #dock-launcher{display:none!important}"), "Launcher must remain available while workspace panel is open");
 assert.ok(html.includes('id="bosley-launcher-final-visibility"') && html.includes("body.panel-open #dock-launcher{display:block!important") && html.includes("top:24%!important"), "Floating ghost menu must remain visible above the chat and workspace while panels are open");
 assert.ok(html.includes('data-open-view="universal-input"') && html.includes("window.BosleyOpenUniversalInput"), "Universal Input must be available from the shared floating menu and global shortcut on every build");

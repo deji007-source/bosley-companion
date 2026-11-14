@@ -11,6 +11,7 @@ on:
       - ".github/workflows/build-windows.yml"
       - "index.html"
       - "package.json"
+      - "capacitor.config.ts"
       - "scripts/**"
       - "src/**"
       - "src/styles.css"
@@ -23,6 +24,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 60
 
     steps:
       - name: Check out repository
@@ -1658,6 +1660,24 @@ jobs:
           test -n "$installer"
           test -s "$installer"
           echo "Installer artifact verified: $installer"
+
+      - name: Install and launch Windows installer smoke test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = Get-ChildItem 'desktop/dist' -Filter '*.exe' -File | Select-Object -First 1
+          if (-not $installer) { throw 'No Windows installer was produced.' }
+          $installDir = Join-Path $env:RUNNER_TEMP 'Bosley-Installer-Smoke'
+          if (Test-Path $installDir) { Remove-Item $installDir -Recurse -Force }
+          Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -Wait -NoNewWindow
+          $app = Join-Path $installDir 'Bosley Companion.exe'
+          if (-not (Test-Path $app -PathType Leaf)) { throw 'Silent installation did not produce Bosley Companion.exe.' }
+          $process = Start-Process -FilePath $app -PassThru
+          Start-Sleep -Seconds 10
+          $process.Refresh()
+          if ($process.HasExited) { throw "Bosley Companion exited during launch smoke test (code $($process.ExitCode))." }
+          Stop-Process -Id $process.Id -Force
+          Write-Host 'Windows installer installed and launched successfully.'
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4

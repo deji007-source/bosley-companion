@@ -1449,7 +1449,6 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 <form id="ct-form" class="ct-form"><textarea id="ct-question" rows="3" placeholder="What would you like Bosley to explain or help with?" required></textarea><div><button id="ct-dictate" type="button">Dictate</button><button id="ct-submit" type="submit" disabled>Ask Bosley →</button></div></form>
 <p id="ct-notice" role="status" aria-live="polite"></p><div id="ct-answer" hidden><strong>BOSLEY</strong><span id="ct-answer-text"></span></div><footer>Images stay in this temporary capture panel. Closing or discarding clears the preview.</footer>
 </section></div>
-<script id="bosley-contextual-talk-runtime"></div>
 </section>
 <section class="workspace" id="shortcuts" hidden aria-label="Keyboard shortcuts and commands">
 <style>
@@ -5228,6 +5227,7 @@ body.desktop-floating-view #side-dock .dock-body video{max-width:100%}
 
 
 
+<script id="bosley-contextual-talk-runtime">
 (()=>{const db=window.__bosleySupabaseClient,$=id=>document.getElementById(id),modal=$("contextual-talk-modal"),file=$("ct-file"),preview=$("ct-preview"),img=$("ct-image"),question=$("ct-question"),notice=$("ct-notice"),answer=$("ct-answer"),answerText=$("ct-answer-text"),submit=$("ct-submit");if(!db||!modal)return;let capture=null,captureBase=null,markers=[],markerMode=false,busy=false,recognition=null;
 const setNotice=t=>notice.textContent=t||"";function setBusy(v){busy=v;submit.disabled=v||!capture||!question.value.trim();$("ct-capture").disabled=v;$("ct-choose").disabled=v;$("ct-dictate").disabled=v;$("ct-close").disabled=v;submit.textContent=v?"Analysing…":"Ask Bosley →"}
 function clearCapture(){capture=null;captureBase=null;markers=[];markerMode=false;img.classList.remove("marker-mode");$("ct-marker-mode").setAttribute("aria-pressed","false");$("ct-marker-mode").textContent="＋ Add guidance marker";$("ct-marker-clear").disabled=true;img.removeAttribute("src");preview.hidden=true;answer.hidden=true;answerText.textContent="";submit.disabled=true}function close(){if(busy)return;modal.hidden=true;recognition?.stop();recognition=null;question.value="";clearCapture();setNotice("")}

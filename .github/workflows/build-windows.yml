@@ -14,6 +14,7 @@ on:
       - "manifest.json"
       - "service-worker.js"
       - "assets/icons/**"
+      - "public/**"
       - "package.json"
       - "capacitor.config.ts"
       - "scripts/**"

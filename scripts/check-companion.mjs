@@ -1059,5 +1059,5 @@ assert.ok(html.includes("-webkit-overflow-scrolling:touch") && html.includes("to
 
 assert.ok(html.includes('id="bosley-heyclicky-shortcuts"') && html.includes('key!=="v"&&key!=="t"') && html.includes('capture.click()'), "Alt+V must invoke the existing consent-based screen capture flow.");
 assert.ok(html.includes('typeof window.BosleyOpenWritingIdeasCard==="function"&&window.BosleyOpenWritingIdeasCard()'), "Alt+T must open the existing Bosley Writing & Ideas card.");
-assert.ok(html.includes('id="bosley-command-help-panel"') && html.includes('Bosley commands &amp; shortcuts') && html.includes('Run my Morning Research automation'), "The launcher must expose an understandable command and shortcut reference.");
+assert.ok(html.includes('id="bosley-command-help-panel"') && html.includes('Bosley commands & shortcuts') && html.includes('Run my Morning Research automation'), "The launcher must expose an understandable command and shortcut reference.");
 assert.ok(html.includes('const safeLaunchOnly=wf.steps.every(step=>isLowRiskAutonomyStep(step)&&(step.type==="open_url"||(step.type==="desktop_action"&&step.action==="launch_app")))') && html.includes('const autoEligible=safeLaunchOnly||'), "Allowlisted website and app-launch workflows must run without a separate per-run confirmation while other autonomy remains permission-gated.");

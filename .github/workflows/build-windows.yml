@@ -11,6 +11,9 @@ on:
       - ".github/workflows/build-windows.yml"
       - ".github/workflows/build-android.yml"
       - "index.html"
+      - "manifest.json"
+      - "service-worker.js"
+      - "assets/icons/**"
       - "package.json"
       - "capacitor.config.ts"
       - "scripts/**"
@@ -28,6 +31,12 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      - name: Generate Bosley PWA icons
+        shell: pwsh
+        run: |
+          python -m pip install Pillow
+          python scripts/generate-app-icons.py
+
       - name: Check out repository
         uses: actions/checkout@v4
 
@@ -116,6 +125,9 @@ jobs:
           # Package the same standalone UI that is deployed as the working website.
           # dist/index.html is a separate React shell, not the production companion UI.
           cp index.html desktop/index.html
+          cp manifest.json service-worker.js desktop/
+          New-Item -ItemType Directory -Force desktop/assets/icons | Out-Null
+          Copy-Item assets/icons/bosley-pwa-* desktop/assets/icons/
           mkdir -p desktop/src/trading
           cp src/trading/*.js desktop/src/trading/
           node scripts/check-ui-parity.mjs index.html desktop/index.html "Windows packaged interface"

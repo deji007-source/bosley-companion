@@ -6,6 +6,9 @@ on:
   push:
     paths:
       - 'index.html'
+      - 'manifest.json'
+      - 'service-worker.js'
+      - 'assets/icons/**'
       - 'src/**'
       - 'package.json'
       - 'vite.config.ts'
@@ -43,11 +46,18 @@ jobs:
           node --check src/trading/strategy-audit.js
           node --check src/trading/strategy-parser.js
           node --check src/trading/backtest-engine.js
+      - name: Generate Bosley PWA icons
+        run: |
+          python -m pip install Pillow
+          python scripts/generate-app-icons.py
       - name: Stage the production companion website
         run: |
           test -s index.html
           mkdir -p dist
           cp index.html dist/index.html
+          cp manifest.json service-worker.js dist/
+          mkdir -p dist/assets/icons
+          cp assets/icons/bosley-pwa-* dist/assets/icons/
           mkdir -p dist/src/trading
           cp src/trading/*.js dist/src/trading/
           node scripts/check-ui-parity.mjs index.html dist/index.html "website"

@@ -8,6 +8,9 @@ on:
   push:
     paths:
       - 'index.html'
+      - 'manifest.json'
+      - 'service-worker.js'
+      - 'assets/icons/**'
       - 'src/**'
       - 'package.json'
       - 'vite.config.ts'
@@ -57,10 +60,18 @@ jobs:
           node --check src/trading/backtest-engine.js
           npm run build
 
+      - name: Generate Bosley PWA icons
+        run: |
+          python3 -m pip install Pillow
+          python3 scripts/generate-app-icons.py
+
       - name: Use the shared production Bosley interface for Android
         run: |
           test -s index.html
           cp index.html dist/index.html
+          cp manifest.json service-worker.js dist/
+          mkdir -p dist/assets/icons
+          cp assets/icons/bosley-pwa-* dist/assets/icons/
           mkdir -p dist/src/trading
           cp src/trading/*.js dist/src/trading/
           node scripts/check-ui-parity.mjs index.html dist/index.html "Android staging"

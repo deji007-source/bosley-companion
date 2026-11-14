@@ -1465,7 +1465,7 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
 
-<section id="auth-gate" role="dialog" aria-modal="true" aria-labelledby="gate-title"><div class="gate-card"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h1 id="gate-title">Welcome to Bosley</h1><p id="gate-copy">Sign in to continue. Your conversations and workspace sync to your Bosley account.</p><form id="gate-auth"><input id="gate-email" type="email" required autocomplete="email" placeholder="Email address" aria-label="Email address"><input id="gate-password" type="password" required autocomplete="current-password" placeholder="Password" aria-label="Password"><button class="gate-submit" id="gate-submit" type="submit">Sign in securely</button></form><button class="gate-switch" id="gate-switch" type="button">New here? Create an account</button><button class="gate-switch" id="gate-resend" type="button">Resend verification email</button><div class="gate-feedback" id="gate-feedback" role="status" aria-live="polite"></div></div></section>
+<section id="auth-gate" role="dialog" aria-modal="true" aria-labelledby="gate-title"><div class="gate-card"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h1 id="gate-title">Welcome to Bosley</h1><p id="gate-copy">Sign in to continue. Your conversations and workspace sync to your Bosley account.</p><form id="gate-auth"><input id="gate-email" type="email" required autocomplete="email" placeholder="Email address" aria-label="Email address"><input id="gate-password" type="password" required autocomplete="current-password" placeholder="Password" aria-label="Password"><button class="gate-submit" id="gate-submit" type="submit">Sign in securely</button></form><button class="gate-switch" id="gate-switch" type="button">New here? Create an account</button><button class="gate-switch" id="gate-resend" type="button">Resend verification email</button><button class="gate-switch" id="pwa-install" type="button">Install Bosley app</button><div class="gate-feedback" id="pwa-install-feedback" role="status" aria-live="polite"></div><div class="gate-feedback" id="gate-feedback" role="status" aria-live="polite"></div></div></section>
 <section id="email-confirmation-page" hidden role="status" aria-labelledby="email-confirmation-title">
  <div class="confirm-card">
   <div class="confirm-mark" aria-hidden="true">✓</div>
@@ -2139,6 +2139,20 @@ function renderAuthGate(){
  const title=$("#gate-title"),copy=$("#gate-copy");if(title)title.textContent=gateMode==="up"?"Create your Bosley account":"Welcome to Bosley";if(copy)copy.textContent=gateMode==="up"?"Create your account and we will email you a verification link. Open it, return here, and sign in to sync your Bosley workspace.":"Sign in to continue. Your conversations and workspace sync securely to your Bosley account.";
 }
 if(gateSwitch)gateSwitch.addEventListener("click",()=>{gateMode=gateMode==="in"?"up":"in";if(gateFeedback)gateFeedback.textContent="";renderAuthGate();gatePassword?.focus()});
+let deferredBosleyInstall=null;
+const pwaInstallButton=$("#pwa-install"),pwaInstallFeedback=$("#pwa-install-feedback");
+window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();deferredBosleyInstall=event;if(pwaInstallButton)pwaInstallButton.hidden=false});
+pwaInstallButton?.addEventListener("click",async()=>{
+ if(deferredBosleyInstall){
+  try{await deferredBosleyInstall.prompt();const choice=await deferredBosleyInstall.userChoice;if(pwaInstallFeedback)pwaInstallFeedback.textContent=choice?.outcome==="accepted"?"Bosley installation started. Follow your browser's confirmation.":"Installation was not completed.";deferredBosleyInstall=null}
+  catch(error){if(pwaInstallFeedback)pwaInstallFeedback.textContent="Use your browser menu and choose Install app or Add to Home Screen."}
+  return;
+ }
+ const ua=navigator.userAgent||"",isIOS=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+ if(pwaInstallFeedback)pwaInstallFeedback.textContent=isIOS?"On iPhone or iPad: open this page in Safari, tap Share, choose Add to Home Screen, then tap Add.":"Open your browser menu and choose Install app or Add to Home Screen. Bosley uses its companion logo when installed.";
+});
+window.addEventListener("appinstalled",()=>{deferredBosleyInstall=null;if(pwaInstallButton)pwaInstallButton.hidden=true;if(pwaInstallFeedback)pwaInstallFeedback.textContent="Bosley is installed on this device."});
+
 if(gateResend)gateResend.addEventListener("click",async()=>{if(!db){if(gateFeedback)gateFeedback.textContent="Account service unavailable. Reload and try again.";return}if(!gateEmail?.value.trim()){if(gateFeedback)gateFeedback.textContent="Enter your email address first.";gateEmail?.focus();return}gateResend.disabled=true;if(gateFeedback)gateFeedback.textContent="Sending a fresh verification email…";try{const redirectUrl=new URL("https://bosley-companion.vercel.app/");redirectUrl.searchParams.set("email-confirmed","1");const {error}=await db.auth.resend({type:"signup",email:gateEmail.value.trim(),options:{emailRedirectTo:redirectUrl.toString()}});if(error)throw error;if(gateFeedback)gateFeedback.textContent="Verification email sent. Check your inbox and spam folder."}catch(error){if(gateFeedback)gateFeedback.textContent=String(error?.message||"Could not resend the verification email.")}finally{gateResend.disabled=false}});
 if(gateForm)gateForm.addEventListener("submit",async e=>{
  e.preventDefault();if(!db){if(gateFeedback)gateFeedback.textContent="Account service unavailable. Check your connection and try again.";return}
@@ -2150,7 +2164,7 @@ if(gateForm)gateForm.addEventListener("submit",async e=>{
  }catch(err){const m=String(err?.message||"Sign-in failed.");if(gateFeedback)gateFeedback.textContent=/invalid login credentials/i.test(m)?"Email or password is incorrect.":/email not confirmed/i.test(m)?"Confirm your email using the link we sent, then sign in.":m}
  finally{gateSubmit.disabled=false}
 });
-if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not initialize. Check your connection and reopen Bosley.";renderAuthGate()}
+if(!db){if(gateFeedback)gateFeedback.textContent="Account service could not initialize. Check your connection and reopen Bosley."}
 
 const RM=matchMedia("(prefers-reduced-motion: reduce)");
 let user=null,tab="tasks",mode="in",notes=[],tasks=[],history=[],conversationId=null,rec=null,lastMove=0,raf=0;

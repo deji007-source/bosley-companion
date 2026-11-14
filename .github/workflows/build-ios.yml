@@ -8,6 +8,9 @@ on:
   push:
     paths:
       - 'index.html'
+      - 'manifest.json'
+      - 'service-worker.js'
+      - 'assets/icons/**'
       - 'src/**'
       - 'package.json'
       - 'vite.config.ts'
@@ -28,6 +31,11 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 45
     steps:
+      - name: Generate Bosley PWA icons
+        run: |
+          python3 -m pip install Pillow
+          python3 scripts/generate-app-icons.py
+
       - name: Check out repository
         uses: actions/checkout@v4
 
@@ -56,6 +64,9 @@ jobs:
         run: |
           test -s index.html
           cp index.html dist/index.html
+          cp manifest.json service-worker.js dist/
+          mkdir -p dist/assets/icons
+          cp assets/icons/bosley-pwa-* dist/assets/icons/
           mkdir -p dist/src/trading
           cp src/trading/*.js dist/src/trading/
           node scripts/check-ui-parity.mjs index.html dist/index.html "iOS staging"

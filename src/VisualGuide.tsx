@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type CSSProperties } from "react";
 import { BookOpen, Brain, Search, Send, Sparkles, RotateCcw, HeartPulse, Globe2, Calculator, Cpu, Clock3, GitBranch, Network, Microscope, Lightbulb, ZoomIn, ZoomOut, Eye, ChevronLeft, ChevronRight, CircleHelp, CheckCircle2 } from "lucide-react";
 
 type Props = { onAsk?: (prompt: string) => void; answer?: string };
@@ -120,7 +120,7 @@ export default function VisualGuide({ onAsk, answer = "" }: Props) {
         <span><Eye size={14}/> Select a node to inspect it</span>
         <div><button type="button" aria-label="Zoom out" onClick={() => setZoom(v => Math.max(.75, +(v - .1).toFixed(2)))} disabled={zoom <= .75}><ZoomOut size={15}/></button><strong>{Math.round(zoom * 100)}%</strong><button type="button" aria-label="Zoom in" onClick={() => setZoom(v => Math.min(1.35, +(v + .1).toFixed(2)))} disabled={zoom >= 1.35}><ZoomIn size={15}/></button></div>
       </div>
-      <div className={`vg-engine-canvas vg-engine-${mode}`} style={{ "--vg-zoom": zoom } as React.CSSProperties}>
+      <div className={`vg-engine-canvas vg-engine-${mode}`} style={{ "--vg-zoom": zoom } as CSSProperties}>
         <svg className="vg-engine-svg" viewBox="0 0 380 270" role="group" aria-label={`${mode} diagram for ${lastTopic}`}>
           {positions.map((p, i) => {
             const next = positions[(i + 1) % positions.length];

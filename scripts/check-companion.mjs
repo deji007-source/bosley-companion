@@ -322,7 +322,7 @@ const contracts = [
   ["Laptop heartbeat uses authenticated edge function", '/functions/v1/remote-action'],
   ["Windows native external overlay action", "open_visual_guide"],
   ["Android system-level guide action", "native?.showGuide"],
-  ["Guide refuses website-only overlay", "The website cannot draw over other apps."],
+  ["Website and iOS in-app guide fallback", "function showInAppBosleyGuide(title,steps,reason)"],
   ["Android requests system overlay permission", "const granted=await native.requestPermission()"],
   ["Guide permission is not silently bypassed", "Allow Bosley to open a system-level visual guide over other apps"],
   ["Activity event history", 'id="activityevents"'],

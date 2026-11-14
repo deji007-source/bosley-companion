@@ -1232,6 +1232,10 @@ jobs:
                 throw new Error('App launching is currently supported by the Windows desktop build only.');
               }
               const apps = {
+                spotify: {
+                  label: 'Spotify',
+                  protocol: 'spotify:'
+                },
                 chrome: {
                   label: 'Google Chrome',
                   candidates: [
@@ -1261,17 +1265,21 @@ jobs:
                 }
               };
               const target = apps[appId];
-              if (!target) throw new Error('Supported Windows apps: Chrome, Edge, Notepad, Calculator, and File Explorer.');
-              const choice = await dialog.showMessageBox(panel, {
-                type: 'question',
-                buttons: ['Cancel', 'Open app'],
-                defaultId: 0,
-                cancelId: 0,
-                title: 'Bosley Companion',
-                message: 'Allow Bosley to launch ' + target.label + '?',
-                detail: 'Only this approved application can be launched. Bosley will not run arbitrary commands or paths.'
-              });
-              if (choice.response !== 1) return { ok: false, cancelled: true };
+              if (!target) throw new Error('Supported Windows apps: Spotify, Chrome, Edge, Notepad, Calculator, and File Explorer.');
+              // Spotify is opened through its registered URI handler; no shell command,
+              // executable path or user-controlled argument is accepted.
+              if (target.protocol) {
+                try {
+                  await shell.openExternal(target.protocol);
+                  return { ok: true, launched: appId, label: target.label, handler: 'system-protocol' };
+                } catch (error) {
+                  // If Spotify is not installed, open its official HTTPS web player instead.
+                  await shell.openExternal('https://open.spotify.com/');
+                  return { ok: true, launched: appId, label: target.label, handler: 'web-fallback', note: String(error?.message || error).slice(0, 160) };
+                }
+              }
+              // Launching a fixed, allowlisted utility is a low-risk action. The user's
+              // explicit Run click is the approval; do not show a second modal each time.
               const executable = target.candidates.find(candidate => candidate && fs.existsSync(candidate));
               if (!executable) throw new Error(target.label + ' was not found in its standard Windows installation folders.');
               const launchArgs = appId === 'chrome' ? ['--new-window', '--window-size=1100,760', '--window-position=70,60'] : [];

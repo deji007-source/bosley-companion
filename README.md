@@ -102,6 +102,12 @@ The Supabase project used by this app is the Jarvis project with ref `ywwfqisbml
 Edge Functions and database policies should be reviewed and tested before enabling additional automation. Keep user data scoped to the authenticated user, keep service-role credentials server-side, and require explicit user confirmation for sensitive actions.
 
 
+## iOS simulator build
+
+The **Build Bosley iOS App** workflow creates an unsigned iOS Simulator app from the same production `index.html` used by the website, runs shared regression checks, compiles with Xcode, and installs/launches the app in an iPhone simulator. Download the `Bosley-iOS-Simulator` artifact from the latest successful [iOS workflow run](https://github.com/deji007-source/bosley-companion/actions/workflows/build-ios.yml).
+
+**Important:** this artifact is for the iOS Simulator on a Mac with Xcode. It is not an installable iPhone IPA. Installing on a physical iPhone requires an Apple signing identity, provisioning, and a signed distribution build (for example, through TestFlight). iOS also does not permit the Android-style always-on overlay above unrelated apps; the iOS app provides the in-app companion experience instead.
+
 ## Android distribution and Play Protect
 
 The default GitHub Actions artifact is a **debug APK for development testing only**. A successful build does not mean Google Play Protect has reviewed or trusted it. Do not disable Play Protect to install an unfamiliar APK.

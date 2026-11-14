@@ -1920,6 +1920,8 @@ document.addEventListener("DOMContentLoaded",()=>{
    show(route.panel).catch(error=>console.error("Bosley page navigation failed:",route.panel,error));
    return;
   }
+  // The command-help button owns its own dialog action; do not swallow its click.
+  if(target.closest("#bosley-command-help"))return;
   // Ignore taps on menu padding, but route each menu item only once above.
   if(target.closest("#dock-launcher-menu")){
    event.preventDefault();event.stopImmediatePropagation();

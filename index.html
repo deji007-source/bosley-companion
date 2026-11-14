@@ -2885,7 +2885,7 @@ function createPlannerTaskFromCommand(raw){
  activityTasks.unshift(task);activityTasks=activityTasks.slice(0,60);saveActivity();renderActivity();activityEvent("Task drafted from voice/text: "+title,"task");syncPlannerTasks();
  const plannerButton=document.querySelector('#dock-launcher [data-open-view="activity"]');
  if(plannerButton)plannerButton.click();else{const toggle=$("#activitytoggle");if(toggle){toggle.hidden=false;toggle.click();}}
- addMsg("bosley","Added to your planner as a draft: "+title+"\nCategory: "+kind+" · Priority: "+priority+(due?" · Due: "+due:"")+"\nOpen Activity to review it, then tap Guide when you’re ready. I haven’t started the guide yet.");
+ addMsg("bosley","Added to your planner as a draft: "+title+"\nCategory: "+kind+" · Priority: "+priority+(due?" · Due: "+due:"")+"\nOpen Activity to review it, then tap Visual guide when you’re ready. I haven’t started the guide yet.");
  return true;
 }
 const BOSLEY_SKILLS_KEY="bosley_skills_v1";

@@ -1093,6 +1093,9 @@ assert.ok(html.includes("syncDatasetSourceChoice") && html.includes('el("td-stoo
 
 assert.ok(html.includes('rel="manifest" href="/manifest.json"') && html.includes('apple-mobile-web-app-capable') && html.includes('navigator.serviceWorker.register("/service-worker.js"'), "Web app must expose iOS PWA metadata and register its offline service worker");
 assert.ok(html.includes('params.delete("email-confirmed")') && html.includes("Consume the one-time confirmation route") && !html.includes('window.location.pathname+"?email-confirmed=1"'), "Email confirmation callback must consume its URL marker so a later sign-in reload cannot immediately sign the user out.");
+assert.ok(html.includes('<body class="auth-required">') && html.includes('id="auth-gate" role="dialog"') && !html.includes('id="auth-gate" hidden'), "First-time visitors must see sign-in/sign-up immediately.");
+assert.ok(html.includes("body.auth-required #root{visibility:hidden}") && html.includes("body.auth-required #bosley-splash{display:none!important}"), "Unauthenticated visitors must not see the companion shell or splash.");
+assert.ok(html.includes('id="workspace-signin"') && !html.includes('id="auth"'), "Jarvis Workspace must use the canonical sign-in gate, not a duplicate sign-in form.");
 const manifest = JSON.parse(readFileSync(new URL("../public/manifest.json", import.meta.url), "utf8"));
 assert.equal(manifest.name, "Bosley Companion");
 assert.equal(manifest.display, "standalone");

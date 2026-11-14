@@ -9,6 +9,7 @@ on:
       - 'manifest.json'
       - 'service-worker.js'
       - 'assets/icons/**'
+      - 'public/**'
       - 'src/**'
       - 'package.json'
       - 'vite.config.ts'

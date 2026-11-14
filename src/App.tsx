@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import VisualGuide from "./VisualGuide";
 import { createClient, type User } from "@supabase/supabase-js";
-import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut, ListTodo, RefreshCw, RotateCcw, Ban, ChevronLeft, CalendarClock, Pause, Play, Trash2, BookOpen } from "lucide-react";
+import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut, ListTodo, RefreshCw, RotateCcw, Ban, ChevronLeft, CalendarClock, Pause, Play, Trash2, BookOpen, Bot, PlusCircle } from "lucide-react";
 
 const SUPABASE_URL = "https://ywwfqisbmlkjcfoqehph.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwicmVmIjoieXd3ZnFpc2JtbGtqY2ZvcWVwaHAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3OTU4MDYwOSwiZXhwIjoyMDk1MTU2NjA5fQ.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
@@ -19,7 +19,13 @@ type SpeechWindow = Window & { SpeechRecognition?: RecognitionConstructor; webki
 
 type BosleySkill = { id: string; title: string; summary: string; capabilities: string[]; instructions: string };
 
+type BosleyClicky = { id: string; name: string; emoji: string; focus: string };
 type BosleyRoutine = { id: string; name: string; action_type: "open_app" | "open_url"; target: string; recurrence: "once" | "daily" | "weekly"; timezone: string; scheduled_time: string; weekday: number | null; next_run_at: string; enabled: boolean; last_run_at: string | null };
+const DEFAULT_CLICKYS: BosleyClicky[] = [
+  { id: "research-scout", name: "Research Scout", emoji: "🔎", focus: "Research topics, compare trustworthy sources and summarise findings with links." },
+  { id: "study-coach", name: "Study Coach", emoji: "📚", focus: "Explain school subjects step by step, create practice and check understanding." },
+  { id: "project-planner", name: "Project Planner", emoji: "🧭", focus: "Break projects into milestones, organise tasks and track practical next steps." }
+];
 const ROUTINE_APPS = ["Spotify", "Chrome", "Edge", "Notepad", "Calculator", "Explorer"];
 const ROUTINE_URLS = ["https://spotify.com", "https://youtube.com", "https://gmail.com", "https://drive.google.com", "https://github.com", "https://chatgpt.com", "https://notion.so"];
 function localRoutineInstant(dateText: string, timeText: string, timezone: string): string {
@@ -85,10 +91,15 @@ export default function App() {
   const [taskBusy, setTaskBusy] = useState(false);
   const [taskNotice, setTaskNotice] = useState("");
   const [taskInstruction, setTaskInstruction] = useState("");
-  const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "skills" | "routines" | "visual-guide">("tasks");
+  const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "agents" | "skills" | "routines" | "visual-guide">("tasks");
   const [enabledSkills, setEnabledSkills] = useState<string[]>([]);
   const [skillBusy, setSkillBusy] = useState(false);
   const [routines, setRoutines] = useState<BosleyRoutine[]>([]);
+  const [clickys, setClickys] = useState<BosleyClicky[]>(DEFAULT_CLICKYS);
+  const [activeClickyId, setActiveClickyId] = useState("research-scout");
+  const [clickyName, setClickyName] = useState("");
+  const [clickyFocus, setClickyFocus] = useState("");
+  const [clickyBusy, setClickyBusy] = useState(false);
   const [routineName, setRoutineName] = useState("");
   const [routineTarget, setRoutineTarget] = useState("Spotify");
   const [routineRecurrence, setRoutineRecurrence] = useState<"once" | "daily" | "weekly">("daily");
@@ -139,6 +150,14 @@ export default function App() {
     });
     return () => { alive = false; listener.subscription.unsubscribe(); };
   }, []);
+
+  useEffect(() => {
+    const saved = user?.user_metadata?.bosley_clickys;
+    const restored = Array.isArray(saved) ? saved.filter((item: unknown): item is BosleyClicky => !!item && typeof item === "object" && typeof (item as BosleyClicky).id === "string" && typeof (item as BosleyClicky).name === "string" && typeof (item as BosleyClicky).focus === "string").slice(0, 8) : [];
+    const next = restored.length ? restored : DEFAULT_CLICKYS;
+    setClickys(next);
+    setActiveClickyId(current => next.some(item => item.id === current) ? current : next[0].id);
+  }, [user?.id]);
 
   useEffect(() => {
     const saved = user?.user_metadata?.bosley_enabled_skills;
@@ -341,10 +360,31 @@ export default function App() {
       setTaskNotice(error instanceof Error ? error.message : "Could not update skill settings.");
     } finally { setSkillBusy(false); }
   }
+  async function saveClicky(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user || clickyBusy) return;
+    const name = clickyName.trim().slice(0, 32);
+    const focus = clickyFocus.trim().slice(0, 180);
+    if (!name || !focus) { setTaskNotice("Give your agent a name and a clear focus."); return; }
+    if (clickys.length >= 8) { setTaskNotice("You can keep up to 8 personal agents in this workspace."); return; }
+    setClickyBusy(true); setTaskNotice("");
+    const next = [...clickys, { id: "clicky-" + crypto.randomUUID(), name, emoji: "✨", focus }];
+    try {
+      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, bosley_clickys: next } });
+      if (error) throw error;
+      if (data.user) { userRef.current = data.user; setUser(data.user); }
+      setClickys(next); setActiveClickyId(next[next.length - 1].id); setClickyName(""); setClickyFocus("");
+      setTaskNotice(name + " added. Choose this agent when delegating a task.");
+    } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not save this agent."); }
+    finally { setClickyBusy(false); }
+  }
   async function queueAgentTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const instruction = taskInstruction.trim();
-    if (!instruction || instruction.length > 2000 || taskBusy) return;
+    const rawInstruction = taskInstruction.trim();
+    if (!rawInstruction || rawInstruction.length > 1800 || taskBusy) return;
+    const assignedClicky = clickys.find(item => item.id === activeClickyId) ?? clickys[0];
+    const instruction = assignedClicky ? "[Bosley agent: " + assignedClicky.name + ". Focus: " + assignedClicky.focus + "]\\n" + rawInstruction : rawInstruction;
+    if (instruction.length > 2000) { setTaskNotice("Shorten the task slightly so the selected agent's instructions fit."); return; }
     setTaskBusy(true); setTaskNotice("");
     try {
       const { data } = await supabase.auth.getSession();
@@ -585,16 +625,22 @@ export default function App() {
       <header className="task-workspace-header"><button className="icon-button task-workspace-mark" aria-label="Bosley workspace"><ListTodo size={17}/></button><div><strong>AGENT WORKSPACE</strong><span>Tasks, skills, routines and visual learning</span></div><span className="workspace-live-indicator">● WORKSPACE</span><button className="icon-button" onClick={() => void loadTasks()} disabled={taskBusy} aria-label="Refresh tasks"><RefreshCw size={15}/></button><button className="icon-button" onClick={() => { setTaskPanelOpen(false); setSelectedTask(null); }} aria-label="Back to chat"><ChevronLeft size={17}/></button><button className="icon-button" onClick={() => setTaskPanelOpen(false)} aria-label="Close task workspace"><X size={16}/></button></header>
       <nav className="workspace-tabs workspace-taskbar" aria-label="Agent workspace sections">
         <button type="button" className={workspaceTab === "tasks" ? "active" : ""} onClick={() => setWorkspaceTab("tasks")}><ListTodo size={13}/> Tasks</button>
+        <button type="button" className={workspaceTab === "agents" ? "active" : ""} onClick={() => setWorkspaceTab("agents")}><Bot size={13}/> Agents <span>{clickys.length}</span></button>
         <button type="button" className={workspaceTab === "skills" ? "active" : ""} onClick={() => setWorkspaceTab("skills")}><Command size={13}/> Skills Library <span>{enabledSkills.length} active</span></button>
         <button type="button" className={workspaceTab === "routines" ? "active" : ""} onClick={() => { setWorkspaceTab("routines"); void loadRoutines(); }}><CalendarClock size={13}/> Routines <span>{routines.filter(item => item.enabled).length} active</span></button>
         <button type="button" className={workspaceTab === "visual-guide" ? "active" : ""} onClick={() => setWorkspaceTab("visual-guide")}><BookOpen size={13}/> Visual Guide</button>
       </nav>
       {taskNotice && <div className="task-notice" role="status">{taskNotice}</div>}
+      {workspaceTab === "agents" && <div className="clicky-library">
+        <div className="clicky-intro"><span className="clicky-kicker">YOUR BOSLEY TEAM</span><h3>Meet your agents</h3><p>Create focused assistants with their own name and job. Choose one when you delegate work; its role travels with the task.</p></div>
+        <div className="clicky-grid">{clickys.map(agent => <button type="button" key={agent.id} className={activeClickyId === agent.id ? "clicky-card active" : "clicky-card"} onClick={() => setActiveClickyId(agent.id)}><span className="clicky-avatar">{agent.emoji}</span><strong>{agent.name}</strong><small>{agent.focus}</small><span className="clicky-select">{activeClickyId === agent.id ? "SELECTED" : "SELECT AGENT"}</span></button>)}</div>
+        <form className="clicky-create" onSubmit={saveClicky}><label>CREATE A NEW AGENT</label><input value={clickyName} onChange={event => setClickyName(event.target.value)} maxLength={32} placeholder="Agent name e.g. Design Helper" required/><textarea value={clickyFocus} onChange={event => setClickyFocus(event.target.value)} maxLength={180} rows={2} placeholder="What should this agent focus on?" required/><button type="submit" disabled={clickyBusy || clickys.length >= 8}><PlusCircle size={14}/>{clickyBusy ? "Saving…" : "Add to my team"}</button><small>Profiles are private to your account. Agents use Bosley's existing approved task and device permissions.</small></form>
+      </div>}
       {workspaceTab === "tasks" && <>
       <form className="task-compose" onSubmit={queueAgentTask}>
         <label htmlFor="agent-task-instruction">DELEGATE A TASK</label>
-        <div className="task-compose-row"><input id="agent-task-instruction" value={taskInstruction} onChange={event => setTaskInstruction(event.target.value)} maxLength={2000} placeholder="Describe a task for your connected Windows agent…" disabled={taskBusy}/><button type="submit" disabled={taskBusy || !taskInstruction.trim()}><Send size={13}/>{taskBusy ? "Queueing…" : "Delegate"}</button></div>
-        <small>Tasks are private to your account. They remain queued while your Windows agent is offline.</small>
+        <div className="task-compose-row"><select aria-label="Choose Bosley agent" value={activeClickyId} onChange={event => setActiveClickyId(event.target.value)}>{clickys.map(agent => <option key={agent.id} value={agent.id}>{agent.emoji} {agent.name}</option>)}</select><input id="agent-task-instruction" value={taskInstruction} onChange={event => setTaskInstruction(event.target.value)} maxLength={1800} placeholder="Describe a task for your connected Windows agent…" disabled={taskBusy}/><button type="submit" disabled={taskBusy || !taskInstruction.trim()}><Send size={13}/>{taskBusy ? "Queueing…" : "Delegate"}</button></div>
+        <small>Assigned agent: {clickys.find(item => item.id === activeClickyId)?.name ?? "Bosley"}. Tasks are private and remain queued while your Windows agent is offline.</small>
       </form>
       <div className="task-workspace-body">
         <div className="task-list-column"><div className="task-section-label">RECENT TASKS <span>{tasks.length}</span></div>

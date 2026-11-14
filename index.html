@@ -3333,11 +3333,11 @@ if(screenButton){
  }else screenButton.hidden=true;
 }
 if(screenButton)screenButton.onclick=async()=>{
- if(screenButton.disabled)return;
+ if(screenButton.disabled)return {ok:false,reason:"busy"};
  if(androidCapture()&&screenButton.dataset.nativeCaptureConfirmed!=="true"){
   try{await window.Capacitor.Plugins.BosleyOverlay.showScreenCapturePrompt();note("A small OK button is now floating above your apps. Switch to the screen you want, then tap OK.");}
   catch(error){note("Could not show the capture button: "+String(error?.message||error).slice(0,180));}
-  return;
+  return {ok:false,permissionPending:true};
  }
  delete screenButton.dataset.nativeCaptureConfirmed;
  screenButton.disabled=true;
@@ -3346,21 +3346,23 @@ if(screenButton)screenButton.onclick=async()=>{
   if(androidCapture()){
    note("Android will ask you to approve screen capture. Choose Start now to continue.");
    result=await window.Capacitor.Plugins.BosleyOverlay.requestScreenCapture();
-   if(result?.cancelled){note("Screen capture cancelled.");return}
+   if(result?.cancelled){note("Screen capture cancelled.");return {ok:false,cancelled:true}}
   }else{
    const desktop=window.BosleyDesktop;
    if(!desktop||typeof desktop.request!=="function")throw Error("Screen capture is available in the installed Android and Windows apps, not in a regular browser tab.");
    result=await desktop.request({action:"capture_screen",payload:{}});
-   if(result?.cancelled)return;
+   if(result?.cancelled)return {ok:false,cancelled:true};
   }
   if(result?.ok!==true||typeof result.dataUrl!=="string"||!result.dataUrl.startsWith("data:image/"))throw Error("The device did not return a valid screenshot.");
   pendingImageData=await normalizeCapturedImage(result.dataUrl);
   $("#imagepreview").src=pendingImageData;
   $("#imageattachment").hidden=false;
   note("Screen captured and attached. Review it; nothing is sent until you press Send.");
- }catch(error){note("Screen capture failed: "+String(error?.message||error).slice(0,220))}
+  return {ok:true};
+ }catch(error){const message=String(error?.message||error).slice(0,220);note("Screen capture failed: "+message);return {ok:false,error:message}}
  finally{screenButton.disabled=false}
 };
+window.BosleyCaptureScreenShortcut=()=>screenButton?.onclick?.();
 $("#removeimage").onclick=clearImageAttachment;
 $("#camera-input").addEventListener("change",async e=>{
  const file=e.target.files?.[0];
@@ -5069,6 +5071,7 @@ body.desktop-floating-view #side-dock .dock-body video{max-width:100%}
   if(!window.__bosleyHeyClickyShortcutsBound){
    window.__bosleyHeyClickyShortcutsBound=true;
    document.addEventListener("keydown",event=>{
+    if(window.BosleyDesktop)return; // Windows uses Electron global shortcuts so capture also works over other apps.
     if(!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
     const key=String(event.key||"").toLowerCase();
     if(key!=="v"&&key!=="t")return;

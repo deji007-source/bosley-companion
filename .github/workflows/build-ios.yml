@@ -8,7 +8,7 @@ on:
   push:
     paths:
       - 'index.html'
-      - 'src/trading/**'
+      - 'src/**'
       - 'package.json'
       - 'vite.config.ts'
       - 'capacitor.config.ts'
@@ -41,6 +41,10 @@ jobs:
           npm run test:companion
           npm run test:strategy-library
           npm run test:access-lock
+          npm run test:agent-workspace
+          npm run test:agent-skills
+          npm run test:agent-voice
+          npm run test:agent-routines
           node --check src/trading/strategy-library.js
           node --check src/trading/strategy-audit.js
           node --check src/trading/strategy-parser.js
@@ -68,7 +72,7 @@ jobs:
       - name: Build iOS Simulator app
         run: |
           xcodebuild \
-            -workspace ios/App/App.xcworkspace \
+            -project ios/App/App.xcodeproj \
             -scheme App \
             -sdk iphonesimulator \
             -configuration Debug \

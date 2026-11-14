@@ -72,6 +72,7 @@ assert.ok(html.includes('id="bosley-playful-ui"') && html.includes('--bosley-cya
 assert.ok(html.includes('return ["spotify","chrome","google chrome"') && html.includes('requestedApp==="spotify"'), "HeyClicky low-risk Spotify launch must be allowlisted across native and browser surfaces");
 assert.ok(html.includes('const safeLaunchOnly=wf.steps.every') && html.includes('Low-risk launch ran without a per-run prompt'), "Allowlisted single-purpose app and website launch workflows must run without repeated confirmation");
 assert.ok(html.includes('id="quick-open-spotify"') && html.includes('name:"Open Spotify"'), "Automation workspace must provide a one-click saved Spotify launch workflow");
+assert.ok(html.includes('if(target.closest("#bosley-command-help"))return;'), "Commands & shortcuts menu item must receive its click instead of being swallowed by the workspace router");
 
 
 assert.ok(!html.includes("body.panel-open:not(.desktop-panel) #dock-launcher{display:none!important}"), "Launcher must remain available while workspace panel is open");

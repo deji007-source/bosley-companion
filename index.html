@@ -2383,12 +2383,13 @@ function renderActivity(){
   const review=notes.length?'<p>'+notes.map(esc).join(" · ")+'</p>':'<p>No deadline or inactivity flags found in your tracked tasks.</p>';
   insight.innerHTML='<strong>Proactive focus</strong>'+focus+review+'<small class="mute">Based only on tasks you chose to track. Bosley will not reschedule, complete or send anything automatically.</small>';
  }
- te.innerHTML=activityTasks.length?activityTasks.map(x=>'<article class="item"><main><strong>'+esc(x.title)+'</strong><p class="status '+(x.status==="done"?"done":"pending")+'">'+(x.status==="done"?"COMPLETED":"IN PROGRESS · MANUAL TRACKING")+'</p><p class="status">'+esc(x.kind||"Daily")+' · '+esc(x.priority||"Normal")+' priority'+(x.project?' · '+esc(x.project):'')+(x.due?' · Due '+esc(x.due):'')+'</p><small>'+esc(new Date(x.createdAt).toLocaleString())+'</small></main><button type="button" data-activity-guide="'+esc(x.id)+'">Guide</button><button type="button" data-activity-done="'+esc(x.id)+'">'+(x.status==="done"?"Reopen":"Mark done")+'</button><button type="button" data-activity-delete="'+esc(x.id)+'" aria-label="Delete task">×</button></article>').join(""):'<p class="mute">No tracked tasks yet. Add one above to keep the work visible.</p>';
+ te.innerHTML=activityTasks.length?activityTasks.map(x=>'<article class="item"><main><strong>'+esc(x.title)+'</strong><p class="status '+(x.status==="done"?"done":"pending")+'">'+(x.status==="done"?"COMPLETED":"IN PROGRESS · MANUAL TRACKING")+'</p><p class="status">'+esc(x.kind||"Daily")+' · '+esc(x.priority||"Normal")+' priority'+(x.project?' · '+esc(x.project):'')+(x.due?' · Due '+esc(x.due):'')+'</p><small>'+esc(new Date(x.createdAt).toLocaleString())+'</small></main><button type="button" data-activity-guide="'+esc(x.id)+'">Visual guide</button><button type="button" data-activity-done="'+esc(x.id)+'">'+(x.status==="done"?"Reopen":"Mark done")+'</button><button type="button" data-activity-delete="'+esc(x.id)+'" aria-label="Delete task">×</button></article>').join(""):'<p class="mute">No tracked tasks yet. Add one above to keep the work visible.</p>';
  ee.innerHTML=activityEvents.length?activityEvents.map(x=>'<article class="item"><main><strong>'+esc(x.message)+'</strong><small>'+esc(new Date(x.at).toLocaleString())+'</small></main><span class="status">'+esc(x.status.toUpperCase())+'</span></article>').join(""):'<p class="mute">Bosley events will appear here as you use the assistant.</p>';
 }
 $("#activityform").addEventListener("submit",e=>{e.preventDefault();const input=$("#activitytitle"),title=input.value.trim();if(!title)return;activityTasks.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),title:title,status:"active",kind:$("#activitykind").value,priority:$("#activitypriority").value,project:$("#activityproject").value.trim().slice(0,80),due:$("#activitydue").value,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});activityTasks=activityTasks.slice(0,60);input.value="";saveActivity();activityEvent("Task added: "+title,"task");syncPlannerTasks().then(()=>{if(contextEngineEnabled())return saveHandoffSnapshot()}).catch(error=>console.warn("Planner handoff save failed",error))});
 let bosleyGuideActive=false,bosleyGuideTitle="";
 async function stopBosleyGuide(){
+ document.getElementById("bosley-inapp-guide")?.remove();
  const desktop=bridge(),native=window.Capacitor?.Plugins?.BosleyOverlay;
  try{
   if(desktop)await desktop.request({action:"stop_visual_guide",payload:{}});
@@ -2408,6 +2409,24 @@ async function checkBosleyGuideTarget(){
   const message=result?.found===false?"I couldn’t confidently identify the target. Keep the target app visible and try a more specific instruction.":result?.target?"I found a possible target: "+result.target+". Check the highlighted location before continuing.":"I’ve asked the visual guide to locate the relevant control. Check its status on screen.";
   addMsg("bosley",message);activityEvent("Visual target check requested: "+bosleyGuideTitle,"guide");
  }catch(error){const message="Target check unavailable: "+String(error?.message||error);addMsg("bosley",message);activityEvent(message,"warning")}
+}
+function showInAppBosleyGuide(title,steps,reason){
+ document.getElementById("bosley-inapp-guide")?.remove();
+ const panel=document.createElement("section");panel.id="bosley-inapp-guide";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
+ panel.style.cssText="position:fixed;z-index:2147483646;inset:0;display:grid;place-items:center;padding:14px;background:#000d;color:#f4f7f9;font:12px/1.5 system-ui,sans-serif";
+ const card=document.createElement("div");card.style.cssText="width:min(560px,100%);max-height:84dvh;overflow:auto;padding:17px;border:1px solid #40515d;border-radius:16px;background:#080d12;box-shadow:0 22px 90px #000d";
+ const heading=document.createElement("h2");heading.textContent="Bosley visual guide";heading.style.margin="0";
+ const sub=document.createElement("p");sub.textContent=String(title||"Guided task");sub.style.cssText="color:#a6b6c1;font-size:11px;margin:6px 0 14px";
+ const status=document.createElement("p");status.textContent=reason||"This walkthrough stays inside Bosley and does not inspect other apps or click controls.";status.style.cssText="padding:10px;border:1px solid #34404a;border-radius:9px;color:#aebbc4;font-size:10px";
+ const list=document.createElement("ol");list.style.cssText="padding-left:24px;display:grid;gap:9px";
+ const items=(steps||[]).map(x=>String(x).replace(/^GOAL:\\s*/,"").replace(/^\\d+\\.\\s*/,"")).filter(Boolean);let current=0;
+ const progress=document.createElement("p");progress.style.color="#9bdcf0";
+ const controls=document.createElement("div");controls.style.cssText="display:flex;justify-content:space-between;gap:8px;margin-top:12px";
+ const prev=document.createElement("button"),next=document.createElement("button"),close=document.createElement("button");
+ for(const b of [prev,next,close])b.style.cssText="padding:9px 12px;border:1px solid #40515d;border-radius:9px;background:#111b22;color:#fff";
+ prev.textContent="Previous";next.textContent="Next step";close.textContent="Close";
+ const render=()=>{list.replaceChildren();items.forEach((item,i)=>{const li=document.createElement("li");li.textContent=item;li.style.cssText="padding:10px;border:1px solid "+(i===current?"#79bfd2":"#202c34")+";border-radius:9px;background:"+(i===current?"#10202a":"#0b1218")+";color:"+(i===current?"#f1f8fb":"#9eabb4");list.appendChild(li)});progress.textContent="STEP "+(current+1)+" OF "+items.length;prev.disabled=current===0;next.textContent=current===items.length-1?"Finish":"Next step"};
+ prev.onclick=()=>{if(current>0){current--;render()}};next.onclick=()=>{if(current<items.length-1){current++;render()}else panel.remove()};close.onclick=()=>panel.remove();controls.append(prev,next,close);card.append(heading,sub,progress,list,status,controls);panel.append(card);document.body.append(panel);render();close.focus();
 }
 async function startBosleyGuide(task){
  if(!task||task.status==="done")return;
@@ -2432,10 +2451,10 @@ async function startBosleyGuide(task){
   const accessToken=sessionResult?.data?.session?.access_token||"";
   if(desktop)result=await desktop.request({action:"open_visual_guide",payload:{instruction,taskTitle:title,accessToken}});
   else if(native?.showGuide){const permission=await native.status();if(!permission?.granted){const granted=await native.requestPermission();if(!granted?.granted)throw new Error("Android display-over-other-apps permission was not granted.");}result=await native.showGuide({payload:{instruction,taskTitle:title}});}
-  else throw new Error("A native Windows or Android build with overlay permission is required. The website cannot draw over other apps.");
+  else{showInAppBosleyGuide(title,steps,"This build cannot draw over other apps. The guided steps are shown here in Bosley instead.");activityEvent("In-app visual guide opened: "+title,"guide");return;}
   if(result?.ok!==true)throw new Error(result?.error||"Native overlay did not confirm it opened");
   bosleyGuideActive=true;activityEvent("System visual guide opened: "+task.title,"guide");
- }catch(error){activityEvent("Visual guide unavailable: "+String(error?.message||error).slice(0,150),"error");window.alert("Bosley could not open the system visual guide. "+String(error?.message||error))}
+ }catch(error){const reason="System overlay unavailable: "+String(error?.message||error).slice(0,180)+". Bosley has opened the in-app walkthrough instead.";showInAppBosleyGuide(title,steps,reason);activityEvent("In-app visual guide fallback opened: "+title,"guide")}
 }
 $("#activitytasks").addEventListener("click",e=>{const guide=e.target.closest("[data-activity-guide]");if(guide){startBosleyGuide(activityTasks.find(x=>x.id===guide.dataset.activityGuide));return}});
 $("#activitytasks").addEventListener("click",e=>{const done=e.target.closest("[data-activity-done]"),del=e.target.closest("[data-activity-delete]");if(done){const task=activityTasks.find(x=>x.id===done.dataset.activityDone);if(!task)return;task.status=task.status==="done"?"active":"done";task.updatedAt=new Date().toISOString();saveActivity();activityEvent((task.status==="done"?"Task completed: ":"Task reopened: ")+task.title,task.status);renderActivity();syncPlannerTasks()}if(del){const task=activityTasks.find(x=>x.id===del.dataset.activityDelete);activityTasks=activityTasks.filter(x=>x.id!==del.dataset.activityDelete);saveActivity();deleteSyncedPlannerTask(del.dataset.activityDelete,task);if(task)activityEvent("Task removed: "+task.title,"task");renderActivity()}});

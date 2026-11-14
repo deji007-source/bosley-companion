@@ -80,10 +80,10 @@ export default function VisualGuide({ onAsk, answer = "" }: Props) {
   function previousStage() { setSelected(index => Math.max(0, index - 1)); setAnswerRevealed(false); }
 
   const positions = visibleStages.map((_, i) => {
-    if (mode === "process") return { x: 90 + (i % 2) * 220, y: 55 + i * 92 };
-    if (mode === "timeline") return { x: 80 + i * (340 / Math.max(1, visibleStages.length - 1)), y: i % 2 ? 145 : 75 };
-    if (mode === "compare") return { x: i % 2 ? 300 : 100, y: 55 + Math.floor(i / 2) * 105 };
-    if (mode === "system") { const angle = (Math.PI * 2 * i) / Math.max(1, visibleStages.length); return { x: 190 + Math.cos(angle) * 125, y: 135 + Math.sin(angle) * 95 }; }
+    if (mode === "process") return { x: 90 + (i % 2) * 200, y: 40 + Math.floor(i / 2) * (180 / Math.max(1, Math.ceil(visibleStages.length / 2) - 1)) };
+    if (mode === "timeline") return { x: 40 + i * (300 / Math.max(1, visibleStages.length - 1)), y: i % 2 ? 165 : 82 };
+    if (mode === "compare") return { x: i % 2 ? 280 : 100, y: 55 + Math.floor(i / 2) * (150 / Math.max(1, Math.ceil(visibleStages.length / 2) - 1)) };
+    if (mode === "system") { const angle = (Math.PI * 2 * i) / Math.max(1, visibleStages.length); return { x: 190 + Math.cos(angle) * 112, y: 135 + Math.sin(angle) * 72 }; }
     const angle = (Math.PI * 2 * i) / Math.max(1, visibleStages.length);
     return { x: 190 + Math.cos(angle) * 125, y: 135 + Math.sin(angle) * 95 };
   });

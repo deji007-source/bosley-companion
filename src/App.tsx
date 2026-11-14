@@ -109,8 +109,11 @@ export default function App() {
   useEffect(() => {
     let alive = true;
     const params = new URLSearchParams(window.location.search);
-    const confirmationReturn = params.get("auth") === "confirmed";
-    if (params.get("auth") === "error") setConfirmationError("That confirmation link could not be verified. It may have expired or already been used.");
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const confirmationReturn = params.get("auth") === "confirmed" || hashParams.has("access_token");
+    const callbackError = params.get("error_description") || hashParams.get("error_description") || params.get("error") || hashParams.get("error");
+    if (params.get("auth") === "error" || callbackError) setConfirmationError(callbackError || "That confirmation link could not be verified. It may have expired or already been used.");
+    if (params.get("auth") === "recovery" || hashParams.get("type") === "recovery") setConfirmationError("Password recovery was opened. Return to sign in or request a new reset link.");
     supabase.auth.getSession().then(async ({ data }) => {
       if (!alive) return;
       if (confirmationReturn && data.session?.user?.email_confirmed_at) {
@@ -418,10 +421,16 @@ export default function App() {
     setAuthBusy(true); setNotice("");
     try {
       if (authMode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: window.location.origin + "/?auth=confirmed" } });
+        const redirectTo = new URL("/", window.location.origin);
+        redirectTo.searchParams.set("auth", "confirmed");
+        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: redirectTo.toString() } });
         if (error) throw error;
-        if (!data.session) setNotice("Account created. Check your email and click the confirmation link. Bosley will then take you to the login page.");
-        else setNotice("Account created and signed in.");
+        if (!data.session || !data.user?.email_confirmed_at) {
+          if (data.session) await supabase.auth.signOut();
+          setAuthMode("signin");
+          setPassword("");
+          setNotice("Account created. Check your inbox (and spam folder) and open the verification link. Once verified, return here and sign in.");
+        } else setNotice("Your email is already verified. You are signed in.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
@@ -553,15 +562,20 @@ export default function App() {
     {!user && <form className="auth-form" onSubmit={handleAuth}>
       <div className="auth-heading">{authMode === "signin" ? "Welcome back" : "Create your workspace account"}</div>
       <input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email address" aria-label="Email address" required />
-      <input type="password" autoComplete={authMode === "signin" ? "current-password" : "new-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} placeholder="Password (at least 8 characters)" aria-label="Password" required />
+      <input type="password" autoComplete={authMode === "signin" ? "current-password" : "new-password"} minLength={authMode === "signup" ? 8 : undefined} value={password} onChange={event => setPassword(event.target.value)} placeholder={authMode === "signup" ? "Create a password (8+ characters)" : "Password"} aria-label="Password" required />
       <button type="submit" className="auth-submit" disabled={authBusy}>{authBusy ? "PLEASE WAIT…" : <><LogIn size={14}/>{authMode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}</>}</button>
-      {authMode === "signin" && <button type="button" className="auth-switch" onClick={async () => {
-        if (!email.trim()) { setNotice("Enter your email address first so we can resend the confirmation link."); return; }
+      {authMode === "signin" && <button type="button" className="auth-switch" disabled={authBusy} onClick={async () => {
+        if (!email.trim()) { setNotice("Enter your email address first so we can resend the verification link."); return; }
         setAuthBusy(true); setNotice("");
-        const { error } = await supabase.auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: window.location.origin + "/?auth=confirmed" } });
-        setNotice(error ? error.message : "A new confirmation email has been sent. Check your inbox.");
-        setAuthBusy(false);
-      }}>Resend confirmation email</button>}
+        try {
+          const redirectTo = new URL("/", window.location.origin);
+          redirectTo.searchParams.set("auth", "confirmed");
+          const { error } = await supabase.auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: redirectTo.toString() } });
+          if (error) throw error;
+          setNotice("A fresh verification email has been sent. Check your inbox and spam folder.");
+        } catch (error) { setNotice(error instanceof Error ? error.message : "Could not resend the verification email."); }
+        finally { setAuthBusy(false); }
+      }}>Resend verification email</button>}
       <button type="button" className="auth-switch" onClick={() => { setAuthMode(current => current === "signin" ? "signup" : "signin"); setNotice(""); }}>{authMode === "signin" ? "Need an account? Create one" : "Already have an account? Sign in"}</button>
     </form>}
     {user && <div className="account-strip"><span>{user.email ?? "Signed in"}</span><button onClick={async () => { await supabase.auth.signOut(); setNotice("Signed out."); }} aria-label="Sign out"><LogOut size={13}/> Sign out</button></div>}

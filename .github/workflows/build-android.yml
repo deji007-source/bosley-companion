@@ -61,18 +61,13 @@ jobs:
           node --check src/trading/backtest-engine.js
           npm run build
 
-      - name: Generate Bosley PWA icons
-        run: |
-          python3 -m pip install Pillow
-          python3 scripts/generate-app-icons.py
-
       - name: Use the shared production Bosley interface for Android
         run: |
           test -s index.html
           cp index.html dist/index.html
           cp manifest.json service-worker.js dist/
           mkdir -p dist/assets/icons
-          cp assets/icons/bosley-pwa-* dist/assets/icons/
+          cp public/assets/icons/bosley-pwa-* dist/assets/icons/
           mkdir -p dist/src/trading
           cp src/trading/*.js dist/src/trading/
           node scripts/check-ui-parity.mjs index.html dist/index.html "Android staging"
@@ -85,6 +80,8 @@ jobs:
       - name: Generate Android project
         run: |
           if [ ! -f android/app/src/main/AndroidManifest.xml ]; then npx cap add android; fi
+          python3 -m pip install Pillow
+          python3 scripts/generate-app-icons.py
           npx cap sync android
           python3 - <<'PY'
           from pathlib import Path

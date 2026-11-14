@@ -113,6 +113,10 @@ assert.ok(androidInstaller.includes('"mailto".equalsIgnoreCase(scheme)') && andr
 assert.ok(appScript.includes('window.Capacitor?.Plugins?.BosleyOverlay') && appScript.includes('native?.openExternalUrl'), "Android communication handoffs must use the native external-app bridge");
 
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");
+assert.ok(windowsWorkflow.includes("spotify:") && windowsWorkflow.includes("shell.openExternal(target.protocol)"), "Windows must open Spotify through its registered URI handler with an official web fallback");
+assert.ok(!windowsWorkflow.includes("buttons: ['Cancel', 'Open app']"), "A user-initiated low-risk app launch must not trigger a second confirmation dialog");
+assert.ok(windowsWorkflow.includes("Only this approved application can be launched.")===false, "Windows app launches must not retain the obsolete repeated permission modal");
+
 const gateway = readText(new URL("../supabase/functions/agent-gateway/index.ts", import.meta.url), "utf8");
 assert.ok(appScript.includes('connectButton.disabled=false'), "Agents Connect buttons must remain available so server configuration errors can be shown and corrected");
 assert.ok(!appScript.includes("disabled=!credentialStoreReady"), "Agents UI must not silently disable provider connection when credential-store readiness is false");

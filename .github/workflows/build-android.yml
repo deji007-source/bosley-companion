@@ -83,7 +83,7 @@ jobs:
 
       - name: Generate Android project
         run: |
-          npx cap add android
+          if [ ! -f android/app/src/main/AndroidManifest.xml ]; then npx cap add android; fi
           npx cap sync android
           python3 - <<'PY'
           from pathlib import Path

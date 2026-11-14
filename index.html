@@ -967,6 +967,18 @@ body.desktop-floating-view #side-dock .dock-body #automation-skill-options{
  body.desktop-floating-view #side-dock .dock-body .bue-editor{min-height:200px!important}
 }
 
+
+/* Auth gate refinements: signup, login and verification recovery */
+#auth-gate .gate-card{background:radial-gradient(ellipse at 50% 0%,#17212a 0%,#0d1116 48%,#080a0d 100%);border-color:#34404c;box-shadow:0 28px 100px #000c,0 0 45px #42d9ff0a}
+#auth-gate .gate-card p{line-height:1.7}
+#auth-gate .gate-submit{min-height:44px;border-radius:10px}
+#auth-gate .gate-switch{min-height:30px;border-radius:8px}
+#auth-gate .gate-switch:hover{color:#fff;background:#ffffff09}
+#auth-gate .gate-switch[hidden]{display:none!important}
+#auth-gate input{min-height:43px;border-radius:10px}
+#auth-gate .gate-feedback{padding:0 2px}
+@media(max-width:520px){#auth-gate .gate-card{width:min(100%,430px);padding:23px}}
+
 </style><style>
 /* Detached Windows views must occupy the Electron client area edge-to-edge. */
 html,body{width:100%;height:100%;min-width:0;min-height:0;margin:0}
@@ -2093,7 +2105,7 @@ function renderAuthGate(){
  if(gatePassword){gatePassword.autocomplete=gateMode==="up"?"new-password":"current-password";gatePassword.minLength=gateMode==="up"?8:0;gatePassword.placeholder=gateMode==="up"?"Create a password (8+ characters)":"Password";}
  if(gateSwitch)gateSwitch.textContent=gateMode==="up"?"Already have an account? Sign in":"New here? Create an account";
  if(gateResend)gateResend.hidden=gateMode!=="in";
- const title=$("#gate-title"),copy=$("#gate-copy");if(title)title.textContent=gateMode==="up"?"Create your Bosley account":"Welcome to Bosley";if(copy)copy.textContent=gateMode==="up"?"Create an account to sync your conversations and workspace across your Bosley apps.":"Sign in to continue. Your conversations and workspace sync to your Bosley account.";
+ const title=$("#gate-title"),copy=$("#gate-copy");if(title)title.textContent=gateMode==="up"?"Create your Bosley account":"Welcome to Bosley";if(copy)copy.textContent=gateMode==="up"?"Create your account and we will email you a verification link. Open it, return here, and sign in to sync your Bosley workspace.":"Sign in to continue. Your conversations and workspace sync securely to your Bosley account.";
 }
 if(gateSwitch)gateSwitch.addEventListener("click",()=>{gateMode=gateMode==="in"?"up":"in";if(gateFeedback)gateFeedback.textContent="";renderAuthGate();gatePassword?.focus()});
 if(gateResend)gateResend.addEventListener("click",async()=>{if(!db){if(gateFeedback)gateFeedback.textContent="Account service unavailable. Reload and try again.";return}if(!gateEmail?.value.trim()){if(gateFeedback)gateFeedback.textContent="Enter your email address first.";gateEmail?.focus();return}gateResend.disabled=true;if(gateFeedback)gateFeedback.textContent="Sending a fresh verification email…";try{const redirectUrl=new URL("https://bosley-companion.vercel.app/");redirectUrl.searchParams.set("email-confirmed","1");const {error}=await db.auth.resend({type:"signup",email:gateEmail.value.trim(),options:{emailRedirectTo:redirectUrl.toString()}});if(error)throw error;if(gateFeedback)gateFeedback.textContent="Verification email sent. Check your inbox and spam folder."}catch(error){if(gateFeedback)gateFeedback.textContent=String(error?.message||"Could not resend the verification email.")}finally{gateResend.disabled=false}});

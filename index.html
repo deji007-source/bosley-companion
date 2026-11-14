@@ -2092,6 +2092,7 @@ function renderAuthGate(){
  if(gateSubmit)gateSubmit.textContent=gateMode==="up"?"Create account":"Sign in securely";
  if(gatePassword){gatePassword.autocomplete=gateMode==="up"?"new-password":"current-password";gatePassword.minLength=gateMode==="up"?8:0;gatePassword.placeholder=gateMode==="up"?"Create a password (8+ characters)":"Password";}
  if(gateSwitch)gateSwitch.textContent=gateMode==="up"?"Already have an account? Sign in":"New here? Create an account";
+ if(gateResend)gateResend.hidden=gateMode!=="in";
  const title=$("#gate-title"),copy=$("#gate-copy");if(title)title.textContent=gateMode==="up"?"Create your Bosley account":"Welcome to Bosley";if(copy)copy.textContent=gateMode==="up"?"Create an account to sync your conversations and workspace across your Bosley apps.":"Sign in to continue. Your conversations and workspace sync to your Bosley account.";
 }
 if(gateSwitch)gateSwitch.addEventListener("click",()=>{gateMode=gateMode==="in"?"up":"in";if(gateFeedback)gateFeedback.textContent="";renderAuthGate();gatePassword?.focus()});

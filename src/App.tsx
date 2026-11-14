@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import VisualGuide from "./VisualGuide";
 import { createClient, type User } from "@supabase/supabase-js";
-import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut, ListTodo, RefreshCw, RotateCcw, Ban, ChevronLeft, CalendarClock, Pause, Play, Trash2 } from "lucide-react";
+import { ArrowDown, Check, CircleHelp, Command, Copy, Mic, MicOff, Minus, Send, Volume2, VolumeX, X, LogIn, LogOut, ListTodo, RefreshCw, RotateCcw, Ban, ChevronLeft, CalendarClock, Pause, Play, Trash2, BookOpen } from "lucide-react";
 
 const SUPABASE_URL = "https://ywwfqisbmlkjcfoqehph.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwicmVmIjoieXd3ZnFpc2JtbGtqY2ZvcWVwaHAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3OTU4MDYwOSwiZXhwIjoyMDk1MTU2NjA5fQ.__Dwk0-YjWNe9o3EaICSxnJlRKMlJw67XSUc_KjU_sU";
@@ -84,7 +85,7 @@ export default function App() {
   const [taskBusy, setTaskBusy] = useState(false);
   const [taskNotice, setTaskNotice] = useState("");
   const [taskInstruction, setTaskInstruction] = useState("");
-  const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "skills" | "routines">("tasks");
+  const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "skills" | "routines" | "visual-guide">("tasks");
   const [enabledSkills, setEnabledSkills] = useState<string[]>([]);
   const [skillBusy, setSkillBusy] = useState(false);
   const [routines, setRoutines] = useState<BosleyRoutine[]>([]);
@@ -565,11 +566,12 @@ export default function App() {
     </form>}
     {user && <div className="account-strip"><span>{user.email ?? "Signed in"}</span><button onClick={async () => { await supabase.auth.signOut(); setNotice("Signed out."); }} aria-label="Sign out"><LogOut size={13}/> Sign out</button></div>}
     {taskPanelOpen && <section className="task-workspace" aria-label="Agent task workspace">
-      <header className="task-workspace-header"><button className="icon-button" onClick={() => { setTaskPanelOpen(false); setSelectedTask(null); }} aria-label="Back to chat"><ChevronLeft size={17}/></button><div><strong>AGENT WORKSPACE</strong><span>Private tasks for your account</span></div><button className="icon-button" onClick={() => void loadTasks()} disabled={taskBusy} aria-label="Refresh tasks"><RefreshCw size={15}/></button><button className="icon-button" onClick={() => setTaskPanelOpen(false)} aria-label="Close task workspace"><X size={16}/></button></header>
-      <nav className="workspace-tabs" aria-label="Agent workspace sections">
+      <header className="task-workspace-header"><button className="icon-button task-workspace-mark" aria-label="Bosley workspace"><ListTodo size={17}/></button><div><strong>AGENT WORKSPACE</strong><span>Tasks, skills, routines and visual learning</span></div><span className="workspace-live-indicator">● WORKSPACE</span><button className="icon-button" onClick={() => void loadTasks()} disabled={taskBusy} aria-label="Refresh tasks"><RefreshCw size={15}/></button><button className="icon-button" onClick={() => { setTaskPanelOpen(false); setSelectedTask(null); }} aria-label="Back to chat"><ChevronLeft size={17}/></button><button className="icon-button" onClick={() => setTaskPanelOpen(false)} aria-label="Close task workspace"><X size={16}/></button></header>
+      <nav className="workspace-tabs workspace-taskbar" aria-label="Agent workspace sections">
         <button type="button" className={workspaceTab === "tasks" ? "active" : ""} onClick={() => setWorkspaceTab("tasks")}><ListTodo size={13}/> Tasks</button>
         <button type="button" className={workspaceTab === "skills" ? "active" : ""} onClick={() => setWorkspaceTab("skills")}><Command size={13}/> Skills Library <span>{enabledSkills.length} active</span></button>
         <button type="button" className={workspaceTab === "routines" ? "active" : ""} onClick={() => { setWorkspaceTab("routines"); void loadRoutines(); }}><CalendarClock size={13}/> Routines <span>{routines.filter(item => item.enabled).length} active</span></button>
+        <button type="button" className={workspaceTab === "visual-guide" ? "active" : ""} onClick={() => setWorkspaceTab("visual-guide")}><BookOpen size={13}/> Visual Guide</button>
       </nav>
       {taskNotice && <div className="task-notice" role="status">{taskNotice}</div>}
       {workspaceTab === "tasks" && <>
@@ -618,6 +620,7 @@ export default function App() {
           </article>)}
         </div>
       </div>}
+      {workspaceTab === "visual-guide" && <VisualGuide />}
       {workspaceTab === "skills" && <div className="skills-library">
         <div className="skills-intro"><strong>REUSABLE BOSLEY SKILLS</strong><p>Enable instruction packs for your conversations. Skills are account-scoped guidance only; they do not install code or grant new device permissions.</p></div>
         {BOSLEY_SKILLS.map(skill => <article className="skill-card" key={skill.id}>

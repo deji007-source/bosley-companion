@@ -282,3 +282,15 @@
 .vg-quiz-options button.chosen{border-color:#b4ccec;background:#273b56}
 .vg-quiz-options p{grid-column:1/-1;margin:0;color:#b9cce4;font-size:10px}
 @media(max-width:600px){.vg-engine-canvas{min-height:250px}.vg-engine-svg{min-width:460px}.vg-quick-check{align-items:flex-start}.vg-quick-check>button{margin-left:28px}.vg-quiz-options{grid-template-columns:1fr}}
+
+/* Account entry: clear, friendly sign-in and email-verification states */
+.auth-form{gap:10px;padding:16px;border-radius:16px;background:linear-gradient(145deg,rgba(13,24,34,.94),rgba(5,10,15,.96));box-shadow:0 12px 35px rgba(0,0,0,.22)}
+.auth-heading{font-size:14px;letter-spacing:-.02em}
+.auth-helper{margin:0 0 3px;color:#9aaaba;font-size:10px;line-height:1.65}
+.auth-form input{min-height:42px;padding:11px 12px;border-radius:10px;font-size:12px}
+.auth-submit{min-height:42px;border-radius:10px;font-size:11px}
+.auth-switch{min-height:30px;border-radius:8px;font-size:10px}
+.auth-switch:hover{background:rgba(66,217,255,.07);color:#d8f8ff}
+.auth-switch:disabled{opacity:.5;cursor:wait}
+.auth-result-content .auth-heading{font-size:clamp(21px,4vw,28px)}
+@media(max-width:520px){.auth-form{margin:14px 12px 0;padding:15px}.auth-form input{min-height:44px}.auth-helper{font-size:11px}}

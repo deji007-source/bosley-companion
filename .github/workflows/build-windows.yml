@@ -1324,8 +1324,19 @@ jobs:
             if (!shortcutRegistered) logStartup('COMPANION SHORTCUT REGISTRATION FAILED');
             const writingShortcutRegistered = globalShortcut.register('CommandOrControl+Shift+U', openUniversalInput);
             if (!writingShortcutRegistered) logStartup('UNIVERSAL INPUT SHORTCUT REGISTRATION FAILED');
-            const floatingBulbShortcutRegistered = globalShortcut.register('CommandOrControl+Shift+I', toggleWritingBulb);
-            if (!floatingBulbShortcutRegistered) logStartup('FLOATING WRITING BULB SHORTCUT REGISTRATION FAILED');
+            const writingIdeasShortcutRegistered = globalShortcut.register('Alt+T', openWritingAssistantFromBulb);
+            if (!writingIdeasShortcutRegistered) logStartup('WRITING IDEAS ALT+T SHORTCUT REGISTRATION FAILED');
+            const captureScreenShortcutRegistered = globalShortcut.register('Alt+V', () => {
+              (async () => {
+                if (!panel || panel.isDestroyed()) return;
+                if (panel.webContents.isLoading()) await new Promise(resolve => panel.webContents.once('did-finish-load', resolve));
+                const result = await panel.webContents.executeJavaScript('window.BosleyCaptureScreenShortcut?.()');
+                panel.show();
+                panel.focus();
+                if (!result?.ok && !result?.cancelled) logStartup('GLOBAL SCREEN CAPTURE SHORTCUT DID NOT COMPLETE', result);
+              })().catch(error => logStartup('GLOBAL SCREEN CAPTURE SHORTCUT FAILED', error.message));
+            });
+            if (!captureScreenShortcutRegistered) logStartup('SCREEN CAPTURE ALT+V SHORTCUT REGISTRATION FAILED');
             positionWindows();
 
             ipcMain.on('toggle-panel', togglePanel);

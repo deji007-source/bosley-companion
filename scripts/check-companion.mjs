@@ -544,6 +544,8 @@ assert.ok(html.includes('if(remaining.length)localStorage.setItem(BOSLEY_OFFLINE
 assert.ok(html.includes('No command was sent.'), "Draft import must not imply that commands were sent");
 assert.ok(html.includes("renderOfflineCommandQueue();startLaptopCommandListener(user)"), "Initial auth restoration must refresh the account-scoped offline queue");
 assert.ok(html.includes("renderAuthGate();renderOfflineCommandQueue();startLaptopCommandListener(user)"), "Sign-in and sign-out transitions must refresh the account-scoped offline queue");
+assert.ok(html.includes('db.auth.onAuthStateChange((_e,s)=>{authResolved=true;const previousUserId=user?.id||null;user=s?.user||null;') && html.includes('document.body.classList.toggle("auth-required",!signedIn)') && html.includes('if(!user){chatRestoreToken++;cloudBrainRows=[];renderCloudSecondBrain();notes=[];tasks=[];history=[];conversationId=null;'), "Web sign-in state must be driven by Supabase auth events, restore the signed-in interface, and clear account data on sign-out across tabs");
+assert.ok(!html.includes('if(result.data.session){user=result.data.user||result.data.session.user;') && !html.includes('if(r.data.session){user=r.data.user||r.data.session.user;'), "Login forms must not mutate the active user outside the central Supabase auth-state listener");
 assert.ok(html.includes("function queueOfflineCommandDraft(instruction)"), "Failed offline automation requests must be saved as drafts");
 assert.ok(html.includes("function reviewAndSendOfflineDraft(id)"), "Offline drafts must require an explicit review-and-send action");
 assert.ok(html.includes('data-offline-send="'), "Offline drafts must expose an explicit send control");

@@ -282,3 +282,38 @@
 .vg-quiz-options button.chosen{border-color:#b4ccec;background:#273b56}
 .vg-quiz-options p{grid-column:1/-1;margin:0;color:#b9cce4;font-size:10px}
 @media(max-width:600px){.vg-engine-canvas{min-height:250px}.vg-engine-svg{min-width:460px}.vg-quick-check{align-items:flex-start}.vg-quick-check>button{margin-left:28px}.vg-quiz-options{grid-template-columns:1fr}}
+
+/* Account entry: clear, friendly sign-in and email-verification states */
+.auth-form{gap:10px;padding:16px;border-radius:16px;background:linear-gradient(145deg,rgba(13,24,34,.94),rgba(5,10,15,.96));box-shadow:0 12px 35px rgba(0,0,0,.22)}
+.auth-heading{font-size:14px;letter-spacing:-.02em}
+.auth-helper{margin:0 0 3px;color:#9aaaba;font-size:10px;line-height:1.65}
+.auth-form input{min-height:42px;padding:11px 12px;border-radius:10px;font-size:12px}
+.auth-submit{min-height:42px;border-radius:10px;font-size:11px}
+.auth-switch{min-height:30px;border-radius:8px;font-size:10px}
+.auth-switch:hover{background:rgba(66,217,255,.07);color:#d8f8ff}
+.auth-switch:disabled{opacity:.5;cursor:wait}
+.auth-result-content .auth-heading{font-size:clamp(21px,4vw,28px)}
+@media(max-width:520px){.auth-form{margin:14px 12px 0;padding:15px}.auth-form input{min-height:44px}.auth-helper{font-size:11px}}
+
+/* Named Clicky-style agent profiles */
+.clicky-library{min-height:0;overflow-y:auto;padding:14px;display:grid;gap:14px}
+.clicky-intro{padding:15px;border:1px solid rgba(66,217,255,.16);border-radius:14px;background:radial-gradient(ellipse at 0 0,rgba(66,217,255,.09),transparent 65%),#101722}
+.clicky-kicker{color:#80dff3;font:9px "DM Mono",monospace;letter-spacing:.14em}
+.clicky-intro h3{margin:7px 0 5px;color:#edf5ff;font-size:17px}
+.clicky-intro p{margin:0;color:#a5b3c4;font-size:10px;line-height:1.65}
+.clicky-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.clicky-card{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:7px;padding:12px;border:1px solid #344256;border-radius:12px;background:#101824;color:#dfe9f6;text-align:left}
+.clicky-card:hover{border-color:#6b91b8;background:#152236}
+.clicky-card.active{border-color:#80c9e5;background:linear-gradient(145deg,#1b3148,#121d2b);box-shadow:0 0 0 1px #80c9e522}
+.clicky-avatar{display:grid;place-items:center;width:36px;height:36px;border:1px solid #40546c;border-radius:11px;background:#1a2a3d;font-size:19px}
+.clicky-card strong{font-size:12px}
+.clicky-card small{min-height:48px;color:#9eafc3;font-size:9px;line-height:1.55}
+.clicky-select{color:#8fd8ef;font:8px "DM Mono",monospace;letter-spacing:.1em}
+.clicky-create{display:grid;gap:8px;padding:13px;border:1px solid #344256;border-radius:12px;background:#0e151f}
+.clicky-create label{color:#9bb8d6;font:9px "DM Mono",monospace;letter-spacing:.12em}
+.clicky-create input,.clicky-create textarea{width:100%;min-width:0;padding:10px;border:1px solid #344256;border-radius:8px;background:#080e16;color:#eaf1fb;font:11px Manrope,system-ui,sans-serif}
+.clicky-create textarea{resize:vertical;line-height:1.5}
+.clicky-create button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:36px;border:1px solid #4c7897;border-radius:8px;background:#1b344a;color:#e7f6ff;font-size:10px;font-weight:800}
+.clicky-create small{color:#7f91a5;font-size:9px;line-height:1.55}
+.task-compose-row select{min-width:125px;max-width:170px;padding:0 8px;border:1px solid rgba(145,176,197,.2);border-radius:8px;background:#070d13;color:#cfe1f2;font-size:10px}
+@media(max-width:520px){.clicky-grid{grid-template-columns:1fr}.clicky-card{display:grid;grid-template-columns:40px 1fr;align-items:center}.clicky-avatar{grid-row:span 3}.clicky-card small{min-height:0}.task-compose-row{flex-wrap:wrap}.task-compose-row select{max-width:none;flex:1 1 100%;min-height:34px}}

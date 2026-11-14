@@ -163,3 +163,54 @@
 .vg-tip{display:flex;align-items:flex-start;gap:8px;margin-top:auto;padding:10px;border-radius:9px;background:rgba(255,211,120,.055);color:#d8bd83}.vg-tip svg{flex:0 0 auto}.vg-tip span{font-size:9px;line-height:1.55}.vg-tip strong{color:#ffe2a0}.vg-footer{display:flex;justify-content:space-between;gap:10px;padding:10px 15px;border-top:1px solid rgba(145,176,197,.1);color:#6e8593;font:8px 'DM Mono',monospace}
 @media(max-width:720px){.vg-content{grid-template-columns:1fr;padding:10px}.vg-explainer{min-height:190px}.vg-canvas{min-height:210px}.vg-element-grid{padding:12px;gap:6px}.vg-element{min-height:90px;padding:7px}.vg-element strong{font-size:19px}.vg-footer{flex-direction:column}.vg-stage-heading h2{font-size:13px}}
 @media(max-width:420px){.vg-brand small{font-size:8px}.vg-lessons{padding:8px}.vg-lessons button{padding:7px 8px;font-size:8px}.vg-controls label{grid-template-columns:auto 18px minmax(70px,1fr);flex:1}.vg-canvas{min-height:180px}.vg-svg{min-height:180px}}
+
+
+/* Universal Visual Guide */
+.visual-guide{display:flex;flex-direction:column;gap:18px;padding:18px;min-height:100%;color:#f5f5f5}
+.vg-universal-intro{padding:22px;border:1px solid #30343d;border-radius:18px;background:radial-gradient(ellipse at 12% 0%,#172033 0%,#10131b 48%,#0b0d12 100%)}
+.vg-universal-intro h2{margin:7px 0;font-size:clamp(22px,3vw,31px);letter-spacing:-.04em}
+.vg-universal-intro>p{max-width:760px;color:#aeb6c4;font-size:13px;line-height:1.7}
+.vg-ask-form{margin-top:16px;padding:10px;border:1px solid #414957;border-radius:14px;background:#080b11}
+.vg-ask-form textarea{display:block;width:100%;resize:vertical;min-height:58px;border:0;outline:0;background:transparent;color:#fff;font:13px/1.6 inherit}
+.vg-ask-form textarea::placeholder{color:#737d8d}
+.vg-ask-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}
+.vg-search-button,.vg-ask-button,.vg-continue-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 12px;border:1px solid #394252;border-radius:9px;background:#151b27;color:#e8edf7;font-size:11px;font-weight:700}
+.vg-ask-button,.vg-continue-button{background:#f2f4f8;color:#111827;border-color:#fff}
+.vg-ask-button:disabled,.vg-search-button:disabled{opacity:.4;cursor:not-allowed}
+.vg-mode-label{margin:17px 0 8px;color:#8893a4;font:9px "DM Mono",monospace;letter-spacing:.12em}
+.vg-mode-picker{display:flex;flex-wrap:wrap;gap:7px}
+.vg-mode-picker button{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #333b49;border-radius:9px;background:#111620;color:#aeb8c8;font-size:10px}
+.vg-mode-picker button.active{border-color:#8195b9;background:#202b3e;color:#fff}
+.vg-examples{padding:16px;border:1px solid #2b303a;border-radius:15px;background:#0b0e14}
+.vg-section-heading{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:12px}
+.vg-section-heading>span{font:10px "DM Mono",monospace;letter-spacing:.1em;color:#cbd4e3}
+.vg-section-heading small{font-size:10px;color:#7e8999}
+.vg-example-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.vg-example-grid button{display:flex;align-items:center;gap:9px;min-height:54px;padding:10px;border:1px solid #303746;border-radius:10px;background:#121824;color:#e2e8f2;text-align:left;font-size:11px}
+.vg-example-grid button:hover{border-color:#7587a4;background:#192334}
+.vg-example-grid button>svg{flex:0 0 auto;color:#a9bddc}
+.vg-example-grid button span:nth-child(2){flex:1}
+.vg-example-arrow{color:#8290a5}
+.vg-generated{padding:18px;border:1px solid #343c49;border-radius:16px;background:#0b0e14}
+.vg-generated-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.vg-generated-heading h3{margin:5px 0 0;font-size:19px;overflow-wrap:anywhere}
+.vg-live{display:inline-flex;align-items:center;gap:6px;color:#a7d6b3;font:9px "DM Mono",monospace;white-space:nowrap}
+.vg-live i{width:6px;height:6px;border-radius:50%;background:#71d38c;box-shadow:0 0 8px #71d38c}
+.vg-visual-canvas{display:grid;grid-template-columns:minmax(140px,.8fr) 2fr;gap:14px;align-items:stretch}
+.vg-topic-node{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:180px;padding:15px;border:1px solid #7187a7;border-radius:14px;background:radial-gradient(circle at 50% 25%,#243652,#131b29 70%);text-align:center}
+.vg-topic-node>svg{color:#c4d8f7}
+.vg-topic-node strong{font-size:13px;overflow-wrap:anywhere}
+.vg-topic-node small{font:9px "DM Mono",monospace;color:#9eacc1}
+.vg-topic-branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.vg-topic-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:13px;border:1px solid #303948;border-radius:12px;background:#131a26;color:#e5eaf2;text-align:left}
+.vg-topic-card.selected{border-color:#91a8ca;background:#1c293c;box-shadow:inset 0 0 0 1px #91a8ca22}
+.vg-topic-number{color:#94a9c8;font:10px "DM Mono",monospace}
+.vg-topic-card strong{font-size:12px}
+.vg-topic-card small{color:#9da8b8;font-size:10px;line-height:1.5}
+.vg-expanded-note,.vg-health-note{display:flex;align-items:flex-start;gap:9px;margin-top:12px;padding:12px;border:1px solid #394254;border-radius:10px;background:#121925;color:#cbd5e4;font-size:11px;line-height:1.6}
+.vg-expanded-note svg,.vg-health-note svg{flex:0 0 auto;color:#b9ccef}
+.vg-health-note{border-color:#66543b;background:#201a12;color:#e6d5b8}
+.vg-health-note svg{color:#e8c58e}
+.vg-continue-button{margin-top:12px}
+@media(max-width:700px){.visual-guide{padding:11px;gap:12px}.vg-universal-intro{padding:15px}.vg-example-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.vg-visual-canvas{grid-template-columns:1fr}.vg-topic-node{min-height:100px}.vg-generated-heading{align-items:flex-start;flex-direction:column}.vg-mode-picker button{font-size:9px;padding:7px}.vg-section-heading{align-items:flex-start;flex-direction:column}}
+@media(max-width:390px){.vg-example-grid,.vg-topic-branches{grid-template-columns:1fr}.vg-ask-actions{align-items:stretch;flex-direction:column}.vg-ask-actions button{width:100%}}

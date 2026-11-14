@@ -3918,7 +3918,7 @@ async function runAction(step,approved=false){
   const result=await b.request({action:"send_message",payload:{recipient,body}});if(result?.ok!==true)throw Error(result?.error||"Messaging bridge did not confirm delivery.");return "Message connector confirmed send request."}
  if(step.type==="desktop_action"){
   const requestedApp=String(step.app||input||"").trim().toLowerCase();
-  if(action==="launch_app"&&requestedApp==="spotify"){
+  if(step.action==="launch_app"&&requestedApp==="spotify"){
    const native=window.Capacitor?.Plugins?.BosleyOverlay;
    if(native?.openExternalUrl){try{const opened=await native.openExternalUrl({url:"spotify:"});if(opened?.ok===true)return "Android handed Spotify to its installed app handler."}catch{}const fallback=await native.openExternalUrl({url:"https://open.spotify.com/"});if(fallback?.ok!==true)throw Error(fallback?.error||"Android could not open Spotify or its web player.");return "Spotify app link was unavailable; opened Spotify's web destination."}
    if(!bridge()){const w=window.open("https://open.spotify.com/","_blank","noopener,noreferrer");if(!w)throw Error("The browser blocked Spotify. Allow pop-ups for Bosley and retry.");return "Opened Spotify's app/web link. If the Spotify app is installed, your device may open it."}

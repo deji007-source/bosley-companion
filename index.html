@@ -4047,7 +4047,7 @@ function drawAutomation(){const el=$("#automation");if(!el)return;const b=bridge
  const routineForm=$("#bosley-routine-form"),routineFeedback=$("#routine-feedback"),routineList=$("#routine-list"),routineRecurrence=$("#routine-recurrence"),routineWeekday=$("#routine-weekday"),routineWeekdayLabel=$("#routine-weekday-label"),routineTimezone=$("#routine-timezone");
  const routineZone=Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC";
  if(routineTimezone)routineTimezone.textContent="Times use "+routineZone+". Scheduled runs are sent to your connected Bosley device.";
- const routineDateInput=$("#routine-date");if(routineDateInput&&!routineDateInput.value)routineDateInput.value=new Date(Date.now()+86400000).toLocaleDateString("en-CA");
+ const routineDateInput=$("#routine-date");if(routineDateInput&&!routineDateInput.value){const today=new Date();routineDateInput.value=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0")}
  if(routineRecurrence)routineRecurrence.onchange=()=>{const weekly=routineRecurrence.value==="weekly";if(routineWeekday)routineWeekday.hidden=!weekly;if(routineWeekdayLabel)routineWeekdayLabel.hidden=!weekly};
  const refreshRoutineList=async()=>{
   if(!db||!user){if(routineList)routineList.innerHTML='<p class="mute">Sign in to manage your private routines.</p>';return}

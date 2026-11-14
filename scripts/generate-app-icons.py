@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate Bosley's black tile / white eyes icons for Windows and Android."""
 from pathlib import Path
+import shutil
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -70,3 +71,11 @@ maskable = Image.new("RGBA", (512, 512), (0, 0, 0, 255))
 safe_eyes = render(390, background=False)
 maskable.alpha_composite(safe_eyes, ((512-390)//2, (512-390)//2))
 maskable.save(ICON_DIR / "bosley-pwa-maskable-512.png", format="PNG")
+
+# Vite serves files from public/ at the site root, including on Vercel.
+WEB_ICON_DIR = ROOT / "public" / "assets" / "icons"
+WEB_ICON_DIR.mkdir(parents=True, exist_ok=True)
+for icon_name in ("bosley-pwa.svg", "bosley-pwa-180.png", "bosley-pwa-192.png", "bosley-pwa-512.png", "bosley-pwa-maskable-512.png"):
+    source = ICON_DIR / icon_name
+    if source.exists():
+        shutil.copy2(source, WEB_ICON_DIR / icon_name)

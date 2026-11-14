@@ -1281,6 +1281,17 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 #ct-notice{margin:0;color:#9fc8d5;font-size:10px;line-height:1.5}#ct-answer{padding:12px;border:1px solid #263c46;border-radius:11px;background:#0b151b;overflow-wrap:anywhere;white-space:pre-wrap;font-size:11px;line-height:1.7}#ct-answer[hidden]{display:none}#ct-answer strong{display:block;margin-bottom:6px;color:#8bdff2;font:700 9px "DM Mono",monospace;letter-spacing:.1em}#contextual-talk-card footer{color:#71838e;font-size:9px;line-height:1.5}
 @media(max-width:560px){#contextual-talk-launch{right:12px;bottom:68px;padding:10px 11px}#contextual-talk-launch span{display:none}#contextual-talk-modal{padding:7px}#contextual-talk-card{max-height:95dvh;padding:12px}.ct-preview img{max-height:210px}}
 </style>
+<style id="bvg-universal-styles">
+.bvg-universal-ask{display:grid;gap:8px;padding:12px;margin:10px 11px 0;border:1px solid #344b59;border-radius:12px;background:linear-gradient(135deg,#10212c,#0b141c)}
+.bvg-universal-ask>span{font:700 9px 'DM Mono',monospace;letter-spacing:.12em;color:#a8c9db}
+.bvg-universal-ask textarea{width:100%;resize:vertical;min-height:48px;padding:9px;border:1px solid #314653;border-radius:8px;background:#071018;color:#eef7fb;font:11px/1.6 Manrope,system-ui,sans-serif}
+.bvg-universal-ask textarea::placeholder{color:#718895}
+.bvg-universal-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.bvg-universal-actions button{padding:8px 11px;border:1px solid #466171;border-radius:8px;background:#122633;color:#d8edf6;font-size:10px}
+.bvg-universal-actions #bvg-ask-topic{background:#e5f5fb;color:#0b1720;border-color:#e5f5fb;font-weight:800}
+.bvg-universal-ask>small{color:#8095a2;font-size:9px}
+@media(max-width:560px){.bvg-universal-actions{display:grid;grid-template-columns:1fr 1fr}.bvg-universal-actions button{width:100%}}
+</style>
 <style id="bosley-workspace-visual-guide-styles">
 .agent-task-head{position:relative;background:linear-gradient(90deg,#0c171d,#090d11);min-height:52px}
 .agent-task-head .agent-task-head-icon{display:grid;place-items:center;width:31px;height:31px;border:1px solid #365563;border-radius:9px;background:#10232c;color:#a9eaff;font-size:15px;flex:0 0 auto}
@@ -1328,8 +1339,9 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 <small class="agent-task-footnote">Cancelling prevents queued work from starting. An already-running device action may need to finish its current safe step.</small>
 </section>
 <section id="bosley-visual-guide-window" hidden aria-label="Bosley Visual Guide">
- <header class="bvg-head"><div><strong>✦ VISUAL GUIDE STUDIO</strong><small>Interactive teaching board · diagrams that respond as you learn</small></div><button type="button" id="bvg-close">← Back to workspace</button></header>
- <nav class="bvg-tabs" aria-label="Visual Guide topics"><button type="button" class="active" data-bvg-lesson="chain">Carbon chains</button><button type="button" data-bvg-lesson="water">Water molecule</button><button type="button" data-bvg-lesson="ionic">Ionic bonding</button></nav>
+ <header class="bvg-head"><div><strong>✦ UNIVERSAL VISUAL GUIDE</strong><small>Explore any subject · Ask Bosley, search, and learn visually</small></div><button type="button" id="bvg-close">← Back to workspace</button></header>
+ <div class="bvg-universal-ask"><span>WHAT WOULD YOU LIKE TO UNDERSTAND?</span><textarea id="bvg-topic-input" rows="2" maxlength="1200" placeholder="Ask about a disease, a machine, a maths problem, a historical event, an idea…"></textarea><div class="bvg-universal-actions"><button type="button" id="bvg-search-topic">⌕ Search the web</button><button type="button" id="bvg-ask-topic">✦ Ask Bosley</button></div><small>Choose a visual format or describe the exact diagram you want.</small></div>
+ <nav class="bvg-tabs" aria-label="Visual Guide formats"><button type="button" class="active" data-bvg-lesson="chain">Chemistry model</button><button type="button" data-bvg-lesson="water">Molecule model</button><button type="button" data-bvg-lesson="ionic">Bonding model</button></nav>
  <div class="bvg-main"><div class="bvg-drawing"><div class="bvg-title"><strong id="bvg-title">Build a carbon chain</strong><span>LIVE DIAGRAM</span></div><div class="bvg-stage" id="bvg-stage" aria-live="polite"></div><div class="bvg-controls" id="bvg-controls"><label>Carbon atoms <input id="bvg-chain-length" type="range" min="1" max="8" value="4"><strong id="bvg-count">4</strong></label><span class="bvg-formula" id="bvg-formula">C4H10</span></div></div><aside class="bvg-explain"><small>LEARN WITH BOSLEY</small><h3 id="bvg-explain-title">Four bonds per carbon</h3><p id="bvg-explain-copy">Carbon has four valence electrons and can form four covalent bonds. A straight-chain alkane connects carbon atoms in a row and fills remaining bonds with hydrogen.</p><div class="bvg-tip" id="bvg-tip">Try changing the carbon count. The structure and molecular formula update together.</div></aside></div>
 </section>
 <section class="remote-mode-card" id="remote-mode-card" hidden aria-label="Remote mode">
@@ -5177,6 +5189,14 @@ title.textContent="Ionic bonding";exTitle.textContent="Electron transfer";exCopy
 function setLesson(next){lesson=next;document.querySelectorAll("[data-bvg-lesson]").forEach(b=>b.classList.toggle("active",b.dataset.bvgLesson===next));draw()}
 open.addEventListener("click",()=>{win.hidden=false;document.getElementById("agent-task-workspace").hidden=true;setLesson("chain")});close.addEventListener("click",()=>{win.hidden=true;document.getElementById("agent-task-workspace").hidden=false});document.getElementById("agent-task-tab")?.addEventListener("click",()=>{win.hidden=true;document.getElementById("agent-task-workspace").hidden=false});document.querySelectorAll("[data-bvg-lesson]").forEach(b=>b.addEventListener("click",()=>setLesson(b.dataset.bvgLesson)));length?.addEventListener("input",drawChain);
 document.getElementById("agent-skills-shortcut")?.addEventListener("click",()=>{document.getElementById("agent-task-workspace").hidden=true;document.getElementById("dock-open")?.click();document.querySelector('[data-view="skills-panel"]')?.click()});document.getElementById("agent-routines-shortcut")?.addEventListener("click",()=>{document.getElementById("agent-task-workspace").hidden=true;document.getElementById("dock-open")?.click();document.querySelector('[data-view="automation"]')?.click()});document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!win.hidden){win.hidden=true;document.getElementById("agent-task-workspace").hidden=false}});draw();
+})();
+</script>
+<script id="bvg-universal-controller">
+(()=>{const topic=document.getElementById("bvg-topic-input"),ask=document.getElementById("bvg-ask-topic"),search=document.getElementById("bvg-search-topic"),chat=document.getElementById("in"),form=document.getElementById("form");
+const sendToBosley=()=>{const value=topic?.value?.trim();if(!value||!chat||!form)return;chat.value="Please open Visual Guide mode and teach me: "+value+". Create an age-appropriate, accurate visual explanation with an appropriate diagram, labelled parts, step-by-step explanation, examples and a recap. Adapt the visual format to this subject. If this is a health topic, give general educational information only, not a personal diagnosis or treatment recommendation. Include reliable sources when available.";form.requestSubmit();};
+ask?.addEventListener("click",sendToBosley);
+search?.addEventListener("click",()=>{const value=(topic?.value||"").trim();if(!value)return;window.open("https://www.google.com/search?q="+encodeURIComponent(value+" explanation diagram reliable sources"),"_blank","noopener,noreferrer");});
+topic?.addEventListener("keydown",event=>{if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();sendToBosley();}});
 })();
 </script>
 </body></html>

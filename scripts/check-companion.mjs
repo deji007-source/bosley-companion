@@ -1083,3 +1083,6 @@ assert.ok(!windowsWorkflow.slice(windowsWorkflow.indexOf("if (request.action ===
 
 assert.ok(html.includes('id="quick-open-spotify"') && html.includes('name:"Open Spotify"') && html.includes('app:"spotify"'), "Automation workspace must provide a one-click saved Open Spotify starter.");
 assert.ok(html.includes('persistWorkflow(saved,user.id)') && html.includes('select Run whenever you want'), "The Spotify starter must sync to the signed-in account and remain available to run later.");
+
+assert.ok(html.includes('data-td-load-mode="stooq"') && html.includes('data-td-load-mode="demo"') && html.includes('id="td-source-active"'), "Trading Dock must expose explicit Stooq and demo dataset switching with a visible active-source indicator.");
+assert.ok(html.includes("syncDatasetSourceChoice") && html.includes('el("td-stooq-fetch").click()') && html.includes('el("td-demo").click()'), "Dataset source cards must invoke the real Stooq and demo loaders instead of changing labels only.");

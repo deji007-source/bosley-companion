@@ -560,7 +560,9 @@ export default function App() {
     <div className="connection-banner"><span className="connection-icon"><CircleHelp size={15}/></span><div><strong>{user ? "Bosley AI connected" : "Sign in to connect Bosley AI"}</strong><span>{user ? `Signed in as ${user.email ?? "your account"}` : "Secure, account-based AI chat and saved conversations."}</span></div><span className="free-pill">{user ? "AI READY" : "SIGN IN"}</span></div>
     {!user && confirmationError && <div className="notice" role="alert">{confirmationError}<button type="button" onClick={() => setConfirmationError("")} aria-label="Dismiss notice"><X size={13}/></button></div>}
     {!user && <form className="auth-form" onSubmit={handleAuth}>
-      <div className="auth-heading">{authMode === "signin" ? "Welcome back" : "Create your workspace account"}</div>
+      <div className="auth-heading">{authMode === "signin" ? "Welcome back" : "Create your Bosley account"}</div>
+      {authMode === "signup" && <p className="auth-helper">We will email you a verification link. Open it to confirm your address, then come back here to sign in.</p>}
+      {authMode === "signin" && <p className="auth-helper">Sign in to restore your private conversations, routines and workspace.</p>}
       <input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email address" aria-label="Email address" required />
       <input type="password" autoComplete={authMode === "signin" ? "current-password" : "new-password"} minLength={authMode === "signup" ? 8 : undefined} value={password} onChange={event => setPassword(event.target.value)} placeholder={authMode === "signup" ? "Create a password (8+ characters)" : "Password"} aria-label="Password" required />
       <button type="submit" className="auth-submit" disabled={authBusy}>{authBusy ? "PLEASE WAIT…" : <><LogIn size={14}/>{authMode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}</>}</button>

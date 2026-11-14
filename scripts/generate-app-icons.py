@@ -57,3 +57,16 @@ anydpi.mkdir(parents=True, exist_ok=True)
     '</adaptive-icon>\n', encoding="utf-8")
 render(512).save(ICON_DIR / "bosley-icon.png", format="PNG")
 print("Generated Bosley Windows, legacy Android, and adaptive Android launcher icons.")
+
+# PWA launcher assets use the same Bosley eyes mark as desktop/mobile launchers.
+web_icon = Image.new("RGBA", (512, 512), (0, 0, 0, 255))
+eyes = render(512, background=False)
+web_icon.alpha_composite(eyes)
+web_icon.save(ICON_DIR / "bosley-pwa-512.png", format="PNG")
+web_icon.resize((192, 192), Image.Resampling.LANCZOS).save(ICON_DIR / "bosley-pwa-192.png", format="PNG")
+web_icon.resize((180, 180), Image.Resampling.LANCZOS).save(ICON_DIR / "bosley-pwa-180.png", format="PNG")
+maskable = Image.new("RGBA", (512, 512), (0, 0, 0, 255))
+# Keep the mark within the central 80% safe zone used by adaptive launchers.
+safe_eyes = render(390, background=False)
+maskable.alpha_composite(safe_eyes, ((512-390)//2, (512-390)//2))
+maskable.save(ICON_DIR / "bosley-pwa-maskable-512.png", format="PNG")

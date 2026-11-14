@@ -3952,9 +3952,9 @@ function setBosleyCompanionState(state){const allowed=["idle","thinking","workin
 async function runWorkflow(wf){
  if(automationBusy)throw Error("An automation workflow is already running.");
  const plan=validateWorkflowForExecution(wf);
- const autoEligible=lowRiskAutonomyEnabled()&&wf.steps.every(isLowRiskAutonomyStep);
+ const safeLaunchOnly=wf.steps.every(step=>isLowRiskAutonomyStep(step)&&(step.type==="open_url"||(step.type==="desktop_action"&&step.action==="launch_app")));\n const autoEligible=safeLaunchOnly||(lowRiskAutonomyEnabled()&&wf.steps.every(isLowRiskAutonomyStep));
  const approved=autoEligible?true:confirm("Review Bosley automation plan: "+wf.name+"\\n\\n"+plan+"\\n\\nContinue with these "+wf.steps.length+" step(s)?");
- if(autoEligible){autoLog("success","Pre-authorized low-risk workflow: "+wf.name);activityEvent("Low-risk workflow ran under saved autonomy permission: "+wf.name,"autonomous")}
+ if(autoEligible){autoLog("success",(safeLaunchOnly?"Allowlisted low-risk launch workflow: ":"Pre-authorized low-risk workflow: ")+wf.name);activityEvent((safeLaunchOnly?"Low-risk launch ran without a per-run prompt: ":"Low-risk workflow ran under saved autonomy permission: ")+wf.name,"autonomous")}
  if(!approved){setBosleyCompanionState("idle");autoLog("cancelled","Workflow cancelled before execution: "+wf.name);activityEvent("Plan declined: "+wf.name,"cancelled");return {cancelled:true,completed:0,total:wf.steps.length}}
  setBosleyCompanionState("working");automationBusy=true;
  const btn=$("#autorun");if(btn)btn.disabled=true;
@@ -4681,7 +4681,68 @@ async function renderUniversalInput(){
   if(action==="compare"){const key="bosley-universal-input-history-v1:"+String(user?.id||"local");try{const versions=JSON.parse(localStorage.getItem(key)||"[]");const host=$("#bue-history");host.hidden=false;host.replaceChildren();if(!versions.length){host.textContent="No saved versions yet. Use Save version before making changes.";return}const title=document.createElement("strong");title.textContent="Saved versions";host.appendChild(title);versions.slice(0,8).forEach((version,index)=>{const row=document.createElement("div");row.style.cssText="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid #ffffff18";const label=document.createElement("span");label.textContent=new Date(version.savedAt).toLocaleString()+" · "+wordCount(version.text)+" words";const actions=document.createElement("span");const restore=document.createElement("button");restore.type="button";restore.textContent="Restore";restore.addEventListener("click",()=>{area.value=version.text;refresh();status.textContent="Restored saved version. Current text was replaced; save a new version before further edits if needed."});const diff=document.createElement("button");diff.type="button";diff.textContent="Compare";diff.addEventListener("click",()=>{const before=version.text.split(/\s+/),after=area.value.split(/\s+/);let i=0;while(i<before.length&&i<after.length&&before[i]===after[i])i++;const output=document.createElement("pre");output.style.cssText="white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0";output.textContent="First difference near word "+(i+1)+"\nSaved: "+before.slice(Math.max(0,i-8),i+18).join(" ")+"\n\nCurrent: "+after.slice(Math.max(0,i-8),i+18).join(" ");host.querySelector("pre")?.remove();host.appendChild(output)});actions.append(restore,diff);row.append(label,actions);host.appendChild(row)})}catch(error){status.textContent="Unable to read saved versions."}}
   if(action==="preview"){const preview=$("#bue-preview");preview.hidden=!preview.hidden;if(!preview.hidden){preview.textContent=area.value||"Nothing to preview yet.";button.textContent="Hide preview"}else button.textContent="Preview"}
   if(action==="export"){const content=area.value;if(!content.trim()){status.textContent="There is no document to export.";return}const blob=new Blob([content],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="bosley-document.md";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status.textContent="Markdown document exported."}if(action==="docx-export"){const content=area.value;if(!content.trim()){status.textContent="There is no document to export.";return}try{status.textContent="Preparing Word document…";const docx=await loadDocumentLibrary("https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.js","docx");const paragraphs=content.split(/\n{2,}/).map(line=>new docx.Paragraph({children:[new docx.TextRun(line)]}));const documentFile=new docx.Document({sections:[{properties:{},children:paragraphs}]});const blob=await docx.Packer.toBlob(documentFile),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="bosley-document.docx";link.click();setTimeout(()=>URL.revokeObjectURL(url),1500);status.textContent="Word document exported."}catch(error){status.textContent=String(error?.message||"Unable to create Word document.").slice(0,180)}}
-  if(action==="print"){const content=area.value;if(!content.trim()){status.textContent="There is no document to print.";return}const win=window.open("","_blank","noopener");if(!win){status.textContent="The browser blocked the print window.";return}const safe=content.replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));win.document.write("<!doctype html><html><head><title>Bosley document</title><style>body{font:16px/1.7 system-ui,sans-serif;max-width:780px;margin:48px auto;padding:0 24px;white-space:pre-wrap;color:#171717}@media print{body{margin:18mm auto}}</style></head><body>"+safe+"</body></html>");win.document.close();win.focus();setTimeout(()=>win.print(),250);status.textContent="Print dialog opened. Choose Save as PDF to create a PDF copy."}
+  if(action==="print"){const content=area.value;if(!content.trim()){status.textContent="There is no document to print.";return}const win=window.open("","_blank","noopener");if(!win){status.textContent="The browser blocked the print window.";return}const safe=content.replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));win.document.write("<!doctype html><html><head><title>Bosley document</title><style>body{font:16px/1.7 system-ui,sans-serif;max-width:780px;margin:48px auto;padding:0 24px;white-space:pre-wrap;color:#171717}@media print{body{margin:18mm auto}}</style></head><body>"+safe+"
+<style id="bosley-command-help-styles">
+#bosley-command-help-panel{position:fixed;z-index:2147483647;inset:50% auto auto 50%;transform:translate(-50%,-50%);width:min(520px,calc(100vw - 28px));max-height:min(78dvh,720px);overflow:auto;padding:18px;border:1px solid #414141;border-radius:16px;background:#080a0d;color:#f4f5f6;box-shadow:0 22px 80px #000e;font:12px/1.55 system-ui,sans-serif}
+#bosley-command-help-panel[hidden]{display:none!important}
+#bosley-command-help-panel .bch-head{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:12px}
+#bosley-command-help-panel h2{margin:0;font-size:16px;letter-spacing:-.02em}
+#bosley-command-help-panel .bch-close{width:32px;height:32px;border:1px solid #393939;border-radius:9px;background:#111;color:#fff;font-size:18px}
+#bosley-command-help-panel h3{margin:16px 0 7px;color:#c9d5dd;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+#bosley-command-help-panel .bch-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #222}
+#bosley-command-help-panel .bch-row:last-child{border-bottom:0}
+#bosley-command-help-panel kbd{flex:0 0 auto;padding:4px 7px;border:1px solid #4a4a4a;border-radius:6px;background:#151515;color:#fff;font:10px ui-monospace,monospace;white-space:nowrap}
+#bosley-command-help-panel code{color:#e7e7e7;font:10px ui-monospace,monospace;overflow-wrap:anywhere}
+#bosley-command-help-panel p{margin:4px 0;color:#a8b0b7;font-size:11px}
+#bosley-command-help-panel .bch-note{margin-top:12px;padding:10px;border:1px solid #333;border-radius:9px;background:#101214;color:#aeb8c0}
+@media(max-width:520px){#bosley-command-help-panel{padding:14px;border-radius:13px;max-height:calc(100dvh - 28px)}#bosley-command-help-panel .bch-row{gap:8px}}
+</style>
+<script id="bosley-heyclicky-shortcuts">
+(()=>{
+ const init=()=>{
+  const menu=document.getElementById("dock-launcher-menu");
+  if(menu&&!document.getElementById("bosley-command-help")){
+   const button=document.createElement("button");
+   button.type="button";button.id="bosley-command-help";button.setAttribute("role","menuitem");
+   button.title="Commands and keyboard shortcuts";button.textContent="⌨  Commands & shortcuts";
+   menu.appendChild(button);
+  }
+  if(!document.getElementById("bosley-command-help-panel")){
+   const panel=document.createElement("aside");panel.id="bosley-command-help-panel";panel.hidden=true;
+   panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-labelledby","bosley-command-help-title");
+   panel.innerHTML='<div class="bch-head"><h2 id="bosley-command-help-title">Bosley commands & shortcuts</h2><button type="button" class="bch-close" aria-label="Close commands">×</button></div><h3>Keyboard shortcuts</h3><div class="bch-row"><span><strong>Capture the current screen</strong><p>Capture only when you choose. Review the attachment before sending.</p></span><kbd>Alt + V</kbd></div><div class="bch-row"><span><strong>Open Writing &amp; Ideas</strong><p>Open the writing card to draft, improve or develop text.</p></span><kbd>Alt + T</kbd></div><h3>Say it naturally in chat</h3><div class="bch-row"><span><code>Open Spotify</code><p>Open an allowlisted website or run a matching saved launch workflow.</p></span></div><div class="bch-row"><span><code>Open YouTube</code>, <code>Open Gmail</code>, <code>Open Google Drive</code></span></div><div class="bch-row"><span><code>Open WhatsApp</code>, <code>Open Telegram</code>, <code>Open GitHub</code></span></div><div class="bch-row"><span><code>Open ChatGPT</code>, <code>Open Notion</code>, <code>Open Discord</code></span></div><div class="bch-row"><span><code>Search the web for renewable energy news</code></span></div><div class="bch-row"><span><code>Create a text file named notes.txt containing ...</code></span></div><div class="bch-row"><span><code>Run my Morning Research automation</code><p>Use the exact name of a saved workflow.</p></span></div><p class="bch-note">Low-risk, allowlisted website and app launches run without a separate confirmation each time. Actions that send, publish, delete, purchase, change settings or affect other people still require your review. Screen capture is available only in supported installed builds and is never sent until you press Send.</p>';
+   document.body.appendChild(panel);
+   const close=()=>{panel.hidden=true;document.getElementById("bosley-command-help")?.focus()};
+   panel.querySelector(".bch-close").addEventListener("click",close);
+   panel.addEventListener("click",event=>{if(event.target===panel)close()});
+   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!panel.hidden)close()});
+   document.getElementById("bosley-command-help")?.addEventListener("click",()=>{panel.hidden=false;panel.querySelector(".bch-close").focus()});
+  }
+  if(!window.__bosleyHeyClickyShortcutsBound){
+   window.__bosleyHeyClickyShortcutsBound=true;
+   document.addEventListener("keydown",event=>{
+    if(!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+    const key=String(event.key||"").toLowerCase();
+    if(key!=="v"&&key!=="t")return;
+    event.preventDefault();event.stopPropagation();
+    if(key==="v"){
+     const capture=document.getElementById("screen");
+     if(capture&&!capture.hidden&&!capture.disabled)capture.click();
+     else if(typeof window.BosleyNote==="function")window.BosleyNote("Screen capture is available in supported installed Windows and Android builds.");
+     else console.info("Bosley screen capture is not available in this build.");
+    }else{
+     if(typeof window.BosleyOpenWritingIdeasCard==="function"&&window.BosleyOpenWritingIdeasCard())return;
+     const launcher=document.getElementById("bosley-idea-launch");
+     if(launcher&&!launcher.hidden){launcher.click();return}
+     console.info("Bosley Writing & Ideas is not ready in this view.");
+    }
+   },true);
+  }
+ };
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();
+</script>
+</body></html>");win.document.close();win.focus();setTimeout(()=>win.print(),250);status.textContent="Print dialog opened. Choose Save as PDF to create a PDF copy."}
 
   if(["grammar","clearer","concise","engaging"].includes(action)){await rewrite(action==="engaging"?"engaging":action);$("#bue-rewrite").hidden=false;$("#bue-suggestions").hidden=true}
   if(action==="copy"){if(!area.value.trim()){status.textContent="There is no text to copy.";return}try{await bosleyCopyText(area.value);status.textContent="Copied. Paste your text wherever you need it."}catch{status.textContent="Clipboard unavailable. Select and copy the text manually."}}

@@ -30,7 +30,7 @@ assert.match(html, /previous!==active\)\{window\.location\.reload\(\);return\}/)
 assert.match(html, /previous===null&&active!=="guest"/);
 assert.match(html, /sessionStorage\.setItem\("bosley-workspace-unlock:/);
 assert.match(html, /target\.closest\("#dock-launcher-menu"\)/);
-assert.match(html, /open_floating_view/);
+assert.doesNotMatch(html, /open_floating_view/, "In-app page navigation must not depend on the optional native floating-window bridge");
 assert.match(html, /phone-full-page-view/);
 assert.match(html, /\["android","ios"\]\.includes\(window\.Capacitor\?\.getPlatform\?\.\(\)\)/);
 assert.match(html, /← Back to chat/);

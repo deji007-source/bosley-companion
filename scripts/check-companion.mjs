@@ -20,7 +20,8 @@ const printMarkupStart = html.indexOf("win.document.write(");
 const printMarkupEnd = html.indexOf("win.document.close()", printMarkupStart);
 assert.ok(printMarkupStart >= 0 && printMarkupEnd > printMarkupStart, "Standalone Visual Guide print window must have a complete document writer");
 assert.ok(!html.slice(printMarkupStart, printMarkupEnd).includes("</script>"), "Embedded print-window markup must not prematurely close the parent HTML script");
-assert.ok(html.includes(String.raw`<\/script>`), "Embedded print-window document must escape its nested script closing tag");
+const agentProfilesMarkup = html.indexOf('<style id="bosley-agent-profiles-styles">');
+assert.ok(agentProfilesMarkup > html.lastIndexOf("</script>", agentProfilesMarkup) && html.includes('<script id="bosley-agent-profiles-controller">'), "Personal agent profile styles and controller must load as real page markup outside the print document");
 
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));

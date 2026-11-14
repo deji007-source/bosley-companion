@@ -47,7 +47,7 @@ const required = [
   ['Windows floating page children cannot overflow horizontally', 'max-width:100%!important;min-width:0!important;'],
   ['Windows top widget opens the Companion instead of the writing bulb', 'window.bosleyDesktop.togglePanel()'],
   ['Windows top widget does not trigger the writing bulb', '!window.bosleyDesktop.showWritingBulb()'],
-  ['Windows bulb remains assigned to Ctrl+Shift+I', "globalShortcut.register('CommandOrControl+Shift+I', toggleWritingBulb)"],
+  ['Windows Writing Ideas shortcut is Alt+T', "globalShortcut.register('Alt+T', openWritingAssistantFromBulb)"],
   ['Windows Writing Ideas card uses the bundled shared interface', "writingCard.loadFile(path.join(__dirname, 'index.html'), { query: { bosleyWritingCard: '1' } })"],
   ['Writing Ideas card is a movable always-on-top overlay', 'resizable: true, movable: true'],
   ['Writing Ideas card fits within the desktop work area', 'Math.min(700, Math.max(560, cardArea.height - 24))'],
@@ -75,4 +75,4 @@ for (const [label, needle] of required) {
 if (!main.includes("panel.on('show', () => armPanelIdleClose())") || !main.includes("event.sender === panel.webContents && panel.isVisible()) armPanelIdleClose()")) throw new Error('Windows workspace inactivity timer is not armed on show and real panel activity.');
 if (!html.includes('body.desktop-floating-view #side-dock .dock-body{') || !html.includes('body.desktop-floating-view #side-dock .dock-body>*') || !html.includes('height:100%!important;min-width:0!important;min-height:0!important;')) throw new Error('Windows detached page layout is missing its maximized responsive rules.');
 if (html.includes('setTimeout(()=>window.BosleyOpenWritingIdeasCard?.(),450)')) throw new Error('Writing Ideas card still waits through the splash delay.');
-console.log('Windows workspace checks passed (top-bezel square workspace island, independently sized resizable pages, maximized responsive content, instant Writing Ideas card, Ctrl+Shift+I-only bulb).');
+console.log('Windows workspace checks passed (top-bezel square workspace island, independently sized resizable pages, maximized responsive content, instant Writing Ideas card, Alt+T Writing Ideas shortcut).');

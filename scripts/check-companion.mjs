@@ -304,7 +304,7 @@ const contracts = [
   ["Natural-language planner task drafting", "function createPlannerTaskFromCommand(raw)"],
   ["Planner command runs before automation matching", "if(createPlannerTaskFromCommand(text))"],
   ["Planner draft opens the Activity side panel", 'data-open-view="activity"'],
-  ["Planner draft directs user to Guide", "then tap Guide when you’re ready."],
+  ["Planner draft directs user to Visual guide", "then tap Visual guide when you’re ready."],
   ["Daily planner categories", 'id="activitykind"'],
   ["Daily planner deadline", 'id="activitydue"'],
   ["Consent prompt for visual task guide", "Allow Bosley to open a system-level visual guide over other apps for this task?"],

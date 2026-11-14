@@ -12,6 +12,7 @@ on:
       - 'capacitor.config.ts'
       - 'scripts/**'
       - '.github/workflows/build-web.yml'
+      - '.github/workflows/build-android.yml'
   workflow_dispatch:
 permissions:
   contents: read

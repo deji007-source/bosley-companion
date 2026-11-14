@@ -1092,6 +1092,7 @@ assert.ok(html.includes('data-td-load-mode="stooq"') && html.includes('data-td-l
 assert.ok(html.includes("syncDatasetSourceChoice") && html.includes('el("td-stooq-fetch").click()') && html.includes('el("td-demo").click()'), "Dataset source cards must invoke the real Stooq and demo loaders instead of changing labels only.");
 
 assert.ok(html.includes('rel="manifest" href="/manifest.json"') && html.includes('apple-mobile-web-app-capable') && html.includes('navigator.serviceWorker.register("/service-worker.js"'), "Web app must expose iOS PWA metadata and register its offline service worker");
+assert.ok(html.includes('params.delete("email-confirmed")') && html.includes("Consume the one-time confirmation route") && !html.includes('window.location.pathname+"?email-confirmed=1"'), "Email confirmation callback must consume its URL marker so a later sign-in reload cannot immediately sign the user out.");
 const manifest = JSON.parse(readFileSync(new URL("../public/manifest.json", import.meta.url), "utf8"));
 assert.equal(manifest.name, "Bosley Companion");
 assert.equal(manifest.display, "standalone");

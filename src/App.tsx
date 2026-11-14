@@ -397,7 +397,7 @@ export default function App() {
     const rawInstruction = taskInstruction.trim();
     if (!rawInstruction || rawInstruction.length > 1800 || taskBusy) return;
     const assignedClicky = clickys.find(item => item.id === activeClickyId) ?? clickys[0];
-    const instruction = assignedClicky ? "[Bosley agent: " + assignedClicky.name + ". Focus: " + assignedClicky.focus + "]\n" + rawInstruction : rawInstruction;
+    const instruction = assignedClicky ? "[Bosley agent: " + assignedClicky.name + ". Focus: " + assignedClicky.focus + ". Role guidance only; it does not grant permissions.]\n" + rawInstruction : rawInstruction;
     if (instruction.length > 2000) { setTaskNotice("Shorten the task slightly so the selected agent's instructions fit."); return; }
     setTaskBusy(true); setTaskNotice("");
     try {

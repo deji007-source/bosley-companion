@@ -110,6 +110,7 @@ assert.match(html,/Keep the floating tool launcher out of the active conversatio
 assert.ok(!androidInstaller.includes('android.permission.CAMERA'), "Android build must not request camera permission; image capture uses the system picker");
 assert.ok(androidInstaller.includes('"android.permission.MODIFY_AUDIO_SETTINGS"') && androidInstaller.includes('"android.permission.RECORD_AUDIO"'), "Android WebView Live Talk must declare both audio permissions required by Capacitor microphone capture");
 assert.ok(androidInstaller.includes('"mailto".equalsIgnoreCase(scheme)') && androidInstaller.includes('"sms".equalsIgnoreCase(scheme)'), "Android native bridge must allow reviewed email and SMS composer links");
+assert.ok(androidInstaller.includes('"spotify".equalsIgnoreCase(scheme)'), "Android native bridge must allow the fixed Spotify app URI used by HeyClicky");
 assert.ok(appScript.includes('window.Capacitor?.Plugins?.BosleyOverlay') && appScript.includes('native?.openExternalUrl'), "Android communication handoffs must use the native external-app bridge");
 
 const windowsWorkflow = readText(new URL("../.github/workflows/build-windows.yml", import.meta.url), "utf8");

@@ -1429,7 +1429,7 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 <div class="sr" id="live" aria-live="polite"></div>
 </div>
 
-<section id="auth-gate" hidden role="dialog" aria-modal="true" aria-labelledby="gate-title"><div class="gate-card"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h1 id="gate-title">Welcome to Bosley</h1><p id="gate-copy">Sign in to continue. Your conversations and workspace sync to your Bosley account.</p><form id="gate-auth"><input id="gate-email" type="email" required autocomplete="email" placeholder="Email address" aria-label="Email address"><input id="gate-password" type="password" required autocomplete="current-password" placeholder="Password" aria-label="Password"><button class="gate-submit" id="gate-submit" type="submit">Sign in securely</button></form><button class="gate-switch" id="gate-switch" type="button">New here? Create an account</button><div class="gate-feedback" id="gate-feedback" role="status" aria-live="polite"></div></div></section>
+<section id="auth-gate" hidden role="dialog" aria-modal="true" aria-labelledby="gate-title"><div class="gate-card"><div class="gate-mark" aria-hidden="true"><span class="gate-eye"></span><span class="gate-eye"></span></div><h1 id="gate-title">Welcome to Bosley</h1><p id="gate-copy">Sign in to continue. Your conversations and workspace sync to your Bosley account.</p><form id="gate-auth"><input id="gate-email" type="email" required autocomplete="email" placeholder="Email address" aria-label="Email address"><input id="gate-password" type="password" required autocomplete="current-password" placeholder="Password" aria-label="Password"><button class="gate-submit" id="gate-submit" type="submit">Sign in securely</button></form><button class="gate-switch" id="gate-switch" type="button">New here? Create an account</button><button class="gate-switch" id="gate-resend" type="button">Resend verification email</button><div class="gate-feedback" id="gate-feedback" role="status" aria-live="polite"></div></div></section>
 <section id="email-confirmation-page" hidden role="status" aria-labelledby="email-confirmation-title">
  <div class="confirm-card">
   <div class="confirm-mark" aria-hidden="true">✓</div>
@@ -2082,7 +2082,7 @@ const $=s=>document.querySelector(s),H=document.documentElement;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const db=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 window.__bosleySupabaseClient=db;
-const gate=$("#auth-gate"),gateForm=$("#gate-auth"),gateEmail=$("#gate-email"),gatePassword=$("#gate-password"),gateSubmit=$("#gate-submit"),gateSwitch=$("#gate-switch"),gateFeedback=$("#gate-feedback");
+const gate=$("#auth-gate"),gateForm=$("#gate-auth"),gateEmail=$("#gate-email"),gatePassword=$("#gate-password"),gateSubmit=$("#gate-submit"),gateSwitch=$("#gate-switch"),gateFeedback=$("#gate-feedback"),gateResend=$("#gate-resend");
 let gateMode="in",authResolved=false;
 function renderAuthGate(){
  const signedIn=!!user;
@@ -2090,16 +2090,17 @@ function renderAuthGate(){
  if(gate)gate.hidden=signedIn;
  const shortcut=$("#signin-open");if(shortcut)shortcut.hidden=signedIn;
  if(gateSubmit)gateSubmit.textContent=gateMode==="up"?"Create account":"Sign in securely";
- if(gatePassword){gatePassword.autocomplete=gateMode==="up"?"new-password":"current-password";gatePassword.minLength=gateMode==="up"?6:0;gatePassword.placeholder=gateMode==="up"?"Password (at least 6 characters)":"Password";}
+ if(gatePassword){gatePassword.autocomplete=gateMode==="up"?"new-password":"current-password";gatePassword.minLength=gateMode==="up"?8:0;gatePassword.placeholder=gateMode==="up"?"Create a password (8+ characters)":"Password";}
  if(gateSwitch)gateSwitch.textContent=gateMode==="up"?"Already have an account? Sign in":"New here? Create an account";
  const title=$("#gate-title"),copy=$("#gate-copy");if(title)title.textContent=gateMode==="up"?"Create your Bosley account":"Welcome to Bosley";if(copy)copy.textContent=gateMode==="up"?"Create an account to sync your conversations and workspace across your Bosley apps.":"Sign in to continue. Your conversations and workspace sync to your Bosley account.";
 }
 if(gateSwitch)gateSwitch.addEventListener("click",()=>{gateMode=gateMode==="in"?"up":"in";if(gateFeedback)gateFeedback.textContent="";renderAuthGate();gatePassword?.focus()});
+if(gateResend)gateResend.addEventListener("click",async()=>{if(!db){if(gateFeedback)gateFeedback.textContent="Account service unavailable. Reload and try again.";return}if(!gateEmail?.value.trim()){if(gateFeedback)gateFeedback.textContent="Enter your email address first.";gateEmail?.focus();return}gateResend.disabled=true;if(gateFeedback)gateFeedback.textContent="Sending a fresh verification email…";try{const redirectUrl=new URL("https://bosley-companion.vercel.app/");redirectUrl.searchParams.set("email-confirmed","1");const {error}=await db.auth.resend({type:"signup",email:gateEmail.value.trim(),options:{emailRedirectTo:redirectUrl.toString()}});if(error)throw error;if(gateFeedback)gateFeedback.textContent="Verification email sent. Check your inbox and spam folder."}catch(error){if(gateFeedback)gateFeedback.textContent=String(error?.message||"Could not resend the verification email.")}finally{gateResend.disabled=false}});
 if(gateForm)gateForm.addEventListener("submit",async e=>{
  e.preventDefault();if(!db){if(gateFeedback)gateFeedback.textContent="Account service unavailable. Check your connection and try again.";return}
  gateSubmit.disabled=true;if(gateFeedback)gateFeedback.textContent=gateMode==="up"?"Creating your account…":"Signing in securely…";
  try{const credentials={email:gateEmail.value.trim(),password:gatePassword.value};const redirectUrl=new URL("https://bosley-companion.vercel.app/");redirectUrl.searchParams.set("email-confirmed","1");const result=gateMode==="up"?await db.auth.signUp({...credentials,options:{emailRedirectTo:redirectUrl.toString()}}):await db.auth.signInWithPassword(credentials);if(result.error)throw result.error;
- if(gateMode==="up"&&!result.data.session){if(gateFeedback)gateFeedback.textContent="Account created. Check your email to confirm, then sign in here.";return}
+ if(gateMode==="up"&&!result.data.session){gateMode="in";gatePassword.value="";renderAuthGate();if(gateFeedback)gateFeedback.textContent="Account created. Check your inbox (and spam folder) and open the verification link. Once verified, return here and sign in.";return}
  if(result.data.session){user=result.data.user||result.data.session.user;window.dispatchEvent(new Event("bosley:account-changed"));renderAuthGate();if(gateFeedback)gateFeedback.textContent="Signed in.";restoreLatestConversation();if(typeof load==="function")load()}
  else if(gateFeedback)gateFeedback.textContent="No active session returned. Check email confirmation and try again.";
  }catch(err){const m=String(err?.message||"Sign-in failed.");if(gateFeedback)gateFeedback.textContent=/invalid login credentials/i.test(m)?"Email or password is incorrect.":/email not confirmed/i.test(m)?"Confirm your email using the link we sent, then sign in.":m}

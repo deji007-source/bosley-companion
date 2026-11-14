@@ -71,7 +71,7 @@ assert.ok(!html.includes('const desktop=bridge();') || !html.includes('Standalon
 assert.ok(html.includes('id="bosley-playful-ui"') && html.includes('--bosley-cyan') && html.includes('#dock-launcher-menu button:hover'), "The companion must include its modern playful visual theme");
 
 const menuRouteIdsForRegression=[...html.matchAll(/data-open-view="([^"]+)"/g)].map(match=>match[1]).filter(id=>!id.includes("'+"));
-const registeredPanelIdsForRegression=[...html.matchAll(/\\{button:"[^"]*",panel:"([^"]+)"/g)].map(match=>match[1]);
+const registeredPanelIdsForRegression=[...html.matchAll(/\{button:"[^"]*",panel:"([^"]+)"/g)].map(match=>match[1]);
 for(const pageId of new Set(menuRouteIdsForRegression)){
  assert.ok(registeredPanelIdsForRegression.includes(pageId), "Every dropdown page must map to one registered workspace route: "+pageId);
  assert.ok(html.includes('id="'+pageId+'"'), "Every dropdown page must have a real page container: "+pageId);

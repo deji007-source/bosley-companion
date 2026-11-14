@@ -270,7 +270,18 @@ export default function App() {
     setRoutineBusy(true); setTaskNotice("");
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-      const nextRun = localRoutineInstant(routineDate, routineTime, timezone);
+      let scheduleDate = routineDate;
+      if (routineRecurrence === "weekly") {
+        const selectedDay = new Date(scheduleDate + "T00:00:00");
+        const offset = (Number(routineWeekday) - selectedDay.getDay() + 7) % 7;
+        selectedDay.setDate(selectedDay.getDate() + offset);
+        scheduleDate = selectedDay.getFullYear() + "-" + String(selectedDay.getMonth()+1).padStart(2,"0") + "-" + String(selectedDay.getDate()).padStart(2,"0");
+        if (new Date(localRoutineInstant(scheduleDate, routineTime, timezone)).getTime() <= Date.now()) {
+          selectedDay.setDate(selectedDay.getDate() + 7);
+          scheduleDate = selectedDay.getFullYear() + "-" + String(selectedDay.getMonth()+1).padStart(2,"0") + "-" + String(selectedDay.getDate()).padStart(2,"0");
+        }
+      }
+      const nextRun = localRoutineInstant(scheduleDate, routineTime, timezone);
       if (new Date(nextRun).getTime() <= Date.now()) throw new Error("Choose a future time for this routine.");
       const appTarget = ROUTINE_APPS.find(item => item.toLowerCase() === routineTarget.toLowerCase());
       const urlTarget = ROUTINE_URLS.find(item => item === routineTarget);

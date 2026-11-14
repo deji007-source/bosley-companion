@@ -55,7 +55,7 @@ const required = [
 for (const [label, needle] of required) {
   if (label.startsWith('Writing Ideas card opens')) {
     if (!html.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
-  } else if (label.startsWith('Windows detached pages open in') || label.startsWith('Windows detached pages have') || label.startsWith('Windows detached pages restore') || label.startsWith('Windows detached pages remain')) {
+  } else if (label.startsWith('Windows detached pages open in') || label.startsWith('Windows detached pages have') || label.startsWith('Windows detached pages restore') || label.startsWith('Windows detached pages remain') || label.startsWith('Windows Writing Ideas shortcut')) {
     if (!workflow.includes(needle)) throw new Error('Windows workspace check failed: ' + label);
   } else if (label.startsWith('Windows detached pages open near')) {
     if (!main.includes(needle)) throw new Error('Windows workspace check failed: ' + label);

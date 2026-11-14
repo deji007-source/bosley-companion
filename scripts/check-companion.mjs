@@ -69,6 +69,16 @@ assert.ok(html.includes('launcher.addEventListener("click",e=>{if(suppressLaunch
 assert.ok(!html.includes('if(e.detail!==0)return'), "Ghost activation must not discard ordinary mouse or touch clicks");
 assert.ok(!html.includes('const desktop=bridge();') || !html.includes('Standalone Bosley page window could not open:'), "Dropdown page selection must not be intercepted by a second competing router");
 assert.ok(html.includes('id="bosley-playful-ui"') && html.includes('--bosley-cyan') && html.includes('#dock-launcher-menu button:hover'), "The companion must include its modern playful visual theme");
+
+const menuRouteIdsForRegression=[...html.matchAll(/data-open-view="([^"]+)"/g)].map(match=>match[1]).filter(id=>!id.includes("'+"));
+const registeredPanelIdsForRegression=[...html.matchAll(/\\{button:"[^"]*",panel:"([^"]+)"/g)].map(match=>match[1]);
+for(const pageId of new Set(menuRouteIdsForRegression)){
+ assert.ok(registeredPanelIdsForRegression.includes(pageId), "Every dropdown page must map to one registered workspace route: "+pageId);
+ assert.ok(html.includes('id="'+pageId+'"'), "Every dropdown page must have a real page container: "+pageId);
+}
+assert.ok(html.includes('show(route.panel).catch(error=>console.error("Bosley page navigation failed:"'), "Dropdown selection must call the single local page renderer");
+assert.ok(html.includes('if(!p.innerHTML.trim())throw Error("The section opened but its renderer returned no content.'), "An empty page must show a visible retry state rather than appearing to navigate successfully");
+
 assert.ok(html.includes('return ["spotify","chrome","google chrome"') && html.includes('requestedApp==="spotify"'), "HeyClicky low-risk Spotify launch must be allowlisted across native and browser surfaces");
 assert.ok(html.includes('if(step.action==="launch_app"&&requestedApp==="spotify")'), "Spotify launch must read the action from the current step before the desktop bridge action variable is declared");
 assert.ok(!html.includes('if(action==="launch_app"&&requestedApp==="spotify")'), "Spotify launch must not reference an undeclared action variable");

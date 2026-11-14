@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Atom, BookOpen, Brain, Search, Send, Sparkles, RotateCcw, HeartPulse, Globe2, Calculator, Cpu, Clock3, GitBranch, Network, Microscope, Lightbulb } from "lucide-react";
 
-type Props = { onAsk?: (prompt: string) => void };
+type Props = { onAsk?: (prompt: string) => void; answer?: string };
 type Mode = "concept" | "process" | "timeline" | "compare" | "system";
 const examples = [
   { label: "How diabetes affects the body", icon: HeartPulse, prompt: "Explain how diabetes affects the human body, with an interactive visual guide to insulin, blood glucose, organs involved, common symptoms, prevention and treatment." },
@@ -19,7 +19,7 @@ const modes: { id: Mode; label: string; icon: typeof Brain; detail: string }[] =
   { id: "compare", label: "Compare", icon: Microscope, detail: "Side-by-side similarities and differences" },
 ];
 
-export default function VisualGuide({ onAsk }: Props) {
+export default function VisualGuide({ onAsk, answer = "" }: Props) {
   const [topic, setTopic] = useState("");
   const [mode, setMode] = useState<Mode>("concept");
   const [lastTopic, setLastTopic] = useState("");
@@ -28,14 +28,34 @@ export default function VisualGuide({ onAsk }: Props) {
   const [showExamples, setShowExamples] = useState(true);
   const isHealthTopic = /disease|illness|cancer|diabetes|heart|brain|infection|virus|bacteria|symptom|medicine|medical|health|organ|anatomy/i.test(lastTopic);
   const stages = useMemo(() => {
-    const clean = lastTopic.trim() || "Your topic";
-    return [
+    const fallback = [
       { title: "What is it?", text: "Start with a clear definition and the main idea." },
       { title: "Main parts", text: "Identify the important components, people, structures or concepts." },
       { title: "How it works", text: "Follow the relationships, causes, steps or mechanisms." },
       { title: "Why it matters", text: "Connect the explanation to examples and real-world context." },
     ];
-  }, [lastTopic]);
+    const clean = answer.replace(/\r/g, "").trim();
+    if (!clean || clean === "Thinking…") return fallback;
+    const headings = [...clean.matchAll(/^#{1,3}\s+(.+)$/gm)];
+    let parsed: { title: string; text: string }[] = [];
+    if (headings.length) {
+      parsed = headings.slice(0, 8).map((match, index) => {
+        const from = (match.index ?? 0) + match[0].length;
+        const to = headings[index + 1]?.index ?? clean.length;
+        const excerpt = clean.slice(from, to).replace(/^\s+/, "").split(/\n\s*\n/)[0]
+          .replace(/^[-*+]\s+/gm, "").replace(/\*\*/g, "").replace(/\*/g, "").trim();
+        return { title: match[1].replace(/[*_]/g, "").trim(), text: excerpt.slice(0, 260) || "Open this section in the conversation for the full explanation." };
+      });
+    } else {
+      parsed = clean.split(/\n+/).map(line => line.trim()).filter(line => /^([-*+]\s+|\d+[.)]\s+)/.test(line))
+        .slice(0, 8).map((line, index) => ({ title: "Step " + (index + 1), text: line.replace(/^([-*+]\s+|\d+[.)]\s+)/, "").replace(/\*\*/g, "").slice(0, 260) }));
+    }
+    return parsed.length ? parsed : fallback;
+  }, [answer]);
+  const sourceLinks = useMemo(() => {
+    const found = [...answer.matchAll(/\[([^\]]{1,100})\]\((https:\/\/[^\s)]+)\)/g)];
+    return found.slice(0, 8).map(match => ({ label: match[1], url: match[2] }));
+  }, [answer]);
   function askBosley(event?: FormEvent) {
     event?.preventDefault();
     const value = topic.trim();
@@ -83,11 +103,13 @@ export default function VisualGuide({ onAsk }: Props) {
 
     {lastTopic && <div className="vg-generated">
       <div className="vg-generated-heading"><div><span className="vg-eyebrow">VISUAL LEARNING BOARD</span><h3>{lastTopic}</h3></div><span className="vg-live"><i/> READY TO EXPLORE</span></div>
-      <div className="vg-visual-canvas">
+      <div className={`vg-visual-canvas vg-diagram-${mode}`} aria-label={`${mode} visual diagram`}>
         <div className="vg-topic-node"><Sparkles size={19}/><strong>{lastTopic}</strong><small>MAIN TOPIC</small></div>
         <div className="vg-topic-branches">{stages.map((item, index) => <button type="button" key={item.title} className={expanded === index ? "vg-topic-card selected" : "vg-topic-card"} onClick={() => setExpanded(index)}><span className="vg-topic-number">{String(index + 1).padStart(2,"0")}</span><strong>{item.title}</strong><small>{item.text}</small></button>)}</div>
       </div>
       <div className="vg-expanded-note"><Lightbulb size={16}/><span><strong>{stages[expanded].title}:</strong> {stages[expanded].text} Ask Bosley below to expand this section into a detailed explanation, diagram or worked example.</span></div>
+      {answer.trim() && answer !== "Thinking…" && <details className="vg-full-explanation"><summary>Read the full explanation</summary><div>{answer.split(/\n+/).map((line, index) => <p key={index}>{line.replace(/^#{1,6}\s*/, "").replace(/\*\*/g, "").trim()}</p>)}</div></details>}
+      {sourceLinks.length > 0 && <div className="vg-source-list"><strong>Sources from Bosley</strong>{sourceLinks.map(link => <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label} ↗</a>)}</div>}
       {isHealthTopic && <div className="vg-health-note"><HeartPulse size={16}/><span>Health learning mode: this guide is for general education, not personal diagnosis or treatment. For symptoms or medical decisions, consult a qualified healthcare professional.</span></div>}
       <button type="button" className="vg-continue-button" onClick={() => onAsk?.(`Continue the Visual Guide for “${lastTopic}”. Expand the selected section “${stages[expanded].title}” with a detailed explanation and an appropriate labelled visual. Keep it accurate and easy to understand.`)}><BookOpen size={15}/> Continue learning with Bosley</button>
     </div>}

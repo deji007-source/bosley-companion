@@ -620,7 +620,7 @@ export default function App() {
           </article>)}
         </div>
       </div>}
-      {workspaceTab === "visual-guide" && <VisualGuide onAsk={(prompt) => { setTaskPanelOpen(false); void sendMessage(prompt); }} />}
+      {workspaceTab === "visual-guide" && <VisualGuide answer={(() => { const latest = [...messages].reverse().find(message => message.role === "bosley"); return latest && latest.text !== "Thinking…" && !latest.text.startsWith("I couldn\u0027t get a reply:") ? latest.text : ""; })()} onAsk={(prompt) => { setTaskPanelOpen(false); void sendMessage(prompt); }} />}
       {workspaceTab === "skills" && <div className="skills-library">
         <div className="skills-intro"><strong>REUSABLE BOSLEY SKILLS</strong><p>Enable instruction packs for your conversations. Skills are account-scoped guidance only; they do not install code or grant new device permissions.</p></div>
         {BOSLEY_SKILLS.map(skill => <article className="skill-card" key={skill.id}>

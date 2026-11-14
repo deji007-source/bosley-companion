@@ -156,7 +156,8 @@ export default function App() {
     const restored = Array.isArray(saved) ? saved.filter((item: unknown): item is BosleyClicky => !!item && typeof item === "object" && typeof (item as BosleyClicky).id === "string" && typeof (item as BosleyClicky).name === "string" && typeof (item as BosleyClicky).focus === "string").slice(0, 8) : [];
     const next = restored.length ? restored : DEFAULT_CLICKYS;
     setClickys(next);
-    setActiveClickyId(current => next.some(item => item.id === current) ? current : next[0].id);
+    const savedActive = typeof user?.user_metadata?.bosley_active_clicky === "string" ? user.user_metadata.bosley_active_clicky : "";
+    setActiveClickyId(next.some(item => item.id === savedActive) ? savedActive : next[0].id);
   }, [user?.id]);
 
   useEffect(() => {
@@ -370,13 +371,26 @@ export default function App() {
     setClickyBusy(true); setTaskNotice("");
     const next = [...clickys, { id: "clicky-" + crypto.randomUUID(), name, emoji: "✨", focus }];
     try {
-      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, bosley_clickys: next } });
+      const nextActiveId = next[next.length - 1].id;
+      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, bosley_clickys: next, bosley_active_clicky: nextActiveId } });
       if (error) throw error;
       if (data.user) { userRef.current = data.user; setUser(data.user); }
-      setClickys(next); setActiveClickyId(next[next.length - 1].id); setClickyName(""); setClickyFocus("");
+      setClickys(next); setActiveClickyId(nextActiveId); setClickyName(""); setClickyFocus("");
       setTaskNotice(name + " added. Choose this agent when delegating a task.");
     } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not save this agent."); }
     finally { setClickyBusy(false); }
+  }
+  async function chooseClicky(id: string) {
+    if (!clickys.some(item => item.id === id)) return;
+    setActiveClickyId(id);
+    if (!user || user.user_metadata?.bosley_active_clicky === id) return;
+    try {
+      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, bosley_active_clicky: id } });
+      if (error) throw error;
+      if (data.user) { userRef.current = data.user; setUser(data.user); }
+    } catch (error) {
+      setTaskNotice(error instanceof Error ? error.message : "Agent selection could not be saved. It remains selected for this session.");
+    }
   }
   async function queueAgentTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -633,13 +647,13 @@ export default function App() {
       {taskNotice && <div className="task-notice" role="status">{taskNotice}</div>}
       {workspaceTab === "agents" && <div className="clicky-library">
         <div className="clicky-intro"><span className="clicky-kicker">YOUR BOSLEY TEAM</span><h3>Meet your agents</h3><p>Create focused assistants with their own name and job. Choose one when you delegate work; its role travels with the task.</p></div>
-        <div className="clicky-grid">{clickys.map(agent => <button type="button" key={agent.id} className={activeClickyId === agent.id ? "clicky-card active" : "clicky-card"} onClick={() => setActiveClickyId(agent.id)}><span className="clicky-avatar">{agent.emoji}</span><strong>{agent.name}</strong><small>{agent.focus}</small><span className="clicky-select">{activeClickyId === agent.id ? "SELECTED" : "SELECT AGENT"}</span></button>)}</div>
+        <div className="clicky-grid">{clickys.map(agent => <button type="button" key={agent.id} className={activeClickyId === agent.id ? "clicky-card active" : "clicky-card"} onClick={() => void chooseClicky(agent.id)}><span className="clicky-avatar">{agent.emoji}</span><strong>{agent.name}</strong><small>{agent.focus}</small><span className="clicky-select">{activeClickyId === agent.id ? "SELECTED" : "SELECT AGENT"}</span></button>)}</div>
         <form className="clicky-create" onSubmit={saveClicky}><label>CREATE A NEW AGENT</label><input value={clickyName} onChange={event => setClickyName(event.target.value)} maxLength={32} placeholder="Agent name e.g. Design Helper" required/><textarea value={clickyFocus} onChange={event => setClickyFocus(event.target.value)} maxLength={180} rows={2} placeholder="What should this agent focus on?" required/><button type="submit" disabled={clickyBusy || clickys.length >= 8}><PlusCircle size={14}/>{clickyBusy ? "Saving…" : "Add to my team"}</button><small>Profiles are private to your account. Agents use Bosley's existing approved task and device permissions.</small></form>
       </div>}
       {workspaceTab === "tasks" && <>
       <form className="task-compose" onSubmit={queueAgentTask}>
         <label htmlFor="agent-task-instruction">DELEGATE A TASK</label>
-        <div className="task-compose-row"><select aria-label="Choose Bosley agent" value={activeClickyId} onChange={event => setActiveClickyId(event.target.value)}>{clickys.map(agent => <option key={agent.id} value={agent.id}>{agent.emoji} {agent.name}</option>)}</select><input id="agent-task-instruction" value={taskInstruction} onChange={event => setTaskInstruction(event.target.value)} maxLength={1800} placeholder="Describe a task for your connected Windows agent…" disabled={taskBusy}/><button type="submit" disabled={taskBusy || !taskInstruction.trim()}><Send size={13}/>{taskBusy ? "Queueing…" : "Delegate"}</button></div>
+        <div className="task-compose-row"><select aria-label="Choose Bosley agent" value={activeClickyId} onChange={event => void chooseClicky(event.target.value)}>{clickys.map(agent => <option key={agent.id} value={agent.id}>{agent.emoji} {agent.name}</option>)}</select><input id="agent-task-instruction" value={taskInstruction} onChange={event => setTaskInstruction(event.target.value)} maxLength={1800} placeholder="Describe a task for your connected Windows agent…" disabled={taskBusy}/><button type="submit" disabled={taskBusy || !taskInstruction.trim()}><Send size={13}/>{taskBusy ? "Queueing…" : "Delegate"}</button></div>
         <small>Assigned agent: {clickys.find(item => item.id === activeClickyId)?.name ?? "Bosley"}. Tasks are private and remain queued while your Windows agent is offline.</small>
       </form>
       <div className="task-workspace-body">

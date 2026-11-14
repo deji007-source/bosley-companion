@@ -1266,7 +1266,35 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 .agent-task-row{display:flex;gap:8px;width:100%;padding:9px 7px;margin:2px 0;text-align:left;border:1px solid transparent;border-radius:8px;background:transparent;color:#ddd}.agent-task-row.selected,.agent-task-row:hover{background:#151a1d;border-color:#34434a}.agent-task-dot{width:7px;height:7px;border-radius:50%;background:#88939b;flex-shrink:0;margin-top:4px}.agent-task-dot.processing{background:#e5b84f}.agent-task-dot.completed{background:#62c98b}.agent-task-dot.failed{background:#df7777}.agent-task-row span:last-child{display:flex;min-width:0;flex-direction:column;gap:4px}.agent-task-row strong{font-size:10px;line-height:1.45;overflow-wrap:anywhere}.agent-task-row small,.agent-task-event small{font-size:9px;color:#888}
 .agent-task-detail-title{font-size:11px;line-height:1.5;overflow-wrap:anywhere;color:#eee}.agent-task-event{border-left:2px solid #425b64;padding:2px 0 8px 9px;margin:10px 0}.agent-task-event strong{font-size:9px;color:#9fc9d3}.agent-task-event p{font-size:10px;line-height:1.5;color:#ddd;margin:5px 0;overflow-wrap:anywhere}.agent-task-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.agent-task-action.danger{color:#efb1b1;border-color:#684242}.agent-task-action.retry{color:#b8e6c7;border-color:#3c6048}.agent-task-footnote{padding:8px 12px;border-top:1px solid #303030;line-height:1.5}#agent-tasks-open{border:1px solid #343434;background:#101010;color:#ddd;border-radius:8px;padding:5px 8px;font-size:12px}
 @media(max-width:560px){.agent-task-workspace{inset:45px 4px 4px}.agent-task-columns{grid-template-columns:1fr;grid-template-rows:minmax(115px,.85fr) minmax(150px,1.15fr)}.agent-task-list{border-right:0;border-bottom:1px solid #303030;padding:8px}.agent-task-detail{padding:8px}}
-</style></head>
+</style><style id="bosley-playful-ui">
+/* Modern, playful surface treatment: lively accents without sacrificing contrast. */
+:root{--bosley-cyan:#7de3f5;--bosley-violet:#b6a0ff;--bosley-coral:#ffad9d;--bosley-mint:#a7f0d0}
+.panel{border-color:#314653;background:radial-gradient(ellipse at 8% 0%,#10212b 0%,#090d14 35%,#05070b 78%);box-shadow:0 28px 100px #000e,0 0 70px #47c9f018}
+.top{background:linear-gradient(105deg,#0e1a24,#0a0b12 60%,#151024)}
+.brand strong{background:linear-gradient(90deg,#fff 0%,var(--bosley-cyan) 48%,var(--bosley-violet) 100%);background-clip:text;-webkit-background-clip:text;color:transparent}
+.modebar{background:linear-gradient(110deg,#0d1720,#151022);border-color:#293d4b}
+.modebar button.on{background:linear-gradient(110deg,#153340,#28203f);border-color:#426276;color:#fff}
+.composer{border-color:#344d5a;background:linear-gradient(125deg,#0d1a22,#12101d);box-shadow:0 10px 32px #0009,inset 0 1px #ffffff10}
+.composer:focus-within{border-color:#76cfe3;box-shadow:0 0 0 3px #7de3f51c,0 10px 32px #0009}
+.primary{background:linear-gradient(110deg,#eafcff,#dcd2ff);color:#111!important}
+.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+#dock-launcher{border-color:#3b5362;background:linear-gradient(145deg,#111f29f5,#171127f5);box-shadow:0 14px 42px #000b,0 0 24px #75d8ed12}
+#dock-launcher>#dock-menu-toggle{border-color:#526e7e;background:radial-gradient(ellipse at 35% 18%,#263d4c,#10121d 72%);box-shadow:0 8px 25px #000b,inset 0 1px #ffffff35}
+#dock-launcher>#dock-menu-toggle:hover{border-color:var(--bosley-cyan);box-shadow:0 0 0 3px #7de3f51c,0 10px 30px #000b}
+#dock-launcher-menu{border-color:#40586a!important;background:linear-gradient(145deg,#101c25f7,#171226f7)!important;box-shadow:0 18px 54px #000d,0 0 30px #7de3f510!important}
+#dock-launcher-menu button{border:1px solid #ffffff0b!important;border-radius:9px!important;background:#ffffff08!important;color:#eaf5fb!important}
+#dock-launcher-menu button:hover,#dock-launcher-menu button:focus-visible{border-color:#5d91a5!important;background:linear-gradient(100deg,#15313b,#241d39)!important;color:#fff!important}
+#side-dock{border-color:#405464;background:radial-gradient(ellipse at 100% 0%,#172633,#0a0c13 65%)}
+#side-dock .dock-head{background:linear-gradient(100deg,#13232e,#171326)}
+#side-dock .dock-title{color:#dff7ff}
+#side-dock .dock-tabs button.on{border-color:#82d8e9;background:linear-gradient(110deg,#dffaff,#e6dcff);color:#10141a}
+.msg.bosley p{border-color:#294957!important;background:linear-gradient(135deg,#10212b,#171426)!important}
+.msg.you p{border-color:#4b5364!important;background:linear-gradient(135deg,#172331,#211b30)!important}
+.workspace,.automation{border-color:#334653;background:linear-gradient(135deg,#0d1820,#11101a)}
+#dock-launcher-menu button,#dock-menu-toggle,.launch{touch-action:manipulation}
+@media(prefers-reduced-motion:no-preference){#dock-launcher>#dock-menu-toggle:hover{transform:translateY(-2px)}}
+</style>
+</head>
 <body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><script>
 /* Independent splash failsafe: keep the launch overlay from trapping users if app boot code fails. */
 (()=>{const splash=document.getElementById("bosley-splash");if(!splash)return;
@@ -1892,29 +1920,9 @@ document.addEventListener("DOMContentLoaded",()=>{
    show(route.panel).catch(error=>console.error("Bosley page navigation failed:",route.panel,error));
    return;
   }
-  // Keep taps inside the open menu from reaching controls beneath it.
+  // Ignore taps on menu padding, but route each menu item only once above.
   if(target.closest("#dock-launcher-menu")){
-   const item=target.closest("[data-open-view]");
    event.preventDefault();event.stopImmediatePropagation();
-   if(item){
-    const viewId=item.dataset.openView;
-    if(dockMenu)dockMenu.hidden=true;
-    dockToggle?.setAttribute("aria-expanded","false");
-    (async()=>{
-     const desktop=bridge();
-     if(desktop){
-      try{
-       const caps=await desktop.getCapabilities();
-       if(caps?.actions?.includes("open_floating_view")){
-        const result=await desktop.request({action:"open_floating_view",payload:{view:viewId}});
-        if(result?.ok===true)return;
-        throw Error(result?.error||"Windows did not confirm opening this page window.");
-       }
-      }catch(error){console.warn("Standalone Bosley page window could not open:",error);note("Could not open a separate window: "+String(error?.message||error).slice(0,140));return}
-     }
-     await show(viewId);
-    })();
-   }
    return;
   }
   // Outside taps dismiss the menu but retain the outside control's normal action.
@@ -2723,9 +2731,9 @@ launcher.addEventListener("pointerdown",e=>{if(e.button!==0&&e.pointerType!=="to
 launcher.addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.screenX-dragState.x,dy=e.screenY-dragState.y;if(Math.abs(dx)+Math.abs(dy)<5)return;dragged=true;
  try{if(window.BosleyDesktop&&typeof window.BosleyDesktop.moveWindowBy==="function")window.BosleyDesktop.moveWindowBy(dx,dy);else if(window.BosleyAndroidWidget&&typeof window.BosleyAndroidWidget.moveBy==="function")window.BosleyAndroidWidget.moveBy(dx,dy);else{const st=$(".stage"),r=st.getBoundingClientRect();st.style.right="auto";st.style.bottom="auto";st.style.left=Math.max(0,Math.min(innerWidth-108,r.left+dx)) + "px";st.style.top=Math.max(0,Math.min(innerHeight-64,r.top+dy)) + "px"}}catch(err){console.warn("Bosley drag failed",err)}
  dragState.x=e.screenX;dragState.y=e.screenY;},{passive:true});
-function finishDrag(e){const activate=e.type==="pointerup"&&!!dragState&&!dragged;dragState=null;if(activate){e.preventDefault();suppressLaunchClick=true;toggle();requestAnimationFrame(()=>{suppressLaunchClick=false})}}
+function finishDrag(){dragState=null;}
 launcher.addEventListener("pointerup",finishDrag);launcher.addEventListener("pointercancel",()=>{dragState=null;dragged=false});
-launcher.addEventListener("click",e=>{if(suppressLaunchClick){e.preventDefault();return}if(e.detail!==0)return;if(dragged){dragged=false;return}toggle()});
+launcher.addEventListener("click",e=>{if(suppressLaunchClick){e.preventDefault();return}if(dragged){dragged=false;e.preventDefault();return}toggle()});
 $("#maximize").onclick=()=>{const p=$("#panel"),max=p.classList.toggle("maximized");$("#maximize").textContent=max?"❐":"□";$("#maximize").setAttribute("aria-label",max?"Restore panel":"Maximize panel");$("#maximize").title=max?"Restore panel":"Maximize panel"};
 $("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
 

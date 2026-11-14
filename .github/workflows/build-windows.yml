@@ -40,6 +40,10 @@ jobs:
           npm run test:companion
           npm run test:strategy-library
           npm run test:access-lock
+          npm run test:agent-workspace
+          npm run test:agent-skills
+          npm run test:agent-voice
+          npm run test:agent-routines
           node --check src/trading/strategy-library.js
           node --check src/trading/strategy-audit.js
           node --check src/trading/strategy-parser.js

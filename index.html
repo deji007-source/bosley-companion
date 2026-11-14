@@ -4823,7 +4823,7 @@ form?.addEventListener("submit",async event=>{event.preventDefault();if(!current
 db.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(!currentUser){agents=defaults;activeId=defaults[0].id;showAgents(false);render()}else if(!panel.hidden)void load().catch(error=>{if(notice)notice.textContent=String(error?.message||"Could not load agents.")})});
 void load().catch(error=>{if(notice)notice.textContent=String(error?.message||"Could not load agents.")});
 })();
-<\\/script>
+<\/script>
 
 </body></html>");win.document.close();win.focus();setTimeout(()=>win.print(),250);status.textContent="Print dialog opened. Choose Save as PDF to create a PDF copy."}
 

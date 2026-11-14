@@ -27,7 +27,12 @@ const DEFAULT_CLICKYS: BosleyClicky[] = [
   { id: "project-planner", name: "Project Planner", emoji: "🧭", focus: "Break projects into milestones, organise tasks and track practical next steps." }
 ];
 const ROUTINE_APPS = ["Spotify", "Chrome", "Edge", "Notepad", "Calculator", "Explorer"];
-const ROUTINE_URLS = ["https://spotify.com", "https://youtube.com", "https://gmail.com", "https://drive.google.com", "https://github.com", "https://chatgpt.com", "https://notion.so"];
+const ROUTINE_URLS = ["https://open.spotify.com/", "https://wa.me/", "https://web.whatsapp.com/", "https://youtube.com", "https://gmail.com", "https://drive.google.com", "https://github.com", "https://chatgpt.com", "https://notion.so"];
+function buildWhatsAppChatUrl(phone: string, message = ""): string {
+  const digits = phone.replace(/[^0-9]/g, "");
+  if (digits.length < 8 || digits.length > 15) throw new Error("Enter a valid international phone number including country code.");
+  return "https://wa.me/" + digits + (message.trim() ? "?text=" + encodeURIComponent(message.trim()) : "");
+}
 function localRoutineInstant(dateText: string, timeText: string, timezone: string): string {
   const [year, month, day] = dateText.split("-").map(Number);
   const [hour, minute] = timeText.split(":").map(Number);
@@ -107,6 +112,10 @@ export default function App() {
   const [routineTime, setRoutineTime] = useState("08:00");
   const [routineWeekday, setRoutineWeekday] = useState("1");
   const [routineBusy, setRoutineBusy] = useState(false);
+  const [whatsAppName, setWhatsAppName] = useState("");
+  const [whatsAppPhone, setWhatsAppPhone] = useState("");
+  const [whatsAppMessage, setWhatsAppMessage] = useState("");
+  const [whatsAppLinks, setWhatsAppLinks] = useState<Array<{name:string;phone:string;url:string}>>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -158,6 +167,11 @@ export default function App() {
     setClickys(next);
     const savedActive = typeof user?.user_metadata?.bosley_active_clicky === "string" ? user.user_metadata.bosley_active_clicky : "";
     setActiveClickyId(next.some(item => item.id === savedActive) ? savedActive : next[0].id);
+  }, [user?.id]);
+
+  useEffect(() => {
+    const saved = user?.user_metadata?.bosley_whatsapp_links;
+    setWhatsAppLinks(Array.isArray(saved) ? saved.filter((item: unknown): item is {name:string;phone:string;url:string} => !!item && typeof item === "object" && typeof (item as any).name === "string" && typeof (item as any).phone === "string" && typeof (item as any).url === "string" && (item as any).url.startsWith("https://wa.me/")).slice(0, 30) : []);
   }, [user?.id]);
 
   useEffect(() => {
@@ -323,6 +337,28 @@ export default function App() {
     } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not save routine."); }
     finally { setRoutineBusy(false); }
   }
+  async function saveWhatsAppContact(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user) { setTaskNotice("Sign in to save WhatsApp chat links to your account."); return; }
+    try {
+      const name = whatsAppName.trim();
+      if (!name || name.length > 80) throw new Error("Enter the contact name (up to 80 characters).");
+      const url = buildWhatsAppChatUrl(whatsAppPhone, whatsAppMessage);
+      const phone = whatsAppPhone.replace(/[^0-9]/g, "");
+      const next = [{ name, phone, url }, ...whatsAppLinks.filter(item => item.phone !== phone)].slice(0, 30);
+      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, bosley_whatsapp_links: next } });
+      if (error) throw error;
+      setWhatsAppLinks(next);
+      if (data.user) setUser(data.user);
+      setTaskNotice("WhatsApp chat link saved to your account. Open it to review the recipient and message in WhatsApp.");
+      setWhatsAppName(""); setWhatsAppPhone(""); setWhatsAppMessage("");
+    } catch (error) { setTaskNotice(error instanceof Error ? error.message : "Could not save WhatsApp link."); }
+  }
+  function openWhatsAppLink(url: string) {
+    if (!url.startsWith("https://wa.me/")) { setTaskNotice("That saved WhatsApp link is invalid."); return; }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   async function changeRoutine(routine: BosleyRoutine, action: "toggle" | "run" | "delete") {
     if (!user || routineBusy) return;
     setRoutineBusy(true); setTaskNotice("");
@@ -688,6 +724,17 @@ export default function App() {
           <small>Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"}. This feature only opens approved apps/sites; it cannot run scripts, send messages or make purchases.</small>
           <button type="submit" disabled={routineBusy}><CalendarClock size={14}/>{routineBusy ? "Saving…" : "Save routine"}</button>
         </form>
+        <section className="routine-compose" aria-label="WhatsApp chat links">
+          <label>WHATSAPP CHAT LINK</label>
+          <p>Enter the contact name and international phone number. Bosley builds and saves the chat URL; WhatsApp opens so you can review and send the message yourself.</p>
+          <form onSubmit={saveWhatsAppContact}>
+            <input value={whatsAppName} onChange={event => setWhatsAppName(event.target.value)} maxLength={80} placeholder="Contact name" required />
+            <input value={whatsAppPhone} onChange={event => setWhatsAppPhone(event.target.value)} inputMode="tel" maxLength={24} placeholder="Phone with country code, e.g. +234..." required />
+            <textarea value={whatsAppMessage} onChange={event => setWhatsAppMessage(event.target.value)} maxLength={1000} placeholder="Optional message to prefill" />
+            <button type="submit">Save WhatsApp chat link</button>
+          </form>
+          {whatsAppLinks.length > 0 && <div className="routine-list"><div className="task-section-label">SAVED WHATSAPP LINKS <span>{whatsAppLinks.length}</span></div>{whatsAppLinks.map(item => <div className="routine-item" key={item.phone}><span><strong>{item.name}</strong><small>{item.phone}</small></span><button type="button" onClick={() => openWhatsAppLink(item.url)}>Open chat</button><button type="button" onClick={async () => { const next = whatsAppLinks.filter(link => link.phone !== item.phone); const { error } = await supabase.auth.updateUser({ data: { ...user?.user_metadata, bosley_whatsapp_links: next } }); if (error) setTaskNotice(error.message); else setWhatsAppLinks(next); }}>Delete</button></div>)}</div>}
+        </section>
         <div className="routine-list"><div className="task-section-label">YOUR ROUTINES <span>{routines.length}</span></div>
           {!routines.length && <div className="task-empty">No routines yet. Create one above to get started.</div>}
           {routines.map(routine=><article className="routine-card" key={routine.id}>

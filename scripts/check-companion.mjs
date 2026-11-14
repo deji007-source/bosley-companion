@@ -16,6 +16,12 @@ assert.ok(html.includes('el("td-test-strategy").addEventListener("click"'), "The
 assert.ok(html.includes("Not started · strategy needs changes") && html.includes("NEEDS STRATEGY"), "Rejected strategies must be clearly distinguished from active backtest progress");
 assert.ok(html.includes("Strategy parsed successfully. No candles have been processed yet."), "A valid strategy must show a ready state before execution starts");
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
+const printMarkupStart = html.indexOf("win.document.write(");
+const printMarkupEnd = html.indexOf("win.document.close()", printMarkupStart);
+assert.ok(printMarkupStart >= 0 && printMarkupEnd > printMarkupStart, "Standalone Visual Guide print window must have a complete document writer");
+assert.ok(!html.slice(printMarkupStart, printMarkupEnd).includes("</script>"), "Embedded print-window markup must not prematurely close the parent HTML script");
+assert.ok(html.includes(String.raw`<\/script>`), "Embedded print-window document must escape its nested script closing tag");
+
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");

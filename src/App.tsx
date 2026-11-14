@@ -27,7 +27,7 @@ const DEFAULT_CLICKYS: BosleyClicky[] = [
   { id: "project-planner", name: "Project Planner", emoji: "🧭", focus: "Break projects into milestones, organise tasks and track practical next steps." }
 ];
 const ROUTINE_APPS = ["Spotify", "Chrome", "Edge", "Notepad", "Calculator", "Explorer"];
-const ROUTINE_URLS = ["https://open.spotify.com/", "https://wa.me/", "https://web.whatsapp.com/", "https://youtube.com", "https://gmail.com", "https://drive.google.com", "https://github.com", "https://chatgpt.com", "https://notion.so"];
+const ROUTINE_URLS = ["https://open.spotify.com/", "https://web.whatsapp.com/", "https://youtube.com", "https://gmail.com", "https://drive.google.com", "https://github.com", "https://chatgpt.com", "https://notion.so"];
 function buildWhatsAppChatUrl(phone: string, message = ""): string {
   const digits = phone.replace(/[^0-9]/g, "");
   if (digits.length < 8 || digits.length > 15) throw new Error("Enter a valid international phone number including country code.");

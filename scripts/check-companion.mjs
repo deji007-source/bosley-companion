@@ -310,7 +310,7 @@ const contracts = [
   ["Consent prompt for visual task guide", "Allow Bosley to open a system-level visual guide over other apps for this task?"],
   ["Animated visual tether", "bosley-guide-flow"],
   ["Native guide stop action", 'action:"stop_visual_guide"'],
-  ["Website-only guide is rejected", "The website cannot draw over other apps."],
+  ["Website fallback visual guide", "function showInAppBosleyGuide(title,steps,reason)"],
   ["Authenticated planner cloud sync", "async function syncPlannerTasks()"],
   ["Planner sync uses user-scoped rows", '.eq("user_id",uid)'],
   ["Planner sync conflict key", 'onConflict:"user_id,task_id"'],

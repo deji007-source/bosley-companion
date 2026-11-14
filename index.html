@@ -2419,7 +2419,7 @@ function showInAppBosleyGuide(title,steps,reason){
  const sub=document.createElement("p");sub.textContent=String(title||"Guided task");sub.style.cssText="color:#a6b6c1;font-size:11px;margin:6px 0 14px";
  const status=document.createElement("p");status.textContent=reason||"This walkthrough stays inside Bosley and does not inspect other apps or click controls.";status.style.cssText="padding:10px;border:1px solid #34404a;border-radius:9px;color:#aebbc4;font-size:10px";
  const list=document.createElement("ol");list.style.cssText="padding-left:24px;display:grid;gap:9px";
- const items=(steps||[]).map(x=>String(x).replace(/^GOAL:\\s*/,"").replace(/^\\d+\\.\\s*/,"")).filter(Boolean);let current=0;
+ const items=(steps||[]).map(x=>String(x).replace(/^GOAL:\s*/,"").replace(/^\d+\.\s*/,"")).filter(Boolean);let current=0;
  const progress=document.createElement("p");progress.style.color="#9bdcf0";
  const controls=document.createElement("div");controls.style.cssText="display:flex;justify-content:space-between;gap:8px;margin-top:12px";
  const prev=document.createElement("button"),next=document.createElement("button"),close=document.createElement("button");

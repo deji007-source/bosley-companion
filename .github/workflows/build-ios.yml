@@ -31,13 +31,14 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 45
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
       - name: Generate Bosley PWA icons
         run: |
           python3 -m pip install Pillow
           python3 scripts/generate-app-icons.py
 
-      - name: Check out repository
-        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

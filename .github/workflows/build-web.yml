@@ -59,6 +59,21 @@ jobs:
           NODE
           for file in .bosley-web-check-*.cjs; do node --check "$file"; done
           rm -f .bosley-web-check-*.cjs
+      - name: Serve and smoke-test production website bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run preview -- --host 127.0.0.1 > /tmp/bosley-vite-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ -o /tmp/bosley-preview.html; then break; fi
+            sleep 2
+          done
+          test -s /tmp/bosley-preview.html
+          grep -q 'id="side-dock"' /tmp/bosley-preview.html
+          grep -q 'id="launch"' /tmp/bosley-preview.html
+          echo 'Production website bundle served and passed HTTP smoke checks.'
       - name: Upload website test bundle
         uses: actions/upload-artifact@v4
         with:

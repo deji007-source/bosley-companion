@@ -69,6 +69,10 @@ assert.ok(html.includes('launcher.addEventListener("click",e=>{if(suppressLaunch
 assert.ok(!html.includes('if(e.detail!==0)return'), "Ghost activation must not discard ordinary mouse or touch clicks");
 assert.ok(!html.includes('const desktop=bridge();') || !html.includes('Standalone Bosley page window could not open:'), "Dropdown page selection must not be intercepted by a second competing router");
 assert.ok(html.includes('id="bosley-playful-ui"') && html.includes('--bosley-cyan') && html.includes('#dock-launcher-menu button:hover'), "The companion must include its modern playful visual theme");
+assert.ok(html.includes('return ["spotify","chrome","google chrome"') && html.includes('requestedApp==="spotify"'), "HeyClicky low-risk Spotify launch must be allowlisted across native and browser surfaces");
+assert.ok(html.includes('const safeLaunchOnly=wf.steps.every') && html.includes('Low-risk launch ran without a per-run prompt'), "Allowlisted single-purpose app and website launch workflows must run without repeated confirmation");
+assert.ok(html.includes('id="quick-open-spotify"') && html.includes('name:"Open Spotify"'), "Automation workspace must provide a one-click saved Spotify launch workflow");
+
 
 assert.ok(!html.includes("body.panel-open:not(.desktop-panel) #dock-launcher{display:none!important}"), "Launcher must remain available while workspace panel is open");
 assert.ok(html.includes('id="bosley-launcher-final-visibility"') && html.includes("body.panel-open #dock-launcher{display:block!important") && html.includes("top:24%!important"), "Floating ghost menu must remain visible above the chat and workspace while panels are open");

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
-const migration = readFileSync(new URL("../supabase/migrations/20261113234351_add_bosley_scheduled_routines.sql", import.meta.url), "utf8");
-const hardening = readFileSync(new URL("../supabase/migrations/20261114000458_harden_bosley_routine_constraints.sql", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../supabase/migrations/20261114000215_add_bosley_scheduled_routines.sql", import.meta.url), "utf8");
+const hardening = readFileSync(new URL("../supabase/migrations/20261114000516_harden_bosley_routine_constraints.sql", import.meta.url), "utf8");
 for (const marker of ['id="bosley-routines"', 'id="bosley-routine-form"', 'data-routine-run', 'data-routine-toggle', 'data-routine-delete', 'refreshRoutineList', 'routineZone']) {
   assert.ok(html.includes(marker), "Shared web/desktop/mobile app shell must include routine support: " + marker);
 }

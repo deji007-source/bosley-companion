@@ -1537,7 +1537,7 @@ jobs:
                 window.bosleyDesktop.onWidgetAppearance(applyAppearance);
               }
               // The top floating widget opens the Companion window.
-              // The separate Writing & Ideas bulb is reserved for Ctrl+Shift+I only.
+              // The separate Writing & Ideas bulb is reserved for Alt+T only.
               document.querySelector('button').addEventListener('click', () => {
                 window.bosleyDesktop.togglePanel();
               });

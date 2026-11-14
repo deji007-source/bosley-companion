@@ -3917,7 +3917,7 @@ async function runAction(step,approved=false){
   if(typeof b.getCapabilities==="function"){const caps=await b.getCapabilities();if(!caps||!Array.isArray(caps.actions)||!caps.actions.includes("send_message"))throw Error("Desktop bridge does not advertise send_message capability; draft was not sent.")}
   const result=await b.request({action:"send_message",payload:{recipient,body}});if(result?.ok!==true)throw Error(result?.error||"Messaging bridge did not confirm delivery.");return "Message connector confirmed send request."}
  if(step.type==="desktop_action"){
-  const action=String(step.action||"").trim(),requestedApp=String(step.app||input||"").trim().toLowerCase();
+  const requestedApp=String(step.app||input||"").trim().toLowerCase();
   if(action==="launch_app"&&requestedApp==="spotify"){
    const native=window.Capacitor?.Plugins?.BosleyOverlay;
    if(native?.openExternalUrl){try{const opened=await native.openExternalUrl({url:"spotify:"});if(opened?.ok===true)return "Android handed Spotify to its installed app handler."}catch{}const fallback=await native.openExternalUrl({url:"https://open.spotify.com/"});if(fallback?.ok!==true)throw Error(fallback?.error||"Android could not open Spotify or its web player.");return "Spotify app link was unavailable; opened Spotify's web destination."}

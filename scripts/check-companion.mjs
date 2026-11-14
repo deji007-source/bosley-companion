@@ -70,6 +70,7 @@ assert.ok(!html.includes('if(e.detail!==0)return'), "Ghost activation must not d
 assert.ok(!html.includes('const desktop=bridge();') || !html.includes('Standalone Bosley page window could not open:'), "Dropdown page selection must not be intercepted by a second competing router");
 assert.ok(html.includes('id="bosley-playful-ui"') && html.includes('--bosley-cyan') && html.includes('#dock-launcher-menu button:hover'), "The companion must include its modern playful visual theme");
 assert.ok(html.includes('return ["spotify","chrome","google chrome"') && html.includes('requestedApp==="spotify"'), "HeyClicky low-risk Spotify launch must be allowlisted across native and browser surfaces");
+assert.ok(!html.includes('const action=String(step.action||"").trim();\n  const action=String(step.action||"").trim(),requestedApp='), "Spotify launch routing must not redeclare the existing desktop action variable");
 assert.ok(html.includes('const safeLaunchOnly=wf.steps.every') && html.includes('Low-risk launch ran without a per-run prompt'), "Allowlisted single-purpose app and website launch workflows must run without repeated confirmation");
 assert.ok(html.includes('id="quick-open-spotify"') && html.includes('name:"Open Spotify"'), "Automation workspace must provide a one-click saved Spotify launch workflow");
 assert.ok(html.includes('if(target.closest("#bosley-command-help"))return;'), "Commands & shortcuts menu item must receive its click instead of being swallowed by the workspace router");

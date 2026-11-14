@@ -9,6 +9,7 @@ on:
   push:
     paths:
       - ".github/workflows/build-windows.yml"
+      - ".github/workflows/build-android.yml"
       - "index.html"
       - "package.json"
       - "capacitor.config.ts"

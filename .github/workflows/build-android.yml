@@ -51,6 +51,10 @@ jobs:
           npm run test:agent-skills
           npm run test:agent-voice
           npm run test:agent-routines
+          npm run test:agent-workspace
+          npm run test:agent-skills
+          npm run test:agent-voice
+          npm run test:agent-routines
           node --check src/trading/strategy-library.js
           node --check src/trading/strategy-audit.js
           node --check src/trading/strategy-parser.js
@@ -89,7 +93,6 @@ jobs:
           node scripts/check-ui-parity.mjs index.html android/app/src/main/assets/public/index.html "Android packaged WebView"
           python3 -m py_compile scripts/install-android-overlay.py
           python3 scripts/install-android-overlay.py
-          python3 scripts/prepare-android-direct-install.py
           grep -Fq 'android.permission.RECORD_AUDIO' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.MODIFY_AUDIO_SETTINGS' android/app/src/main/AndroidManifest.xml
           grep -Fq 'android.permission.SYSTEM_ALERT_WINDOW' android/app/src/main/AndroidManifest.xml

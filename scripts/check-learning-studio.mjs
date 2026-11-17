@@ -16,7 +16,7 @@ assert.ok(migration.includes("public.learning_documents") && migration.includes(
 assert.ok(migration.includes("enable row level security") && migration.includes("(select auth.uid()) = user_id"), "Learning metadata and chunks must be protected by per-user RLS");
 assert.ok(migration.includes("'bosley-learning'") && migration.includes("false,"), "Learning documents must use a private Storage bucket");
 assert.ok(migration.includes("(storage.foldername(name))[1] = (select auth.uid())::text"), "Storage objects must be isolated by authenticated user folder");
-assert.ok(learning.includes('body.action === "ingest"') && learning.includes('body.action === "search"') && learning.includes('body.action === "videos"'), "Learning Edge Function must support ingest, retrieval and educational video search");
+assert.ok(learning.includes('const action = body.action') && learning.includes('if (action === "ingest")') && learning.includes('if (action === "search")') && learning.includes('if (action === "videos")'), "Learning Edge Function must support ingest, retrieval and educational video search");
 assert.ok(learning.includes('storagePath.startsWith(userId + "/")') && learning.includes("500_000"), "Document ingestion must validate account ownership and extracted text size");
 assert.ok(learning.includes('.eq("user_id", userId)') && learning.includes('textSearch("search_vector"'), "Document retrieval must be account-scoped and use full-text search");
 assert.ok(learning.includes('safeSearch: "strict"') && learning.includes("youtube-nocookie.com/embed/"), "Video search must use safe search and privacy-enhanced embeds");

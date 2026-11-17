@@ -47,6 +47,7 @@ jobs:
           npm run test:companion
           npm run test:strategy-library
           npm run test:access-lock
+          npm run test:learning-studio
           node --check src/trading/strategy-library.js
           node --check src/trading/strategy-audit.js
           node --check src/trading/strategy-parser.js

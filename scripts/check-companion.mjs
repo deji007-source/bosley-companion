@@ -10,6 +10,11 @@ const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g
   .filter(([, attributes]) => !/\bsrc\s*=/.test(attributes))
   .map(([, , source]) => source);
 
+assert.ok(html.includes('id="home-screen"') && html.includes('id="home-core"'), "Bosley must open on the new command-home screen with a central core");
+assert.ok(html.includes('data-home-view="learning-studio"') && html.includes('data-home-view="writing-assist"'), "The command home must link to existing Learning and Writing Studio pages");
+assert.ok(html.includes('id="home-chat-open"') && html.includes("Open Bosley Chat"), "Chat must remain directly accessible from the home screen");
+assert.ok(html.includes('home.classList.toggle("expanded")') && html.includes("prefers-reduced-motion:reduce"), "The command core must expand/collapse with a reduced-motion fallback");
+assert.ok(html.includes("new MutationObserver") && html.includes('if(!panel.hidden&&!document.body.classList.contains("bosley-home"))showHome()'), "Reopening the companion must return to the command home");
 assert.ok(inlineScripts.length > 0, "Expected the companion's inline application script");
 assert.ok(html.includes('id="td-test-strategy"'), "Trading Dock must expose a repeatable SMA 20/50 test strategy");
 assert.ok(html.includes('el("td-test-strategy").addEventListener("click"'), "The test strategy control must load and validate its rule");

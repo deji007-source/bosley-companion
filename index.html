@@ -1551,7 +1551,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   appearance:()=>initFaceSettings(),
   agents:()=>drawAgents(),
   automation:()=>drawAutomation(),
-  activity:()=>renderActivity(),
+  activity:()=>{if(typeof window.BosleyRenderActivity!=="function")throw new Error("Activity renderer has not finished initializing. Retry in a moment.");return window.BosleyRenderActivity()},
   skills:()=>renderBosleySkills(),
   search:()=>renderBosleySearch(),
   control:()=>renderBosleyControlCentre(),
@@ -4588,6 +4588,8 @@ async function drawAgents(){
   if(centreCommands)centreCommands.innerHTML=commandRows.map(x=>'<article class="item"><main><strong>'+esc(x.command_type||"Device command")+'</strong><p>'+esc(typeof x.result==="string"?x.result.slice(0,180):x.result?JSON.stringify(x.result).slice(0,180):"Waiting for a device acknowledgement.")+'</p><small>'+esc(new Date(x.created_at).toLocaleString())+'</small></main><span class="status">'+esc(String(x.status||"unknown").toUpperCase())+'</span></article>').join("")||'<p class="mute">No device commands in the queue.</p>';
   if(centreStatus)centreStatus.textContent=(errors.length?errors.length+" source(s) unavailable · ":"")+(navigator.onLine?"Account data refreshed · ":"Offline · showing last available result · ")+new Date().toLocaleTimeString();
  }
+ // Publish this renderer for the early dock router in the separate bootstrap script.
+ window.BosleyRenderActivity=renderActivity;
  $("#agent-centre-refresh")?.addEventListener("click",()=>refreshAgentCommandCentre().catch(error=>{if(centreStatus)centreStatus.textContent="Refresh failed · "+String(error?.message||error).slice(0,140)}));
  await refreshAgentCommandCentre();
  if(window.__bosleyAgentCentreChannel){try{db.removeChannel(window.__bosleyAgentCentreChannel)}catch{}}

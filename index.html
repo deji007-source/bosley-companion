@@ -2047,7 +2047,19 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(toggle){
    event.preventDefault();event.stopImmediatePropagation();
    dockClickGuardAt=Date.now();
-   if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}
+   // The floating ghost is the Home launcher, not the tools-menu toggle.
+   // Keep all page navigation available through the header's Side views control.
+   const companionPanel=document.getElementById("panel");
+   if(companionPanel){
+    companionPanel.hidden=false;
+    companionPanel.removeAttribute("hidden");
+    document.body.classList.add("panel-open","bosley-home");
+    document.getElementById("home-screen")?.classList.remove("expanded");
+    document.getElementById("home-core")?.setAttribute("aria-expanded","false");
+    toggle.setAttribute("aria-expanded","true");
+    toggle.setAttribute("aria-label","Bosley Home is open");
+   }
+   if(dockMenu)dockMenu.hidden=true;
    return;
   }
   if(item){

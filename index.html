@@ -2047,19 +2047,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(toggle){
    event.preventDefault();event.stopImmediatePropagation();
    dockClickGuardAt=Date.now();
-   // The floating ghost is the Home launcher, not the tools-menu toggle.
-   // Keep all page navigation available through the header's Side views control.
-   const companionPanel=document.getElementById("panel");
-   if(companionPanel){
-    companionPanel.hidden=false;
-    companionPanel.removeAttribute("hidden");
-    document.body.classList.add("panel-open","bosley-home");
-    document.getElementById("home-screen")?.classList.remove("expanded");
-    document.getElementById("home-core")?.setAttribute("aria-expanded","false");
-    toggle.setAttribute("aria-expanded","true");
-    toggle.setAttribute("aria-label","Bosley Home is open");
-   }
-   if(dockMenu)dockMenu.hidden=true;
+   // The floating ghost remains the workspace-pages menu control.
+   if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}
    return;
   }
   if(item){
@@ -2898,7 +2887,7 @@ launcher.addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.scre
  dragState.x=e.screenX;dragState.y=e.screenY;},{passive:true});
 function finishDrag(){dragState=null;}
 launcher.addEventListener("pointerup",finishDrag);launcher.addEventListener("pointercancel",()=>{dragState=null;dragged=false});
-launcher.addEventListener("click",e=>{if(dragged){dragged=false;e.preventDefault();return}toggle()});
+launcher.addEventListener("click",e=>{if(dragged){dragged=false;e.preventDefault();return}if(typeof window.BosleyShowHome==="function"){window.BosleyShowHome();return}const p=$("#panel");p.hidden=false;p.removeAttribute("hidden");document.body.classList.add("panel-open","bosley-home");notifyWidgetSize(true)});
 $("#maximize").onclick=()=>{const p=$("#panel"),max=p.classList.toggle("maximized");$("#maximize").textContent=max?"❐":"□";$("#maximize").setAttribute("aria-label",max?"Restore panel":"Maximize panel");$("#maximize").title=max?"Restore panel":"Maximize panel"};
 $("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
 
@@ -5308,6 +5297,7 @@ body.desktop-floating-view #side-dock .dock-body video{max-width:100%}
  const home=document.getElementById("home-screen"),panel=document.getElementById("panel"),core=document.getElementById("home-core");
  if(!home||!panel||!core||home.dataset.bound==="1")return;home.dataset.bound="1";
  const showHome=()=>{home.classList.remove("expanded");document.body.classList.add("bosley-home");panel.hidden=false;const launch=document.getElementById("launch");if(launch)launch.setAttribute("aria-expanded","true");};
+ window.BosleyShowHome=showHome;
  const showChat=()=>{document.body.classList.remove("bosley-home");home.classList.remove("expanded");panel.hidden=false;const input=document.getElementById("in");if(input)setTimeout(()=>input.focus({preventScroll:true}),80);};
  core.addEventListener("click",()=>{const expanded=home.classList.toggle("expanded");core.setAttribute("aria-expanded",String(expanded));});
  document.getElementById("home-chat-open")?.addEventListener("click",showChat);

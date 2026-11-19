@@ -8,6 +8,7 @@ on:
     branches: [main]
   push:
     paths:
+      - 'README.md'
       - ".github/workflows/build-windows.yml"
       - "index.html"
       - "package.json"

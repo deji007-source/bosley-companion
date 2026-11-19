@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [main]
   push:
+    branches: [main, feat/learning-studio-clean-responses]
     paths:
       - 'README.md'
       - 'index.html'

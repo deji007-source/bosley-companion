@@ -968,6 +968,44 @@ body.desktop-floating-view #side-dock .dock-body #automation-skill-options{
  body.desktop-floating-view #side-dock .dock-body .bue-editor{min-height:200px!important}
 }
 
+
+/* Bosley monochrome command-home */
+#home-screen{display:none;position:absolute;inset:58px 0 0;z-index:4;overflow:auto;align-items:center;justify-content:center;padding:22px 16px 30px;background:radial-gradient(circle at 50% 44%,#171717 0,#080808 32%,#020202 72%);isolation:isolate}
+#home-screen::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.22;background-image:linear-gradient(#777 1px,transparent 1px),linear-gradient(90deg,#777 1px,transparent 1px);background-size:34px 34px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 78%)}
+body.bosley-home #home-screen{display:flex}
+body.bosley-home #panel{position:fixed}
+body.bosley-home #panel>:not(.top):not(#home-screen){display:none!important}
+#home-screen .home-inner{width:min(100%,560px);display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
+#home-screen .home-eyebrow{font:10px "DM Mono",monospace;letter-spacing:.28em;color:#888}
+#home-screen .home-title{margin:0;color:#f7f7f7;font-size:clamp(25px,5vw,38px);font-weight:700;letter-spacing:-.06em}
+#home-screen .home-subtitle{margin:-12px 0 0;color:#929292;font-size:12px}
+#home-screen .core-stage{position:relative;width:min(78vw,350px);height:min(78vw,350px);max-height:350px;display:grid;place-items:center}
+#home-screen .core-ring{position:absolute;inset:9%;border:1px solid #555;border-radius:50%;box-shadow:0 0 0 12px #ffffff04,0 0 46px #ffffff0c,inset 0 0 40px #ffffff08;transition:transform .65s cubic-bezier(.2,.8,.2,1),border-color .4s}
+#home-screen .core-ring::before,#home-screen .core-ring::after{content:"";position:absolute;inset:9%;border:1px solid #333;border-radius:50%}
+#home-screen .core-ring::after{inset:-8%;border-color:#ffffff12;border-style:dashed}
+#home-screen .core-button{position:relative;z-index:2;width:124px;height:124px;border:1px solid #aaa;border-radius:50%;background:radial-gradient(circle at 50% 30%,#292929,#090909 72%);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 8px #ffffff08,0 0 48px #ffffff18,inset 0 2px 12px #ffffff18;transition:transform .35s,box-shadow .35s,border-color .35s}
+#home-screen .core-button:active{transform:scale(.95)}
+#home-screen .core-button svg{width:45px;height:54px}
+#home-screen .core-button small{font:9px "DM Mono",monospace;letter-spacing:.24em}
+#home-screen .orbit-actions{position:absolute;inset:0;list-style:none;margin:0;padding:0;pointer-events:none}
+#home-screen .orbit-actions button{position:absolute;left:50%;top:50%;width:94px;min-height:54px;transform:translate(-50%,-50%) scale(.3);opacity:0;pointer-events:none;border:1px solid #393939;border-radius:13px;background:#0b0b0bf2;color:#eee;padding:8px 7px;font-size:10px;font-weight:700;box-shadow:0 8px 24px #000a;transition:transform .55s cubic-bezier(.16,1,.3,1),opacity .3s,border-color .2s,background .2s}
+#home-screen .orbit-actions button span{display:block;margin-bottom:3px;font-size:17px}
+#home-screen .orbit-actions button:hover{border-color:#aaa;background:#181818}
+#home-screen.expanded .core-ring{transform:scale(1.06);border-color:#aaa}
+#home-screen.expanded .core-button{box-shadow:0 0 0 8px #ffffff0d,0 0 70px #ffffff25,inset 0 2px 12px #ffffff22}
+#home-screen.expanded .orbit-actions button{opacity:1;pointer-events:auto}
+#home-screen.expanded .orbit-actions button:nth-child(1){transform:translate(-50%,-50%) translateY(-143px)}
+#home-screen.expanded .orbit-actions button:nth-child(2){transform:translate(-50%,-50%) translate(124px,-75px)}
+#home-screen.expanded .orbit-actions button:nth-child(3){transform:translate(-50%,-50%) translate(124px,75px)}
+#home-screen.expanded .orbit-actions button:nth-child(4){transform:translate(-50%,-50%) translateY(143px)}
+#home-screen.expanded .orbit-actions button:nth-child(5){transform:translate(-50%,-50%) translate(-124px,75px)}
+#home-screen.expanded .orbit-actions button:nth-child(6){transform:translate(-50%,-50%) translate(-124px,-75px)}
+#home-screen .home-bottom{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+#home-screen .home-chat{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 20px;border:1px solid #eee;border-radius:999px;background:#f5f5f5;color:#050505;font-weight:800;font-size:12px;box-shadow:0 8px 28px #0008}
+#home-screen .home-chat:hover{background:#fff;transform:translateY(-2px)}
+#home-screen .home-hint{font:9px "DM Mono",monospace;color:#777;letter-spacing:.08em}
+@media(max-width:390px){#home-screen .core-stage{width:290px;height:290px}#home-screen .orbit-actions button{width:82px;font-size:9px}#home-screen.expanded .orbit-actions button:nth-child(1){transform:translate(-50%,-50%) translateY(-119px)}#home-screen.expanded .orbit-actions button:nth-child(2){transform:translate(-50%,-50%) translate(103px,-62px)}#home-screen.expanded .orbit-actions button:nth-child(3){transform:translate(-50%,-50%) translate(103px,62px)}#home-screen.expanded .orbit-actions button:nth-child(4){transform:translate(-50%,-50%) translateY(119px)}#home-screen.expanded .orbit-actions button:nth-child(5){transform:translate(-50%,-50%) translate(-103px,62px)}#home-screen.expanded .orbit-actions button:nth-child(6){transform:translate(-50%,-50%) translate(-103px,-62px)}}
+@media(prefers-reduced-motion:reduce){#home-screen *{transition:none!important}}
 </style><style>
 /* Detached Windows views must occupy the Electron client area edge-to-edge. */
 html,body{width:100%;height:100%;min-width:0;min-height:0;margin:0}
@@ -1314,6 +1352,32 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 </svg></button></main>
 <section class="panel" id="panel" hidden aria-label="Bosley Companion">
  <header class="top"><div class="brand"><strong>BOSLEY</strong><small id="status">● READY</small></div><button id="signin-open" class="signin-shortcut" type="button" aria-label="Open account sign-in" title="Account and sync">Sign in</button><button id="agent-tasks-open" type="button" aria-label="Open agent task workspace" title="Agent task workspace" hidden>☷ Tasks</button><button id="dock-open" aria-label="Open side views" title="Open Workspace, Automation, Appearance and Activity">▤</button><button id="maximize" aria-label="Maximize panel" title="Maximize panel">□</button><button id="collapse" aria-label="Collapse panel">−</button></header>
+
+ <section id="home-screen" aria-label="Bosley home">
+  <div class="home-inner">
+   <div class="home-eyebrow">YOUR PERSONAL COMMAND CENTRE</div>
+   <h1 class="home-title">Good to have you here.</h1>
+   <p class="home-subtitle">One tap to bring Bosley to life.</p>
+   <div class="core-stage">
+    <div class="core-ring" aria-hidden="true"></div>
+    <button type="button" class="core-button" id="home-core" aria-expanded="false" aria-label="Expand Bosley shortcuts">
+     <svg viewBox="0 0 150 180" aria-hidden="true"><path d="M75 12C42 12 18 39 18 76v43c0 5 2 8 6 8 4 0 8-4 12-9 4-5 8-7 12-7 5 0 8 4 12 9 4 5 8 8 13 8s9-3 13-8c5-5 7-9 12-9 4 0 8 2 12 7 4 5 8 9 12 9 4 0 6-3 6-8V76c0-37-26-64-60-64Z" fill="#fff"/><ellipse cx="56" cy="78" rx="10.5" ry="14.5" fill="#050505"/><ellipse cx="94" cy="78" rx="10.5" ry="14.5" fill="#050505"/></svg>
+     <small>BOSLEY</small>
+    </button>
+    <div class="orbit-actions" aria-label="Bosley shortcuts">
+     <button type="button" data-home-view="ws"><span>▤</span>Workspace</button>
+     <button type="button" data-home-view="agents-panel"><span>◈</span>AI Agents</button>
+     <button type="button" data-home-view="automation"><span>⌘</span>Automations</button>
+     <button type="button" data-home-view="learning-studio"><span>▧</span>Learning</button>
+     <button type="button" data-home-view="writing-assist"><span>✎</span>Writing Studio</button>
+     <button type="button" data-home-view="money-learning"><span>◫</span>Trading Dock</button>
+    </div>
+   </div>
+   <div class="home-bottom"><button type="button" class="home-chat" id="home-chat-open"><span>◉</span> Open Bosley Chat <span>→</span></button></div>
+   <div class="home-hint" id="home-hint">TAP THE BOSLEY CORE TO EXPLORE</div>
+  </div>
+ </section>
+
  <section id="agent-task-workspace" class="agent-task-workspace" hidden aria-label="Agent task workspace">
 <header class="agent-task-head"><div><strong>AGENT WORKSPACE</strong><small>Private tasks for your Bosley account</small></div><button type="button" id="agent-task-refresh">↻ Refresh</button><button type="button" id="agent-task-close">← Back to chat</button></header>
 <p id="agent-task-notice" class="agent-task-notice" role="status" aria-live="polite">Loading tasks…</p>
@@ -4808,7 +4872,31 @@ async function renderUniversalInput(){
   if(action==="compare"){const key="bosley-universal-input-history-v1:"+String(user?.id||"local");try{const versions=JSON.parse(localStorage.getItem(key)||"[]");const host=$("#bue-history");host.hidden=false;host.replaceChildren();if(!versions.length){host.textContent="No saved versions yet. Use Save version before making changes.";return}const title=document.createElement("strong");title.textContent="Saved versions";host.appendChild(title);versions.slice(0,8).forEach((version,index)=>{const row=document.createElement("div");row.style.cssText="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid #ffffff18";const label=document.createElement("span");label.textContent=new Date(version.savedAt).toLocaleString()+" · "+wordCount(version.text)+" words";const actions=document.createElement("span");const restore=document.createElement("button");restore.type="button";restore.textContent="Restore";restore.addEventListener("click",()=>{area.value=version.text;refresh();status.textContent="Restored saved version. Current text was replaced; save a new version before further edits if needed."});const diff=document.createElement("button");diff.type="button";diff.textContent="Compare";diff.addEventListener("click",()=>{const before=version.text.split(/\s+/),after=area.value.split(/\s+/);let i=0;while(i<before.length&&i<after.length&&before[i]===after[i])i++;const output=document.createElement("pre");output.style.cssText="white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0";output.textContent="First difference near word "+(i+1)+"\nSaved: "+before.slice(Math.max(0,i-8),i+18).join(" ")+"\n\nCurrent: "+after.slice(Math.max(0,i-8),i+18).join(" ");host.querySelector("pre")?.remove();host.appendChild(output)});actions.append(restore,diff);row.append(label,actions);host.appendChild(row)})}catch(error){status.textContent="Unable to read saved versions."}}
   if(action==="preview"){const preview=$("#bue-preview");preview.hidden=!preview.hidden;if(!preview.hidden){preview.textContent=area.value||"Nothing to preview yet.";button.textContent="Hide preview"}else button.textContent="Preview"}
   if(action==="export"){const content=area.value;if(!content.trim()){status.textContent="There is no document to export.";return}const blob=new Blob([content],{type:"text/markdown;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="bosley-document.md";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status.textContent="Markdown document exported."}if(action==="docx-export"){const content=area.value;if(!content.trim()){status.textContent="There is no document to export.";return}try{status.textContent="Preparing Word document…";const docx=await loadDocumentLibrary("https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.js","docx");const paragraphs=content.split(/\n{2,}/).map(line=>new docx.Paragraph({children:[new docx.TextRun(line)]}));const documentFile=new docx.Document({sections:[{properties:{},children:paragraphs}]});const blob=await docx.Packer.toBlob(documentFile),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="bosley-document.docx";link.click();setTimeout(()=>URL.revokeObjectURL(url),1500);status.textContent="Word document exported."}catch(error){status.textContent=String(error?.message||"Unable to create Word document.").slice(0,180)}}
-  if(action==="print"){const content=area.value;if(!content.trim()){status.textContent="There is no document to print.";return}const win=window.open("","_blank","noopener");if(!win){status.textContent="The browser blocked the print window.";return}const safe=content.replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));win.document.write("<!doctype html><html><head><title>Bosley document</title><style>body{font:16px/1.7 system-ui,sans-serif;max-width:780px;margin:48px auto;padding:0 24px;white-space:pre-wrap;color:#171717}@media print{body{margin:18mm auto}}</style></head><body>"+safe+"</body></html>");win.document.close();win.focus();setTimeout(()=>win.print(),250);status.textContent="Print dialog opened. Choose Save as PDF to create a PDF copy."}
+  if(action==="print"){const content=area.value;if(!content.trim()){status.textContent="There is no document to print.";return}const win=window.open("","_blank","noopener");if(!win){status.textContent="The browser blocked the print window.";return}const safe=content.replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));win.document.write("<!doctype html><html><head><title>Bosley document</title><style>body{font:16px/1.7 system-ui,sans-serif;max-width:780px;margin:48px auto;padding:0 24px;white-space:pre-wrap;color:#171717}@media print{body{margin:18mm auto}}</style></head><body>"+safe+"
+<script>
+(()=>{const init=()=>{
+ const home=document.getElementById("home-screen"),panel=document.getElementById("panel"),core=document.getElementById("home-core");
+ if(!home||!panel||!core||home.dataset.bound==="1")return;home.dataset.bound="1";
+ const showHome=()=>{home.classList.remove("expanded");document.body.classList.add("bosley-home");panel.hidden=false;const launch=document.getElementById("launch");if(launch)launch.setAttribute("aria-expanded","true");};
+ const showChat=()=>{document.body.classList.remove("bosley-home");home.classList.remove("expanded");panel.hidden=false;const input=document.getElementById("in");if(input)setTimeout(()=>input.focus({preventScroll:true}),80);};
+ core.addEventListener("click",()=>{const expanded=home.classList.toggle("expanded");core.setAttribute("aria-expanded",String(expanded));document.getElementById("home-hint").textContent=expanded?"CHOOSE A DESTINATION":"TAP THE BOSLEY CORE TO EXPLORE";});
+ document.getElementById("home-chat-open")?.addEventListener("click",showChat);
+ document.getElementById("collapse")?.addEventListener("click",()=>document.body.classList.remove("bosley-home"));
+ document.getElementById("home-screen").querySelectorAll("[data-home-view]").forEach(button=>button.addEventListener("click",()=>{
+  const target=button.getAttribute("data-home-view"),dock=document.getElementById("dock-launcher-menu"),item=dock?.querySelector('[data-open-view="'+target+'"]');
+  showChat();if(item){item.click();}else{const fallback=document.querySelector('[data-open-view="'+target+'"]');fallback?.click();}
+ }));
+ document.getElementById("launch")?.addEventListener("click",()=>{if(!panel.hidden){showHome();}});
+ // Home is the first landing view; chat remains a distinct, persistent destination.
+ const originalCollapse=document.getElementById("collapse");if(originalCollapse&&!originalCollapse.dataset.homeBound){originalCollapse.dataset.homeBound="1";originalCollapse.addEventListener("click",()=>{panel.hidden=true;});}
+ const mo=new MutationObserver(()=>{if(!panel.hidden&&!document.body.classList.contains("bosley-home")&&!panel.dataset.homeVisited){panel.dataset.homeVisited="1";showHome();}});
+ mo.observe(panel,{attributes:true,attributeFilter:["hidden"]});
+ if(!panel.hidden)showHome();
+};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();
+</script>
+</body></html>");win.document.close();win.focus();setTimeout(()=>win.print(),250);status.textContent="Print dialog opened. Choose Save as PDF to create a PDF copy."}
 
   if(["grammar","clearer","concise","engaging"].includes(action)){await rewrite(action==="engaging"?"engaging":action);$("#bue-rewrite").hidden=false;$("#bue-suggestions").hidden=true}
   if(action==="copy"){if(!area.value.trim()){status.textContent="There is no text to copy.";return}try{await bosleyCopyText(area.value);status.textContent="Copied. Paste your text wherever you need it."}catch{status.textContent="Clipboard unavailable. Select and copy the text manually."}}

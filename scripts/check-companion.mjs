@@ -29,8 +29,8 @@ assert.ok(html.includes("Strategy parsed successfully. No candles have been proc
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 assert.ok(html.includes('activity:()=>{if(typeof window.BosleyRenderActivity!=="function")throw new Error("Activity renderer has not finished initializing. Retry in a moment.");return window.BosleyRenderActivity()},') && html.includes("window.BosleyRenderActivity=renderActivity;"), "The early dock router must call Activity through a published cross-script bridge, not an out-of-scope local function");
-assert.ok(html.includes('if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}'), "The floating launcher must toggle the complete workspace pages dropdown");
-assert.ok(html.includes('if(typeof window.BosleyShowHome==="function")window.BosleyShowHome();') && html.includes("window.BosleyShowHome=showHome;") && html.includes('if(open){\n  // All launcher entry paths'), "The main ghost launcher and native panel action must converge on the visible Bosley Home panel");
+assert.ok(html.includes('const toggle=target.closest("#dock-pages-toggle");') && html.includes('dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));'), "The separate pages control must retain the workspace dropdown");
+assert.ok(html.includes('const homeLauncher=target.closest("#dock-menu-toggle");') && html.includes('if(typeof window.BosleyShowHome==="function")window.BosleyShowHome();') && html.includes("window.BosleyShowHome=showHome;"), "The visible ghost icon must open Bosley Home, not only the tools dropdown");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
 
@@ -79,7 +79,7 @@ assert.ok(html.includes("Always reveal the in-app dock immediately") && !html.in
 assert.ok(!/if\s*\(\s*isAndroidNative\s*\|\|/.test(html) && html.includes('window.Capacitor?.getPlatform?.()==="android"'), "Shared page navigation must use a safely scoped Android platform check so website clicks cannot fail before showing the dock");
 assert.ok(html.includes('dock.hidden=false;dock.removeAttribute("hidden")') && html.includes("Selecting an already-open page must keep it open"), "Selecting a launcher page must immediately show the dock and must not toggle the selected page closed");
 assert.ok(html.includes('function finishDrag(){dragState=null;}'), "Ghost drag completion must never be responsible for opening the chat panel");
-assert.ok(html.includes('launcher.addEventListener("click",e=>{if(dragged){dragged=false;e.preventDefault();return}toggle()});'), "Ghost panel must open from standard mouse, touch and keyboard click events");
+assert.ok(html.includes('launcher.addEventListener("click",e=>{if(dragged){dragged=false;e.preventDefault();return}toggle(true);if(typeof window.BosleyShowHome==="function")window.BosleyShowHome();});'), "Main ghost launcher must open the visible Home panel on click");
 assert.ok(!html.includes('if(e.detail!==0)return'), "Ghost activation must not discard ordinary mouse or touch clicks");
 assert.ok(!html.includes('const desktop=bridge();') || !html.includes('Standalone Bosley page window could not open:'), "Dropdown page selection must not be intercepted by a second competing router");
 assert.ok(html.includes('id="bosley-playful-ui"') && html.includes('--bosley-cyan') && html.includes('#dock-launcher-menu button:hover'), "The companion must include its modern playful visual theme");

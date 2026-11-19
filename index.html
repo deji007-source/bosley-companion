@@ -1348,6 +1348,39 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 #dock-launcher-menu button,#dock-menu-toggle,.launch{touch-action:manipulation}
 @media(prefers-reduced-motion:no-preference){#dock-launcher>#dock-menu-toggle:hover{transform:translateY(-2px)}}
 </style>
+<style id="bosley-pulse-styles">
+#bosley-pulse{position:fixed;z-index:2147482500;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(410px,calc(100vw - 24px));font-family:Manrope,system-ui,sans-serif;color:#f7fbff;pointer-events:none}
+#bosley-pulse *{box-sizing:border-box}
+#bosley-pulse .pulse-shell{pointer-events:auto;border:1px solid #657783;border-radius:24px;background:linear-gradient(145deg,#111a20f5,#05080cf7 72%);box-shadow:0 18px 55px #000b,0 0 0 1px #ffffff12,inset 0 1px #ffffff20;overflow:hidden;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);transition:border-radius .22s ease,box-shadow .22s ease}
+#bosley-pulse .pulse-trigger{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:7px 13px;border:0;background:transparent;color:inherit;text-align:left}
+#bosley-pulse .pulse-mark{display:grid;place-items:center;width:30px;height:30px;border:1px solid #91aab8;border-radius:11px;background:radial-gradient(circle at 50% 25%,#344b59,#0b1116 75%);font-size:17px}
+#bosley-pulse .pulse-name{font:700 11px "DM Mono",monospace;letter-spacing:.16em}
+#bosley-pulse .pulse-state{margin-left:auto;color:#9aabb5;font:9px "DM Mono",monospace;letter-spacing:.08em}
+#bosley-pulse .pulse-chevron{color:#b9c9d1;font-size:16px;transition:transform .2s}
+#bosley-pulse[data-open="true"] .pulse-chevron{transform:rotate(180deg)}
+#bosley-pulse .pulse-body{display:none;padding:0 13px 13px}
+#bosley-pulse[data-open="true"] .pulse-body{display:block;animation:pulse-in .22s ease-out}
+#bosley-pulse .pulse-prompt{margin:0 0 10px;color:#c4d0d7;font-size:11px}
+#bosley-pulse .pulse-entry{display:flex;gap:7px;padding:5px;border:1px solid #43535e;border-radius:14px;background:#03070bd9}
+#bosley-pulse .pulse-entry input{min-width:0;flex:1;border:0!important;outline:0!important;background:transparent!important;color:#fff!important;padding:9px 8px;font-size:13px}
+#bosley-pulse .pulse-entry input::placeholder{color:#8c9ba4}
+#bosley-pulse .pulse-entry button{width:38px;border:1px solid #91aab8;border-radius:10px;background:#eaf4fa;color:#0a151c;font-weight:800}
+#bosley-pulse .pulse-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}
+#bosley-pulse .pulse-action{min-width:0;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid #35444d;border-radius:12px;background:#ffffff08;color:#e6edf1;font-size:10px}
+#bosley-pulse .pulse-action:active{background:#ffffff18;transform:scale(.97)}
+#bosley-pulse .pulse-action span:first-child{font-size:17px}
+#bosley-pulse .pulse-foot{display:flex;justify-content:space-between;align-items:center;margin-top:9px;color:#82929c;font:9px "DM Mono",monospace}
+#bosley-pulse .pulse-foot button{border:0;background:transparent;color:#b9d8e8;font:inherit}
+#bosley-pulse .pulse-privacy{opacity:.9}
+html[data-theme="light"] #bosley-pulse .pulse-shell{background:linear-gradient(145deg,#f9fcffed,#e9f1f6f5);color:#182b36;border-color:#91aab8;box-shadow:0 18px 45px #19334430,inset 0 1px #fff}
+html[data-theme="light"] #bosley-pulse .pulse-state,html[data-theme="light"] #bosley-pulse .pulse-prompt,html[data-theme="light"] #bosley-pulse .pulse-foot{color:#526873}
+html[data-theme="light"] #bosley-pulse .pulse-entry{background:#fff;border-color:#a9bbc5}
+html[data-theme="light"] #bosley-pulse .pulse-entry input{color:#182b36!important}
+html[data-theme="light"] #bosley-pulse .pulse-action{background:#fff;border-color:#b7c6ce;color:#203640}
+@keyframes pulse-in{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){#bosley-pulse *{animation:none!important;transition:none!important}}
+@media(min-width:700px){#bosley-pulse{left:auto;right:24px;bottom:24px;transform:none;width:360px}}
+</style>
 </head>
 <body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><script>
 /* Independent splash failsafe: keep the launch overlay from trapping users if app boot code fails. */
@@ -1469,6 +1502,24 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 </section>
 
 
+<aside id="bosley-pulse" data-open="false" aria-label="Bosley Pulse quick assistant">
+ <div class="pulse-shell">
+  <button class="pulse-trigger" type="button" aria-expanded="false" aria-controls="bosley-pulse-body">
+   <span class="pulse-mark" aria-hidden="true">◉</span><span class="pulse-name">BOSLEY PULSE</span><span class="pulse-state">STANDBY · TAP TO ACT</span><span class="pulse-chevron" aria-hidden="true">⌃</span>
+  </button>
+  <div class="pulse-body" id="bosley-pulse-body">
+   <p class="pulse-prompt">What should we take care of?</p>
+   <form class="pulse-entry" id="bosley-pulse-form"><input id="bosley-pulse-input" maxlength="2000" autocomplete="off" placeholder="Ask, launch, create, or resume…" aria-label="Tell Bosley what to do"><button type="submit" aria-label="Send to Bosley">↑</button></form>
+   <div class="pulse-actions">
+    <button class="pulse-action" type="button" data-pulse-action="chat"><span>✦</span><span>Chat</span></button>
+    <button class="pulse-action" type="button" data-pulse-action="voice"><span>🎙</span><span>Voice</span></button>
+    <button class="pulse-action" type="button" data-pulse-action="automation"><span>⌘</span><span>Automate</span></button>
+    <button class="pulse-action" type="button" data-pulse-action="resume"><span>↗</span><span>Resume</span></button>
+   </div>
+   <div class="pulse-foot"><span class="pulse-privacy">MIC OFF UNTIL YOU TAP VOICE</span><button type="button" data-pulse-action="home">OPEN FULL BOSLEY ↗</button></div>
+  </div>
+ </div>
+</aside>
 <nav id="dock-launcher" aria-label="Bosley workspace menu"><button type="button" id="dock-menu-toggle" aria-expanded="false" aria-controls="panel" aria-label="Open Bosley Home" title="Open Bosley Home"><svg class="dock-ghost-mascot" viewBox="0 0 150 180" role="img" aria-label="Bosley white ghost with blinking black eyes"><path d="M75 12C42 12 18 39 18 76v43c0 5 2 8 6 8 4 0 8-4 12-9 4-5 8-7 12-7 5 0 8 4 12 9 4 5 8 8 13 8s9-3 13-8c5-5 7-9 12-9 4 0 8 2 12 7 4 5 8 9 12 9 4 0 6-3 6-8V76c0-37-26-64-60-64Z" fill="#fff" stroke="#101820" stroke-width="4" stroke-linejoin="round"/><ellipse class="dock-ghost-eye" cx="56" cy="78" rx="10.5" ry="14.5"/><ellipse class="dock-ghost-eye" cx="94" cy="78" rx="10.5" ry="14.5"/></svg></button><button type="button" id="dock-pages-toggle" aria-expanded="false" aria-controls="dock-launcher-menu" aria-label="Open workspace pages" title="Open workspace pages">⋯</button><div id="dock-launcher-menu" hidden role="menu" aria-label="Bosley pages"><button type="button" role="menuitem" data-open-view="money-learning">Trading Dock</button><button type="button" role="menuitem" data-open-view="lovable-bosley">Bosley Builder</button><button type="button" role="menuitem" data-open-view="ws">Workspace</button><button type="button" role="menuitem" data-open-view="facepanel">Appearance</button><button type="button" role="menuitem" data-open-view="agents-panel">AI Agents</button><button type="button" role="menuitem" data-open-view="automation">Automation</button><button type="button" role="menuitem" data-open-view="activity">Activity & Planner</button><button type="button" role="menuitem" data-open-view="skills-panel">Skills</button><button type="button" role="menuitem" data-open-view="bosley-search">Bosley Search</button><button type="button" role="menuitem" data-open-view="control-centre">Control Centre</button><button type="button" role="menuitem" data-open-view="universal-input">Universal Input</button><button type="button" role="menuitem" data-open-view="writing-assist">Writing Studio</button><button type="button" role="menuitem" data-open-view="learning-studio">Learning Studio</button><button type="button" role="menuitem" data-review-composer>Review chat draft</button></div></nav>
 <aside id="side-dock" hidden aria-label="Bosley side views"><header class="dock-head"><span class="dock-title">BOSLEY WORKSPACE</span><button class="dock-close" id="dock-close" aria-label="Close side views">×</button></header><nav class="dock-tabs" id="dock-tabs" aria-label="Workspace views"></nav><div class="dock-body" id="dock-body"></div></aside>
 <section class="workspace" id="agents-panel" hidden></section><section class="workspace" id="money-learning" hidden></section>
@@ -5407,4 +5458,23 @@ html[data-theme="light"] :is(.danger,.error,.text-danger){color:#a52b35!importan
 html[data-theme="light"] :is(.success,.text-success){color:#176b46!important}
 html[data-theme="light"] :is(.warning,.text-warning){color:#80520c!important}
 </style>
+<script id="bosley-pulse-controller">
+(()=>{
+ const root=document.getElementById("bosley-pulse");if(!root||root.dataset.bound)return;root.dataset.bound="1";
+ const trigger=root.querySelector(".pulse-trigger"),entry=root.querySelector("#bosley-pulse-form"),input=root.querySelector("#bosley-pulse-input");
+ const setOpen=open=>{root.dataset.open=String(!!open);trigger.setAttribute("aria-expanded",String(!!open));if(open)setTimeout(()=>input.focus({preventScroll:true}),100)};
+ trigger.addEventListener("click",()=>setOpen(root.dataset.open!=="true"));
+ const openChat=()=>{if(typeof window.BosleyShowHome==="function")window.BosleyShowHome();const panel=document.getElementById("panel");if(panel){panel.hidden=false;panel.removeAttribute("hidden");document.body.classList.add("panel-open");}setTimeout(()=>document.getElementById("in")?.focus({preventScroll:true}),100)};
+ const dispatch=action=>{
+  if(action==="chat"||action==="home"){openChat();if(action==="home")setOpen(false);return}
+  if(action==="voice"){openChat();setTimeout(()=>document.getElementById("mic")?.click(),180);setOpen(false);return}
+  if(action==="automation"){openChat();setTimeout(()=>document.querySelector('#dock-launcher-menu [data-open-view="automation"]')?.click(),180);setOpen(false);return}
+  if(action==="resume"){openChat();setTimeout(()=>document.querySelector('#dock-launcher-menu [data-open-view="activity"]')?.click(),180);setOpen(false)}
+ };
+ root.querySelectorAll("[data-pulse-action]").forEach(button=>button.addEventListener("click",()=>dispatch(button.dataset.pulseAction)));
+ entry.addEventListener("submit",event=>{event.preventDefault();const value=input.value.trim();if(!value)return;openChat();setOpen(false);input.value="";setTimeout(()=>{if(typeof window.send==="function")window.send(value);else{const field=document.getElementById("in");if(field){field.value=value;document.getElementById("form")?.requestSubmit()}}},180)});
+ document.addEventListener("keydown",event=>{if((event.ctrlKey||event.metaKey)&&event.shiftKey&&event.code==="Space"){event.preventDefault();setOpen(root.dataset.open!=="true")}if(event.key==="Escape"&&root.dataset.open==="true")setOpen(false)});
+ window.BosleyPulse={open:()=>setOpen(true),close:()=>setOpen(false),toggle:()=>setOpen(root.dataset.open!=="true")};
+})();
+</script>
 </body></html>

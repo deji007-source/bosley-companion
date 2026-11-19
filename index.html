@@ -4925,6 +4925,13 @@ html[data-theme="light"] :is(.success,.text-success){color:#176b46!important}
 html[data-theme="light"] :is(.warning,.text-warning){color:#80520c!important}
 html[data-theme="light"] :focus-visible{outline-color:#28749a!important}
 @media(prefers-contrast:more){html[data-theme="light"]{--mute:#40515c;--line:#9aaab4}html[data-theme="light"] :is(.card,.dock-card,.panel,button,input,textarea,select){border-width:1.5px!important}}
+/* Override inline pale text left by legacy dark-mode widgets. */
+html[data-theme="light"] :is(h1,h2,h3,h4,h5,h6,p,span,label,small,strong,em,li,dt,dd,th,td,.title,.heading,.description,.subtitle,.meta,.status,.mute,.muted){color:inherit!important}
+html[data-theme="light"] [style*="color: white"],html[data-theme="light"] [style*="color:white"],html[data-theme="light"] [style*="color: #fff"],html[data-theme="light"] [style*="color:#fff"],html[data-theme="light"] [style*="color: rgb(255"],html[data-theme="light"] [style*="color:rgb(255"]{color:#263944!important}
+html[data-theme="light"] :is(.primary,.btn-primary,button.primary,[data-variant="primary"]){color:#fff!important}
+html[data-theme="light"] :is(.danger,.error,.text-danger){color:#a52b35!important}
+html[data-theme="light"] :is(.success,.text-success){color:#176b46!important}
+html[data-theme="light"] :is(.warning,.text-warning){color:#80520c!important}
 </style>
 </body></html>");win.document.close();win.focus();setTimeout(()=>win.print(),250);status.textContent="Print dialog opened. Choose Save as PDF to create a PDF copy."}
 

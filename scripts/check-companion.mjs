@@ -22,6 +22,10 @@ assert.ok(html.includes("Native light palette") && html.includes('html[data-them
 assert.ok(html.includes('home.classList.toggle("expanded")') && html.includes("prefers-reduced-motion:reduce"), "The command core must expand/collapse with a reduced-motion fallback");
 assert.ok(html.includes("new MutationObserver") && html.includes('if(!panel.hidden&&!document.body.classList.contains("bosley-home"))showHome()'), "Reopening the companion must return to the command home");
 assert.ok(inlineScripts.length > 0, "Expected the companion's inline application script");
+assert.ok(html.includes('id="bosley-pulse"') && html.includes('id="bosley-pulse-form"') && html.includes('window.BosleyPulse={'), "Bosley Pulse must provide a persistent expandable quick-action island");
+assert.ok(html.includes('data-pulse-action="chat"') && html.includes('data-pulse-action="voice"') && html.includes('data-pulse-action="automation"') && html.includes('data-pulse-action="resume"'), "Pulse must expose chat, voice, automation and resume actions");
+assert.ok(html.includes("MIC OFF UNTIL YOU TAP VOICE") && html.includes('event.code==="Space"'), "Pulse must be privacy-first and support its keyboard toggle");
+assert.ok(html.includes('html[data-theme="light"] #bosley-pulse .pulse-shell') && html.includes('prefers-reduced-motion:reduce){#bosley-pulse'), "Pulse must support real light mode and reduced-motion accessibility");
 assert.ok(html.includes('id="td-test-strategy"'), "Trading Dock must expose a repeatable SMA 20/50 test strategy");
 assert.ok(html.includes('el("td-test-strategy").addEventListener("click"'), "The test strategy control must load and validate its rule");
 assert.ok(html.includes("Not started · strategy needs changes") && html.includes("NEEDS STRATEGY"), "Rejected strategies must be clearly distinguished from active backtest progress");

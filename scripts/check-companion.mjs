@@ -30,7 +30,7 @@ assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear aft
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
 assert.ok(html.includes('activity:()=>{if(typeof window.BosleyRenderActivity!=="function")throw new Error("Activity renderer has not finished initializing. Retry in a moment.");return window.BosleyRenderActivity()},') && html.includes("window.BosleyRenderActivity=renderActivity;"), "The early dock router must call Activity through a published cross-script bridge, not an out-of-scope local function");
 assert.ok(html.includes('if(dockMenu){dockMenu.hidden=!dockMenu.hidden;toggle.setAttribute("aria-expanded",String(!dockMenu.hidden));}'), "The floating launcher must toggle the complete workspace pages dropdown");
-assert.ok(html.includes('if(typeof window.BosleyShowHome==="function"){window.BosleyShowHome();return}') && html.includes("window.BosleyShowHome=showHome;"), "The main ghost launcher must explicitly open Bosley Home");
+assert.ok(html.includes('if(typeof window.BosleyShowHome==="function")window.BosleyShowHome();') && html.includes("window.BosleyShowHome=showHome;") && html.includes('if(open){\n  // All launcher entry paths'), "The main ghost launcher and native panel action must converge on the visible Bosley Home panel");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
 

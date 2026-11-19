@@ -969,42 +969,32 @@ body.desktop-floating-view #side-dock .dock-body #automation-skill-options{
 }
 
 
-/* Bosley monochrome command-home */
-#home-screen{display:none;position:absolute;inset:58px 0 0;z-index:4;overflow:auto;align-items:center;justify-content:center;padding:22px 16px 30px;background:radial-gradient(circle at 50% 44%,#171717 0,#080808 32%,#020202 72%);isolation:isolate}
-#home-screen::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.22;background-image:linear-gradient(#777 1px,transparent 1px),linear-gradient(90deg,#777 1px,transparent 1px);background-size:34px 34px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 78%)}
+/* Minimal Bosley command-home: one core, no orbit rings, high-contrast blueprint grid. */
+#home-screen{display:none;position:absolute;inset:58px 0 0;z-index:4;overflow:auto;align-items:center;justify-content:center;padding:20px 14px;background:#030609;isolation:isolate}
+#home-screen::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.82;background-image:linear-gradient(rgba(117,157,180,.34) 1px,transparent 1px),linear-gradient(90deg,rgba(117,157,180,.34) 1px,transparent 1px),linear-gradient(rgba(117,157,180,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(117,157,180,.13) 1px,transparent 1px);background-size:36px 36px,36px 36px,9px 9px,9px 9px;background-position:center center}
+#home-screen::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 18%,rgba(0,0,0,.12) 100%)}
 body.bosley-home #home-screen{display:flex}
 body.bosley-home #panel{position:fixed}
 body.bosley-home #panel>:not(.top):not(#home-screen){display:none!important}
-#home-screen .home-inner{width:min(100%,560px);display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
-#home-screen .home-eyebrow{font:10px "DM Mono",monospace;letter-spacing:.28em;color:#888}
-#home-screen .home-title{margin:0;color:#f7f7f7;font-size:clamp(25px,5vw,38px);font-weight:700;letter-spacing:-.06em}
-#home-screen .home-subtitle{margin:-12px 0 0;color:#929292;font-size:12px}
-#home-screen .core-stage{position:relative;width:min(78vw,350px);height:min(78vw,350px);max-height:350px;display:grid;place-items:center}
-#home-screen .core-ring{position:absolute;inset:9%;border:1px solid #555;border-radius:50%;box-shadow:0 0 0 12px #ffffff04,0 0 46px #ffffff0c,inset 0 0 40px #ffffff08;transition:transform .65s cubic-bezier(.2,.8,.2,1),border-color .4s}
-#home-screen .core-ring::before,#home-screen .core-ring::after{content:"";position:absolute;inset:9%;border:1px solid #333;border-radius:50%}
-#home-screen .core-ring::after{inset:-8%;border-color:#ffffff12;border-style:dashed}
-#home-screen .core-button{position:relative;z-index:2;width:124px;height:124px;border:1px solid #aaa;border-radius:50%;background:radial-gradient(circle at 50% 30%,#292929,#090909 72%);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 8px #ffffff08,0 0 48px #ffffff18,inset 0 2px 12px #ffffff18;transition:transform .35s,box-shadow .35s,border-color .35s}
+#home-screen .home-inner{width:min(100%,560px);display:flex;align-items:center;justify-content:center}
+#home-screen .core-stage{position:relative;width:min(88vw,390px);height:min(88vw,390px);min-height:300px;display:grid;place-items:center}
+#home-screen .core-button{position:relative;z-index:2;width:132px;height:132px;border:1px solid #b9d0dc;border-radius:50%;background:radial-gradient(circle at 50% 30%,#252d33,#070a0d 76%);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 1px rgba(142,190,214,.2),0 0 56px rgba(122,180,207,.24),inset 0 2px 16px rgba(255,255,255,.16);transition:transform .3s,box-shadow .3s}
 #home-screen .core-button:active{transform:scale(.95)}
-#home-screen .core-button svg{width:45px;height:54px}
-#home-screen .core-button small{font:9px "DM Mono",monospace;letter-spacing:.24em}
+#home-screen .core-button svg{width:52px;height:62px}
 #home-screen .orbit-actions{position:absolute;inset:0;list-style:none;margin:0;padding:0;pointer-events:none}
-#home-screen .orbit-actions button{position:absolute;left:50%;top:50%;width:94px;min-height:54px;transform:translate(-50%,-50%) scale(.3);opacity:0;pointer-events:none;border:1px solid #393939;border-radius:13px;background:#0b0b0bf2;color:#eee;padding:8px 7px;font-size:10px;font-weight:700;box-shadow:0 8px 24px #000a;transition:transform .55s cubic-bezier(.16,1,.3,1),opacity .3s,border-color .2s,background .2s}
-#home-screen .orbit-actions button span{display:block;margin-bottom:3px;font-size:17px}
-#home-screen .orbit-actions button:hover{border-color:#aaa;background:#181818}
-#home-screen.expanded .core-ring{transform:scale(1.06);border-color:#aaa}
-#home-screen.expanded .core-button{box-shadow:0 0 0 8px #ffffff0d,0 0 70px #ffffff25,inset 0 2px 12px #ffffff22}
+#home-screen .orbit-actions button{position:absolute;left:50%;top:50%;width:104px;min-height:58px;transform:translate(-50%,-50%) scale(.25);opacity:0;pointer-events:none;border:1px solid #587181;border-radius:13px;background:rgba(5,12,17,.97);color:#f2f8fb;padding:8px 7px;font-size:10px;font-weight:700;box-shadow:0 8px 28px #000c;transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .28s,border-color .2s,background .2s}
+#home-screen .orbit-actions button span{display:block;margin-bottom:3px;font-size:19px}
+#home-screen .orbit-actions button:hover{border-color:#d3e7f1;background:#10202a}
+#home-screen.expanded .core-button{box-shadow:0 0 0 1px rgba(142,190,214,.32),0 0 76px rgba(122,180,207,.34),inset 0 2px 16px rgba(255,255,255,.2)}
 #home-screen.expanded .orbit-actions button{opacity:1;pointer-events:auto}
-#home-screen.expanded .orbit-actions button:nth-child(1){transform:translate(-50%,-50%) translateY(-143px)}
-#home-screen.expanded .orbit-actions button:nth-child(2){transform:translate(-50%,-50%) translate(124px,-75px)}
-#home-screen.expanded .orbit-actions button:nth-child(3){transform:translate(-50%,-50%) translate(124px,75px)}
-#home-screen.expanded .orbit-actions button:nth-child(4){transform:translate(-50%,-50%) translateY(143px)}
-#home-screen.expanded .orbit-actions button:nth-child(5){transform:translate(-50%,-50%) translate(-124px,75px)}
-#home-screen.expanded .orbit-actions button:nth-child(6){transform:translate(-50%,-50%) translate(-124px,-75px)}
-#home-screen .home-bottom{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
-#home-screen .home-chat{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 20px;border:1px solid #eee;border-radius:999px;background:#f5f5f5;color:#050505;font-weight:800;font-size:12px;box-shadow:0 8px 28px #0008}
-#home-screen .home-chat:hover{background:#fff;transform:translateY(-2px)}
-#home-screen .home-hint{font:9px "DM Mono",monospace;color:#777;letter-spacing:.08em}
-@media(max-width:390px){#home-screen .core-stage{width:290px;height:290px}#home-screen .orbit-actions button{width:82px;font-size:9px}#home-screen.expanded .orbit-actions button:nth-child(1){transform:translate(-50%,-50%) translateY(-119px)}#home-screen.expanded .orbit-actions button:nth-child(2){transform:translate(-50%,-50%) translate(103px,-62px)}#home-screen.expanded .orbit-actions button:nth-child(3){transform:translate(-50%,-50%) translate(103px,62px)}#home-screen.expanded .orbit-actions button:nth-child(4){transform:translate(-50%,-50%) translateY(119px)}#home-screen.expanded .orbit-actions button:nth-child(5){transform:translate(-50%,-50%) translate(-103px,62px)}#home-screen.expanded .orbit-actions button:nth-child(6){transform:translate(-50%,-50%) translate(-103px,-62px)}}
+#home-screen.expanded .orbit-actions button:nth-child(1){transform:translate(-50%,-50%) translateY(-165px)}
+#home-screen.expanded .orbit-actions button:nth-child(2){transform:translate(-50%,-50%) translate(145px,-92px)}
+#home-screen.expanded .orbit-actions button:nth-child(3){transform:translate(-50%,-50%) translate(145px,92px)}
+#home-screen.expanded .orbit-actions button:nth-child(4){transform:translate(-50%,-50%) translateY(165px)}
+#home-screen.expanded .orbit-actions button:nth-child(5){transform:translate(-50%,-50%) translate(-145px,92px)}
+#home-screen.expanded .orbit-actions button:nth-child(6){transform:translate(-50%,-50%) translate(-145px,-92px)}
+#home-screen.expanded .orbit-actions button:nth-child(7){transform:translate(-50%,-50%) translateY(-225px)}
+@media(max-width:430px){#home-screen .core-stage{width:92vw;height:92vw;min-height:290px}#home-screen .orbit-actions button{width:88px;min-height:54px;font-size:9px}#home-screen.expanded .orbit-actions button:nth-child(1){transform:translate(-50%,-50%) translateY(-137px)}#home-screen.expanded .orbit-actions button:nth-child(2){transform:translate(-50%,-50%) translate(112px,-72px)}#home-screen.expanded .orbit-actions button:nth-child(3){transform:translate(-50%,-50%) translate(112px,72px)}#home-screen.expanded .orbit-actions button:nth-child(4){transform:translate(-50%,-50%) translateY(137px)}#home-screen.expanded .orbit-actions button:nth-child(5){transform:translate(-50%,-50%) translate(-112px,72px)}#home-screen.expanded .orbit-actions button:nth-child(6){transform:translate(-50%,-50%) translate(-112px,-72px)}#home-screen.expanded .orbit-actions button:nth-child(7){transform:translate(-50%,-50%) translateY(-190px)}}
 @media(prefers-reduced-motion:reduce){#home-screen *{transition:none!important}}
 </style><style>
 /* Detached Windows views must occupy the Electron client area edge-to-edge. */
@@ -1355,26 +1345,20 @@ body.desktop-floating-view .stage,body.desktop-floating-view .panel,body.desktop
 
  <section id="home-screen" aria-label="Bosley home">
   <div class="home-inner">
-   <div class="home-eyebrow">YOUR PERSONAL COMMAND CENTRE</div>
-   <h1 class="home-title">Good to have you here.</h1>
-   <p class="home-subtitle">One tap to bring Bosley to life.</p>
    <div class="core-stage">
-    <div class="core-ring" aria-hidden="true"></div>
     <button type="button" class="core-button" id="home-core" aria-expanded="false" aria-label="Expand Bosley shortcuts">
      <svg viewBox="0 0 150 180" aria-hidden="true"><path d="M75 12C42 12 18 39 18 76v43c0 5 2 8 6 8 4 0 8-4 12-9 4-5 8-7 12-7 5 0 8 4 12 9 4 5 8 8 13 8s9-3 13-8c5-5 7-9 12-9 4 0 8 2 12 7 4 5 8 9 12 9 4 0 6-3 6-8V76c0-37-26-64-60-64Z" fill="#fff"/><ellipse cx="56" cy="78" rx="10.5" ry="14.5" fill="#050505"/><ellipse cx="94" cy="78" rx="10.5" ry="14.5" fill="#050505"/></svg>
-     <small>BOSLEY</small>
     </button>
     <div class="orbit-actions" aria-label="Bosley shortcuts">
      <button type="button" data-home-view="ws"><span>▤</span>Workspace</button>
      <button type="button" data-home-view="agents-panel"><span>◈</span>AI Agents</button>
      <button type="button" data-home-view="automation"><span>⌘</span>Automations</button>
-     <button type="button" data-home-view="learning-studio"><span>▧</span>Learning</button>
+     <button type="button" data-home-view="learning-studio"><span>▧</span>Learning Studio</button>
      <button type="button" data-home-view="writing-assist"><span>✎</span>Writing Studio</button>
      <button type="button" data-home-view="money-learning"><span>◫</span>Trading Dock</button>
+     <button type="button" id="home-chat-open"><span>◉</span>Open Bosley Chat</button>
     </div>
    </div>
-   <div class="home-bottom"><button type="button" class="home-chat" id="home-chat-open"><span>◉</span> Open Bosley Chat <span>→</span></button></div>
-   <div class="home-hint" id="home-hint">TAP THE BOSLEY CORE TO EXPLORE</div>
   </div>
  </section>
 
@@ -5286,7 +5270,7 @@ body.desktop-floating-view #side-dock .dock-body video{max-width:100%}
  if(!home||!panel||!core||home.dataset.bound==="1")return;home.dataset.bound="1";
  const showHome=()=>{home.classList.remove("expanded");document.body.classList.add("bosley-home");panel.hidden=false;const launch=document.getElementById("launch");if(launch)launch.setAttribute("aria-expanded","true");};
  const showChat=()=>{document.body.classList.remove("bosley-home");home.classList.remove("expanded");panel.hidden=false;const input=document.getElementById("in");if(input)setTimeout(()=>input.focus({preventScroll:true}),80);};
- core.addEventListener("click",()=>{const expanded=home.classList.toggle("expanded");core.setAttribute("aria-expanded",String(expanded));document.getElementById("home-hint").textContent=expanded?"CHOOSE A DESTINATION":"TAP THE BOSLEY CORE TO EXPLORE";});
+ core.addEventListener("click",()=>{const expanded=home.classList.toggle("expanded");core.setAttribute("aria-expanded",String(expanded));});
  document.getElementById("home-chat-open")?.addEventListener("click",showChat);
  document.getElementById("home-screen").querySelectorAll("[data-home-view]").forEach(button=>button.addEventListener("click",()=>{
   const target=button.getAttribute("data-home-view"),dock=document.getElementById("dock-launcher-menu"),item=dock?.querySelector('[data-open-view="'+target+'"]');

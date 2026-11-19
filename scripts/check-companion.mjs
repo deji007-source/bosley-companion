@@ -28,6 +28,7 @@ assert.ok(html.includes("Not started · strategy needs changes") && html.include
 assert.ok(html.includes("Strategy parsed successfully. No candles have been processed yet."), "A valid strategy must show a ready state before execution starts");
 assert.match(html.trimEnd(), /<\/html>$/i, "No application source may appear after the closing HTML document");
 assert.ok(inlineScripts.some(source => source.includes("function startLaptopCommandListener(activeUser)")), "Laptop listener must be defined inside an executable inline script");
+assert.ok(html.includes('activity:()=>{if(typeof window.BosleyRenderActivity!=="function")throw new Error("Activity renderer has not finished initializing.") && html.includes("window.BosleyRenderActivity=renderActivity;"), "The early dock router must call Activity through a published cross-script bridge, not an out-of-scope local function");
 const appScript = inlineScripts.find(source => source.includes("function startLaptopCommandListener(activeUser)"));
 const marketHistoryFunction = readText(new URL("../supabase/functions/market-history/index.ts", import.meta.url), "utf8");
 

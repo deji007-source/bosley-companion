@@ -4889,7 +4889,7 @@ async function renderUniversalInput(){
  document.getElementById("launch")?.addEventListener("click",()=>{if(!panel.hidden){showHome();}});
  // Home is the first landing view; chat remains a distinct, persistent destination.
  const originalCollapse=document.getElementById("collapse");if(originalCollapse&&!originalCollapse.dataset.homeBound){originalCollapse.dataset.homeBound="1";originalCollapse.addEventListener("click",()=>{panel.hidden=true;});}
- const mo=new MutationObserver(()=>{if(!panel.hidden&&!document.body.classList.contains("bosley-home")&&!panel.dataset.homeVisited){panel.dataset.homeVisited="1";showHome();}});
+ const mo=new MutationObserver(()=>{if(!panel.hidden&&!document.body.classList.contains("bosley-home"))showHome();});
  mo.observe(panel,{attributes:true,attributeFilter:["hidden"]});
  if(!panel.hidden)showHome();
 };

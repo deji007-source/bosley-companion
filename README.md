@@ -146,3 +146,10 @@ Bosley includes a small in-app **Commands & shortcuts** reference in the floatin
 - Say **Run my [workflow name] automation** to run a saved workflow.
 
 Saved workflows containing only allowlisted website launches or allowlisted desktop-app launches run without a separate per-run confirmation. Any workflow containing an action that sends, publishes, deletes, purchases, changes account settings, or otherwise has a consequential external effect still requires review and confirmation. The Windows desktop build is required for native Windows app launches; a browser-only build opens websites in browser tabs.
+
+
+## Bosley command home
+
+The default companion landing view is the monochrome Bosley command home. Tap the central Bosley core to expand or collapse the animated radial shortcuts. The shortcuts open the existing Workspace, AI Agents, Automations, Learning Studio, Writing Studio, and Trading Dock destinations. The **Open Bosley Chat** control opens the full conversation view directly. Reopening the companion returns to the command home. The home uses reduced-motion-aware transitions and retains the existing Writing & Ideas (Alt + T) functionality.
+
+The website, Windows, Android, and iOS pull-request workflows all run the same companion regression checks and stage the shared Bosley interface. Use the PR's GitHub Actions checks and uploaded artifacts to verify each platform before release. The iOS artifact is a simulator build unless a separately signed device build is configured.

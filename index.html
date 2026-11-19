@@ -2798,10 +2798,18 @@ function notifyWidgetSize(open){
  else if(!open&&native&&nativeOverlayHiddenForPanel&&typeof native.show==="function"){nativeOverlayHiddenForPanel=false;native.show().catch(e=>console.warn("Could not restore the Android floating widget",e));}
 }
 function toggle(open){
- const p=$("#panel");open=open??p.hidden;p.hidden=!open;document.body.classList.toggle("panel-open",!!open);
- $("#launch").setAttribute("aria-expanded",open);$("#launch").setAttribute("aria-label","Bosley Companion: "+(open?"close":"open"));
- notifyWidgetSize(open);
- if(open){setTimeout(()=>$("#in").focus(),80)}
+ const p=$("#panel");open=open??p.hidden;
+ p.hidden=!open;
+ if(open){p.removeAttribute("hidden");document.body.classList.add("panel-open");}
+ else{document.body.classList.remove("panel-open","bosley-home");}
+ $("#launch").setAttribute("aria-expanded",String(!!open));$("#launch").setAttribute("aria-label","Bosley Companion: "+(open?"close":"open"));
+ notifyWidgetSize(!!open);
+ if(open){
+  // All launcher entry paths (web click, Android overlay action and keyboard)
+  // converge here so the panel is always visibly opened on the Home surface.
+  if(typeof window.BosleyShowHome==="function")window.BosleyShowHome();
+  setTimeout(()=>{const input=$("#in");if(input&&!document.body.classList.contains("bosley-home"))input.focus({preventScroll:true});},80);
+ }
 }
 
 let nativeActionBusy=false;
@@ -2887,7 +2895,7 @@ launcher.addEventListener("pointermove",e=>{if(!dragState)return;const dx=e.scre
  dragState.x=e.screenX;dragState.y=e.screenY;},{passive:true});
 function finishDrag(){dragState=null;}
 launcher.addEventListener("pointerup",finishDrag);launcher.addEventListener("pointercancel",()=>{dragState=null;dragged=false});
-launcher.addEventListener("click",e=>{if(dragged){dragged=false;e.preventDefault();return}if(typeof window.BosleyShowHome==="function"){window.BosleyShowHome();return}const p=$("#panel");p.hidden=false;p.removeAttribute("hidden");document.body.classList.add("panel-open","bosley-home");notifyWidgetSize(true)});
+launcher.addEventListener("click",e=>{if(dragged){dragged=false;e.preventDefault();return}toggle(true);if(typeof window.BosleyShowHome==="function")window.BosleyShowHome();});
 $("#maximize").onclick=()=>{const p=$("#panel"),max=p.classList.toggle("maximized");$("#maximize").textContent=max?"❐":"□";$("#maximize").setAttribute("aria-label",max?"Restore panel":"Maximize panel");$("#maximize").title=max?"Restore panel":"Maximize panel"};
 $("#collapse").onclick=()=>{toggle(false);$("#launch").focus()};
 

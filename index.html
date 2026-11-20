@@ -2951,11 +2951,15 @@ async function handleNativeQuickAction(){
   const result=await plugin.consumeLaunchAction();
   const action=String(result?.action||"");
   const sharedText=String(result?.sharedText||"");
-  if(action==="panel"||action==="voice")await applyNativeQuickAction(action,plugin);
+  const command=String(result?.command||"").trim().slice(0,2000);
+  if(action==="panel"||action==="voice"||action==="pulse-chat")await applyNativeQuickAction(action==="pulse-chat"?"panel":action,plugin);
+  if(action==="pulse-automation"){toggle(true);window.BosleyOpenPanel?.("automation");}
+  if(action==="pulse-resume"){toggle(true);window.BosleyOpenPanel?.("activity");}
+  if(action==="pulse-command"&&command){toggle(true);for(let attempt=0;attempt<30&&!$("#in");attempt++)await new Promise(resolve=>setTimeout(resolve,100));const field=$("#in");if(field){field.value=command;await send(command);}else note("Your command was received, but the chat input is not ready. Please try again.");}
   if(action==="writing"||action==="writing-card")await openUniversalInputFromOverlay();
   if(action==="capture-screen"){const capture=$("#screen");if(capture){capture.dataset.nativeCaptureConfirmed="true";capture.click();}}
   if(sharedText.trim())await openUniversalInputWithSharedText(sharedText);
-  return action==="panel"||action==="voice"||action==="writing"||action==="writing-card"||!!sharedText.trim();
+  return ["panel","voice","pulse-chat","pulse-automation","pulse-resume","pulse-command","writing","writing-card"].includes(action)||!!sharedText.trim();
  }catch(error){console.warn("Bosley quick action could not be read",error);return false}
  finally{nativeActionBusy=false}
 }

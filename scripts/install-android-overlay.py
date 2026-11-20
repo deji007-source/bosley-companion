@@ -145,9 +145,9 @@ import android.util.DisplayMetrics;
 
 public class BosleyOverlayService extends Service {
   static final String ACTION_BULB_SHOW="com.bosley.companion.BULB_SHOW", ACTION_BULB_ACTIVE="com.bosley.companion.BULB_ACTIVE", ACTION_BULB_IDLE="com.bosley.companion.BULB_IDLE", ACTION_BULB_HIDE="com.bosley.companion.BULB_HIDE";
-  static final String ACTION_CAPTURE_PROMPT="com.bosley.companion.CAPTURE_PROMPT", ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE", ACTION_CAPTURE_START="com.bosley.companion.CAPTURE_START", ACTION_CAPTURE_STOP="com.bosley.companion.CAPTURE_STOP";
+  static final String ACTION_PULSE_SHOW="com.bosley.companion.PULSE_SHOW", ACTION_CAPTURE_PROMPT="com.bosley.companion.CAPTURE_PROMPT", ACTION_SHOW="com.bosley.companion.SHOW_OVERLAY", ACTION_HIDE="com.bosley.companion.HIDE_OVERLAY", ACTION_STYLE="com.bosley.companion.STYLE_OVERLAY", ACTION_GUIDE="com.bosley.companion.SHOW_GUIDE", ACTION_HIDE_GUIDE="com.bosley.companion.HIDE_GUIDE", ACTION_TARGET="com.bosley.companion.GUIDE_TARGET_UPDATE", ACTION_CAPTURE_START="com.bosley.companion.CAPTURE_START", ACTION_CAPTURE_STOP="com.bosley.companion.CAPTURE_STOP";
   int widgetWidth=44,widgetHeight=44,cornerDp=18,borderDp=1,eyeWidth=9,eyeHeight=17,eyeGapDp=8; String eyeShape="soft-square";
-  WindowManager wm; View bar,bulb,capturePrompt; WindowManager.LayoutParams capturePromptLp; Handler bulbHandler=new Handler(Looper.getMainLooper()); boolean bulbInUse=false; Runnable hideBulbTask=()->{if(!bulbInUse)hideBulb();}; WindowManager.LayoutParams lp,bulbLp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
+  WindowManager wm; View bar,bulb,capturePrompt,pulsePanel; WindowManager.LayoutParams pulsePanelLp; WindowManager.LayoutParams capturePromptLp; Handler bulbHandler=new Handler(Looper.getMainLooper()); boolean bulbInUse=false; Runnable hideBulbTask=()->{if(!bulbInUse)hideBulb();}; WindowManager.LayoutParams lp,bulbLp; View guideLine,guideCard,guideTarget; WindowManager.LayoutParams guideLineLp,guideCardLp,guideTargetLp; String guideInstruction="Follow the tether to the next step."; String guideTargetLabel="Target not searched yet"; TextView guideStatusView; float guideTargetX=.55f,guideTargetY=.55f;
   static final String CHANNEL_ID="bosley_floating_companion";
   void promoteToForeground(){
     if(Build.VERSION.SDK_INT>=26){
@@ -191,13 +191,14 @@ public class BosleyOverlayService extends Service {
   @Override public void onCreate(){super.onCreate();wm=(WindowManager)getSystemService(WINDOW_SERVICE);promoteToForeground();}
   @Override public int onStartCommand(Intent i,int flags,int id){
     if(i!=null && ACTION_CAPTURE_PROMPT.equals(i.getAction())){showCapturePrompt();return START_STICKY;}
+    if(i!=null && ACTION_PULSE_SHOW.equals(i.getAction())){showPulsePanel();return START_STICKY;}
     if(i!=null && ACTION_BULB_SHOW.equals(i.getAction())){showBulb();return START_STICKY;}
     if(i!=null && ACTION_BULB_ACTIVE.equals(i.getAction())){bulbInUse=true;bulbHandler.removeCallbacks(hideBulbTask);if(bulb==null)showBulb();return START_STICKY;}
     if(i!=null && ACTION_BULB_IDLE.equals(i.getAction())){bulbInUse=false;scheduleBulbHide();return START_STICKY;}
     if(i!=null && ACTION_BULB_HIDE.equals(i.getAction())){bulbInUse=false;hideBulb();return START_STICKY;}
     if(i!=null && ACTION_CAPTURE_START.equals(i.getAction())){promoteToCaptureForeground();return START_NOT_STICKY;}
     if(i!=null && ACTION_CAPTURE_STOP.equals(i.getAction())){stopCaptureForeground();if(bar==null&&guideLine==null&&guideCard==null)stopSelf();return START_NOT_STICKY;}
-    if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();stopSelf();return START_NOT_STICKY;}
+    if(i!=null && ACTION_HIDE.equals(i.getAction())){removeBar();removePulsePanel();stopSelf();return START_NOT_STICKY;}
     if(i!=null && ACTION_HIDE_GUIDE.equals(i.getAction())){removeGuide();return START_STICKY;}
     if(i!=null && ACTION_TARGET.equals(i.getAction())){updateGuideTarget(i);return START_STICKY;}
     if(i!=null && ACTION_GUIDE.equals(i.getAction())){guideInstruction=i.getStringExtra("instruction")!=null?i.getStringExtra("instruction"):"Follow the tether to the next step.";if(!Settings.canDrawOverlays(this)){Intent p=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(p);return START_NOT_STICKY;}showGuide();return START_STICKY;}
@@ -239,11 +240,38 @@ public class BosleyOverlayService extends Service {
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
         case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>8||Math.abs(e.getRawY()-sy)>8){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(0,Math.min(screenHeight-widgetSize,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
-        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480){if(bulb!=null){bulbInUse=false;hideBulb();openCompanion("panel");}else{bulbInUse=false;showBulb();}}return true;
+        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480){bulbInUse=false;hideBulb();if(pulsePanel!=null)removePulsePanel();else showPulsePanel();}return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
   }
+  TextView pulseButton(String label){
+    TextView button=new TextView(this);button.setText(label);button.setTextColor(Color.WHITE);button.setTextSize(12);button.setGravity(Gravity.CENTER);button.setTypeface(null,android.graphics.Typeface.BOLD);button.setPadding(dp(9),dp(10),dp(9),dp(10));
+    GradientDrawable bg=new GradientDrawable();bg.setColor(Color.rgb(27,39,48));bg.setCornerRadius(dp(12));bg.setStroke(dp(1),Color.rgb(91,119,134));button.setBackground(bg);button.setClickable(true);button.setFocusable(true);return button;
+  }
+  void launchPulseAction(String action,String command){
+    Intent intent=new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP).putExtra("bosley_quick_action",action);
+    if(command!=null&&!command.trim().isEmpty())intent.putExtra("bosley_pulse_command",command.trim().substring(0,Math.min(2000,command.trim().length())));
+    removePulsePanel();startActivity(intent);
+  }
+  void showPulsePanel(){
+    if(pulsePanel!=null||!Settings.canDrawOverlays(this))return;
+    LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(14),dp(12),dp(14),dp(12));
+    GradientDrawable surface=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.rgb(25,38,48),Color.rgb(5,10,15)});surface.setCornerRadius(dp(22));surface.setStroke(dp(1),Color.rgb(112,145,164));card.setBackground(surface);card.setElevation(dp(18));
+    TextView heading=new TextView(this);heading.setText("BOSLEY PULSE   ·   STANDBY");heading.setTextColor(Color.rgb(216,239,250));heading.setTextSize(11);heading.setTypeface(null,android.graphics.Typeface.BOLD);heading.setPadding(0,0,0,dp(8));card.addView(heading);
+    EditText command=new EditText(this);command.setSingleLine(true);command.setTextColor(Color.WHITE);command.setHintTextColor(Color.rgb(145,164,175));command.setHint("Ask Bosley to do something…");command.setTextSize(14);command.setPadding(dp(11),dp(7),dp(11),dp(7));GradientDrawable inputBg=new GradientDrawable();inputBg.setColor(Color.rgb(3,8,12));inputBg.setCornerRadius(dp(12));inputBg.setStroke(dp(1),Color.rgb(69,91,105));command.setBackground(inputBg);card.addView(command,new LinearLayout.LayoutParams(-1,dp(48)));
+    LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setPadding(0,dp(9),0,0);
+    String[][] actions={{"CHAT","pulse-chat"},{"VOICE","voice"},{"AUTOMATE","pulse-automation"},{"WRITE","writing"}};
+    for(String[] item:actions){TextView b=pulseButton(item[0]);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(44),1);p.setMargins(dp(2),0,dp(2),0);row.addView(b,p);b.setOnClickListener(v->launchPulseAction(item[1],null));}
+    card.addView(row);
+    LinearLayout footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);footer.setGravity(Gravity.CENTER_VERTICAL);footer.setPadding(0,dp(8),0,0);
+    TextView send=pulseButton("SEND COMMAND");TextView close=pulseButton("CLOSE");LinearLayout.LayoutParams half=new LinearLayout.LayoutParams(0,dp(40),1);half.setMargins(dp(2),0,dp(2),0);footer.addView(send,half);footer.addView(close,half);card.addView(footer);
+    send.setOnClickListener(v->{String value=command.getText()==null?"":command.getText().toString().trim();if(value.isEmpty()){command.setError("Enter a command first");return;}launchPulseAction("pulse-command",value);});close.setOnClickListener(v->removePulsePanel());
+    pulsePanel=card;pulsePanelLp=new WindowManager.LayoutParams(Math.min(dp(340),getResources().getDisplayMetrics().widthPixels-dp(24)),WindowManager.LayoutParams.WRAP_CONTENT,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
+    pulsePanelLp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;pulsePanelLp.y=dp(92);pulsePanelLp.softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
+    try{wm.addView(pulsePanel,pulsePanelLp);}catch(Exception e){pulsePanel=null;pulsePanelLp=null;}
+  }
+  void removePulsePanel(){if(wm!=null&&pulsePanel!=null){try{wm.removeView(pulsePanel);}catch(Exception ignored){}pulsePanel=null;pulsePanelLp=null;}}
   void showCapturePrompt(){
     if(capturePrompt!=null)return;
     if(!Settings.canDrawOverlays(this)){openCompanion("capture-screen");return;}
@@ -690,15 +718,18 @@ public class BosleyOverlayPlugin extends Plugin {
   @PluginMethod public void consumeLaunchAction(PluginCall call){
     android.content.Intent intent=getActivity().getIntent();
     String action=intent.getStringExtra("bosley_quick_action");
+    String pulseCommand=intent.getStringExtra("bosley_pulse_command");
     intent.removeExtra("bosley_quick_action");
     CharSequence shared=intent.getCharSequenceExtra(android.content.Intent.EXTRA_PROCESS_TEXT);
     if(shared==null)shared=intent.getCharSequenceExtra(android.content.Intent.EXTRA_TEXT);
     String sharedText=shared==null?"":shared.toString().trim();
+    String command=getActivity().getIntent().getStringExtra("bosley_pulse_command");
+    getActivity().getIntent().removeExtra("bosley_pulse_command");
     if(sharedText.length()>12000)sharedText=sharedText.substring(0,12000);
     intent.removeExtra(android.content.Intent.EXTRA_PROCESS_TEXT);
     intent.removeExtra(android.content.Intent.EXTRA_TEXT);
     // Keep the fallback expression valid Java and return an empty action when absent.
-    JSObject r=new JSObject();r.put("action",action==null?"":action);r.put("sharedText",sharedText);call.resolve(r);
+    JSObject r=new JSObject();r.put("action",action==null?"":action);r.put("sharedText",sharedText);r.put("command",command==null?"":command);call.resolve(r);
   }
   @PluginMethod public void status(PluginCall call){JSObject r=new JSObject();r.put("available",true);r.put("granted",Build.VERSION.SDK_INT<23||Settings.canDrawOverlays(getContext()));call.resolve(r);}
 }''')
@@ -714,7 +745,7 @@ if "BosleyOverlayPlugin" not in a:
     setIntent(intent);
     String action=intent.getStringExtra("bosley_quick_action");
     boolean hasSharedText=intent.getCharSequenceExtra(android.content.Intent.EXTRA_PROCESS_TEXT)!=null||intent.getCharSequenceExtra(android.content.Intent.EXTRA_TEXT)!=null;
-    if((action!=null && ("panel".equals(action)||"voice".equals(action)||"writing".equals(action)||"writing-card".equals(action)||"capture-screen".equals(action)))||hasSharedText){
+    if((action!=null && ("panel".equals(action)||"voice".equals(action)||"writing".equals(action)||"writing-card".equals(action)||"capture-screen".equals(action)||"pulse-chat".equals(action)||"pulse-automation".equals(action)||"pulse-command".equals(action)||"pulse-resume".equals(action)))||pulseCommand!=null||hasSharedText){
       String js="window.dispatchEvent(new Event(String.fromCharCode(98,111,115,108,101,121,78,97,116,105,118,101,65,99,116,105,111,110)))";
       getBridge().getWebView().post(()->getBridge().getWebView().evaluateJavascript(js,null));
     }

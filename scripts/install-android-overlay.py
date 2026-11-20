@@ -243,11 +243,11 @@ public class BosleyOverlayService extends Service {
     DisplayMetrics screen=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(screen);int screenWidth=screen.widthPixels,screenHeight=screen.heightPixels;
     android.content.SharedPreferences prefs=getSharedPreferences("bosley_pulse",MODE_PRIVATE);
     lp.x=Math.max(0,Math.min(screenWidth-widgetSize,prefs.getInt("x",screenWidth-widgetSize-dp(10))));
-    lp.y=Math.max(dp(24),Math.min(screenHeight-lp.height,prefs.getInt("y",Math.max(dp(72),(int)(screenHeight*.36f)))));
+    lp.y=Math.max(dp(24),Math.min(screenHeight-widgetSize,prefs.getInt("y",Math.max(dp(72),(int)(screenHeight*.36f)))));
     launcher.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{if(!moved){longPressed=true;openCompanion("voice");}};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
-        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>8||Math.abs(e.getRawY()-sy)>8){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(dp(24),Math.min(screenHeight-lp.height,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
+        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>8||Math.abs(e.getRawY()-sy)>8){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(dp(24),Math.min(screenHeight-widgetSize,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
         case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(moved)getSharedPreferences("bosley_pulse",MODE_PRIVATE).edit().putInt("x",lp.x).putInt("y",lp.y).apply();else if(!longPressed&&System.currentTimeMillis()-down<480){bulbInUse=false;hideBulb();if(pulsePanel!=null)removePulsePanel();else showPulsePanel();}return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});

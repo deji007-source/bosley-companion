@@ -723,8 +723,8 @@ public class BosleyOverlayPlugin extends Plugin {
     CharSequence shared=intent.getCharSequenceExtra(android.content.Intent.EXTRA_PROCESS_TEXT);
     if(shared==null)shared=intent.getCharSequenceExtra(android.content.Intent.EXTRA_TEXT);
     String sharedText=shared==null?"":shared.toString().trim();
-    String command=getActivity().getIntent().getStringExtra("bosley_pulse_command");
-    getActivity().getIntent().removeExtra("bosley_pulse_command");
+    String command=pulseCommand;
+    intent.removeExtra("bosley_pulse_command");
     if(sharedText.length()>12000)sharedText=sharedText.substring(0,12000);
     intent.removeExtra(android.content.Intent.EXTRA_PROCESS_TEXT);
     intent.removeExtra(android.content.Intent.EXTRA_TEXT);

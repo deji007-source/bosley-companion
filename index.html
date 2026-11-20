@@ -1381,6 +1381,10 @@ html[data-theme="light"] #bosley-pulse .pulse-action{background:#fff;border-colo
 @media(prefers-reduced-motion:reduce){#bosley-pulse *{animation:none!important;transition:none!important}}
 @media(min-width:700px){#bosley-pulse{left:auto;right:24px;bottom:24px;transform:none;width:360px}}
 </style>
+
+<style id="bosley-pulse-web-disabled">/* Pulse is a native companion on supported desktop/mobile builds, not a permanent web dock. */
+#bosley-pulse{display:none!important}
+</style>
 </head>
 <body><div id="bosley-splash" role="button" tabindex="0" aria-label="Enter Bosley"><div class="bs-inner"><div class="bs-orbit" aria-hidden="true"><span class="bs-orbit-dot"></span><svg class="bs-ghost" viewBox="0 0 120 120" aria-hidden="true"><path d="M60 8C34 8 18 27 18 52v40c0 5 4 7 8 4l11-9 12 10c3 2 6 2 9-1l2-2 12 8c3 2 6 1 8-2l9-12 8 7c4 3 8 1 8-4V52C102 27 86 8 60 8Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="45" cy="51" rx="7.2" ry="10.2" fill="#050505"/><ellipse cx="75" cy="51" rx="7.2" ry="10.2" fill="#050505"/></svg></div><div class="bs-wordmark">BOSLEY</div><div class="bs-tagline">A quieter way to get things done.</div><div class="bs-meta">VOICE <i></i> MEMORY <i></i> AUTOMATION</div><div class="bs-enter"><span>INITIALISING COMPANION</span><b></b><span>TAP TO ENTER</span></div></div></div><script>
 /* Independent splash failsafe: keep the launch overlay from trapping users if app boot code fails. */

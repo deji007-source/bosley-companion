@@ -227,20 +227,28 @@ public class BosleyOverlayService extends Service {
       if(blink<1f)postInvalidateDelayed(35);else postInvalidateDelayed(Math.max(40,(long)(5100-phase)));
     }
   }
+  String floatingStyle(){return getSharedPreferences("bosley_pulse",MODE_PRIVATE).getString("appearance","minimal");}
+  void applyFloatingStyle(String style){getSharedPreferences("bosley_pulse",MODE_PRIVATE).edit().putString("appearance",style).apply();removeBar();showBar();}
   void showBar(){if(bar!=null)return;
-    GhostMascotView mascot=new GhostMascotView(this);bar=mascot;
-    lp=new WindowManager.LayoutParams(dp(44),dp(44),Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
-    // Use absolute screen coordinates so the mascot can be placed anywhere.
-    // Initial position: right edge, slightly above vertical centre.
+    String style=floatingStyle(); final int widgetSize="island".equals(style)?dp(76):("ghost".equals(style)?dp(44):dp(40));
+    View launcher;
+    if("ghost".equals(style)){launcher=new GhostMascotView(this);}
+    else{
+      launcher=new View(this){final Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);@Override protected void onDraw(Canvas c){super.onDraw(c);float inset=dp(1);p.setColor(Color.BLACK);p.setStyle(Paint.Style.FILL);c.drawRoundRect(inset,inset,getWidth()-inset,getHeight()-inset,"island".equals(style)?getHeight()/2f:getWidth()/2f,"island".equals(style)?getHeight()/2f:getWidth()/2f,p);p.setColor(Color.rgb(62,72,80));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(dp(1));c.drawRoundRect(inset,inset,getWidth()-inset,getHeight()-inset,"island".equals(style)?getHeight()/2f:getWidth()/2f,"island".equals(style)?getHeight()/2f:getWidth()/2f,p);}};
+      launcher.setContentDescription("Bosley floating companion. Tap to open Pulse; drag to move.");
+    }
+    GradientDrawable bg=new GradientDrawable();bg.setColor(Color.BLACK);bg.setCornerRadius("island".equals(style)?dp(24):dp(40));bg.setStroke(dp(1),Color.rgb(55,65,72));launcher.setBackground(bg);launcher.setElevation(dp(10));bar=launcher;
+    lp=new WindowManager.LayoutParams(widgetSize,"island".equals(style)?dp(34):widgetSize,Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
     lp.gravity=Gravity.TOP|Gravity.START;
-    DisplayMetrics screen=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(screen);
-    int screenWidth=screen.widthPixels,screenHeight=screen.heightPixels,widgetSize=dp(44);
-    lp.x=Math.max(0,screenWidth-widgetSize-dp(10));lp.y=Math.max(dp(72),(int)(screenHeight*.36f));
-    mascot.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{if(!moved){longPressed=true;openCompanion("voice");}};
+    DisplayMetrics screen=new DisplayMetrics();wm.getDefaultDisplay().getRealMetrics(screen);int screenWidth=screen.widthPixels,screenHeight=screen.heightPixels;
+    android.content.SharedPreferences prefs=getSharedPreferences("bosley_pulse",MODE_PRIVATE);
+    lp.x=Math.max(0,Math.min(screenWidth-widgetSize,prefs.getInt("x",screenWidth-widgetSize-dp(10))));
+    lp.y=Math.max(dp(24),Math.min(screenHeight-lp.height,prefs.getInt("y",Math.max(dp(72),(int)(screenHeight*.36f)))));
+    launcher.setOnTouchListener(new View.OnTouchListener(){float sx,sy;int ox,oy;long down;boolean moved,longPressed;Handler gestureHandler=new Handler(Looper.getMainLooper());Runnable holdAction=()->{if(!moved){longPressed=true;openCompanion("voice");}};
       public boolean onTouch(View v,android.view.MotionEvent e){switch(e.getAction()){
         case MotionEvent.ACTION_DOWN:sx=e.getRawX();sy=e.getRawY();ox=lp.x;oy=lp.y;down=System.currentTimeMillis();moved=false;longPressed=false;gestureHandler.postDelayed(holdAction,480);return true;
-        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>8||Math.abs(e.getRawY()-sy)>8){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(0,Math.min(screenHeight-widgetSize,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
-        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(!moved&&!longPressed&&System.currentTimeMillis()-down<480){bulbInUse=false;hideBulb();if(pulsePanel!=null)removePulsePanel();else showPulsePanel();}return true;
+        case MotionEvent.ACTION_MOVE:if(Math.abs(e.getRawX()-sx)>8||Math.abs(e.getRawY()-sy)>8){moved=true;gestureHandler.removeCallbacks(holdAction);lp.x=Math.max(0,Math.min(screenWidth-widgetSize,ox+(int)(e.getRawX()-sx)));lp.y=Math.max(dp(24),Math.min(screenHeight-lp.height,oy+(int)(e.getRawY()-sy)));try{wm.updateViewLayout(bar,lp);}catch(Exception ignored){}}return true;
+        case MotionEvent.ACTION_UP:gestureHandler.removeCallbacks(holdAction);if(moved)getSharedPreferences("bosley_pulse",MODE_PRIVATE).edit().putInt("x",lp.x).putInt("y",lp.y).apply();else if(!longPressed&&System.currentTimeMillis()-down<480){bulbInUse=false;hideBulb();if(pulsePanel!=null)removePulsePanel();else showPulsePanel();}return true;
         case MotionEvent.ACTION_CANCEL:gestureHandler.removeCallbacks(holdAction);return true;
       }return true;}});
     try{wm.addView(bar,lp);}catch(Exception e){bar=null;}
@@ -264,6 +272,10 @@ public class BosleyOverlayService extends Service {
     String[][] actions={{"CHAT","pulse-chat"},{"VOICE","voice"},{"AUTOMATE","pulse-automation"},{"WRITE","writing"}};
     for(String[] item:actions){TextView b=pulseButton(item[0]);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(44),1);p.setMargins(dp(2),0,dp(2),0);row.addView(b,p);b.setOnClickListener(v->launchPulseAction(item[1],null));}
     card.addView(row);
+    LinearLayout styles=new LinearLayout(this);styles.setOrientation(LinearLayout.HORIZONTAL);styles.setPadding(0,dp(7),0,0);
+    String[][] looks={{"BLACK","minimal"},{"ISLAND","island"},{"GHOST","ghost"}};
+    for(String[] look:looks){TextView choice=pulseButton(look[0]);LinearLayout.LayoutParams choiceLp=new LinearLayout.LayoutParams(0,dp(34),1);choiceLp.setMargins(dp(2),0,dp(2),0);styles.addView(choice,choiceLp);choice.setOnClickListener(v->{applyFloatingStyle(look[1]);});}
+    card.addView(styles);
     LinearLayout footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);footer.setGravity(Gravity.CENTER_VERTICAL);footer.setPadding(0,dp(8),0,0);
     TextView send=pulseButton("SEND COMMAND");TextView close=pulseButton("CLOSE");LinearLayout.LayoutParams half=new LinearLayout.LayoutParams(0,dp(40),1);half.setMargins(dp(2),0,dp(2),0);footer.addView(send,half);footer.addView(close,half);card.addView(footer);
     send.setOnClickListener(v->{String value=command.getText()==null?"":command.getText().toString().trim();if(value.isEmpty()){command.setError("Enter a command first");return;}launchPulseAction("pulse-command",value);});close.setOnClickListener(v->removePulsePanel());

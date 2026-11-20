@@ -13,7 +13,10 @@ assert.match(html, /bosley-trading-dock-v2:"\+\(window\.BosleyCurrentUserId\?\.\
 assert.match(html, /bosley_face_settings_v1:"\+\(\(user&&user\.id\)\|\|"guest"\)/);
 assert.doesNotMatch(html, /(?:const|let)\s+(?:ACCESS_CODE|PASSCODE)\s*=\s*["']1122["']/);
 
-assert.match(html, /mix-blend-mode:difference/);
+assert.doesNotMatch(html, /mix-blend-mode\s*:\s*difference|filter\s*:\s*invert\(/, "Light mode must use native component palettes, not visual inversion");
+assert.match(html, /html\[data-theme="light"\] \.panel\{background:#f8fafb/);
+assert.match(html, /html\[data-theme="light"\] \.composer,html\[data-theme="light"\] \.chat-history-panel/);
+assert.match(html, /html\[data-theme="light"\] #home-screen\{background:#f5f8fa\}/);
 assert.match(html, /id="bosley-theme-mode"/);
 assert.match(html, /function applyBosleyTheme\(mode\)/);
 assert.match(html, /bosley-account:"\+owner\(\)\+":"\+k/);

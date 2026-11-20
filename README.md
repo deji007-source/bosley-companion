@@ -18,6 +18,7 @@ The currently maintained companion experience is the root `index.html`, which co
 - Per-user conversation/message persistence in Supabase.
 - Per-user workflow storage using `automation_workflows`.
 - Second Brain knowledge vault using `user_second_brain_entries`, with Projects/Areas/Resources/Archive categories, searchable notes, optional HTTP(S) source links, and per-user Supabase access policies. Existing engineering notes remain readable during the transition.
+- Learning Studio for private PDF, DOCX, TXT, Markdown, CSV and RTF uploads, browser-side text extraction, account-isolated Supabase Storage, searchable document chunks, and automatic retrieval of relevant uploaded passages in ordinary Bosley chat. Educational YouTube search and embedded playback are available when the server-side `YOUTUBE_API_KEY` secret is configured.
 - Automation execution history persists locally per signed-in user (up to 12 recent status entries), survives page refreshes, and can be cleared from the Automation panel. History stays in that browser's local storage; it is not uploaded to the cloud.
 - Saved-workflow command dispatch: chat messages such as `Open Spotify`, `run Open Spotify`, `please run my Morning Research automation`, and `could you start Morning Research for me` are matched to the signed-in user's saved workflow names before AI chat fallback. Matching ignores case and punctuation and tolerates common polite prefixes/suffixes; the existing workflow runner executes configured steps and records step-level results.
 - Voice profiles: Jarvis-style, natural assistant, and system default. Voice selection prioritizes available English voices, reports the actual selected device voice when available, follows the selected voice's language, and falls back to browser/device defaults when voice metadata is unavailable. The Jarvis-style profile uses slower, lower-pitch speech settings; exact timbre depends on the browser and operating system.
@@ -36,6 +37,7 @@ Some of these integrations have been implemented in code but still require end-t
 - Browser-safe workflow actions are not the same as controlling Windows applications. Desktop actions must remain unavailable unless a secure, allowlisted native bridge is installed and confirms the result.
 - Message actions that lack a verified send integration should be treated as drafts, not as sent messages.
 - Voice support depends on browser/device capabilities and permissions; speech recognition may rely on the browser vendor's service.
+- Learning Studio extracts selectable PDF text and DOCX text in the browser; scanned PDFs require OCR and are not currently OCR-processed. Retrieval currently uses English full-text search rather than vector embeddings. YouTube video search requires a server-side `YOUTUBE_API_KEY` secret.
 - The Windows wrapper loads the hosted site. It is not a standalone offline AI model.
 - Do not add API keys, passwords, Supabase service-role keys, or other secrets to this public repository or to frontend code.
 
@@ -144,3 +146,10 @@ Bosley includes a small in-app **Commands & shortcuts** reference in the floatin
 - Say **Run my [workflow name] automation** to run a saved workflow.
 
 Saved workflows containing only allowlisted website launches or allowlisted desktop-app launches run without a separate per-run confirmation. Any workflow containing an action that sends, publishes, deletes, purchases, changes account settings, or otherwise has a consequential external effect still requires review and confirmation. The Windows desktop build is required for native Windows app launches; a browser-only build opens websites in browser tabs.
+
+
+## Bosley command home
+
+The default companion landing view is the monochrome Bosley command home. Tap the central Bosley core to expand or collapse the animated radial shortcuts. The shortcuts open the existing Workspace, AI Agents, Automations, Learning Studio, Writing Studio, and Trading Dock destinations. The **Open Bosley Chat** control opens the full conversation view directly. Reopening the companion returns to the command home. The home uses reduced-motion-aware transitions and retains the existing Writing & Ideas (Alt + T) functionality.
+
+The website, Windows, Android, and iOS pull-request workflows all run the same companion regression checks and stage the shared Bosley interface. Use the PR's GitHub Actions checks and uploaded artifacts to verify each platform before release. The iOS artifact is a simulator build unless a separately signed device build is configured.
